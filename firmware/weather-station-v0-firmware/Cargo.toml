@@ -1,5 +1,5 @@
 [package]
-name = "weather-station-v0"
+name = "auto-drive-weather-station-v0-firmware"
 version = "0.1.0"
 edition = "2024"
 

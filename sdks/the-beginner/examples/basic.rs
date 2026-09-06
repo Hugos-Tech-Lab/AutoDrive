@@ -1,4 +1,4 @@
-use the_beginner::{register, the_beginner_auto_drive::TheBeginnerAutoDrive};
+use auto_drive_the_beginner_sdk::{register, the_beginner_auto_drive::TheBeginnerAutoDrive, read_wheel};
 
 struct BasicAutoDrive;
 
@@ -6,7 +6,7 @@ impl TheBeginnerAutoDrive for BasicAutoDrive {
     fn run() {
 
         // the_beginner::
-        let a = the_beginner::read_wheel();
+        let a = read_wheel();
         // let temperature = temperature();
 
         // log(&format!(

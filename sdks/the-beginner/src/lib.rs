@@ -6,7 +6,7 @@ pub mod generated {
         world: "app",
         path: "wit",
         pub_export_macro: true,
-        default_bindings_module: "::the_beginner::generated",
+        default_bindings_module: "::auto_drive_the_beginner_sdk::generated",
     });
 }
 

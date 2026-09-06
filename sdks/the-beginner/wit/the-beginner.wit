@@ -11,6 +11,7 @@ world app {
     // export start: func();
     // export pause: func();
     // export cancel: func();
+    /// Test
     export run: func();
     export run-2: func();
 }

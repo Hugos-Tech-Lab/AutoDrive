@@ -22,13 +22,13 @@ impl WasiView for HostState {
     }
 }
 
-impl example::device::device::Host for HostState {
-    fn log(&mut self, message: String) {
-        println!("[WASM] {message}");
+impl example::device::hardware::Host for HostState {
+    fn control_wheel(&mut self,wheel: f32,speed: f32,) -> () {
+        todo!()
     }
 
-    fn temperature(&mut self) -> f32 {
-        23.0
+    fn read_wheel(&mut self,) -> f32 {
+        todo!()
     }
 }
 

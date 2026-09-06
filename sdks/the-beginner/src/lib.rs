@@ -4,7 +4,7 @@
 pub mod generated {
     wit_bindgen::generate!({
         world: "app",
-        path: "wit",
+        path: env!("GENERATED_WIT"),
         pub_export_macro: true,
         default_bindings_module: "::auto_drive_the_beginner_sdk::generated",
     });

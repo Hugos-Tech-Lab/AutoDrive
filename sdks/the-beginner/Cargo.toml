@@ -6,6 +6,9 @@ edition = "2024"
 [dependencies]
 wit-bindgen = "0.61.1"
 
+[build-dependencies]
+auto-drive-the-beginner-firmware = { path = "../../firmware/the-beginner" }
+
 [[example]]
 name = "basic"
 crate-type = ["cdylib"]

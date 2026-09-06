@@ -3,10 +3,28 @@ wit_bindgen::generate!({
     path: "wit"
 });
 
-#[allow(dead_code)]
-struct App;
+pub mod the_beginner;
 
-impl Guest for App {
+#[macro_export]
+macro_rules! register {
+    ($app:ty) => {
+        struct __TheBeginnerAdapter;
+
+        impl $crate::Guest for __TheBeginnerAdapter {
+            fn run() {
+                <$app as $crate::TheBeginner>::run();
+            }
+        }
+
+        $crate::export!(__TheBeginnerAdapter);
+    };
+}
+
+
+#[allow(dead_code)]
+struct Application;
+
+impl Guest for Application {
     #[allow(async_fn_in_trait)]
     fn run() -> () {
         // let temp = temperature::temperature();
@@ -21,4 +39,5 @@ impl Guest for App {
     }
 }
 
-export!(App);
+
+export!(Application);

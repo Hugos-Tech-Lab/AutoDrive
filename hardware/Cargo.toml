@@ -1,7 +1,8 @@
-[package]
-name = "machines"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "common",
+]
 
-[dependencies]
+resolver = "1"
 
+[workspace.dependencies]

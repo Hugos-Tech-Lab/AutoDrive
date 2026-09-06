@@ -1,6 +1,8 @@
 [workspace]
 members = [
     "common",
+    # "the-beginner",
+    "weather-station-v0",
 ]
 
 resolver = "1"

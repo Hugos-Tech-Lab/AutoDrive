@@ -1,3 +1,3 @@
-pub trait TheBeginner {
+pub trait TheBeginnerAutoDrive {
   fn run() -> ();
 }

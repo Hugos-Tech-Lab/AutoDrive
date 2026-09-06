@@ -12,7 +12,7 @@ macro_rules! register {
 
         impl $crate::Guest for __TheBeginnerAdapter {
             fn run() {
-                <$app as $crate::TheBeginner>::run();
+                <$app as $crate::TheBeginnerAutoDrive>::run();
             }
         }
 

@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [[bin]]
-name = "weather-station-v0"
-harness = false # do not use the built-in cargo test harness -> resolve rust-analyzer errors
+name = "main"
+path = "src/main.rs"
+harness = false
 
 [dependencies]
 log = "0.4"

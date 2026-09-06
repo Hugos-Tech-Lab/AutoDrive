@@ -11,5 +11,9 @@ impl Guest for App {
     fn run() -> () {
         let temp = temperature::temperature();
         temperature::log(&format!("{temp}"));
+        temperature::log(&format!("{temp}"));
+        temperature::log(&format!("{temp}"));
     }
 }
+
+export!(App);

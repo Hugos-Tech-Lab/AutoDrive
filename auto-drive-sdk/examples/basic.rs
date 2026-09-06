@@ -1,4 +1,4 @@
-use auto_drive_the_beginner_sdk::{register, the_beginner_auto_drive::TheBeginnerAutoDrive};
+use auto_drive_sdk::the_beginner::{register, TheBeginnerAutoDrive};
 
 struct BasicAutoDrive;
 

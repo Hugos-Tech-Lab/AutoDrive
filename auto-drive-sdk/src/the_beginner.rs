@@ -10,8 +10,6 @@ pub mod generated {
     });
 }
 
-pub mod the_beginner_auto_drive;
-
 pub use generated::hardware::control_wheel as control_wheel;
 pub use generated::hardware::read_wheel as read_wheel;
 

@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use auto_drive_the_beginner_firmware::WIT;
+use auto_drive_interface::the_beginner::WIT;
 
 fn main() {
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());

@@ -1,5 +1,5 @@
 [package]
-name = "auto-drive-the-beginner-sdk"
+name = "auto-drive-sdk"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,7 +7,7 @@ edition = "2024"
 wit-bindgen = "0.61.1"
 
 [build-dependencies]
-auto-drive-the-beginner-firmware = { path = "../../firmware/the-beginner-firmware" }
+auto-drive-interface = { path = "../auto-drive-interface" }
 
 [[example]]
 name = "basic"

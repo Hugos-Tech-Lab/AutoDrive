@@ -266,7 +266,7 @@ components:
         language:
           type: string
           description: Script language or runtime
-          example: "auto-script"
+          example: "rust"
 
         createdAt:
           type: string

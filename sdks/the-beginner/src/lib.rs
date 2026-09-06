@@ -1,3 +1,6 @@
+//! A physical small robot that's driven around the Tech Lab. 
+//! Use this crate to read it's input / control it.
+
 pub mod generated {
     wit_bindgen::generate!({
         world: "app",
@@ -8,6 +11,9 @@ pub mod generated {
 }
 
 pub mod the_beginner_auto_drive;
+
+pub use generated::hardware::control_wheel as control_wheel;
+pub use generated::hardware::read_wheel as read_wheel;
 
 #[macro_export]
 macro_rules! register {

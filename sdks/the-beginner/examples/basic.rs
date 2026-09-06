@@ -1,10 +1,12 @@
 use the_beginner::{register, the_beginner_auto_drive::TheBeginnerAutoDrive};
 
-struct MyCar;
+struct BasicAutoDrive;
 
-impl TheBeginnerAutoDrive for MyCar {
+impl TheBeginnerAutoDrive for BasicAutoDrive {
     fn run() {
-        let a = the_beginner::generated::hardware::read_wheel();
+
+        // the_beginner::
+        let a = the_beginner::read_wheel();
         // let temperature = temperature();
 
         // log(&format!(
@@ -23,5 +25,4 @@ impl TheBeginnerAutoDrive for MyCar {
     }
 }
 
-register!(MyCar);
-
+register!(BasicAutoDrive);

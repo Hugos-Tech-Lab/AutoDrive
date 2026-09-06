@@ -7,9 +7,10 @@ interface hardware {
 
 world app {
     import hardware: hardware;
-    export prepare: func();
+    // export prepare: func();
     // export start: func();
     // export pause: func();
     // export cancel: func();
     export run: func();
+    export run-2: func();
 }

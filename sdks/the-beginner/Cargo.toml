@@ -6,5 +6,10 @@ edition = "2024"
 [dependencies]
 wit-bindgen = "0.61.1"
 
-[lib]
+[[example]]
+name = "basic"
 crate-type = ["cdylib"]
+
+
+# [lib]
+# crate-type = ["cdylib"]

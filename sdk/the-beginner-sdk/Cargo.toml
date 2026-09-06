@@ -7,7 +7,7 @@ edition = "2024"
 wit-bindgen = "0.61.1"
 
 [build-dependencies]
-auto-drive-the-beginner-firmware = { path = "../../firmware/the-beginner" }
+auto-drive-the-beginner-firmware = { path = "../../firmware/the-beginner-firmware" }
 
 [[example]]
 name = "basic"

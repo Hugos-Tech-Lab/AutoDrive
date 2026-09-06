@@ -1,11 +1,11 @@
 use wasmtime::{Config, Engine, Store};
 use wasmtime::component::{Component, Linker};
-use wasmtime::component::{bindgen, HasSelf, ResourceTable};
+use wasmtime::component::{HasSelf, ResourceTable};
 use wasmtime_wasi::{WasiCtx, WasiCtxView, WasiView};
 
 wasmtime::component::bindgen!({
     world: "app",
-    path: "../../examples/the-beginner/wit",
+    path: "interface/the-beginner.wit",
 });
 
 struct HostState {

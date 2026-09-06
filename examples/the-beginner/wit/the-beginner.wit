@@ -1,0 +1,15 @@
+package example:device;
+
+interface device {
+    log: func(message: string);
+    temperature: func() -> f32;
+}
+
+world app {
+    import temperature: device;
+    // export load: func();
+    // export start: func();
+    // export pause: func();
+    // export cancel: func();
+    export run: func();
+}

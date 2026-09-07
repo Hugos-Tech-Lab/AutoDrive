@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: Simple Weather API
+  version: 1.0.0
+  description: A simple REST API for temperature and humidity.
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /temperature:
+    get:
+      summary: Get the current temperature
+      operationId: getTemperature
+      responses:
+        '200':
+          description: Current temperature
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  temperature:
+                    type: number
+                    format: float
+                    example: 22.5
+                  unit:
+                    type: string
+                    example: celsius
+
+  /humidity:
+    get:
+      summary: Get the current humidity
+      operationId: getHumidity
+      responses:
+        '200':
+          description: Current humidity
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  humidity:
+                    type: number
+                    format: float
+                    example: 55.0
+                  unit:
+                    type: string
+                    example: percent

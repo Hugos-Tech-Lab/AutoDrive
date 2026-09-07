@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Simple Weather API
+  title: Weather Station V0
   version: 1.0.0
-  description: A simple REST API for temperature and humidity.
+  description: A REST API for the Weather Station.
 
 servers:
   - url: http://localhost:8080

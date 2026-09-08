@@ -28,7 +28,7 @@ use dotenvy_macro::dotenv;
 
     use embedded_dht_rs::dht11::Dht11;
 use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration as WifiConfiguration};
-
+use std::sync::Mutex;
     use esp_idf_svc::hal::delay::{Delay, FreeRtos};
 use esp_idf_svc::hal::gpio::PinDriver;
 use esp_idf_svc::hal::peripherals::Peripherals;
@@ -66,23 +66,7 @@ use esp_idf_svc::ipv4::{
             // PinDriver::output_od(peripherals.pins.gpio4)?;``
         let delay = Delay::new_default();
 
-        let mut dht11 = Dht11::new(dht11_pin, delay);
 
-
-    loop {
-        log::info!("starting");
-        FreeRtos::delay_ms(2000);
-        log::info!("done delay");
-
-        match dht11.read() {
-            Ok(sensor_reading) => log::info!(
-                "DHT 11 Sensor - Temperature: {} °C, humidity: {} %",
-                sensor_reading.temperature,
-                sensor_reading.humidity
-            ),
-            Err(error) => log::error!("An error occurred while trying to read sensor: {:?}", error),
-        }
-    }
         let wifi = WifiDriver::new(peripherals.modem, sys_loop.clone(), Some(nvs))?;
         let wifi = configure_wifi(wifi)?;
 
@@ -90,24 +74,46 @@ use esp_idf_svc::ipv4::{
         connect_wifi(&mut wifi)?;
 
         // let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
-        let mut mdns = EspMdns::take()?;
-        mdns.set_hostname("weather-station")?;
-        // Advertise the HTTP server
-        // mdns.add_service(
-        //     Some("ESP HTTP Server"),
-        //     "_http",
-        //     "_tcp",
-        //     server_config.http_port,
-        //     &[],
-        // )?;
+
+        // let mut dht11 = Dht11::new(dht11_pin, delay);
+
+
+        let dht11 = Mutex::new(Dht11::new(dht11_pin, delay));
 
         let server_config = esp_idf_svc::http::server::Configuration::default();
         let mut server = EspHttpServer::new(&server_config)?;
-        server.fn_handler("/temperature", Method::Get, |req| {
-            req.into_ok_response()?
-                .write_all("temperature".as_bytes())
-                .map(|_| ())
+
+        let mut mdns = EspMdns::take()?;
+        mdns.set_hostname("weather-station")?;
+
+        server.fn_handler("/temperature", Method::Get, move |req| {
+            let mut dht11 = dht11.lock().unwrap();
+
+            match dht11.read() {
+                Ok(reading) => {
+                    let body = format!(
+                        r#"{{"temperature":{}}}"#,
+                        reading.temperature
+                    );
+
+                    req.into_ok_response()?
+                        .write_all(body.as_bytes())
+                        .map(|_| ())
+                }
+
+                Err(error) => {
+                    log::error!("DHT11 read error: {:?}", error);
+
+                    req.into_status_response(500)?
+                        .write_all(br#"{"error":"Failed to read temperature"}"#)
+                        .map(|_| ())
+                }
+            }
         })?;
+
+        loop {
+            std::thread::park();  // maybe implement some proper shutdown handler? I.e. block until some signal?
+        }
 
         // info!("Wifi Interface info: {ip_info:?}");
 
@@ -118,7 +124,7 @@ use esp_idf_svc::ipv4::{
 
         // let od_for_dht11 = OutputOpenDrain::new(io.pins.gpio4, Level::High, Pull::None);
 
-
+        Ok(())
     }
 
     fn configure_wifi(wifi: WifiDriver) -> anyhow::Result<EspWifi> {

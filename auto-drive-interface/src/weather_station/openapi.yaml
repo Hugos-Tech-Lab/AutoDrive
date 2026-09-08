@@ -27,7 +27,20 @@ paths:
                   unit:
                     type: string
                     example: celsius
-
+        '500':
+          description: Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  temperature:
+                    type: number
+                    format: float
+                    example: 22.5
+                  unit:
+                    type: string
+                    example: celsius
   /humidity:
     get:
       summary: Get the current humidity

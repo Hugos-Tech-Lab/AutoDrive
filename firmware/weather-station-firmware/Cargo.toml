@@ -15,6 +15,7 @@ embassy-time = { version = "0.5", features = ["generic-queue-8"] }
 embedded-svc = "0.29.0"
 anyhow = "1.0.104"
 embedded-dht-rs = { version = "0.5.0", features = ["dht11"] }
+dotenvy_macro = "0.15.7"
 
 [build-dependencies]
 embuild = "0.33"

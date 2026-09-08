@@ -83,32 +83,31 @@ use esp_idf_svc::ipv4::{
             Err(error) => log::error!("An error occurred while trying to read sensor: {:?}", error),
         }
     }
-        // let wifi = WifiDriver::new(peripherals.modem, sys_loop.clone(), Some(nvs))?;
-        // let wifi = configure_wifi(wifi)?;
+        let wifi = WifiDriver::new(peripherals.modem, sys_loop.clone(), Some(nvs))?;
+        let wifi = configure_wifi(wifi)?;
 
-        // let mut wifi = BlockingWifi::wrap(wifi, sys_loop)?;
-        // connect_wifi(&mut wifi)?;
+        let mut wifi = BlockingWifi::wrap(wifi, sys_loop)?;
+        connect_wifi(&mut wifi)?;
 
         // let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
-        // let mut mdns = EspMdns::take()?;
-        // mdns.set_hostname("esp-advertiser")?;
-        
-        // let server_config = esp_idf_svc::http::server::Configuration::default();
-        // let mut server = EspHttpServer::new(&server_config)?;
-        // server.fn_handler("/", Method::Get, |req| {
-        //     req.into_ok_response()?
-        //         .write_all("hi".as_bytes())
-        //         .map(|_| ())
-        // })?;
+        let mut mdns = EspMdns::take()?;
+        mdns.set_hostname("weather-station")?;
+        // Advertise the HTTP server
+        // mdns.add_service(
+        //     Some("ESP HTTP Server"),
+        //     "_http",
+        //     "_tcp",
+        //     server_config.http_port,
+        //     &[],
+        // )?;
 
-        // // Advertise the HTTP server
-        // // mdns.add_service(
-        // //     Some("ESP HTTP Server"),
-        // //     "_http",
-        // //     "_tcp",
-        // //     server_config.http_port,
-        // //     &[],
-        // // )?;
+        let server_config = esp_idf_svc::http::server::Configuration::default();
+        let mut server = EspHttpServer::new(&server_config)?;
+        server.fn_handler("/temperature", Method::Get, |req| {
+            req.into_ok_response()?
+                .write_all("temperature".as_bytes())
+                .map(|_| ())
+        })?;
 
         // info!("Wifi Interface info: {ip_info:?}");
 

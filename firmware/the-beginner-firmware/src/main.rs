@@ -1,4 +1,4 @@
-pub mod wasm_runtime;
+// pub mod wasm_runtime;
 
 
 fn main() -> anyhow::Result<()> {

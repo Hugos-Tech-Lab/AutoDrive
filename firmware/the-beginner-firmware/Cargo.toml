@@ -9,10 +9,11 @@ path = "src/main.rs"
 harness = false
 
 [dependencies]
+wamr-rust-sdk = { git = "https://github.com/bytecodealliance/wamr-rust-sdk", features = ["esp-idf"] }
 anyhow = "1.0.104"
 # wasmtime = "48.0.1"
 # wasmtime-wasi = "48.0.1"
-# wit-bindgen = "0.61.1"
+wit-bindgen = "0.61.1"
 log = "0.4"
 esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }

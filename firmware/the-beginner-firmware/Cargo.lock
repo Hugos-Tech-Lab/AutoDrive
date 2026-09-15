@@ -51,7 +51,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
-name = "auto-drive-the-beginner-firmware"
+name = "auto-drive-the-beginner-fw"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -61,7 +61,11 @@ dependencies = [
  "embedded-svc",
  "embuild",
  "esp-idf-svc",
+ "esp-idf-sys",
+ "heapless 0.9.3",
  "log",
+ "serde",
+ "serde_json",
  "wamr-rust-sdk",
  "wit-bindgen",
 ]

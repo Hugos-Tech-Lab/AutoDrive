@@ -1,2 +1,10 @@
 [build]
-target = "wasm32-wasip2"
+target = "wasm32-unknown-unknown"
+
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "-C", "target-feature=-reference-types,-multivalue",
+    "-C", "link-arg=-z",
+    "-C", "link-arg=stack-size=65536",
+    "-C", "link-arg=--initial-memory=65536",
+]

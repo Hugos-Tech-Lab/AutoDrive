@@ -3,16 +3,18 @@ name = "auto-drive-sdk"
 version = "0.1.0"
 edition = "2024"
 
-[dependencies]
-wit-bindgen = "0.61.1"
-
 [build-dependencies]
 auto-drive-interface = { path = "../auto-drive-interface" }
 
+[lib]
+# "cdylib" forces Rust to generate the actual .wasm binary file
+crate-type = ["cdylib"] 
 [[example]]
 name = "basic"
 crate-type = ["cdylib"]
 
-
-# [lib]
-# crate-type = ["cdylib"]
+[profile.release]
+opt-level = "z"      # Optimize strictly for size
+lto = true           # Enable Link-Time Optimization across all crates
+codegen-units = 1    # Reduce parallel compilation blocks to maximize LTO stripping
+panic = "abort"      # Remove heavy stack unwinding tracking structures

@@ -3,15 +3,15 @@ target = "riscv32imac-esp-espidf"
 
 [target.'cfg(target_os = "espidf")']
 linker = "ldproxy"
-runner = "espflash flash --monitor"
-rustflags = [ "--cfg",  "espidf_time64"]
+runner = "espflash flash --partition-table partitions_two_ota.csv --monitor"
+rustflags = ["--cfg", "espidf_time64"]
 
 [unstable]
 build-std = ["std", "panic_abort"]
 
 [env]
 MCU = "esp32c6"
-ESP_IDF_VERSION = "v5.5.3"
+ESP_IDF_VERSION = "v5.5.4"
 ESP_IDF_TOOLS_INSTALL_DIR = "workspace"
 ESP_IDF_COMP_MDNS_ENABLED = "1"
 ESP_IDF_PATH_ISSUES = 'warn'

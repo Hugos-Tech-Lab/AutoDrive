@@ -1,5 +1,5 @@
 [package]
-name = "auto-drive-the-beginner-firmware"
+name = "auto-drive-the-beginner-fw"
 version = "0.1.0"
 edition = "2024"
 
@@ -16,13 +16,26 @@ anyhow = "1.0.104"
 wit-bindgen = "0.61.1"
 log = "0.4"
 esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
+esp-idf-sys = "0.37.2"
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }
 embedded-svc = "0.29.0"
 embedded-dht-rs = { version = "0.5.0", features = ["dht11"] }
 dotenvy_macro = "0.15.7"
+heapless = "0.9.3"
+serde = "1.0.229"
+serde_json = "1.0.151"
 
 [build-dependencies]
 embuild = "0.33"
 
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "1.8.2" }
+
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/wasm-micro-runtime", version = "2.4.0~1" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(esp_idf_app_compile_time_date)',
+    'cfg(esp_idf_app_reproducible_build)',
+] }

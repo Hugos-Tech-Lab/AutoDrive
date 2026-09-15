@@ -1,0 +1,53 @@
+openapi: 3.1.0
+
+info:
+  title: Firmware Manager
+  version: 1.0.0
+  description: |
+    Manage the ESP32 firmware remotely.
+servers:
+  - url: http://the-beginner.local
+
+paths:
+  /firmware/info:
+    get:
+      summary: Get firmware information
+      operationId: getInfo
+      responses:
+        '200':
+          description: firmware information
+          content:
+            application/json:
+              schema:
+                type: object
+  /firmware/update:
+    post:
+      summary: Upload and install firmware
+      operationId: updateFirmware
+      description: |
+        Streams a raw ESP32 firmware binary into the inactive OTA partition.
+
+        The firmware is written directly to the OTA partition without being
+        buffered entirely in memory. After the upload completes successfully,
+        the firmware image is finalized and selected as the next boot image.
+        The device then reboots automatically.
+
+        The request body must contain the raw firmware binary.
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Firmware installed successfully. The device will reboot.
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid firmware upload
+        '500':
+          description: OTA update failed

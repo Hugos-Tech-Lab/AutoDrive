@@ -103,7 +103,7 @@ impl<'runtime> DeviceControl<'runtime> {
 
                 let instance = Instance::new(&runtime, &module, 1024 * 32).unwrap();
 
-                let function = Function::find_export_func(&instance, "run").unwrap();
+                let function = Function::find_export_func(&instance, "main").unwrap();
                 let params = vec![];
 
                 info!("starting to run");
@@ -118,6 +118,7 @@ impl<'runtime> DeviceControl<'runtime> {
             })
             .unwrap()
             .join();
+
 
         // println!("Free heap: {} bytes", unsafe {
         //     esp_idf_sys::esp_get_free_heap_size()

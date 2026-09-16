@@ -36,16 +36,7 @@ mod macros {
     #[macro_export]
     macro_rules! register {
         ($app:ty) => {
-            #[unsafe(export_name = "run")]
-            pub extern "C" fn run() -> () {
-                <$app as $crate::the_beginner::TheBeginnerAutoDrive>::run()
-            }
 
-            #[cfg(not(test))]
-            #[panic_handler]
-            fn panic(_info: &core::panic::PanicInfo) -> ! {
-                loop {}
-            }
         };
     }
 }

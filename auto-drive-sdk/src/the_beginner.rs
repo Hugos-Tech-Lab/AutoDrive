@@ -6,6 +6,7 @@ mod ffi {
     unsafe extern "C" {
         pub fn delay(milliseconds: u64);
         pub fn print(text: u32);
+        pub fn set_onboard_led_color(r: u8, g: u8, b: u8);
     }
 }
 
@@ -18,6 +19,12 @@ pub fn delay(milliseconds: u64) {
 pub fn print(text: u32) {
     unsafe {
         ffi::print(text);
+    }
+}
+
+pub fn set_onboard_led_color(r: u8, g: u8, b: u8) {
+    unsafe {
+        ffi::set_onboard_led_color(r, g, b);
     }
 }
 

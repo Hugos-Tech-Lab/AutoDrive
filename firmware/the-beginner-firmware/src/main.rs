@@ -1,15 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::{sync::{Arc, Mutex}, thread, time::Duration};
 
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    http::{
+    eventloop::EspSystemEventLoop, hal::{gpio::AnyIOPin, spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, units::Hertz}, http::{
         Method,
         server::{Configuration, EspHttpServer},
-    },
-    io::Write,
-    mdns::EspMdns,
-    ota::EspOta,
-    wifi::{BlockingWifi, EspWifi},
+    }, io::Write, mdns::EspMdns, ota::EspOta, wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -17,14 +12,15 @@ use esp_idf_svc::{
     nvs::EspDefaultNvsPartition,
     sys::{build_time::build_time_utc, const_format},
 };
+use ws2812_spi::Ws2812;
 
 use crate::{
-    connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::Hardware, logger::init_logging, ota_http::verify_and_set_valid::verify_and_set_valid,
+    connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::{Hardware, on_board_led::OnBoardLed}, logger::init_logging, ota_http::verify_and_set_valid::verify_and_set_valid,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
-
+use smart_leds_trait::{RGB8, SmartLedsWrite};
 pub mod wasm;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
@@ -45,6 +41,7 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
+    let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
 
     let mut wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,

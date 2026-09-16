@@ -88,6 +88,7 @@ impl<'runtime> DeviceControl<'runtime> {
                 .use_system_allocator()
                 .register_host_function("delay", crate::wasm::exposed_functions::delay as *mut c_void)
                 .register_host_function("print", crate::wasm::exposed_functions::print as *mut c_void)
+                .register_host_function("set_onboard_led_color", crate::wasm::exposed_functions::set_onboard_led_color as *mut c_void)
                 .build()
                 .unwrap();
 

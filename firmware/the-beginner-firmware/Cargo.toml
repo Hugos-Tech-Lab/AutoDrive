@@ -24,6 +24,8 @@ dotenvy_macro = "0.15.7"
 heapless = "0.9.3"
 serde = "1.0.229"
 serde_json = "1.0.151"
+ws2812-spi = { version = "0.5", features = ["mosi_idle_high"] }
+smart-leds-trait = "0.3.2"
 
 [build-dependencies]
 embuild = "0.33"

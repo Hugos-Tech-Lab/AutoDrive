@@ -23,5 +23,3 @@ pub extern "C" fn main() -> () {
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
-
-register!(BasicAutoDrive);

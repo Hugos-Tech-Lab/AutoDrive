@@ -27,16 +27,3 @@ pub fn set_onboard_led_color(r: u8, g: u8, b: u8) {
         ffi::set_onboard_led_color(r, g, b);
     }
 }
-
-pub trait TheBeginnerAutoDrive {
-    fn run();
-}
-
-mod macros {
-    #[macro_export]
-    macro_rules! register {
-        ($app:ty) => {
-
-        };
-    }
-}

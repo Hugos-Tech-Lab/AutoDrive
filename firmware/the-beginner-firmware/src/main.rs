@@ -12,15 +12,13 @@ use esp_idf_svc::{
     nvs::EspDefaultNvsPartition,
     sys::{build_time::build_time_utc, const_format},
 };
-use ws2812_spi::Ws2812;
 
 use crate::{
-    connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::{Hardware, on_board_led::OnBoardLed}, logger::init_logging, ota_http::verify_and_set_valid::verify_and_set_valid,
+    connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::{on_board_led::OnBoardLed}, logger::init_logging, ota_http::verify_and_set_valid::verify_and_set_valid,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
-use smart_leds_trait::{RGB8, SmartLedsWrite};
 pub mod wasm;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;

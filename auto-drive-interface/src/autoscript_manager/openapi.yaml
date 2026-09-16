@@ -1,457 +1,53 @@
-openapi: 3.0.3
+openapi: 3.1.0
 
 info:
-  title: Autonomous Vehicle Auto-Script API
-  description: |
-    Common REST interface for uploading, compiling, activating,
-    starting, pausing, and cancelling autonomous-driving scripts.
-
-    The API defines the common script lifecycle. Individual vehicle
-    implementations may extend this interface with vehicle-specific
-    capabilities and configuration.
+  title: Firmware Manager
   version: 1.0.0
-
+  description: |
+    Manage the ESP32 firmware remotely.
 servers:
-  - url: https://api.example.com/v1
-
-tags:
-  - name: Auto Scripts
-    description: Manage autonomous-driving scripts
+  - url: http://the-beginner.local
 
 paths:
-  /auto-scripts:
+  /firmware/info:
+    get:
+      summary: Get firmware information
+      operationId: getInfo
+      responses:
+        '200':
+          description: firmware information
+          content:
+            application/json:
+              schema:
+                type: object
+  /autoscript/upload:
     post:
-      tags:
-        - Auto Scripts
-      summary: Upload an auto script
-      operationId: uploadAutoScript
+      summary: Upload and install firmware
+      operationId: updateFirmware
+      description: |
+        Streams a raw ESP32 firmware binary into the inactive OTA partition.
 
+        The firmware is written directly to the OTA partition without being
+        buffered entirely in memory. After the upload completes successfully,
+        the firmware image is finalized and selected as the next boot image.
+        The device then reboots automatically.
+
+        The request body must contain the raw firmware binary.
       requestBody:
         required: true
         content:
-          application/json:
+          application/octet-stream:
             schema:
-              $ref: "#/components/schemas/AutoScriptUpload"
-
+              type: string
+              format: binary
       responses:
-        "201":
-          description: Auto script uploaded successfully
+        '200':
+          description: Firmware installed successfully. The device will reboot.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AutoScript"
-
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
-        "409":
-          description: A script with the same ID or version already exists
-
-    get:
-      tags:
-        - Auto Scripts
-      summary: List auto scripts
-      operationId: listAutoScripts
-
-      responses:
-        "200":
-          description: List of auto scripts
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AutoScript"
-
-  /auto-scripts/{scriptId}:
-    parameters:
-      - $ref: "#/components/parameters/ScriptId"
-
-    get:
-      tags:
-        - Auto Scripts
-      summary: Get auto script
-      operationId: getAutoScript
-
-      responses:
-        "200":
-          description: Auto script information
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutoScript"
-
-        "404":
-          $ref: "#/components/responses/NotFound"
-  /auto-scripts/{scriptId}/activate:
-    parameters:
-      - $ref: "#/components/parameters/ScriptId"
-
-    post:
-      tags:
-        - Auto Scripts
-      summary: Activate auto script
-      description: |
-        Activates a successfully compiled script on the target vehicle.
-        Activation does not start autonomous execution.
-      operationId: activateAutoScript
-      responses:
-        "200":
-          description: Auto script activated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutoScriptCommandResponse"
-
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-        "409":
-          description: Script has not been successfully compiled or cannot be activated
-
-  /auto-scripts/{scriptId}/start:
-    parameters:
-      - $ref: "#/components/parameters/ScriptId"
-
-    post:
-      tags:
-        - Auto Scripts
-      summary: Start autonomous execution
-      description: |
-        Starts execution of the activated auto script on the vehicle.
-      operationId: startAutoScript
-      responses:
-        "200":
-          description: Auto script started
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutoScriptCommandResponse"
-
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-        "409":
-          description: Script is not activated or cannot currently be started
-
-  /auto-scripts/{scriptId}/pause:
-    parameters:
-      - $ref: "#/components/parameters/ScriptId"
-
-    post:
-      tags:
-        - Auto Scripts
-      summary: Pause autonomous execution
-      operationId: pauseAutoScript
-
-      responses:
-        "200":
-          description: Auto script paused
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutoScriptCommandResponse"
-
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-        "409":
-          description: Script is not currently running
-
-  /auto-scripts/{scriptId}/cancel:
-    parameters:
-      - $ref: "#/components/parameters/ScriptId"
-
-    post:
-      tags:
-        - Auto Scripts
-      summary: Cancel autonomous execution
-      description: |
-        Cancels the current execution of the auto script.
-        A cancelled execution cannot be resumed.
-      operationId: cancelAutoScript
-      responses:
-        "200":
-          description: Auto script cancelled
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutoScriptCommandResponse"
-
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-        "409":
-          description: Script cannot currently be cancelled
-
-  /auto-scripts/{scriptId}/resume:
-    parameters:
-      - $ref: "#/components/parameters/ScriptId"
-
-    post:
-      tags:
-        - Auto Scripts
-      summary: Resume paused autonomous execution
-      operationId: resumeAutoScript
-
-      responses:
-        "200":
-          description: Auto script resumed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AutoScriptCommandResponse"
-
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-        "409":
-          description: Script is not currently paused
-
-components:
-  parameters:
-    ScriptId:
-      name: scriptId
-      in: path
-      required: true
-      description: Unique identifier of the auto script
-      schema:
-        type: string
-
-  schemas:
-    AutoScript:
-      type: object
-      description: |
-        Common representation of an autonomous-driving script.
-
-      required:
-        - id
-        - name
-        - version
-        - status
-
-      properties:
-        id:
-          type: string
-          description: Unique identifier of the script
-          example: "script-12345"
-
-        name:
-          type: string
-          description: Human-readable script name
-          example: "Autonomous Test Route"
-
-        version:
-          type: string
-          description: Script version
-          example: "1.2.0"
-
-        status:
-          $ref: "#/components/schemas/AutoScriptStatus"
-
-        vehicleId:
-          type: string
-          nullable: true
-          description: Vehicle currently associated with the script
-          example: "vehicle-001"
-
-        source:
-          type: string
-          description: Source code of the autonomous-driving script
-          example: |
-            drive_to("waypoint_1")
-            stop()
-            drive_to("waypoint_2")
-
-        language:
-          type: string
-          description: Script language or runtime
-          example: "rust"
-
-        createdAt:
-          type: string
-          format: date-time
-
-        updatedAt:
-          type: string
-          format: date-time
-
-        compiledAt:
-          type: string
-          format: date-time
-          nullable: true
-
-        activatedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-        startedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-        metadata:
-          type: object
-          description: Optional implementation-specific metadata
-          additionalProperties: true
-
-    AutoScriptUpload:
-      type: object
-      description: Request used to upload a new auto script.
-
-      required:
-        - name
-        - version
-        - source
-        - language
-
-      properties:
-        name:
-          type: string
-          description: Human-readable script name
-          example: "Autonomous Test Route"
-
-        version:
-          type: string
-          description: Script version
-          example: "1.0.0"
-
-        source:
-          type: string
-          description: Autonomous-driving script source code
-          example: |
-            drive_to("waypoint_1")
-            stop()
-            drive_to("waypoint_2")
-
-        language:
-          type: string
-          description: Script language/runtime
-          example: "auto-script"
-
-        vehicleId:
-          type: string
-          nullable: true
-          description: Optional target vehicle
-          example: "vehicle-001"
-
-        metadata:
-          type: object
-          description: Optional implementation-specific metadata
-          additionalProperties: true
-
-    AutoScriptStatus:
-      type: string
-      description: Current lifecycle state of the auto script.
-
-      enum:
-        - uploaded
-        - compiling
-        - compiled
-        - active
-        - running
-        - paused
-        - completed
-        - cancelled
-        - failed
-
-      example: running
-
-    UploadResult:
-      type: object
-      required:
-        - success
-        - scriptId
-        - status
-
-      properties:
-        success:
-          type: boolean
-          description: Whether upload succeeded
-          example: true
-
-        scriptId:
-          type: string
-          example: "script-12345"
-
-        status:
-          $ref: "#/components/schemas/AutoScriptStatus"
-
-        artifactId:
-          type: string
-          nullable: true
-          description: Identifier of the compiled executable artifact
-          example: "artifact-98765"
-
-        errors:
-          type: array
-          description: Compilation errors
-          items:
-            type: string
-          example: []
-
-        warnings:
-          type: array
-          description: Compilation warnings
-          items:
-            type: string
-          example:
-            - "Waypoint 3 is close to the configured boundary."
-
-    AutoScriptCommandResponse:
-      type: object
-      required:
-        - scriptId
-        - status
-
-      properties:
-        scriptId:
-          type: string
-          description: Script affected by the command
-          example: "script-12345"
-
-        status:
-          $ref: "#/components/schemas/AutoScriptStatus"
-
-        message:
-          type: string
-          example: "Auto script started successfully."
-
-        timestamp:
-          type: string
-          format: date-time
-
-    Error:
-      type: object
-      required:
-        - code
-        - message
-
-      properties:
-        code:
-          type: string
-          example: "SCRIPT_NOT_COMPILED"
-
-        message:
-          type: string
-          example: "The script must be successfully compiled before activation."
-
-        details:
-          type: object
-          additionalProperties: true
-
-  responses:
-    BadRequest:
-      description: Invalid request
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-
-    NotFound:
-      description: Auto script not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
+                type: object
+        '400':
+          description: Invalid firmware upload
+        '500':
+          description: OTA update failed

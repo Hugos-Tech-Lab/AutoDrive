@@ -14,7 +14,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::{on_board_led::OnBoardLed}, logger::init_logging, http::verify_and_set_valid::verify_and_set_valid,
+    autoscript::AutoScript, connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::on_board_led::OnBoardLed, http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
@@ -26,6 +26,7 @@ pub mod logger;
 pub mod http;
 pub mod hardware;
 pub mod device_control;
+pub mod autoscript;
 
 use anyhow::Context;
 
@@ -40,6 +41,8 @@ pub fn main() -> anyhow::Result<()> {
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
     let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
+    let wasm = Wasm::new();
+    let auto_script = Arc::new(AutoScript::new(wasm));
 
     let mut wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
@@ -68,7 +71,8 @@ pub fn main() -> anyhow::Result<()> {
     device_control.activate_auto();
 
     info!("registering");
-    http::set_handles(&mut server, esp_ota)?;
+    http::set_handles(&mut server, esp_ota)?; // TODO: setting handles should all be in http module
+    http::autoscript_manager::set_handles(&mut server, auto_script)?;
 
     server.fn_handler("/*", Method::Get, |req| -> anyhow::Result<()> {
         req.into_status_response(404)?.write_all(b"Not Found")?;

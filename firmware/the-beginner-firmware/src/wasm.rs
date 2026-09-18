@@ -87,9 +87,9 @@ impl WasmThread {
         runtime
     }
 
+    #[allow(unused_assignments, reason = "it seems the compiler is used how we are using objects through references...")]
     fn listen(listener: InterThreadListener<WasmThreadCommand, WasmResponse>) -> Result<()> {
         let runtime = Self::build_runtime();
-        #[allow(unused_assignments, reason = "using it indirectly - compiler cannot see")]
         let mut maybe_module = None;
         let mut maybe_instance = None;
         let mut maybe_main_function = None;

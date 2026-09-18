@@ -99,7 +99,7 @@ impl WasmThread {
         while let Ok((command, mut response)) = listener.listen() {
             match command {
                 WasmThreadCommand::Install { data } => {
-                    maybe_main_function = None;
+                    maybe_main_function = None; // when commenting this line, the compiler doesn't complain... isn't that a memory bug?
                     maybe_instance = None;
                     maybe_module = None;
 

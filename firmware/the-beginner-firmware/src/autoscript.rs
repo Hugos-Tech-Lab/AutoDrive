@@ -1,6 +1,6 @@
 use std::sync::mpsc;
 
-use crate::wasm::{Wasm, WasmCommand, WasmResponse};
+use crate::wasm::{Wasm, WasmResponse};
 
 enum AutoScriptState {
     Uninstalled,
@@ -24,10 +24,10 @@ impl AutoScript {
     pub fn install(&self, data: Vec<u8>) -> anyhow::Result<WasmResponse> {
         let (sender, receiver) = mpsc::channel::<WasmResponse>(); // TODO: maybe use spsc
 
-        self.wasm.send(WasmCommand::Install { data, response: sender });
+        // self.wasm.send(WasmCommand::Install { data, response: sender });
 
-        let response = receiver.recv().unwrap(); // TODO: unwrap + is recv ok like this?
-        Ok(response)
+        // let response = receiver.recv().unwrap(); // TODO: unwrap + is recv ok like this?
+        Ok(WasmResponse::Success)
     }
 
     pub fn cancel(&self) {}

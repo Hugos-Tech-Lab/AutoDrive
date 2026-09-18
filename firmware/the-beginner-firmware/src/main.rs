@@ -27,6 +27,7 @@ pub mod http;
 pub mod hardware;
 pub mod device_control;
 pub mod autoscript;
+pub mod inter_thread;
 
 use anyhow::Context;
 

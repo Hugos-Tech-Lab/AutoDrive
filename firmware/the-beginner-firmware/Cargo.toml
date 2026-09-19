@@ -32,6 +32,9 @@ embedded-io-async = "0.7.0"
 futures-lite = "2.6.1"
 async-io = "2.3" # Added: Required for driving async I/O sockets properly in STD
 edge-nal-std = "0.7.0"
+embassy-sync = { version = "0.8.0" }
+futures = "0.3.34"
+static_cell = "2.1.1"
 
 [build-dependencies]
 embuild = "0.33"

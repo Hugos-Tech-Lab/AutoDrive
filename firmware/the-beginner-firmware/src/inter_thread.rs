@@ -1,69 +1,81 @@
-use std::sync::mpsc;
+use embassy_sync::blocking_mutex::raw::RawMutex;
+use embassy_sync::channel::{Channel, Receiver, Sender};
+use embassy_sync::signal::Signal;
 
-pub struct InterThreadProducer<M, R> {
-    sender: mpsc::Sender<(M, mpsc::Sender<R>)>,
+pub struct InterTaskProducer<'a, Mtx: RawMutex, M, R, const N: usize> {
+    sender: Sender<'a, Mtx, (M, &'a Signal<Mtx, R>), N>,
+    // Dedicated signal for this producer to receive the response.
+    // Pre-allocating this avoids dynamic heap allocation per request.
+    response_signal: &'a Signal<Mtx, R>,
 }
 
-impl<M, R> InterThreadProducer<M, R> {
+impl<'a, Mtx: RawMutex, M, R, const N: usize> InterTaskProducer<'a, Mtx, M, R, N> {
     #[must_use]
-    pub fn send(&self, message: M) -> R {
-        // Channel dedicated to this particular request.
-        let (response_sender, response_receiver) = mpsc::channel();
+    // We take `&mut self` here so you cannot accidentally fire multiple 
+    // concurrent requests from the SAME producer, which would overwrite the signal.
+    pub async fn send(&mut self, message: M) -> R {
+        // Reset the signal to clear any stale state before we wait on it
+        self.response_signal.reset();
 
-        // Send the message together with the channel on which we expect
-        // the response.
+        // Send the message together with the reference to our response signal
         self.sender
-            .send((message, response_sender))
-            .expect("listener thread has stopped");
+            .send((message, self.response_signal))
+            .await;
 
-        // Wait for the listener to process the message.
-        response_receiver
-            .recv()
-            .expect("listener thread has stopped")
+        // Wait for the listener to process the message and signal back
+        self.response_signal.wait().await
     }
 }
 
-pub struct InterThreadResponse<R> {
-    response_sender: mpsc::Sender<R>,
+pub struct InterTaskResponse<'a, Mtx: RawMutex, R> {
+    response_signal: &'a Signal<Mtx, R>,
     sent: bool,
 }
 
-impl<R> InterThreadResponse<R> {
+impl<'a, Mtx: RawMutex, R> InterTaskResponse<'a, Mtx, R> {
     pub fn send(mut self, response: R) {
         if !self.sent {
-            self.response_sender
-                .send(response)
-                .expect("producer thread has stopped");
+            self.response_signal.signal(response);
         }
-
         self.sent = true;
     }
 }
 
-impl<R> Drop for InterThreadResponse<R> {
+impl<'a, Mtx: RawMutex, R> Drop for InterTaskResponse<'a, Mtx, R> {
     fn drop(&mut self) {
         if !self.sent {
+            // Note: Panicking in `drop` behaves the same as standard Rust, but in 
+            // embedded contexts you might want to log this via `defmt::error!` instead.
             panic!("Dropped response without sending any message");
         }
     }
 }
 
-pub struct InterThreadListener<M, R> {
-    receiver: mpsc::Receiver<(M, mpsc::Sender<R>)>,
+pub struct InterTaskListener<'a, Mtx: RawMutex, M, R, const N: usize> {
+    receiver: Receiver<'a, Mtx, (M, &'a Signal<Mtx, R>), N>,
 }
 
-impl<M, R> InterThreadListener<M, R> {
-    pub fn listen(&self) -> anyhow::Result<(M, InterThreadResponse<R>)> {
-      let (message, response_sender) = self.receiver.recv()?;
-        Ok((message, InterThreadResponse { response_sender, sent: false }))
+impl<'a, Mtx: RawMutex, M, R, const N: usize> InterTaskListener<'a, Mtx, M, R, N> {
+    // Embassy channels don't have the concept of a "disconnected" error natively
+    // because they are statically allocated. We can safely remove `anyhow::Result`.
+    pub async fn listen(&self) -> (M, InterTaskResponse<'a, Mtx, R>) {
+        let (message, response_signal) = self.receiver.receive().await;
+        (message, InterTaskResponse { response_signal, sent: false })
     }
 }
 
-pub fn create<M, R>() -> (InterThreadProducer<M, R>, InterThreadListener<M, R>) {
-    let (sender, receiver) = mpsc::channel();
-
+// In Embassy, initialization requires passing in the statically allocated primitives.
+pub fn create<'a, Mtx: RawMutex, M, R, const N: usize>(
+    channel: &'a Channel<Mtx, (M, &'a Signal<Mtx, R>), N>,
+    signal: &'a Signal<Mtx, R>,
+) -> (InterTaskProducer<'a, Mtx, M, R, N>, InterTaskListener<'a, Mtx, M, R, N>) {
     (
-        InterThreadProducer { sender },
-        InterThreadListener { receiver },
+        InterTaskProducer {
+            sender: channel.sender(),
+            response_signal: signal,
+        },
+        InterTaskListener {
+            receiver: channel.receiver(),
+        },
     )
 }

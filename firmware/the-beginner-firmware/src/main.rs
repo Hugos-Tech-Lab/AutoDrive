@@ -30,9 +30,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    autoscript::AutoScript, autoscript_v2::HttpHandler, connect_to_wifi::connect_to_wifi,
-    device_control::DeviceControl, hardware::on_board_led::OnBoardLed,
-    http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
+    autoscript::AutoScript, autoscript_v2::HttpHandler, connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::on_board_led::OnBoardLed, http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
@@ -109,14 +107,14 @@ unsafe {
         .spawn(|| {
             // Instantiate DefaultServer inside the spawned thread with 32KB stack
             let mut server = SmallServer::new();
-            futures_lite::future::block_on(run(&mut server))
+            futures_lite::future::block_on(run(&mut server, auto_script))
         })?;
 
     handle.join().unwrap().unwrap();
     Ok(())
 }
 
-pub async fn run(server: &mut SmallServer) -> Result<(), anyhow::Error> {
+pub async fn run(server: &mut SmallServer, auto_script: Arc<AutoScript>) -> Result<(), anyhow::Error> {
 
     let addr ="0.0.0.0:80".parse().unwrap();
     info!("Running HTTP server on {addr}");
@@ -125,7 +123,7 @@ pub async fn run(server: &mut SmallServer) -> Result<(), anyhow::Error> {
         .bind(addr)
         .await?;
 
-    server.run(None, acceptor, HttpHandler).await?;
+    server.run(None, acceptor, HttpHandler { auto_script }).await?;
 
     Ok(())
 }

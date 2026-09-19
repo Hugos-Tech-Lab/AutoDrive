@@ -29,12 +29,12 @@ impl AutoScript {
         }
     }
 
-    pub fn install(&self, data: Vec<u8>) -> anyhow::Result<WasmResponse> {
-        self.wasm.install(data)
+    pub async fn install(&self, data: Vec<u8>) -> anyhow::Result<WasmResponse> {
+        self.wasm.install(data).await
     }
 
-    pub fn run(&self, progress: SyncSender<AutoScriptRunProgress>) -> Result<WasmResponse> {
-        self.wasm.run(progress)
+    pub async fn run(&self, progress: SyncSender<AutoScriptRunProgress>) -> Result<WasmResponse> {
+        self.wasm.run(progress).await
     }
 
     pub fn cancel(&self) {

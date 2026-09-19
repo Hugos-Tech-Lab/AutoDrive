@@ -4,7 +4,7 @@ use log::info;
 use smart_leds_trait::RGB8;
 use wamr_rust_sdk::sys::{WASMExecEnv, wasm_runtime_get_module_inst, wasm_runtime_terminate};
 
-use crate::{hardware::on_board_led::OnBoardLed, wasm::cancellation_token};
+use crate::{hardware::on_board_led::OnBoardLed, auto_script::cancellation_token};
 
 pub fn terminate(exec_env: *mut WASMExecEnv) {
     if exec_env.is_null() {

@@ -23,7 +23,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-     connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, wasm::{AutoScript},
+     connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, auto_script::{AutoScript},
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
@@ -34,7 +34,7 @@ pub mod esp_app_desc_2;
 pub mod http_server;
 pub mod inter_thread;
 pub mod logger;
-pub mod wasm;
+pub mod auto_script;
 pub mod hardware;
 
 use anyhow::Context;

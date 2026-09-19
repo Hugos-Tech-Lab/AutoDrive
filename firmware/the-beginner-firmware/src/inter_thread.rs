@@ -5,6 +5,7 @@ pub struct InterThreadProducer<M, R> {
 }
 
 impl<M, R> InterThreadProducer<M, R> {
+    #[must_use]
     pub fn send(&self, message: M) -> R {
         // Channel dedicated to this particular request.
         let (response_sender, response_receiver) = mpsc::channel();
@@ -28,7 +29,7 @@ pub struct InterThreadResponse<R> {
 }
 
 impl<R> InterThreadResponse<R> {
-    pub fn send(&mut self, response: R) {
+    pub fn send(mut self, response: R) {
         if !self.sent {
             self.response_sender
                 .send(response)
@@ -41,7 +42,7 @@ impl<R> InterThreadResponse<R> {
 
 impl<R> Drop for InterThreadResponse<R> {
     fn drop(&mut self) {
-        if self.sent {
+        if !self.sent {
             panic!("Dropped response without sending any message");
         }
     }

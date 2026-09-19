@@ -54,6 +54,7 @@ pub fn main() -> anyhow::Result<()> {
     let server_config = Configuration {
         uri_match_wildcard: true,
         stack_size: 16 * 1024,
+        max_open_sockets: 7,
         ..Default::default()
     };
     let mut server = EspHttpServer::new(&server_config)?;

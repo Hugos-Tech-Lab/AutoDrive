@@ -51,3 +51,14 @@ paths:
           description: Invalid firmware upload
         '500':
           description: OTA update failed
+  /autoscript/run:
+    post:
+      summary: Get firmware information
+      operationId: runAutoscript
+      responses:
+        '200':
+          description: firmware information
+          content:
+            application/json:
+              schema:
+                type: object

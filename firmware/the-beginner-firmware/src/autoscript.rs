@@ -1,11 +1,19 @@
-use std::sync::mpsc;
-
 use crate::wasm::{Wasm, WasmResponse};
+use anyhow::Result;
+use serde::Serialize;
+use std::sync::mpsc::{self, SyncSender};
 
 enum AutoScriptState {
     Uninstalled,
     Ready,
     Running,
+}
+
+#[derive(Serialize)]
+pub enum AutoScriptRunProgress {
+    Starting,
+    Log,
+    Stopping,
 }
 
 pub struct AutoScript {
@@ -22,12 +30,11 @@ impl AutoScript {
     }
 
     pub fn install(&self, data: Vec<u8>) -> anyhow::Result<WasmResponse> {
-        let (sender, receiver) = mpsc::channel::<WasmResponse>(); // TODO: maybe use spsc
+        self.wasm.install(data)
+    }
 
-        // self.wasm.send(WasmCommand::Install { data, response: sender });
-
-        // let response = receiver.recv().unwrap(); // TODO: unwrap + is recv ok like this?
-        Ok(WasmResponse::Success)
+    pub fn run(&self, progress: SyncSender<AutoScriptRunProgress>) -> Result<WasmResponse> {
+        self.wasm.run(progress)
     }
 
     pub fn cancel(&self) {}

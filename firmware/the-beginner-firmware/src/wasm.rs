@@ -1,29 +1,34 @@
 use std::{
-    ffi::c_void,
-    thread::{self, JoinHandle},
+    ffi::c_void, sync::mpsc::SyncSender, thread::{self, JoinHandle},
 };
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use log::info;
 use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
 
-use crate::inter_thread::{self, InterThreadListener, InterThreadProducer, InterThreadResponse};
+use crate::{autoscript::AutoScriptRunProgress, inter_thread::{self, InterThreadListener, InterThreadProducer}};
 
 pub mod cancellation_token;
 pub mod exposed_functions;
 
 pub enum WasmResponse {
-    Success,
-    Error(String),
+    SuccessfullyInstalled,
+    SuccessfullyRun,
+    InstallError(String),
+    StartError(String),
+    InternalError(String),
 }
 
+#[derive(PartialEq)]
 pub enum WasmState {
     Uninstalled,
-    Stopped,
+    Installed,
     Running,
 }
+
 pub struct Wasm {
     wasm_thread: JoinHandle<()>,
+    wasm_state: WasmState,
     producer: InterThreadProducer<WasmThreadCommand, WasmResponse>,
 }
 
@@ -43,15 +48,26 @@ impl Wasm {
         Self {
             producer,
             wasm_thread,
+            wasm_state: WasmState::Uninstalled,
         }
     }
 
-    pub fn install(&self) {
-        //
+    pub fn install(&self, data: Vec<u8>) -> Result<WasmResponse> {
+        let res = self.producer.send(WasmThreadCommand::Install { data }); // TODO: add progress here too
+        // self.wasm_state = WasmState::Installed;
+        Ok(res)
     }
 
-    pub fn run(&self) {
-        //
+    pub fn run(&self, progress: SyncSender<AutoScriptRunProgress>) -> Result<WasmResponse> {
+        if self.wasm_state == WasmState::Running {
+            bail!("already running");
+        }
+
+        // self.wasm_state = WasmState::Running;
+        let res = self.producer.send(WasmThreadCommand::Run { progress });
+        // self.wasm_state = WasmState::Installed;
+
+        Ok(res)
     }
 
     pub fn cancel(&self) {
@@ -61,7 +77,7 @@ impl Wasm {
 
 pub enum WasmThreadCommand {
     Install { data: Vec<u8> },
-    Start,
+    Run { progress: SyncSender<AutoScriptRunProgress> }
 }
 
 struct WasmThread;
@@ -87,7 +103,10 @@ impl WasmThread {
         runtime
     }
 
-    #[allow(unused_assignments, reason = "it seems the compiler is used how we are using objects through references...")]
+    #[allow(
+        unused_assignments,
+        reason = "it seems the compiler is used how we are using objects through references..."
+    )]
     fn listen(listener: InterThreadListener<WasmThreadCommand, WasmResponse>) -> Result<()> {
         let runtime = Self::build_runtime();
         let mut maybe_module = None;
@@ -95,7 +114,6 @@ impl WasmThread {
         let mut maybe_main_function = None;
         info!("WASM runtime started");
 
-        // let mut executable = Option::<WasmExecutable::<'runtime, 'module>>::None;
         while let Ok((command, mut response)) = listener.listen() {
             match command {
                 WasmThreadCommand::Install { data } => {
@@ -103,41 +121,89 @@ impl WasmThread {
                     maybe_instance = None;
                     maybe_module = None;
 
+                    info!("a");
                     let module = maybe_module.insert(
                         Module::from_vec(&runtime, data, "env")
                             .map_err(|e| format!("failed to create module: {e:?}"))
                             .unwrap(),
                     );
+                    info!("b");
 
-                    maybe_instance = Some(
-                        Instance::new(&runtime, module, 1024 * 32)
-                            .map_err(|e| format!("failed to create instance: {e:?}"))
-                            .unwrap(),
-                    );
+                    let mut instance_create_error = Option::None;
+                    match Instance::new(&runtime, module, 1024 * 32) {
+                        Ok(instance) => maybe_instance = Some(instance),
+                        Err(error) => instance_create_error = Some(error),
+                    }
+                    info!("c");
+
+                    if let Some(instance_create_error) = instance_create_error {
+                        response.send(WasmResponse::InstallError(format!(
+                            "failed to create instance: {}",
+                            instance_create_error
+                        )));
+                        maybe_main_function = None;
+                        maybe_instance = None;
+                        maybe_module = None;
+                        continue;
+                    }
+                    info!("d");
 
                     // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
-                    let instance = maybe_instance.as_ref().unwrap();
+                    let Some(instance) = maybe_instance.as_ref() else {
+                        response.send(WasmResponse::InternalError(format!(
+                            "failed to get the created instance. This is a code bug in the library"
+                        )));
+                        maybe_main_function = None;
+                        maybe_instance = None;
+                        maybe_module = None;
+                        continue;
+                    };
+                    info!("e");
 
-                    maybe_main_function = Some(
-                        Function::find_export_func(instance, "main")
-                            .map_err(|e| {
-                                format!("failed to find export function (is main defined?): {e:?}")
-                            })
-                            .unwrap(),
-                    );
+                    let mut main_function_find_error = Option::None;
+                    match Function::find_export_func(instance, "main") {
+                        Ok(main_function) => maybe_main_function = Some(main_function),
+                        Err(error) => main_function_find_error = Some(error),
+                    }
+                    info!("f");
 
-                    response.send(WasmResponse::Success);
+                    if let Some(main_function_find_error) = main_function_find_error {
+                        response.send(WasmResponse::InstallError(format!(
+                            "failed to find export function (is main defined?): {}",
+                            main_function_find_error
+                        )));
+                        maybe_main_function = None;
+                        maybe_instance = None;
+                        maybe_module = None;
+                        continue;
+                    }
+                    info!("g");
+
+                    response.send(WasmResponse::SuccessfullyInstalled);
                 }
-                WasmThreadCommand::Start => {
+                WasmThreadCommand::Run { progress } => {
                     let Some(ref instance) = maybe_instance else {
+                        response.send(WasmResponse::StartError(
+                            "Wasm instance not installed. Try to install first before running"
+                                .to_string(),
+                        ));
                         continue;
                     };
 
+                    progress.send(AutoScriptRunProgress::Starting).unwrap();
+                    progress.send(AutoScriptRunProgress::Starting).unwrap();
+                    progress.send(AutoScriptRunProgress::Starting).unwrap();
+                    progress.send(AutoScriptRunProgress::Starting).unwrap();
                     if let Some(ref main_function) = maybe_main_function {
-                        main_function.call(&instance, &vec![]).unwrap();
+                        progress.send(AutoScriptRunProgress::Starting);
+                        let res = main_function.call(&instance, &vec![]);
                     } else {
+                        response.send(WasmResponse::StartError(
+                            "Main function not found. Try to reinstall before running".to_string(),
+                        ));
                         continue;
                     }
+                    response.send(WasmResponse::SuccessfullyRun);
                 }
             }
         }

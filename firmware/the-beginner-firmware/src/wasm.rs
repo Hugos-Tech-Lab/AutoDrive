@@ -4,6 +4,7 @@ use std::{
 
 use anyhow::{Result, bail};
 use embassy_sync::{channel::Channel, mutex::Mutex};
+use esp_idf_sys::{MALLOC_CAP_8BIT, esp_get_free_heap_size, heap_caps_get_largest_free_block};
 use log::info;
 use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
 use embassy_sync::signal::Signal;
@@ -40,7 +41,7 @@ impl Wasm {
         let (producer, listener) = inter_thread::create::<WasmThreadCommand, WasmResponse>();
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
-            .stack_size(64 * 1024)
+            .stack_size(34 * 1024) // by decreasing the stack size 
             .spawn({
                 move || {
                     let res = WasmThread::listen(listener); // TODO: something about this res
@@ -56,8 +57,6 @@ impl Wasm {
     }
 
     pub async fn install(&self, data: Vec<u8>) -> Result<WasmResponse> {
-
-
         let res = self.producer.send_async(WasmThreadCommand::Install { data }).await; // TODO: add progress here too
             info!("resp");
 
@@ -129,6 +128,12 @@ impl WasmThread {
                     maybe_instance = None;
                     maybe_module = None;
 
+                        let free = unsafe { esp_get_free_heap_size() };
+                    let largest = unsafe { heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) };
+
+                    info!("Free heap: {} bytes", free);
+                    info!("Largest free block: {} bytes", largest);
+                    
                     info!("a");
                     let module = maybe_module.insert(
                         Module::from_vec(&runtime, data, "env")
@@ -201,9 +206,6 @@ impl WasmThread {
                     };
                     cancellation_token::reset();
 
-                    progress.send(AutoScriptRunProgress::Starting).unwrap();
-                    progress.send(AutoScriptRunProgress::Starting).unwrap();
-                    progress.send(AutoScriptRunProgress::Starting).unwrap();
                     progress.send(AutoScriptRunProgress::Starting).unwrap();
                     if let Some(ref main_function) = maybe_main_function {
                         progress.send(AutoScriptRunProgress::Starting);

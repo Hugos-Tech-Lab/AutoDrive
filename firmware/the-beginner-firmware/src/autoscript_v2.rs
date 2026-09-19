@@ -155,23 +155,23 @@ impl Handler for HttpHandler {
             }
 
             // // --- POST Cancel Handler ---
-            // (Method::Post, "/autoscript/cancel") => {
-            //     log::info!("Starting cancel stream...");
+            (Method::Post, "/autoscript/cancel") => {
+                log::info!("Starting cancel stream...");
                 
-            //     self.auto_script.cancel();
+                self.auto_script.cancel();
                 
-            //     log::info!("done stream...");
+                log::info!("done stream...");
 
-            //     let body = serde_json::to_vec(&FirmwareUpdate200Response {
-            //         status: "ok".to_string(),
-            //     }).unwrap();
+                let body = serde_json::to_vec(&FirmwareUpdate200Response {
+                    status: "ok".to_string(),
+                }).unwrap();
 
-            //     let mut res_headers = cors_headers.to_vec();
-            //     res_headers.push(("Content-Type", "application/json"));
+                let mut res_headers = cors_headers.to_vec();
+                res_headers.push(("Content-Type", "application/json"));
                 
-            //     conn.initiate_response(200, Some("OK"), &res_headers).await?;
-            //     conn.write_all(&body).await?;
-            // }
+                conn.initiate_response(200, Some("OK"), &res_headers).await?;
+                conn.write_all(&body).await?;
+            }
 
             // --- Fallbacks (Not Found / Wrong Method) ---
             (_, "/autoscript/upload") | (_, "/autoscript/run") | (_, "/autoscript/cancel") => {

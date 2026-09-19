@@ -9,7 +9,7 @@ CONFIG_FREERTOS_IDLE_TASK_STACKSIZE=4096
 # You might have to increase this further if you spawn your own Rust threads 
 # that allocate large stack variables; or better yet - use 
 # `std::thread::Builder::new().stack_size(XXX)` for spawning
-CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=32768
+CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT=4096
 CONFIG_ESP_IDF_COMP_MDNS_ENABLED=y
 
 CONFIG_BOOTLOADER_LOG_LEVEL_INFO=y

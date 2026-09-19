@@ -71,7 +71,7 @@ impl Handler for HttpHandler {
                 let mut data = Vec::with_capacity(capacity);
                 let mut buf = [0u8; 2048];
                 let mut total = 0usize;
-
+                // TODO: add progress to response
                 loop {
                     let read = conn.read(&mut buf).await?;
                     if read == 0 {
@@ -92,11 +92,17 @@ impl Handler for HttpHandler {
 
                 log::info!("Autoscript download complete: {} bytes", total);
 
-                if let Err(e) = self.auto_script.install(data).await {
-                    log::error!("Failed to install script: {:?}", e);
-                    conn.initiate_response(500, Some("Internal Server Error"), &cors_headers).await?;
-                    return Ok(());
+                let res = self.auto_script.install(data).await;
+
+                if let Ok(res) = res {
+                    log::error!("{:?}", res);
                 }
+
+                // if let Err(e) = res {
+                //     log::error!("Failed to install script: {:?}", e);
+                //     conn.initiate_response(500, Some("Internal Server Error"), &cors_headers).await?;
+                //     return Ok(());
+                // }
 
                 let body = serde_json::to_vec(&FirmwareUpdate200Response {
                     status: "ok".to_string(),
@@ -109,42 +115,44 @@ impl Handler for HttpHandler {
                 conn.write_all(&body).await?;
             }
 
-            // // --- POST Run Handler ---
-            // (Method::Post, "/autoscript/run") => {
-            //     log::info!("Starting autoscript execution stream...");
-            //     let (tx, rx) = mpsc::sync_channel::<AutoScriptRunProgress>(10);
+            // --- POST Run Handler ---
+            (Method::Post, "/autoscript/run") => {
+                log::info!("Starting autoscript execution stream...");
+                let (tx, rx) = mpsc::sync_channel::<AutoScriptRunProgress>(10);
 
-            //     let auto_script_clone = self.auto_script.clone();
-            //     auto_script_clone.run(tx).await;
+                let auto_script_clone = self.auto_script.clone();
+                let res = auto_script_clone.run(tx).await.unwrap();
+                info!("{:?}", res);
 
-            //     let mut res_headers = cors_headers.to_vec();
-            //     res_headers.push(("Content-Type", "application/x-ndjson"));
-            //     res_headers.push(("Transfer-Encoding", "chunked"));
 
-            //     conn.initiate_response(200, Some("OK"), &res_headers).await?;
+                let mut res_headers = cors_headers.to_vec();
+                res_headers.push(("Content-Type", "application/x-ndjson"));
+                res_headers.push(("Transfer-Encoding", "chunked"));
 
-            //     // Note: Using try_recv + thread::yield_now() prevents this loop from completely 
-            //     // blocking the async executor while waiting for the thread to produce logs. 
-            //     // If you use embassy or tokio, consider substituting thread::yield_now() with their async yield/sleep.
-            //     loop {
-            //         match rx.try_recv() {
-            //             Ok(chunk) => {
-            //                 let mut bytes = serde_json::to_vec(&chunk).unwrap();
-            //                 bytes.push(b'\n'); // CRITICAL for NDJSON framing
-            //                 conn.write_all(&bytes).await?;
-            //             }
-            //             Err(mpsc::TryRecvError::Empty) => {
-            //                 // Yield back to the executor
-            //                 thread::yield_now(); 
-            //             }
-            //             Err(mpsc::TryRecvError::Disconnected) => {
-            //                 break;
-            //             }
-            //         }
-            //     }
+                conn.initiate_response(200, Some("OK"), &res_headers).await?;
 
-            //     log::info!("Autoscript execution stream ended.");
-            // }
+                // Note: Using try_recv + thread::yield_now() prevents this loop from completely 
+                // blocking the async executor while waiting for the thread to produce logs. 
+                // If you use embassy or tokio, consider substituting thread::yield_now() with their async yield/sleep.
+                loop {
+                    match rx.try_recv() {
+                        Ok(chunk) => {
+                            let mut bytes = serde_json::to_vec(&chunk).unwrap();
+                            bytes.push(b'\n'); // CRITICAL for NDJSON framing
+                            conn.write_all(&bytes).await?;
+                        }
+                        Err(mpsc::TryRecvError::Empty) => {
+                            // Yield back to the executor
+                            thread::yield_now(); 
+                        }
+                        Err(mpsc::TryRecvError::Disconnected) => {
+                            break;
+                        }
+                    }
+                }
+
+                log::info!("Autoscript execution stream ended.");
+            }
 
             // // --- POST Cancel Handler ---
             // (Method::Post, "/autoscript/cancel") => {

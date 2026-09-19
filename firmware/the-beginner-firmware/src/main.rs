@@ -103,7 +103,7 @@ unsafe {
     // Keep main's stack frame tiny (< 250 bytes)
     let handle = std::thread::Builder::new()
         .name("async_main".into())
-        .stack_size(64 * 1024)
+        .stack_size(74 * 1024)
         .spawn(|| {
             // Instantiate DefaultServer inside the spawned thread with 32KB stack
             let mut server = SmallServer::new();

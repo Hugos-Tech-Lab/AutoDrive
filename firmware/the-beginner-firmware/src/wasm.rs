@@ -7,11 +7,13 @@ use embassy_sync::{channel::Channel, mutex::Mutex};
 use log::info;
 use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
 use embassy_sync::signal::Signal;
-use crate::{autoscript::AutoScriptRunProgress, inter_thread::{self, InterTaskListener, InterTaskProducer}};
+use crate::{autoscript::AutoScriptRunProgress, inter_thread::{self, InterThreadListener, InterThreadProducer}};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 pub mod cancellation_token;
 pub mod exposed_functions;
 use static_cell::StaticCell;
+
+#[derive(Debug)]
 pub enum WasmResponse {
     SuccessfullyInstalled,
     SuccessfullyRun,
@@ -27,24 +29,15 @@ pub enum WasmState {
     Running,
 }
 
-static MAIN_CHANNEL: StaticCell<
-    Channel<CriticalSectionRawMutex, (WasmThreadCommand, &'static Signal<CriticalSectionRawMutex, WasmResponse>), 4>
-> = StaticCell::new();
-
-static PRODUCER_SIGNAL: StaticCell<Signal<CriticalSectionRawMutex, WasmResponse>> = StaticCell::new();
-
 pub struct Wasm {
     wasm_thread: JoinHandle<()>,
     wasm_state: WasmState,
-    producer: Mutex<CriticalSectionRawMutex, InterTaskProducer<'static, CriticalSectionRawMutex, WasmThreadCommand, WasmResponse, 4>>,
+    producer: InterThreadProducer<WasmThreadCommand, WasmResponse>,
 }
 
 impl Wasm {
     pub fn new() -> Self {
-        let channel_ref = MAIN_CHANNEL.init(Channel::new());
-        let signal_ref = PRODUCER_SIGNAL.init(Signal::new());
-
-        let (mut producer, listener) = inter_thread::create(channel_ref, signal_ref);
+        let (producer, listener) = inter_thread::create::<WasmThreadCommand, WasmResponse>();
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
             .stack_size(64 * 1024)
@@ -56,18 +49,16 @@ impl Wasm {
             .unwrap(); // TODO: remove unwrap
 
         Self {
-            producer: Mutex::new(producer),
+            producer,
             wasm_thread,
             wasm_state: WasmState::Uninstalled,
         }
     }
 
     pub async fn install(&self, data: Vec<u8>) -> Result<WasmResponse> {
-        info!("lookinc");
-        let mut producer = self.producer.lock().await;
-        info!("sending");
 
-        let res = producer.send(WasmThreadCommand::Install { data }).await; // TODO: add progress here too
+
+        let res = self.producer.send_async(WasmThreadCommand::Install { data }).await; // TODO: add progress here too
             info!("resp");
 
         // self.wasm_state = WasmState::Installed;
@@ -80,11 +71,11 @@ impl Wasm {
         // }
 
         // // self.wasm_state = WasmState::Running;
-        // let res = self.producer.send(WasmThreadCommand::Run { progress }).await;
+        let res = self.producer.send_async(WasmThreadCommand::Run { progress }).await;
         // // self.wasm_state = WasmState::Installed;
 
         // Ok(res)
-        bail!("h")
+        Ok(res)
     }
 
     pub fn cancel(&self) {
@@ -124,14 +115,14 @@ impl WasmThread {
         unused_assignments,
         reason = "it seems the compiler is used how we are using objects through references..."
     )]
-    async fn listen(listener: InterTaskListener<'static, CriticalSectionRawMutex, WasmThreadCommand, WasmResponse, 4>) -> Result<()> {
+    fn listen(listener: InterThreadListener<WasmThreadCommand, WasmResponse>) -> Result<()> {
         let runtime = Self::build_runtime();
         let mut maybe_module = None;
         let mut maybe_instance = None;
         let mut maybe_main_function = None;
         info!("WASM runtime started");
 
-        while let (command, mut response) = listener.listen().await {
+        while let (command, mut response) = listener.listen().unwrap() { // TODO: remove unwrap
             match command {
                 WasmThreadCommand::Install { data } => {
                     maybe_main_function = None; // when commenting this line, the compiler doesn't complain... isn't that a memory bug?
@@ -199,6 +190,8 @@ impl WasmThread {
                     response.send(WasmResponse::SuccessfullyInstalled);
                 }
                 WasmThreadCommand::Run { progress } => {
+                    info!("running");
+
                     let Some(ref instance) = maybe_instance else {
                         response.send(WasmResponse::StartError(
                             "Wasm instance not installed. Try to install first before running"

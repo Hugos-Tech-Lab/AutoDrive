@@ -1,81 +1,103 @@
-use embassy_sync::blocking_mutex::raw::RawMutex;
-use embassy_sync::channel::{Channel, Receiver, Sender};
-use embassy_sync::signal::Signal;
-
-pub struct InterTaskProducer<'a, Mtx: RawMutex, M, R, const N: usize> {
-    sender: Sender<'a, Mtx, (M, &'a Signal<Mtx, R>), N>,
-    // Dedicated signal for this producer to receive the response.
-    // Pre-allocating this avoids dynamic heap allocation per request.
-    response_signal: &'a Signal<Mtx, R>,
+pub struct InterThreadProducer<M, R> {
+    sender: flume::Sender<(M, flume::Sender<R>)>,
 }
 
-impl<'a, Mtx: RawMutex, M, R, const N: usize> InterTaskProducer<'a, Mtx, M, R, N> {
+impl<M, R> InterThreadProducer<M, R> {
+    /// Synchronous (blocking) send
     #[must_use]
-    // We take `&mut self` here so you cannot accidentally fire multiple 
-    // concurrent requests from the SAME producer, which would overwrite the signal.
-    pub async fn send(&mut self, message: M) -> R {
-        // Reset the signal to clear any stale state before we wait on it
-        self.response_signal.reset();
+    pub fn send(&self, message: M) -> R {
+        // Use bounded(1) since we only ever expect exactly one response
+        let (response_sender, response_receiver) = flume::bounded(1);
 
-        // Send the message together with the reference to our response signal
         self.sender
-            .send((message, self.response_signal))
-            .await;
+            .send((message, response_sender))
+            .expect("listener thread has stopped");
 
-        // Wait for the listener to process the message and signal back
-        self.response_signal.wait().await
+        response_receiver
+            .recv()
+            .expect("listener thread has stopped")
+    }
+
+    /// Asynchronous (non-blocking) send for use in async contexts
+    #[must_use]
+    pub async fn send_async(&self, message: M) -> R {
+        let (response_sender, response_receiver) = flume::bounded(1);
+
+        self.sender
+            .send_async((message, response_sender))
+            .await
+            .expect("listener thread has stopped");
+
+        response_receiver
+            .recv_async()
+            .await
+            .expect("listener thread has stopped")
     }
 }
 
-pub struct InterTaskResponse<'a, Mtx: RawMutex, R> {
-    response_signal: &'a Signal<Mtx, R>,
+pub struct InterThreadResponse<R> {
+    response_sender: flume::Sender<R>,
     sent: bool,
 }
 
-impl<'a, Mtx: RawMutex, R> InterTaskResponse<'a, Mtx, R> {
+impl<R> InterThreadResponse<R> {
     pub fn send(mut self, response: R) {
         if !self.sent {
-            self.response_signal.signal(response);
+            self.response_sender
+                .send(response)
+                .expect("producer thread has stopped");
         }
+
         self.sent = true;
     }
 }
 
-impl<'a, Mtx: RawMutex, R> Drop for InterTaskResponse<'a, Mtx, R> {
+impl<R> Drop for InterThreadResponse<R> {
     fn drop(&mut self) {
         if !self.sent {
-            // Note: Panicking in `drop` behaves the same as standard Rust, but in 
-            // embedded contexts you might want to log this via `defmt::error!` instead.
             panic!("Dropped response without sending any message");
         }
     }
 }
 
-pub struct InterTaskListener<'a, Mtx: RawMutex, M, R, const N: usize> {
-    receiver: Receiver<'a, Mtx, (M, &'a Signal<Mtx, R>), N>,
+pub struct InterThreadListener<M, R> {
+    receiver: flume::Receiver<(M, flume::Sender<R>)>,
 }
 
-impl<'a, Mtx: RawMutex, M, R, const N: usize> InterTaskListener<'a, Mtx, M, R, N> {
-    // Embassy channels don't have the concept of a "disconnected" error natively
-    // because they are statically allocated. We can safely remove `anyhow::Result`.
-    pub async fn listen(&self) -> (M, InterTaskResponse<'a, Mtx, R>) {
-        let (message, response_signal) = self.receiver.receive().await;
-        (message, InterTaskResponse { response_signal, sent: false })
+impl<M, R> InterThreadListener<M, R> {
+    /// Synchronous (blocking) listen
+    pub fn listen(&self) -> anyhow::Result<(M, InterThreadResponse<R>)> {
+        // flume's RecvError trivially converts to anyhow::Error with `?`
+        let (message, response_sender) = self.receiver.recv()?;
+        Ok((
+            message,
+            InterThreadResponse {
+                response_sender,
+                sent: false,
+            },
+        ))
+    }
+
+    /// Asynchronous (non-blocking) listen for use in async contexts
+    pub async fn listen_async(&self) -> anyhow::Result<(M, InterThreadResponse<R>)> {
+        let (message, response_sender) = self.receiver.recv_async().await?;
+        Ok((
+            message,
+            InterThreadResponse {
+                response_sender,
+                sent: false,
+            },
+        ))
     }
 }
 
-// In Embassy, initialization requires passing in the statically allocated primitives.
-pub fn create<'a, Mtx: RawMutex, M, R, const N: usize>(
-    channel: &'a Channel<Mtx, (M, &'a Signal<Mtx, R>), N>,
-    signal: &'a Signal<Mtx, R>,
-) -> (InterTaskProducer<'a, Mtx, M, R, N>, InterTaskListener<'a, Mtx, M, R, N>) {
+pub fn create<M, R>() -> (InterThreadProducer<M, R>, InterThreadListener<M, R>) {
+    // std::sync::mpsc::channel() is unbounded, so we use flume::unbounded()
+    // Alternatively, you could use flume::bounded(16) if you want backpressure.
+    let (sender, receiver) = flume::unbounded();
+
     (
-        InterTaskProducer {
-            sender: channel.sender(),
-            response_signal: signal,
-        },
-        InterTaskListener {
-            receiver: channel.receiver(),
-        },
+        InterThreadProducer { sender },
+        InterThreadListener { receiver },
     )
 }

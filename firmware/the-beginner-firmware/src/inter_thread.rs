@@ -37,6 +37,7 @@ impl<M, R> InterThreadProducer<M, R> {
     }
 }
 
+#[must_use = "You must call .reply() to send a response back to the requester"]
 pub struct InterThreadResponse<R> {
     response_sender: flume::Sender<R>,
     sent: bool,

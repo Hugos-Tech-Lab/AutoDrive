@@ -13,11 +13,6 @@ use esp_idf_svc::{
         spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
         units::Hertz,
     },
-    http::{
-        Method,
-        server::{Configuration, EspHttpServer},
-    },
-    io::Write,
     mdns::EspMdns,
     ota::EspOta,
     wifi::{BlockingWifi, EspWifi},
@@ -30,7 +25,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    autoscript::AutoScript, autoscript_v2::HttpHandler, connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::on_board_led::OnBoardLed, http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
+    autoscript::AutoScript, autoscript_v2::HttpHandler, connect_to_wifi::connect_to_wifi, http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
@@ -38,13 +33,12 @@ use log::info;
 pub mod autoscript;
 pub mod autoscript_v2;
 pub mod connect_to_wifi;
-pub mod device_control;
 pub mod esp_app_desc_2;
-pub mod hardware;
 pub mod http;
 pub mod inter_thread;
 pub mod logger;
 pub mod wasm;
+pub mod hardware;
 
 use anyhow::Context;
 
@@ -68,7 +62,7 @@ unsafe {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
+    // let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
     let wasm = Wasm::new();
     let auto_script = Arc::new(AutoScript::new(wasm));
 
@@ -95,9 +89,7 @@ unsafe {
     let esp_ota = Arc::new(Mutex::new(ota));
 
     // let _device_control = Arc::new(Mutex::new(DeviceControl::new()?));
-    info!("activating auto");
-    let device_control = DeviceControl::new().unwrap();
-    device_control.activate_auto();
+    // info!("activating auto");
 
 
     // Keep main's stack frame tiny (< 250 bytes)

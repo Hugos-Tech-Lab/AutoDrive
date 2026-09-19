@@ -1,21 +1,20 @@
-use std::sync::{Arc, Mutex, OnceLock};
 
-use crate::device_control::DeviceControl;
+// use crate::device_control::DeviceControl;
 
-static HARDWARE: OnceLock<Arc<Mutex<Hardware>>> = OnceLock::new();
+// static HARDWARE: OnceLock<Arc<Mutex<Hardware>>> = OnceLock::new();
 
 pub mod on_board_led;
 
-pub struct Hardware {
-  //
-}
+// pub struct Hardware {
+//   //
+// }
 
-impl Hardware {
-  pub fn control_wheel() {
-    //
-  }
+// impl Hardware {
+//   pub fn control_wheel() {
+//     //
+//   }
 
-  pub fn read_wheel() {
-    //
-  }
-}
+//   pub fn read_wheel() {
+//     //
+//   }
+// }

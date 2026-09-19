@@ -1,7 +1,6 @@
 use core::fmt::{Debug, Display};
 use std::{
-    sync::{Arc, mpsc},
-    thread,
+    sync::{Arc},
 };
 
 use edge_http::Method;

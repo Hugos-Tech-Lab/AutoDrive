@@ -1,7 +1,6 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 
 use edge_nal::TcpBind;
-use esp_idf_svc::{http::server::EspHttpServer, ota::EspOta};
 
 pub mod auto_script;
 pub mod info;

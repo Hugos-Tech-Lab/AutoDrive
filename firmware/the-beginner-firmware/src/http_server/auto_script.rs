@@ -7,7 +7,7 @@ use log::info;
 
 use crate::{
     autoscript::{AutoScript, AutoScriptRunProgress},
-    http::{CORS_HEADERS, FirmwareUpdate200Response},
+    http_server::{CORS_HEADERS, FirmwareUpdate200Response},
 };
 
 pub async fn upload<T, const N: usize>(

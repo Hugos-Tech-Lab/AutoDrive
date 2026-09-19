@@ -23,7 +23,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    autoscript::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, wasm::Wasm,
+    autoscript::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, wasm::Wasm,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
@@ -31,7 +31,7 @@ use log::info;
 pub mod autoscript;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
-pub mod http;
+pub mod http_server;
 pub mod inter_thread;
 pub mod logger;
 pub mod wasm;
@@ -83,7 +83,7 @@ unsafe {
         .stack_size(64 * 1024)
         .spawn(|| {
             let mut server = SmallServer::new();
-            futures_lite::future::block_on(http::run(&mut server, auto_script))
+            futures_lite::future::block_on(http_server::run(&mut server, auto_script))
         })?;
 
     handle.join().unwrap().unwrap();

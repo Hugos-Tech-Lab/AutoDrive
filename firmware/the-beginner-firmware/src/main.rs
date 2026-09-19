@@ -79,7 +79,7 @@ unsafe {
 
     let handle = std::thread::Builder::new()
         .name("async_main".into())
-        .stack_size(64 * 1024)
+        .stack_size(48 * 1024)
         .spawn(|| {
             let mut server = SmallServer::new();
             futures_lite::future::block_on(http_server::run(&mut server, auto_script))

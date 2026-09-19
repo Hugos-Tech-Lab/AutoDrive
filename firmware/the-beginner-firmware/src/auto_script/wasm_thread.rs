@@ -5,7 +5,10 @@ use std::{
     time::Duration,
 };
 
-use crate::{auto_script::{AutoScriptRunProgress, WasmResponse}, inter_thread::{self, InterThreadListener, InterThreadProducer}};
+use crate::{
+    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token},
+    inter_thread::{self, InterThreadListener, InterThreadProducer},
+};
 use anyhow::{Result, bail};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::signal::Signal;
@@ -73,20 +76,17 @@ impl WasmThread {
                     info!("Free heap: {} bytes", free);
                     info!("Largest free block: {} bytes", largest);
 
-                    info!("a");
                     let module = maybe_module.insert(
                         Module::from_vec(&runtime, data, "env")
                             .map_err(|e| format!("failed to create module: {e:?}"))
                             .unwrap(),
                     );
-                    info!("b");
 
                     let mut instance_create_error = Option::None;
-                    match Instance::new(&runtime, module, 1024 * 32) {
+                    match Instance::new(&runtime, module, 1024 * 16) {
                         Ok(instance) => maybe_instance = Some(instance),
                         Err(error) => instance_create_error = Some(error),
                     }
-                    info!("c");
 
                     if let Some(instance_create_error) = instance_create_error {
                         response.send(WasmResponse::InstallError(format!(
@@ -98,7 +98,6 @@ impl WasmThread {
                         maybe_module = None;
                         continue;
                     }
-                    info!("d");
 
                     // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
                     let Some(instance) = maybe_instance.as_ref() else {
@@ -110,14 +109,12 @@ impl WasmThread {
                         maybe_module = None;
                         continue;
                     };
-                    info!("e");
 
                     let mut main_function_find_error = Option::None;
                     match Function::find_export_func(instance, "main") {
                         Ok(main_function) => maybe_main_function = Some(main_function),
                         Err(error) => main_function_find_error = Some(error),
                     }
-                    info!("f");
 
                     if let Some(main_function_find_error) = main_function_find_error {
                         response.send(WasmResponse::InstallError(format!(
@@ -129,34 +126,122 @@ impl WasmThread {
                         maybe_module = None;
                         continue;
                     }
-                    info!("g");
 
                     response.send(WasmResponse::SuccessfullyInstalled)?;
                 }
                 WasmThreadCommand::Run { progress } => {
                     info!("running");
-                    progress.send(AutoScriptRunProgress::Starting)?;
-
-                    let Some(ref instance) = maybe_instance else {
-                        // response.send(WasmResponse::StartError(
-                        //     "Wasm instance not installed. Try to install first before running"
-                        //         .to_string(),
-                        // ))?;
-                        continue;
-                    };
-                    crate::auto_script::cancellation_token::reset();
-
-                    progress.send(AutoScriptRunProgress::Starting).unwrap();
-                    if let Some(ref main_function) = maybe_main_function {
+                    {
                         progress.send(AutoScriptRunProgress::Starting)?;
-                        let res = main_function.call(&instance, &vec![]);
-                        // response.send(WasmResponse::SuccessfullyRun)?;
-                    } else {
-                        response.send(WasmResponse::StartError(
-                            "Main function not found. Try to reinstall before running".to_string(),
-                        ))?;
-                        continue;
+
+                        let Some(ref instance) = maybe_instance else {
+                            // response.send(WasmResponse::StartError(
+                            //     "Wasm instance not installed. Try to install first before running"
+                            //         .to_string(),
+                            // ))?;
+                            continue;
+                        };
+                        crate::auto_script::cancellation_token::reset();
+
+                        progress.send(AutoScriptRunProgress::Starting).unwrap();
+                        if let Some(ref main_function) = maybe_main_function {
+                            progress.send(AutoScriptRunProgress::Starting)?;
+                            let res = main_function.call(&instance, &vec![]);
+                            log::info!("{:?}", res);
+                            // response.send(WasmResponse::SuccessfullyRun)?;
+                        } else {
+                            response.send(WasmResponse::StartError(
+                                "Main function not found. Try to reinstall before running"
+                                    .to_string(),
+                            ))?;
+                            continue;
+                        }
                     }
+
+                    // cleanup after cancellation
+                    if cancellation_token::is_cancelled() {
+                        log::info!("cancelled");
+                        maybe_main_function = None;
+                        maybe_instance = None;
+                                                    log::info!("0000");
+
+                    let free = unsafe { esp_get_free_heap_size() };
+                    let largest = unsafe { heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) };
+
+                    info!("Free heap: {} bytes", free);
+                    info!("Largest free block: {} bytes", largest);
+
+                        // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
+                        let Some(module) = maybe_module.as_ref() else {
+                                response.send(WasmResponse::InternalError(format!(
+                                "failed to get the created instance. This is a code bug in the library"
+                            )))?;
+                            maybe_main_function = None;
+                            maybe_instance = None;
+                            maybe_module = None;
+                                                    log::info!("1111");
+
+                            continue;
+                        };
+                        log::info!("2222");
+
+                        let mut instance_create_error = Option::None;
+                        match Instance::new(&runtime, module, 1024 * 16) {
+                            Ok(instance) => maybe_instance = Some(instance),
+                            Err(error) => instance_create_error = Some(error),
+                        }
+                                                    log::info!("3333");
+
+                        if let Some(instance_create_error) = instance_create_error {
+                            log::info!("{:?}", instance_create_error);
+
+
+                            response.send(WasmResponse::InstallError(format!(
+                                "failed to create instance: {}",
+                                instance_create_error
+                            )))?;
+                            maybe_main_function = None;
+                            maybe_instance = None;
+                            maybe_module = None;
+                                                                                log::info!("4444");
+
+                            continue;
+                        }
+                                                    log::info!("555");
+
+                        // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
+                        let Some(instance) = maybe_instance.as_ref() else {
+                            response.send(WasmResponse::InternalError(format!(
+                            "failed to get the created instance. This is a code bug in the library"
+                        )))?;
+                            maybe_main_function = None;
+                            maybe_instance = None;
+                            maybe_module = None;
+                                                                                log::info!("6666");
+
+                            continue;
+                        };
+                                                    log::info!("7777");
+
+                        let mut main_function_find_error = Option::None;
+                        match Function::find_export_func(instance, "main") {
+                            Ok(main_function) => maybe_main_function = Some(main_function),
+                            Err(error) => main_function_find_error = Some(error),
+                        }
+
+                        if let Some(main_function_find_error) = main_function_find_error {
+                            response.send(WasmResponse::InstallError(format!(
+                                "failed to find export function (is main defined?): {}",
+                                main_function_find_error
+                            )))?;
+                            maybe_main_function = None;
+                            maybe_instance = None;
+                            maybe_module = None;
+                            continue;
+                        }
+                    }
+                    log::info!("done");
+
                     response.send(WasmResponse::SuccessfullyRun)?;
                 }
             }

@@ -4,10 +4,11 @@ use std::{
     thread,
 };
 
-use edge_http::io::server::{Connection, Handler};
-use edge_http::io::Error;
 use edge_http::Method;
+use edge_http::io::Error;
+use edge_http::io::server::{Connection, Handler};
 use embedded_io_async::{Read, Write};
+use futures::{FutureExt, select};
 use log::info;
 use serde::Serialize;
 
@@ -30,7 +31,10 @@ impl HttpHandler {
 }
 
 impl Handler for HttpHandler {
-    type Error<E> = Error<E> where E: Debug;
+    type Error<E>
+        = Error<E>
+    where
+        E: Debug;
 
     async fn handle<T, const N: usize>(
         &self,
@@ -45,7 +49,6 @@ impl Handler for HttpHandler {
         let method = headers.method;
         info!("{:?}", path);
         info!("{:?}", method);
-
 
         let cors_headers = [
             ("Access-Control-Allow-Origin", "*"),
@@ -65,7 +68,10 @@ impl Handler for HttpHandler {
 
                 // edge-http usually parses content_len for us
                 let content_length = headers.headers.content_len();
-                log::info!("Starting autoscript update, content length: {:?}", content_length);
+                log::info!(
+                    "Starting autoscript update, content length: {:?}",
+                    content_length
+                );
 
                 let capacity = content_length.map(|c| c as usize).unwrap_or(2048);
                 let mut data = Vec::with_capacity(capacity);
@@ -80,8 +86,8 @@ impl Handler for HttpHandler {
                     data.extend_from_slice(&buf[..read]);
                     total += read;
                     log::debug!("Autoscript: received {} bytes", total);
-                    
-                    // Break early if we've reached the expected content length to avoid hanging 
+
+                    // Break early if we've reached the expected content length to avoid hanging
                     // on keep-alive connections
                     if let Some(cl) = content_length {
                         if total >= cl as usize {
@@ -106,50 +112,58 @@ impl Handler for HttpHandler {
 
                 let body = serde_json::to_vec(&FirmwareUpdate200Response {
                     status: "ok".to_string(),
-                }).unwrap();
+                })
+                .unwrap();
 
                 let mut res_headers = cors_headers.to_vec();
                 res_headers.push(("Content-Type", "application/json"));
-                
-                conn.initiate_response(200, Some("OK"), &res_headers).await?;
+
+                conn.initiate_response(200, Some("OK"), &res_headers)
+                    .await?;
                 conn.write_all(&body).await?;
             }
 
             // --- POST Run Handler ---
             (Method::Post, "/autoscript/run") => {
                 log::info!("Starting autoscript execution stream...");
-                let (tx, rx) = mpsc::sync_channel::<AutoScriptRunProgress>(10);
+                let (tx, rx) = flume::bounded::<AutoScriptRunProgress>(1);
 
                 let auto_script_clone = self.auto_script.clone();
-                let res = auto_script_clone.run(tx).await.unwrap();
-                info!("{:?}", res);
-
 
                 let mut res_headers = cors_headers.to_vec();
                 res_headers.push(("Content-Type", "application/x-ndjson"));
                 res_headers.push(("Transfer-Encoding", "chunked"));
 
-                conn.initiate_response(200, Some("OK"), &res_headers).await?;
+                let auto_fut = auto_script_clone.run(tx).fuse();
+                futures::pin_mut!(auto_fut);
 
-                // Note: Using try_recv + thread::yield_now() prevents this loop from completely 
-                // blocking the async executor while waiting for the thread to produce logs. 
-                // If you use embassy or tokio, consider substituting thread::yield_now() with their async yield/sleep.
                 loop {
-                    match rx.try_recv() {
-                        Ok(chunk) => {
-                            let mut bytes = serde_json::to_vec(&chunk).unwrap();
-                            bytes.push(b'\n'); // CRITICAL for NDJSON framing
-                            conn.write_all(&bytes).await?;
-                        }
-                        Err(mpsc::TryRecvError::Empty) => {
-                            // Yield back to the executor
-                            thread::yield_now(); 
-                        }
-                        Err(mpsc::TryRecvError::Disconnected) => {
+                    select! {
+                        auto = auto_fut => {
+                            // TODO: stuff with auto
+
+                            // function done
                             break;
+                        }
+                        progress = rx.recv_async().fuse() => {
+                            match progress {
+                                Ok(chunk) => {
+                                    let mut bytes = serde_json::to_vec(&chunk).unwrap();
+                                    bytes.push(b'\n'); // CRITICAL for NDJSON framing
+                                    conn.write_all(&bytes).await?;
+                                }
+                                Err(err) => {
+                                    log::error!("{:?}", err);
+                                    break;
+                                },
+                            }
+
                         }
                     }
                 }
+
+                conn.initiate_response(200, Some("OK"), &res_headers)
+                    .await?;
 
                 log::info!("Autoscript execution stream ended.");
             }
@@ -157,25 +171,28 @@ impl Handler for HttpHandler {
             // // --- POST Cancel Handler ---
             (Method::Post, "/autoscript/cancel") => {
                 log::info!("Starting cancel stream...");
-                
+
                 self.auto_script.cancel();
-                
+
                 log::info!("done stream...");
 
                 let body = serde_json::to_vec(&FirmwareUpdate200Response {
                     status: "ok".to_string(),
-                }).unwrap();
+                })
+                .unwrap();
 
                 let mut res_headers = cors_headers.to_vec();
                 res_headers.push(("Content-Type", "application/json"));
-                
-                conn.initiate_response(200, Some("OK"), &res_headers).await?;
+
+                conn.initiate_response(200, Some("OK"), &res_headers)
+                    .await?;
                 conn.write_all(&body).await?;
             }
 
             // --- Fallbacks (Not Found / Wrong Method) ---
             (_, "/autoscript/upload") | (_, "/autoscript/run") | (_, "/autoscript/cancel") => {
-                conn.initiate_response(405, Some("Method Not Allowed"), &[]).await?;
+                conn.initiate_response(405, Some("Method Not Allowed"), &[])
+                    .await?;
             }
             _ => {
                 conn.initiate_response(404, Some("Not Found"), &[]).await?;

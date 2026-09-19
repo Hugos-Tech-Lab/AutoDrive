@@ -1,5 +1,6 @@
 use crate::wasm::{Wasm, WasmResponse};
 use anyhow::Result;
+use flume::{Receiver, Sender};
 use serde::Serialize;
 use std::sync::mpsc::{self, SyncSender};
 
@@ -33,7 +34,7 @@ impl AutoScript {
         self.wasm.install(data).await
     }
 
-    pub async fn run(&self, progress: SyncSender<AutoScriptRunProgress>) -> Result<WasmResponse> {
+    pub async fn run(&self, progress: Sender<AutoScriptRunProgress>) -> Result<WasmResponse> {
         self.wasm.run(progress).await
     }
 

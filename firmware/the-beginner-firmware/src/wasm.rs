@@ -5,6 +5,7 @@ use std::{
 use anyhow::{Result, bail};
 use embassy_sync::{channel::Channel, mutex::Mutex};
 use esp_idf_sys::{MALLOC_CAP_8BIT, esp_get_free_heap_size, heap_caps_get_largest_free_block};
+use flume::Sender;
 use log::info;
 use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
 use embassy_sync::signal::Signal;
@@ -64,7 +65,7 @@ impl Wasm {
         Ok(res)
     }
 
-    pub async fn run(&self, progress: SyncSender<AutoScriptRunProgress>) -> Result<WasmResponse> {
+    pub async fn run(&self, progress: Sender<AutoScriptRunProgress>) -> Result<WasmResponse> {
         // if self.wasm_state == WasmState::Running {
         //     bail!("already running");
         // }
@@ -84,7 +85,7 @@ impl Wasm {
 
 pub enum WasmThreadCommand {
     Install { data: Vec<u8> },
-    Run { progress: SyncSender<AutoScriptRunProgress> }
+    Run { progress: Sender<AutoScriptRunProgress> }
 }
 
 struct WasmThread;

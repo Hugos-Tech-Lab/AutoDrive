@@ -1,3 +1,5 @@
+use anyhow::{Context, Result};
+
 pub struct InterThreadProducer<M, R> {
     sender: flume::Sender<(M, flume::Sender<R>)>,
 }
@@ -40,15 +42,16 @@ pub struct InterThreadResponse<R> {
     sent: bool,
 }
 
-impl<R> InterThreadResponse<R> {
-    pub fn send(mut self, response: R) {
+impl<R: Send + Sync + 'static> InterThreadResponse<R> {
+    pub fn send(mut self, response: R) -> Result<()> {
         if !self.sent {
             self.response_sender
-                .send(response)
-                .expect("producer thread has stopped");
+                .send(response).context("failed to send inter-thread response")?;
         }
 
         self.sent = true;
+
+        Ok(())
     }
 }
 

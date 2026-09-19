@@ -189,6 +189,7 @@ impl WasmThread {
                         ));
                         continue;
                     };
+                    cancellation_token::reset();
 
                     progress.send(AutoScriptRunProgress::Starting).unwrap();
                     progress.send(AutoScriptRunProgress::Starting).unwrap();

@@ -62,3 +62,14 @@ paths:
             application/json:
               schema:
                 type: object
+  /autoscript/cancel:
+    post:
+      summary: Cancel
+      operationId: cancelAutoscript
+      responses:
+        '200':
+          description: cancel info
+          content:
+            application/json:
+              schema:
+                type: object

@@ -137,12 +137,58 @@ pub fn set_handles(server: &mut EspHttpServer, auto_script: Arc<AutoScript>) -> 
 
             // 4. Stream data chunks directly to client as they are produced
             while let Ok(chunk) = rx.recv() {
-                let bytes = serde_json::to_vec(&chunk)?;
-
+                let mut bytes = serde_json::to_vec(&chunk)?;
+                bytes.push(b'\n'); // <--- CRITICAL for NDJSON framing
                 response.write(&bytes).unwrap();
                 // Flush explicitly to send the chunk over TCP immediately
                 response.flush().unwrap();
             }
+
+            log::info!("Autoscript execution stream ended.");
+            Ok(())
+        },
+    )?;
+
+    let auto_script_cancel = auto_script.clone();
+    server.fn_handler(
+        "/autoscript/cancel",
+        Method::Post,
+        move |req| -> anyhow::Result<()> {
+            log::info!("Starting autoscript execution stream...");
+            log::info!("Starting cancel stream...");
+            log::info!("Starting cancel stream...");
+            // 1. Create a channel to stream logs/chunks from the background task back to HTTP handler
+
+
+            let auto_script_clone = auto_script_cancel.clone();
+            auto_script_clone.cancel();
+            log::info!("done stream...");
+            log::info!("done stream...");
+            log::info!("done stream...");
+            log::info!("done stream...");
+            // 3. Prepare chunked streaming HTTP response (specify chunked Transfer-Encoding)
+            let mut response = req
+                .into_response(
+                    200,
+                    None,
+                    &[
+                        ("Content-Type", "application/x-ndjson"), // or text/event-stream / text/plain
+                        ("Transfer-Encoding", "chunked"),
+                        ("Access-Control-Allow-Origin", "*"),
+                    ],
+                )
+                .unwrap();
+
+            #[derive(Serialize)]
+            struct FirmwareUpdate200Response {
+                status: String,
+            }
+
+            // 4. Stream data chunks directly to client as they are produced
+            let body = serde_json::to_vec(&FirmwareUpdate200Response {
+                status: "ok".to_string(),
+            })?;
+            response.write(&body)?;
 
             log::info!("Autoscript execution stream ended.");
             Ok(())

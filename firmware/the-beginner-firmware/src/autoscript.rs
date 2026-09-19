@@ -37,5 +37,7 @@ impl AutoScript {
         self.wasm.run(progress)
     }
 
-    pub fn cancel(&self) {}
+    pub fn cancel(&self) {
+        self.wasm.cancel();
+    }
 }

@@ -23,7 +23,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    autoscript::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, wasm::Wasm,
+     connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, wasm::{AutoScript},
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
@@ -58,8 +58,7 @@ unsafe {
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
     let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
-    let wasm = Wasm::new();
-    let auto_script = Arc::new(AutoScript::new(wasm));
+    let auto_script = Arc::new(AutoScript::new());
 
     let mut wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,

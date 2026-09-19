@@ -16,7 +16,7 @@ use edge_http::io::server::{Connection, Handler, Server};
 use embedded_io_async::{Read, Write};
 use serde::Serialize;
 
-use crate::autoscript::AutoScript;
+use crate::wasm::AutoScript;
 
 pub type SmallServer = Server<2, 1024, 16>;
 

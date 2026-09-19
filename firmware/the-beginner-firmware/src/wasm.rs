@@ -1,16 +1,20 @@
 use std::{
-    ffi::c_void, sync::mpsc::SyncSender, thread::{self, JoinHandle}, time::Duration,
+    ffi::c_void,
+    sync::mpsc::SyncSender,
+    thread::{self, JoinHandle},
+    time::Duration,
 };
 
+use crate::inter_thread::{self, InterThreadListener, InterThreadProducer};
 use anyhow::{Result, bail};
+use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_sync::signal::Signal;
 use embassy_sync::{channel::Channel, mutex::Mutex};
 use esp_idf_sys::{MALLOC_CAP_8BIT, esp_get_free_heap_size, heap_caps_get_largest_free_block};
 use flume::Sender;
 use log::info;
+use serde::Serialize;
 use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
-use embassy_sync::signal::Signal;
-use crate::{autoscript::AutoScriptRunProgress, inter_thread::{self, InterThreadListener, InterThreadProducer}};
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 pub mod cancellation_token;
 pub mod exposed_functions;
 use static_cell::StaticCell;
@@ -24,36 +28,46 @@ pub enum WasmResponse {
     InternalError(String),
 }
 
+#[derive(Serialize)]
+pub enum AutoScriptRunProgress {
+    Starting,
+    Log,
+    Stopping,
+}
+
 #[derive(PartialEq)]
-pub enum WasmState {
+pub enum AutoScriptState {
     Uninstalled,
     Installed,
     Running,
 }
 
-pub struct Wasm {
+pub struct AutoScript {
     wasm_thread: JoinHandle<()>,
-    wasm_state: WasmState,
+    auto_script_state: Mutex<CriticalSectionRawMutex, AutoScriptState>,
     producer: InterThreadProducer<WasmThreadCommand, WasmResponse>,
 }
 
-impl Wasm {
+impl AutoScript {
     pub fn new() -> Self {
         let (producer, listener) = inter_thread::create::<WasmThreadCommand, WasmResponse>();
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
-            .stack_size(34 * 1024) // by decreasing the stack size 
+            .stack_size(34 * 1024) // by decreasing the stack size
             .spawn({
                 move || {
                     loop {
                         match WasmThread::listen(&listener) {
                             Ok(ok) => {
                                 log::info!("wasm thread is stopping")
-                            },
+                            }
                             Err(err) => {
-                                log::warn!("wasm thread crashed: '{:?}'. Restarting in 1 second", err);
+                                log::warn!(
+                                    "wasm thread crashed: '{:?}'. Restarting in 1 second",
+                                    err
+                                );
                                 thread::sleep(Duration::from_secs(1));
-                            },
+                            }
                         }
                     }
                 }
@@ -63,30 +77,51 @@ impl Wasm {
         Self {
             producer,
             wasm_thread,
-            wasm_state: WasmState::Uninstalled,
+            auto_script_state: AutoScriptState::Uninstalled.into(),
         }
     }
 
     pub async fn install(&self, data: Vec<u8>) -> Result<WasmResponse> {
-        let res = self.producer.send_async(WasmThreadCommand::Install { data }).await; // TODO: add progress here too
-            info!("resp");
+        {
+            let auto_script_state_guard = self.auto_script_state.lock().await;
+            if *auto_script_state_guard == AutoScriptState::Running {
+                return Ok(WasmResponse::StartError("already running".to_string()));
+            }
+        }
 
-        // self.wasm_state = WasmState::Installed;
+        let res = self
+            .producer
+            .send_async(WasmThreadCommand::Install { data })
+            .await; // TODO: add progress here too
+
+        {
+            let mut auto_script_state_guard = self.auto_script_state.lock().await;
+            *auto_script_state_guard = AutoScriptState::Installed;
+        }
+
         Ok(res)
     }
 
     pub async fn run(&self, progress: Sender<AutoScriptRunProgress>) -> Result<WasmResponse> {
-        // if self.wasm_state == WasmState::Running {
-        //     bail!("already running");
-        // }
+        {
+            let mut auto_script_state_guard = self.auto_script_state.lock().await;
+            if *auto_script_state_guard == AutoScriptState::Running {
+                return Ok(WasmResponse::StartError("already running".to_string()));
+            }
+            if *auto_script_state_guard == AutoScriptState::Uninstalled {
+                return Ok(WasmResponse::StartError("not installed".to_string()));
+            }
+            *auto_script_state_guard = AutoScriptState::Running;
+        }
 
-        // // self.wasm_state = WasmState::Running;
-        log::info!("sending async message and now waiting until finish");
-        let res = self.producer.send_async(WasmThreadCommand::Run { progress }).await;
-        log::info!("{:?}", res);
-        log::info!("FINISHEDDDD");
-
-        // Ok(res)
+        let res = self
+            .producer
+            .send_async(WasmThreadCommand::Run { progress })
+            .await;
+        {
+            let mut auto_script_state_guard = self.auto_script_state.lock().await; // TODO: only set running when the response is actually ok
+            *auto_script_state_guard = AutoScriptState::Running;
+        }
         Ok(res)
     }
 
@@ -96,8 +131,12 @@ impl Wasm {
 }
 
 pub enum WasmThreadCommand {
-    Install { data: Vec<u8> },
-    Run { progress: Sender<AutoScriptRunProgress> }
+    Install {
+        data: Vec<u8>,
+    },
+    Run {
+        progress: Sender<AutoScriptRunProgress>,
+    },
 }
 
 struct WasmThread;
@@ -134,19 +173,20 @@ impl WasmThread {
         let mut maybe_main_function = None;
         info!("WASM runtime started");
 
-        while let Ok((command, response)) = listener.listen() { // TODO: remove unwrap
+        while let Ok((command, response)) = listener.listen() {
+            // TODO: remove unwrap
             match command {
                 WasmThreadCommand::Install { data } => {
                     maybe_main_function = None; // when commenting this line, the compiler doesn't complain... isn't that a memory bug?
                     maybe_instance = None;
                     maybe_module = None;
 
-                        let free = unsafe { esp_get_free_heap_size() };
+                    let free = unsafe { esp_get_free_heap_size() };
                     let largest = unsafe { heap_caps_get_largest_free_block(MALLOC_CAP_8BIT) };
 
                     info!("Free heap: {} bytes", free);
                     info!("Largest free block: {} bytes", largest);
-                    
+
                     info!("a");
                     let module = maybe_module.insert(
                         Module::from_vec(&runtime, data, "env")
@@ -210,7 +250,6 @@ impl WasmThread {
                 WasmThreadCommand::Run { progress } => {
                     info!("running");
                     progress.send(AutoScriptRunProgress::Starting)?;
- 
 
                     let Some(ref instance) = maybe_instance else {
                         // response.send(WasmResponse::StartError(

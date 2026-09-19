@@ -6,8 +6,7 @@ use futures::{FutureExt, select};
 use log::info;
 
 use crate::{
-    autoscript::{AutoScript, AutoScriptRunProgress},
-    http_server::{CORS_HEADERS, FirmwareUpdate200Response},
+    http_server::{CORS_HEADERS, FirmwareUpdate200Response}, wasm::{AutoScript, AutoScriptRunProgress},
 };
 
 pub async fn upload<T, const N: usize>(

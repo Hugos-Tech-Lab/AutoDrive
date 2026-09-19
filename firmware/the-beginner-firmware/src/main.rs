@@ -1,10 +1,26 @@
-use std::{sync::{Arc, Mutex}, thread, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
+use edge_http::io::server::{DefaultServer, Server};
+use edge_nal::TcpBind;
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop, hal::{gpio::AnyIOPin, spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, units::Hertz}, http::{
+    eventloop::EspSystemEventLoop,
+    hal::{
+        gpio::AnyIOPin,
+        spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
+        units::Hertz,
+    },
+    http::{
         Method,
         server::{Configuration, EspHttpServer},
-    }, io::Write, mdns::EspMdns, ota::EspOta, wifi::{BlockingWifi, EspWifi},
+    },
+    io::Write,
+    mdns::EspMdns,
+    ota::EspOta,
+    wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -14,27 +30,40 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    autoscript::AutoScript, connect_to_wifi::connect_to_wifi, device_control::DeviceControl, hardware::on_board_led::OnBoardLed, http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
+    autoscript::AutoScript, autoscript_v2::HttpHandler, connect_to_wifi::connect_to_wifi,
+    device_control::DeviceControl, hardware::on_board_led::OnBoardLed,
+    http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
-pub mod wasm;
-pub mod connect_to_wifi;
-pub mod esp_app_desc_2;
-pub mod logger;
-pub mod http;
-pub mod hardware;
-pub mod device_control;
 pub mod autoscript;
+pub mod autoscript_v2;
+pub mod connect_to_wifi;
+pub mod device_control;
+pub mod esp_app_desc_2;
+pub mod hardware;
+pub mod http;
 pub mod inter_thread;
+pub mod logger;
+pub mod wasm;
 
 use anyhow::Context;
+
+pub type SmallServer = Server<2, 1024, 16>;
 
 esp_app_desc_2! {}
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
+
+unsafe {
+        let config = esp_idf_sys::esp_vfs_eventfd_config_t {
+            max_fds: 5,
+        };
+        esp_idf_sys::esp_vfs_eventfd_register(&config);
+    }
+    
     init_logging();
     info!("starting");
 
@@ -51,13 +80,13 @@ pub fn main() -> anyhow::Result<()> {
     )?;
     connect_to_wifi(&mut wifi)?;
 
-    let server_config = Configuration {
-        uri_match_wildcard: true,
-        stack_size: 16 * 1024,
-        max_open_sockets: 7,
-        ..Default::default()
-    };
-    let mut server = EspHttpServer::new(&server_config)?;
+    // let server_config = Configuration {
+    //     uri_match_wildcard: true,
+    //     stack_size: 16 * 1024,
+    //     max_open_sockets: 7,
+    //     ..Default::default()
+    // };
+    // let mut server = EspHttpServer::new(&server_config)?;
 
     let mut mdns = EspMdns::take()?;
     mdns.set_hostname("the-beginner")?;
@@ -72,16 +101,31 @@ pub fn main() -> anyhow::Result<()> {
     let device_control = DeviceControl::new().unwrap();
     device_control.activate_auto();
 
-    info!("registering");
-    http::set_handles(&mut server, esp_ota)?; // TODO: setting handles should all be in http module
-    http::autoscript_manager::set_handles(&mut server, auto_script)?;
 
-    server.fn_handler("/*", Method::Get, |req| -> anyhow::Result<()> {
-        req.into_status_response(404)?.write_all(b"Not Found")?;
-        Ok(())
-    })?;
+    // Keep main's stack frame tiny (< 250 bytes)
+    let handle = std::thread::Builder::new()
+        .name("async_main".into())
+        .stack_size(64 * 1024)
+        .spawn(|| {
+            // Instantiate DefaultServer inside the spawned thread with 32KB stack
+            let mut server = SmallServer::new();
+            futures_lite::future::block_on(run(&mut server))
+        })?;
 
-    loop {
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
+    handle.join().unwrap().unwrap();
+    Ok(())
+}
+
+pub async fn run(server: &mut SmallServer) -> Result<(), anyhow::Error> {
+
+    let addr ="0.0.0.0:80".parse().unwrap();
+    info!("Running HTTP server on {addr}");
+
+    let acceptor = edge_nal_std::Stack::new()
+        .bind(addr)
+        .await?;
+
+    server.run(None, acceptor, HttpHandler).await?;
+
+    Ok(())
 }

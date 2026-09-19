@@ -46,11 +46,10 @@ pub struct InterThreadResponse<R> {
 impl<R: Send + Sync + 'static> InterThreadResponse<R> {
     pub fn send(mut self, response: R) -> Result<()> {
         if !self.sent {
+            self.sent = true;
             self.response_sender
                 .send(response).context("failed to send inter-thread response")?;
         }
-
-        self.sent = true;
 
         Ok(())
     }

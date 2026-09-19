@@ -1,7 +1,5 @@
 use core::fmt::{Debug, Display};
-use std::{
-    sync::{Arc},
-};
+use std::sync::Arc;
 
 use edge_http::Method;
 use edge_http::io::Error;
@@ -125,20 +123,21 @@ impl Handler for HttpHandler {
             // --- POST Run Handler ---
             (Method::Post, "/autoscript/run") => {
                 log::info!("Starting autoscript execution stream...");
-                let (tx, rx) = flume::bounded::<AutoScriptRunProgress>(1);
+                let (tx, rx) = flume::bounded::<AutoScriptRunProgress>(10);
 
                 let auto_script_clone = self.auto_script.clone();
 
                 let mut res_headers = cors_headers.to_vec();
                 res_headers.push(("Content-Type", "application/x-ndjson"));
                 res_headers.push(("Transfer-Encoding", "chunked"));
-
+                conn.initiate_response(200, Some("OK"), &res_headers)
+                    .await?;
                 let auto_fut = auto_script_clone.run(tx).fuse();
                 futures::pin_mut!(auto_fut);
-
                 loop {
                     select! {
                         auto = auto_fut => {
+                            log::error!("done");
                             // TODO: stuff with auto
 
                             // function done
@@ -149,7 +148,10 @@ impl Handler for HttpHandler {
                                 Ok(chunk) => {
                                     let mut bytes = serde_json::to_vec(&chunk).unwrap();
                                     bytes.push(b'\n'); // CRITICAL for NDJSON framing
-                                    conn.write_all(&bytes).await?;
+                                    let res = conn.write_all(&bytes).await;
+                                    if let Err(err) = res {
+                                        log::error!("failed to write bytes: '{:?}'", err);
+                                    }
                                 }
                                 Err(err) => {
                                     log::error!("{:?}", err);
@@ -161,8 +163,6 @@ impl Handler for HttpHandler {
                     }
                 }
 
-                conn.initiate_response(200, Some("OK"), &res_headers)
-                    .await?;
 
                 log::info!("Autoscript execution stream ended.");
             }

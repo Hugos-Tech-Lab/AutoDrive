@@ -1,5 +1,5 @@
 use std::{
-    ffi::c_void, sync::mpsc::SyncSender, thread::{self, JoinHandle},
+    ffi::c_void, sync::mpsc::SyncSender, thread::{self, JoinHandle}, time::Duration,
 };
 
 use anyhow::{Result, bail};
@@ -45,7 +45,17 @@ impl Wasm {
             .stack_size(34 * 1024) // by decreasing the stack size 
             .spawn({
                 move || {
-                    let res = WasmThread::listen(listener); // TODO: something about this res
+                    loop {
+                        match WasmThread::listen(&listener) {
+                            Ok(ok) => {
+                                log::info!("wasm thread is stopping")
+                            },
+                            Err(err) => {
+                                log::warn!("wasm thread crashed: '{:?}'. Restarting in 1 second", err);
+                                thread::sleep(Duration::from_secs(1));
+                            },
+                        }
+                    }
                 }
             })
             .unwrap(); // TODO: remove unwrap
@@ -71,8 +81,10 @@ impl Wasm {
         // }
 
         // // self.wasm_state = WasmState::Running;
+        log::info!("sending async message and now waiting until finish");
         let res = self.producer.send_async(WasmThreadCommand::Run { progress }).await;
-        // // self.wasm_state = WasmState::Installed;
+        log::info!("{:?}", res);
+        log::info!("FINISHEDDDD");
 
         // Ok(res)
         Ok(res)
@@ -115,14 +127,14 @@ impl WasmThread {
         unused_assignments,
         reason = "it seems the compiler is used how we are using objects through references..."
     )]
-    fn listen(listener: InterThreadListener<WasmThreadCommand, WasmResponse>) -> Result<()> {
+    fn listen(listener: &InterThreadListener<WasmThreadCommand, WasmResponse>) -> Result<()> {
         let runtime = Self::build_runtime();
         let mut maybe_module = None;
         let mut maybe_instance = None;
         let mut maybe_main_function = None;
         info!("WASM runtime started");
 
-        while let (command, mut response) = listener.listen().unwrap() { // TODO: remove unwrap
+        while let Ok((command, response)) = listener.listen() { // TODO: remove unwrap
             match command {
                 WasmThreadCommand::Install { data } => {
                     maybe_main_function = None; // when commenting this line, the compiler doesn't complain... isn't that a memory bug?
@@ -154,7 +166,7 @@ impl WasmThread {
                         response.send(WasmResponse::InstallError(format!(
                             "failed to create instance: {}",
                             instance_create_error
-                        )));
+                        )))?;
                         maybe_main_function = None;
                         maybe_instance = None;
                         maybe_module = None;
@@ -166,7 +178,7 @@ impl WasmThread {
                     let Some(instance) = maybe_instance.as_ref() else {
                         response.send(WasmResponse::InternalError(format!(
                             "failed to get the created instance. This is a code bug in the library"
-                        )));
+                        )))?;
                         maybe_main_function = None;
                         maybe_instance = None;
                         maybe_module = None;
@@ -185,7 +197,7 @@ impl WasmThread {
                         response.send(WasmResponse::InstallError(format!(
                             "failed to find export function (is main defined?): {}",
                             main_function_find_error
-                        )));
+                        )))?;
                         maybe_main_function = None;
                         maybe_instance = None;
                         maybe_module = None;
@@ -193,31 +205,34 @@ impl WasmThread {
                     }
                     info!("g");
 
-                    response.send(WasmResponse::SuccessfullyInstalled);
+                    response.send(WasmResponse::SuccessfullyInstalled)?;
                 }
                 WasmThreadCommand::Run { progress } => {
                     info!("running");
+                    progress.send(AutoScriptRunProgress::Starting)?;
+ 
 
                     let Some(ref instance) = maybe_instance else {
-                        response.send(WasmResponse::StartError(
-                            "Wasm instance not installed. Try to install first before running"
-                                .to_string(),
-                        ));
+                        // response.send(WasmResponse::StartError(
+                        //     "Wasm instance not installed. Try to install first before running"
+                        //         .to_string(),
+                        // ))?;
                         continue;
                     };
                     cancellation_token::reset();
 
                     progress.send(AutoScriptRunProgress::Starting).unwrap();
                     if let Some(ref main_function) = maybe_main_function {
-                        progress.send(AutoScriptRunProgress::Starting);
+                        progress.send(AutoScriptRunProgress::Starting)?;
                         let res = main_function.call(&instance, &vec![]);
+                        // response.send(WasmResponse::SuccessfullyRun)?;
                     } else {
                         response.send(WasmResponse::StartError(
                             "Main function not found. Try to reinstall before running".to_string(),
-                        ));
+                        ))?;
                         continue;
                     }
-                    response.send(WasmResponse::SuccessfullyRun);
+                    response.send(WasmResponse::SuccessfullyRun)?;
                 }
             }
         }

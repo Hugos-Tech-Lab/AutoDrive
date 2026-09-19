@@ -1,10 +1,8 @@
 use std::{
     sync::{Arc, Mutex},
-    thread,
-    time::Duration,
 };
 
-use edge_http::io::server::{DefaultServer, Server};
+use edge_http::io::server::{Server};
 use edge_nal::TcpBind;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
@@ -25,7 +23,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    autoscript::AutoScript, autoscript_v2::HttpHandler, connect_to_wifi::connect_to_wifi, http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
+    autoscript::AutoScript, autoscript_v2::HttpHandler, connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http::verify_and_set_valid::verify_and_set_valid, logger::init_logging, wasm::Wasm,
 };
 use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
@@ -62,7 +60,7 @@ unsafe {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    // let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
+    let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
     let wasm = Wasm::new();
     let auto_script = Arc::new(AutoScript::new(wasm));
 

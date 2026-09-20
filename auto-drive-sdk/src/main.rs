@@ -5,7 +5,7 @@ use auto_drive_sdk::hardware::the_beginner;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn main() -> () {
-  the_beginner::set_onboard_led_color(10,0,0);
+  the_beginner::set_onboard_led_color(4,0,0);
 }
 
 

@@ -11,13 +11,8 @@ use crate::{
     utils::heap,
 };
 use anyhow::{Result, bail};
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-use embassy_sync::signal::Signal;
-use embassy_sync::{channel::Channel, mutex::Mutex};
-use esp_idf_sys::{MALLOC_CAP_8BIT, esp_get_free_heap_size, heap_caps_get_largest_free_block};
 use flume::Sender;
 use log::info;
-use serde::Serialize;
 use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
 
 pub enum WasmThreadCommand {
@@ -131,10 +126,10 @@ impl WasmThread {
                             progress.send(AutoScriptRunProgress::Starting)?;
 
                             let Some(ref instance) = maybe_instance else {
-                                // response.send(WasmResponse::StartError(
-                                //     "Wasm instance not installed. Try to install first before running"
-                                //         .to_string(),
-                                // ))?;
+                                response.send(WasmResponse::StartError(
+                                    "Wasm instance not installed. Try to install first before running"
+                                        .to_string(),
+                                ))?;
                                 continue;
                             };
                             crate::auto_script::cancellation_token::reset();
@@ -144,7 +139,6 @@ impl WasmThread {
                                 progress.send(AutoScriptRunProgress::Starting)?;
                                 let res = main_function.call(&instance, &vec![]);
                                 log::info!("{:?}", res);
-                                // response.send(WasmResponse::SuccessfullyRun)?;
                             } else {
                                 response.send(WasmResponse::StartError(
                                     "Main function not found. Try to reinstall before running"
@@ -160,7 +154,6 @@ impl WasmThread {
                             maybe_main_function = None;
                             maybe_instance = None;
                             log::info!("0000");
-
 
                             // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
                             let Some(module) = maybe_module.as_ref() else {
@@ -204,6 +197,7 @@ impl WasmThread {
                                 response.send(WasmResponse::InternalError(format!(
                             "failed to get the created instance. This is a code bug in the library"
                         )))?;
+
                                 maybe_main_function = None;
                                 maybe_instance = None;
                                 maybe_module = None;

@@ -54,7 +54,7 @@ impl AutoScript {
         let (producer, listener) = inter_thread::create::<WasmThreadCommand, WasmResponse>();
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
-            .stack_size(8 * 1024) // by decreasing the stack size
+            .stack_size(8 * 1024) 
             .spawn({
                 move || {
                     loop {

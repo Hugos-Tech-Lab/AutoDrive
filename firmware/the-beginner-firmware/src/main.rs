@@ -24,13 +24,11 @@ use crate::{
     auto_script::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, utils::heap,
 };
 use esp_idf_sys::{
-    CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, heap_caps_get_info,
-    multi_heap_info_t,
+    CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL
 };
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
 pub mod auto_script;
-pub mod autoscript;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
 pub mod hardware;
@@ -42,14 +40,10 @@ pub mod utils;
 
 use anyhow::Context;
 
-
 esp_app_desc_2! {}
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
-    // let mut memory_pool = vec![0u8; 120 * 1024];
-// let memory_pool: &'static mut [u8] =
-//     Box::leak(vec![0u8; 12_000 * 1024].into_boxed_slice());
 
     unsafe {
         let config = esp_idf_sys::esp_vfs_eventfd_config_t { max_fds: 5 };
@@ -80,20 +74,6 @@ pub fn main() -> anyhow::Result<()> {
     let esp_ota = Arc::new(Mutex::new(ota));
 
     info!("1: {:?}", heap());
-
-    // let _device_control = Arc::new(Mutex::new(DeviceControl::new()?));
-    // info!("activating auto");
-
-unsafe {
-    let remaining = esp_idf_sys::uxTaskGetStackHighWaterMark(
-        std::ptr::null_mut()
-    );
-
-    log::info!(
-        "stack remaining: {} bytes",
-        remaining
-    );
-}
 
     let handle = std::thread::Builder::new()
         .name("async_main".into())

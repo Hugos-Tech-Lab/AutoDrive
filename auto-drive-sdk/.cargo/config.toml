@@ -2,7 +2,7 @@
 target = "wasm32-unknown-unknown"
 
 [target.wasm32-unknown-unknown]
-runner = "wasm-bindgen-test-runner"
+runner = ".cargo/runner.sh"
 rustflags = [
     "-C", "target-feature=-reference-types,-multivalue",
     "-C", "link-arg=-z",

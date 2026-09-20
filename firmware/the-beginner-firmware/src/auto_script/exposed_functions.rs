@@ -1,10 +1,11 @@
-use std::{thread, time::Duration};
+use std::{sync::Mutex, thread, time::Duration};
 
+use flume::Sender;
 use log::info;
 use smart_leds_trait::RGB8;
 use wamr_rust_sdk::sys::{WASMExecEnv, wasm_runtime_get_module_inst, wasm_runtime_terminate};
 
-use crate::{hardware::on_board_led::OnBoardLed, auto_script::cancellation_token};
+use crate::{auto_script::{AutoScriptRunProgress, cancellation_token}, hardware::on_board_led::OnBoardLed};
 
 pub fn terminate(exec_env: *mut WASMExecEnv) {
     if exec_env.is_null() {
@@ -23,6 +24,9 @@ macro_rules! check_cancellation {
     };
 }
 
+pub static CURRENT_RUN_PROGRESS: Mutex<Option<flume::Sender<AutoScriptRunProgress>>> =
+    Mutex::new(None);
+
 #[unsafe(no_mangle)]
 pub extern "C" fn delay(exec_env: *mut WASMExecEnv, milliseconds: u8) {
     check_cancellation!(exec_env);
@@ -32,6 +36,16 @@ pub extern "C" fn delay(exec_env: *mut WASMExecEnv, milliseconds: u8) {
 #[unsafe(no_mangle)]
 pub extern "C" fn print(exec_env: *mut WASMExecEnv, text: u32) {
     check_cancellation!(exec_env);
+    {
+        let current_run_progress = CURRENT_RUN_PROGRESS.lock().unwrap();
+
+        if let Some(current_run_progress) = current_run_progress.as_ref() {
+            if let Err(_err) = current_run_progress.send(AutoScriptRunProgress::Log{message: "hi".to_string()}) { // TODO: this shouldn't block maybe?
+                //
+            }
+        }
+    }
+
     info!("received: {:?}", text);
 }
 

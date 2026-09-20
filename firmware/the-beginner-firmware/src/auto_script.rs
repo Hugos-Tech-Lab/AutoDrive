@@ -32,7 +32,7 @@ pub enum WasmResponse {
 #[derive(Serialize)]
 pub enum AutoScriptRunProgress {
     Starting,
-    Log,
+    Log{message: String},
     Stopping,
 }
 

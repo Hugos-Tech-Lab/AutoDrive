@@ -6,9 +6,7 @@ use std::{
 };
 
 use crate::{
-    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token},
-    inter_thread::{self, InterThreadListener, InterThreadProducer},
-    utils::heap,
+    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token, exposed_functions::CURRENT_RUN_PROGRESS}, inter_thread::{self, InterThreadListener, InterThreadProducer}, utils::heap,
 };
 use anyhow::{Result, bail};
 use flume::Sender;
@@ -121,6 +119,10 @@ impl WasmThread {
                         response.send(WasmResponse::SuccessfullyInstalled)?;
                     }
                     WasmThreadCommand::Run { progress } => {
+                        {
+                            let mut current_run_progress = CURRENT_RUN_PROGRESS.lock().unwrap();
+                            *current_run_progress = Some(progress.clone());
+                        }
                         info!("running");
                         {
                             progress.send(AutoScriptRunProgress::Starting)?;
@@ -153,7 +155,6 @@ impl WasmThread {
                             log::info!("cancelled");
                             maybe_main_function = None;
                             maybe_instance = None;
-                            log::info!("0000");
 
                             // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
                             let Some(module) = maybe_module.as_ref() else {
@@ -167,14 +168,12 @@ impl WasmThread {
 
                                 continue;
                             };
-                            log::info!("2222");
 
                             let mut instance_create_error = Option::None;
                             match Instance::new(&runtime, module, 1024 * 16) {
                                 Ok(instance) => maybe_instance = Some(instance),
                                 Err(error) => instance_create_error = Some(error),
                             }
-                            log::info!("3333");
 
                             if let Some(instance_create_error) = instance_create_error {
                                 log::info!("{:?}", instance_create_error);
@@ -190,7 +189,6 @@ impl WasmThread {
 
                                 continue;
                             }
-                            log::info!("555");
 
                             // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
                             let Some(instance) = maybe_instance.as_ref() else {

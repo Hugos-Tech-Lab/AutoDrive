@@ -54,13 +54,14 @@ impl AutoScript {
         let (producer, listener) = inter_thread::create::<WasmThreadCommand, WasmResponse>();
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
-            .stack_size(16 * 1024) // by decreasing the stack size
+            .stack_size(8 * 1024) // by decreasing the stack size
             .spawn({
                 move || {
                     loop {
                         match WasmThread::listen(&listener) {
                             Ok(ok) => {
-                                log::info!("wasm thread is stopping")
+                                log::info!("wasm thread is stopping");
+                                thread::sleep(Duration::from_secs(1));
                             }
                             Err(err) => {
                                 log::warn!(
@@ -126,8 +127,12 @@ impl AutoScript {
         Ok(res)
     }
 
-    pub fn cancel(&self) {
+    pub async fn cancel(&self) {
         cancellation_token::cancel();
+        {
+            let mut auto_script_state_guard = self.auto_script_state.lock().await; // TODO: only set running when the response is actually ok
+            *auto_script_state_guard = AutoScriptState::Installed;
+        }
     }
     
 }

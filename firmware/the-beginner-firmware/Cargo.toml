@@ -37,14 +37,17 @@ futures = "0.3.34"
 static_cell = "2.1.1"
 flume = "0.12.0"
 
+[patch."https://github.com/bytecodealliance/wamr-rust-sdk"]
+wamr-rust-sdk = { path = "patched-wamr-rust-sdk/d2508ad" }
+
 [build-dependencies]
 embuild = "0.33"
 
 [[package.metadata.esp-idf-sys.extra_components]]
 remote_component = { name = "espressif/mdns", version = "1.8.2" }
 
-[[package.metadata.esp-idf-sys.extra_components]]
-remote_component = { name = "espressif/wasm-micro-runtime", version = "2.4.0~1" }
+# [[package.metadata.esp-idf-sys.extra_components]]
+# remote_component = { name = "espressif/wasm-micro-runtime", version = "2.4.0~1" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = [

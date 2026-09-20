@@ -100,7 +100,7 @@ where
     loop {
         select! {
             auto = auto_fut => {
-                log::error!("done");
+                log::error!("{:?}", auto);
                 // TODO: stuff with auto
 
                 // function done
@@ -139,7 +139,7 @@ where
 {
     log::info!("Starting cancel stream...");
 
-    auto_script.cancel();
+    auto_script.cancel().await;
 
     log::info!("done stream...");
 

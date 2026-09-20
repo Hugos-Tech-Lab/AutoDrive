@@ -6,7 +6,7 @@ mod ffi {
     unsafe extern "C" {
         /// takes u8 so we don't wait too long (i. 255ms max) between cancellation checks
         pub fn delay(milliseconds: u8);
-        pub fn print(text: u32);
+        pub fn print(ptr: u32, len: u32);
         pub fn set_onboard_led_color(r: u8, g: u8, b: u8);
     }
 }
@@ -26,9 +26,9 @@ pub fn delay(milliseconds: u64) {
     }
 }
 
-pub fn print(text: u32) {
+pub fn print(text: &str) {
     unsafe {
-        ffi::print(text);
+        ffi::print(text.as_ptr() as u32, text.len() as u32);
     }
 }
 

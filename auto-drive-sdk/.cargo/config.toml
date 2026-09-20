@@ -6,6 +6,6 @@ runner = ".cargo/runner.sh"
 rustflags = [
     "-C", "target-feature=-reference-types,-multivalue",
     "-C", "link-arg=-z",
-    "-C", "link-arg=stack-size=65536",
+    "-C", "link-arg=stack-size=16384",
     "-C", "link-arg=--initial-memory=65536",
 ]

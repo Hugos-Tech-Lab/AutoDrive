@@ -57,7 +57,7 @@ pub fn main() -> anyhow::Result<()> {
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
     let _hardware = OnBoardLed::new(peripherals.pins.gpio8, peripherals.spi2);
-    let auto_script = Arc::new(AutoScript::new());
+    let auto_script = Arc::new(AutoScript::new()?);
 
     let mut wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,

@@ -139,7 +139,7 @@ where
 {
     log::info!("Starting cancel stream...");
 
-    auto_script.cancel().await;
+    auto_script.cancel();
 
     log::info!("done stream...");
 

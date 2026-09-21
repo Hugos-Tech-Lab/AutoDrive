@@ -1,28 +1,27 @@
 use std::{
     ffi::c_void,
-    sync::mpsc::SyncSender,
+    sync::{
+        atomic::{AtomicU8, Ordering},
+        mpsc::SyncSender,
+        Arc,
+    },
     thread::{self, JoinHandle},
     time::Duration,
 };
 
 use crate::{
     auto_script::wasm_thread::{WasmThread, WasmThreadCommand},
-    inter_thread::{self, InterThreadListener, InterThreadProducer},
+    inter_thread::{self, InterThreadProducer},
 };
-use anyhow::{Result, bail};
-use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
-use embassy_sync::signal::Signal;
-use embassy_sync::{channel::Channel, mutex::Mutex};
-use esp_idf_sys::{MALLOC_CAP_8BIT, esp_get_free_heap_size, heap_caps_get_largest_free_block};
+use anyhow::{bail, Result};
 use flume::Sender;
-use log::info;
+use log::{info, warn};
 use serde::Serialize;
-use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
+
 pub mod cancellation_token;
 pub mod exposed_functions;
 pub mod wasm_thread;
 
-// TODO: might be more ergonomic if this only contained errors
 #[derive(Debug)]
 pub enum WasmResponse {
     SuccessfullyInstalled,
@@ -39,103 +38,127 @@ pub enum AutoScriptRunProgress {
     Stopping,
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[repr(u8)]
 pub enum AutoScriptState {
-    Uninstalled,
-    Installed,
-    Running,
+    Uninstalled = 0,
+    Installed = 1,
+    Running = 2,
+}
+
+// Helper to convert atomic reads back into our Enum safely
+impl From<u8> for AutoScriptState {
+    fn from(val: u8) -> Self {
+        match val {
+            1 => AutoScriptState::Installed,
+            2 => AutoScriptState::Running,
+            _ => AutoScriptState::Uninstalled,
+        }
+    }
 }
 
 pub struct AutoScript {
     wasm_thread: JoinHandle<()>,
-    auto_script_state: Mutex<CriticalSectionRawMutex, AutoScriptState>,
+    state: Arc<AtomicU8>,
     producer: InterThreadProducer<WasmThreadCommand, Result<()>>,
 }
 
 impl AutoScript {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self> {
         let (producer, listener) = inter_thread::create::<WasmThreadCommand, Result<()>>();
+        
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
             .stack_size(8 * 1024)
-            .spawn({
-                move || {
-                    let mut auto_script_wasm = WasmThread::new().unwrap();
+            .spawn(move || {
+                let mut auto_script_wasm = WasmThread::new().expect("Failed to init WasmThread");
 
-                    loop {
-                        match auto_script_wasm.listen(&listener) {
-                            Ok(ok) => {
-                                log::info!("wasm thread is stopping");
-                                thread::sleep(Duration::from_secs(1));
-                            }
-                            Err(err) => {
-                                log::warn!(
-                                    "wasm thread crashed: '{:?}'. Restarting in 1 second",
-                                    err
-                                );
-                                thread::sleep(Duration::from_secs(1));
-                            }
+                loop {
+                    match auto_script_wasm.listen(&listener) {
+                        Ok(_) => {
+                            info!("wasm thread processed command successfully");
+                        }
+                        Err(err) => {
+                            warn!("wasm thread crashed: '{:?}'. Restarting in 1s", err);
+                            thread::sleep(Duration::from_secs(1));
                         }
                     }
                 }
-            })
-            .unwrap(); // TODO: remove unwrap
+            })?; 
 
-        Self {
+        Ok(Self {
             producer,
             wasm_thread,
-            auto_script_state: AutoScriptState::Uninstalled.into(),
-        }
+            state: Arc::new(AtomicU8::new(AutoScriptState::Uninstalled as u8)),
+        })
+    }
+
+    pub fn get_state(&self) -> AutoScriptState {
+        self.state.load(Ordering::Acquire).into()
     }
 
     pub async fn install(&self, data: Vec<u8>) -> Result<()> {
-        {
-            let auto_script_state_guard = self.auto_script_state.lock().await;
-            if *auto_script_state_guard == AutoScriptState::Running {
-                return Err(anyhow::anyhow!("already running"));
-            }
+        if self.get_state() == AutoScriptState::Running {
+            bail!("already running");
         }
 
         self.producer
             .send_async(WasmThreadCommand::Install { data })
-            .await?; // TODO: add progress here too
+            .await?; 
 
-        {
-            let mut auto_script_state_guard = self.auto_script_state.lock().await;
-            *auto_script_state_guard = AutoScriptState::Installed;
-        }
+        // Update to installed ONLY if send_async succeeded
+        self.state.store(AutoScriptState::Installed as u8, Ordering::Release);
 
         Ok(())
     }
 
     pub async fn run(&self, progress: Sender<AutoScriptRunProgress>) -> Result<()> {
-        {
-            let mut auto_script_state_guard = self.auto_script_state.lock().await;
-            if *auto_script_state_guard == AutoScriptState::Running {
-                return Err(anyhow::anyhow!("already running"));
-            }
-            if *auto_script_state_guard == AutoScriptState::Uninstalled {
-                return Err(anyhow::anyhow!("not installed"));
-            }
-            *auto_script_state_guard = AutoScriptState::Running;
-        }
+        // Atomic compare_exchange ensures we can ONLY transition from Installed -> Running.
+        // This completely eliminates race conditions where two requests call run() at once.
+        self.state.compare_exchange(
+            AutoScriptState::Installed as u8,
+            AutoScriptState::Running as u8,
+            Ordering::SeqCst,
+            Ordering::SeqCst,
+        ).map_err(|_| anyhow::anyhow!("Cannot run: not installed or already running"))?;
+
+        // DROP GUARD: This guarantees the state resets to Installed even if 
+        // the HTTP client disconnects early and drops the Future.
+        let _guard = RunGuard { state: &self.state };
+
+        // Ensure cancellation token is cleared before we start a fresh run
+        // cancellation_token::reset(); // TODO: Implement this to avoid carrying over cancels
 
         self.producer
             .send_async(WasmThreadCommand::Run { progress })
             .await?;
 
-        {
-            let mut auto_script_state_guard = self.auto_script_state.lock().await; // TODO: only set running when the response is actually ok
-            *auto_script_state_guard = AutoScriptState::Installed;
-        }
+        // _guard goes out of scope here and automatically cleanly restores the state to `Installed`.
         Ok(())
     }
 
-    pub async fn cancel(&self) {
+    pub fn cancel(&self) {
         cancellation_token::cancel();
-        {
-            let mut auto_script_state_guard = self.auto_script_state.lock().await; // TODO: only set running when the response is actually ok
-            *auto_script_state_guard = AutoScriptState::Installed;
-        }
+    }
+}
+
+/// A scope guard that automatically handles state cleanup
+struct RunGuard<'a> {
+    state: &'a AtomicU8,
+}
+
+impl<'a> Drop for RunGuard<'a> {
+    fn drop(&mut self) {
+        // If this future drops unexpectedly (e.g. HTTP disconnect), trigger a background cancel
+        // to make sure the single-threaded Wasm instance doesn't run forever.
+        cancellation_token::cancel();
+
+        // Safely transition back to Installed ONLY if we were Running.
+        let _ = self.state.compare_exchange(
+            AutoScriptState::Running as u8,
+            AutoScriptState::Installed as u8,
+            Ordering::SeqCst,
+            Ordering::SeqCst,
+        );
     }
 }

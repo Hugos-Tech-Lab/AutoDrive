@@ -114,11 +114,13 @@ impl WasmThread {
         ct: CancellationToken,
     ) -> Result<()> {
         info!("running");
+        progress.send(AutoScriptRunProgress::ReceivedRunAction).unwrap();
 
         let installed_module = self.installed_module.clone().ok_or(anyhow::anyhow!(
             "installed module not found. did you install first before running?"
         ))?;
 
+        progress.send(AutoScriptRunProgress::InstantiatingInstance).unwrap();
         let instance = Rc::new(
             Instance::new(installed_module.clone(), 1024 * 16)
                 .map_err(|e| format!("failed to create instance: {}", e)) // TODO these should be more specific types for wasm and no unwrap AND CLEANUP TOO
@@ -137,14 +139,17 @@ impl WasmThread {
             )
         }; //  TODO: disable WAMR_BUILD_LIB_PTHREAD
 
+        progress.send(AutoScriptRunProgress::FindingMain).unwrap();
+
         let main_function = Function::find_export_func(instance.clone(), "main").unwrap();
 
+
+        progress.send(AutoScriptRunProgress::CallingMain).unwrap();
         let res = main_function.call(&vec![]);
         log::info!("{:?}", res);
 
         // cleanup after cancellation
         if wasm_data.ct.is_cancelled() {
-            progress.send(AutoScriptRunProgress::Starting).unwrap(); // TODO say we cancelled
             log::info!("cancelled");
         }
 

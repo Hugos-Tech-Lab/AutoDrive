@@ -34,7 +34,10 @@ pub enum WasmResponse {
 
 #[derive(Serialize)]
 pub enum AutoScriptRunProgress {
-    Starting,
+    ReceivedRunAction,
+    InstantiatingInstance,
+    FindingMain,
+    CallingMain,
     Log { message: String },
     Stopping,
 }

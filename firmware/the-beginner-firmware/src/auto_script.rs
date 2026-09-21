@@ -133,12 +133,10 @@ impl AutoScript {
             )
             .map_err(|_| anyhow::anyhow!("Cannot run: not installed or already running"))?;
 
-        // DROP GUARD: This guarantees the state resets to Installed even if
-        // the HTTP client disconnects early and drops the Future.
+
         let _guard = RunGuard { state: &self.state, ct: self.ct.clone() };
 
-        // Ensure cancellation token is cleared before we start a fresh run
-        // cancellation_token::reset(); // TODO: Implement this to avoid carrying over cancels
+        self.ct.reset();
 
         self.producer
             .send_async(WasmThreadCommand::Run { progress })

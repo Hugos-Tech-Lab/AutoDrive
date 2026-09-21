@@ -65,11 +65,12 @@ impl WasmThread {
             match listener.listen() {
                 Ok((command, response)) => match command {
                     WasmThreadCommand::Install { data } => {
-                        self.install(data).unwrap();
-                        response.send(Ok(()))?;
+                        let ret = self.install(data);
+                        response.send(ret)?;
                     }
                     WasmThreadCommand::Run { progress } => {
-                        self.run(progress, self.ct.clone())?;
+                        let ret = self.run(progress, self.ct.clone());
+                        response.send(ret)?;
                     }
                 },
                 Err(error) => {
@@ -125,9 +126,11 @@ impl WasmThread {
 
         // cleanup after cancellation
         if wasm_data.ct.is_cancelled() {
-            progress.send(AutoScriptRunProgress::Starting).unwrap(); // TODO cancel
+            progress.send(AutoScriptRunProgress::Starting).unwrap(); // TODO say we cancelled
             log::info!("cancelled");
         }
+
+
         log::info!("done");
         Ok(())
     }

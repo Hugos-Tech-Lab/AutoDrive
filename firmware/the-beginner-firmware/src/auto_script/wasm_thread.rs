@@ -1,13 +1,11 @@
 use std::{ffi::c_void, rc::Rc};
 
 use crate::{
-    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token},
-    inter_thread::InterThreadListener,
+    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token::{self, CancellationToken}}, inter_thread::InterThreadListener,
 };
 use anyhow::Result;
 use flume::Sender;
 use log::info;
-use thiserror::Error;
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime,
     sys::wasm_runtime_set_custom_data,
@@ -24,15 +22,17 @@ pub enum WasmThreadCommand {
 
 pub struct WasmData {
     pub progress: flume::Sender<AutoScriptRunProgress>,
+    pub ct: CancellationToken,
 }
 
 pub struct WasmThread {
     runtime: Rc<Runtime>,
     installed_module: Option<Rc<Module>>,
+    ct: CancellationToken,
 }
 
 impl WasmThread {
-    pub fn new() -> Result<Self> {
+    pub fn new(ct: CancellationToken) -> Result<Self> {
         let runtime = Runtime::builder()
             .use_system_allocator()
             .register_host_function(
@@ -52,6 +52,7 @@ impl WasmThread {
         Ok(Self {
             runtime: Rc::new(runtime),
             installed_module: None,
+            ct
         })
     }
 
@@ -68,7 +69,7 @@ impl WasmThread {
                         response.send(Ok(()))?;
                     }
                     WasmThreadCommand::Run { progress } => {
-                        self.run(progress)?;
+                        self.run(progress, self.ct.clone())?;
                     }
                 },
                 Err(error) => {
@@ -94,7 +95,7 @@ impl WasmThread {
         Ok(())
     }
 
-    pub fn run(&mut self, progress: Sender<AutoScriptRunProgress>) -> Result<()> {
+    pub fn run(&mut self, progress: Sender<AutoScriptRunProgress>, ct: CancellationToken) -> Result<()> {
         info!("running");
 
         let installed_module = self.installed_module.clone().ok_or(anyhow::anyhow!("installed module not found. did you install first before running?"))?;
@@ -107,6 +108,7 @@ impl WasmThread {
 
         let mut wasm_data = Box::new(WasmData {
             progress: progress.clone(),
+            ct,
         });
 
         unsafe {
@@ -114,7 +116,7 @@ impl WasmThread {
                 instance.get_inner_instance(),
                 wasm_data.as_mut() as *mut WasmData as *mut c_void,
             )
-        }; //  disable WAMR_BUILD_LIB_PTHREAD
+        }; //  TODO: disable WAMR_BUILD_LIB_PTHREAD
 
         let main_function = Function::find_export_func(instance.clone(), "main").unwrap();
 
@@ -122,7 +124,7 @@ impl WasmThread {
         log::info!("{:?}", res);
 
         // cleanup after cancellation
-        if cancellation_token::is_cancelled() {
+        if wasm_data.ct.is_cancelled() {
             progress.send(AutoScriptRunProgress::Starting).unwrap(); // TODO cancel
             log::info!("cancelled");
         }

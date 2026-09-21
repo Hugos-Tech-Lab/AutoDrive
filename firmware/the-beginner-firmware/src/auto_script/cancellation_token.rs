@@ -1,16 +1,26 @@
-use std::sync::{atomic::{AtomicBool, Ordering}};
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 
-static WASM_CANCELLED: AtomicBool = AtomicBool::new(false);
-
-pub fn cancel() {
-    WASM_CANCELLED.store(true, Ordering::Relaxed);
+#[derive(Clone)]
+pub struct CancellationToken {
+    raw: Arc<AtomicBool>,
 }
 
-pub fn is_cancelled() -> bool {
-    WASM_CANCELLED.load(Ordering::Relaxed)
-}
+impl CancellationToken {
+    pub fn new() -> Self {
+        Self {
+            raw: Arc::new(AtomicBool::new(false)),
+        }
+    }
 
-pub fn reset() {
-    WASM_CANCELLED.store(false, Ordering::Relaxed);
-}
+    pub fn cancel(&self) {
+        self.raw.store(true, Ordering::Relaxed);
+    }
 
+    pub fn is_cancelled(&self) -> bool {
+        self.raw.load(Ordering::Relaxed)
+    }
+
+    pub fn reset(&self) {
+        self.raw.store(false, Ordering::Relaxed);
+    }
+}

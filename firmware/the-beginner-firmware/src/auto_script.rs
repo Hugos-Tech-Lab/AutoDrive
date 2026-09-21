@@ -20,6 +20,8 @@ pub mod exposed_functions;
 pub mod wasm_thread;
 use static_cell::StaticCell;
 
+
+// TODO: might be more ergonomic if this only contained errors
 #[derive(Debug)]
 pub enum WasmResponse {
     SuccessfullyInstalled,
@@ -57,8 +59,10 @@ impl AutoScript {
             .stack_size(8 * 1024) 
             .spawn({
                 move || {
+                    let mut auto_script_wasm = WasmThread::new().unwrap();
+
                     loop {
-                        match WasmThread::listen(&listener) {
+                        match auto_script_wasm.listen(&listener) {
                             Ok(ok) => {
                                 log::info!("wasm thread is stopping");
                                 thread::sleep(Duration::from_secs(1));

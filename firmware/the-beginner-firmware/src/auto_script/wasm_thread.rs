@@ -7,6 +7,7 @@ use crate::{
 use anyhow::Result;
 use flume::Sender;
 use log::info;
+use thiserror::Error;
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime,
     sys::wasm_runtime_set_custom_data,
@@ -56,18 +57,18 @@ impl WasmThread {
 
     pub fn listen(
         &mut self,
-        listener: &InterThreadListener<WasmThreadCommand, WasmResponse>,
+        listener: &InterThreadListener<WasmThreadCommand, Result<()>>,
     ) -> Result<()> {
-        info!("WASM runtime started");
+        info!("WASM runtime started listening for requests.");
         loop {
             match listener.listen() {
                 Ok((command, response)) => match command {
                     WasmThreadCommand::Install { data } => {
                         self.install(data).unwrap();
-                        response.send(WasmResponse::SuccessfullyInstalled)?;
+                        response.send(Ok(()))?;
                     }
                     WasmThreadCommand::Run { progress } => {
-                        self.run(progress);
+                        self.run(progress)?;
                     }
                 },
                 Err(error) => {
@@ -77,33 +78,26 @@ impl WasmThread {
             }
         }
 
-        info!("WASM thread stopped");
+        info!("WASM runtime stopped listening for requests.");
         Ok(())
     }
 
-    fn install(&mut self, data: Vec<u8>) -> Result<(), WasmResponse> {
+    fn install(&mut self, data: Vec<u8>) -> Result<()> {
         self.installed_module = None;
 
-        let module = self
-            .installed_module
-            .insert(Rc::new(
-                Module::from_vec(self.runtime.clone(), data, "env")
-                    .map_err(|e| format!("failed to create module: {e:?}"))
-                    .unwrap(),
-            ))
-            .clone();
+        let module = Module::from_vec(self.runtime.clone(), data, "env")
+            .map_err(|e| anyhow::anyhow!("failed to create module: {e:?}"))?;
+
+        let module = self.installed_module.insert(Rc::new(module)).clone();
 
         self.installed_module = Some(module);
         Ok(())
     }
 
-    pub fn run(&mut self, progress: Sender<AutoScriptRunProgress>) {
+    pub fn run(&mut self, progress: Sender<AutoScriptRunProgress>) -> Result<()> {
         info!("running");
 
-        let Some(ref installed_module) = self.installed_module else {
-            // TODO: give error module should be installed
-            return;
-        };
+        let installed_module = self.installed_module.clone().ok_or(anyhow::anyhow!("installed module not found. did you install first before running?"))?;
 
         let instance = Rc::new(
             Instance::new(installed_module.clone(), 1024 * 16)
@@ -111,7 +105,9 @@ impl WasmThread {
                 .unwrap(),
         );
 
-        let mut wasm_data = Box::new(WasmData { progress });
+        let mut wasm_data = Box::new(WasmData {
+            progress: progress.clone(),
+        });
 
         unsafe {
             wasm_runtime_set_custom_data(
@@ -127,8 +123,10 @@ impl WasmThread {
 
         // cleanup after cancellation
         if cancellation_token::is_cancelled() {
+            progress.send(AutoScriptRunProgress::Starting).unwrap(); // TODO cancel
             log::info!("cancelled");
         }
         log::info!("done");
+        Ok(())
     }
 }

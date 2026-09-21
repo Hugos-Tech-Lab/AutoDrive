@@ -5,7 +5,10 @@ use std::{
     time::Duration,
 };
 
-use crate::{auto_script::wasm_thread::{WasmThread, WasmThreadCommand}, inter_thread::{self, InterThreadListener, InterThreadProducer}};
+use crate::{
+    auto_script::wasm_thread::{WasmThread, WasmThreadCommand},
+    inter_thread::{self, InterThreadListener, InterThreadProducer},
+};
 use anyhow::{Result, bail};
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::signal::Signal;
@@ -18,8 +21,6 @@ use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runt
 pub mod cancellation_token;
 pub mod exposed_functions;
 pub mod wasm_thread;
-use static_cell::StaticCell;
-
 
 // TODO: might be more ergonomic if this only contained errors
 #[derive(Debug)]
@@ -34,7 +35,7 @@ pub enum WasmResponse {
 #[derive(Serialize)]
 pub enum AutoScriptRunProgress {
     Starting,
-    Log{message: String},
+    Log { message: String },
     Stopping,
 }
 
@@ -48,15 +49,15 @@ pub enum AutoScriptState {
 pub struct AutoScript {
     wasm_thread: JoinHandle<()>,
     auto_script_state: Mutex<CriticalSectionRawMutex, AutoScriptState>,
-    producer: InterThreadProducer<WasmThreadCommand, WasmResponse>,
+    producer: InterThreadProducer<WasmThreadCommand, Result<()>>,
 }
 
 impl AutoScript {
     pub fn new() -> Self {
-        let (producer, listener) = inter_thread::create::<WasmThreadCommand, WasmResponse>();
+        let (producer, listener) = inter_thread::create::<WasmThreadCommand, Result<()>>();
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
-            .stack_size(8 * 1024) 
+            .stack_size(8 * 1024)
             .spawn({
                 move || {
                     let mut auto_script_wasm = WasmThread::new().unwrap();
@@ -87,48 +88,47 @@ impl AutoScript {
         }
     }
 
-    pub async fn install(&self, data: Vec<u8>) -> Result<WasmResponse> {
+    pub async fn install(&self, data: Vec<u8>) -> Result<()> {
         {
             let auto_script_state_guard = self.auto_script_state.lock().await;
             if *auto_script_state_guard == AutoScriptState::Running {
-                return Ok(WasmResponse::StartError("already running".to_string()));
+                return Err(anyhow::anyhow!("already running"));
             }
         }
 
-        let res = self
-            .producer
+        self.producer
             .send_async(WasmThreadCommand::Install { data })
-            .await; // TODO: add progress here too
+            .await?; // TODO: add progress here too
 
         {
             let mut auto_script_state_guard = self.auto_script_state.lock().await;
             *auto_script_state_guard = AutoScriptState::Installed;
         }
 
-        Ok(res)
+        Ok(())
     }
 
-    pub async fn run(&self, progress: Sender<AutoScriptRunProgress>) -> Result<WasmResponse> {
+    pub async fn run(&self, progress: Sender<AutoScriptRunProgress>) -> Result<()> {
         {
             let mut auto_script_state_guard = self.auto_script_state.lock().await;
             if *auto_script_state_guard == AutoScriptState::Running {
-                return Ok(WasmResponse::StartError("already running".to_string()));
+                return Err(anyhow::anyhow!("already running"));
             }
             if *auto_script_state_guard == AutoScriptState::Uninstalled {
-                return Ok(WasmResponse::StartError("not installed".to_string()));
+                return Err(anyhow::anyhow!("not installed"));
             }
             *auto_script_state_guard = AutoScriptState::Running;
         }
 
-        let res = self
-            .producer
+        self.producer
             .send_async(WasmThreadCommand::Run { progress })
-            .await;
+            .await?;
+
         {
             let mut auto_script_state_guard = self.auto_script_state.lock().await; // TODO: only set running when the response is actually ok
             *auto_script_state_guard = AutoScriptState::Installed;
         }
-        Ok(res)
+        Ok(())
     }
 
     pub async fn cancel(&self) {
@@ -138,7 +138,4 @@ impl AutoScript {
             *auto_script_state_guard = AutoScriptState::Installed;
         }
     }
-    
 }
-
-

@@ -1,11 +1,17 @@
 use std::{ffi::c_void, rc::Rc};
 
 use crate::{
-    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token::{self, CancellationToken}}, inter_thread::InterThreadListener,
+    auto_script::{
+        AutoScriptRunProgress, WasmResponse,
+        cancellation_token::{self, CancellationToken},
+    },
+    hardware::on_board_led::OnBoardLed,
+    inter_thread::InterThreadListener,
 };
 use anyhow::Result;
 use flume::Sender;
 use log::info;
+use smart_leds_trait::RGB8;
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime,
     sys::wasm_runtime_set_custom_data,
@@ -23,6 +29,12 @@ pub enum WasmThreadCommand {
 pub struct WasmData {
     pub progress: flume::Sender<AutoScriptRunProgress>,
     pub ct: CancellationToken,
+}
+
+impl Drop for WasmData {
+    fn drop(&mut self) {
+        OnBoardLed::set_color(RGB8 { r: 0, g: 0, b: 0 })
+    }
 }
 
 pub struct WasmThread {
@@ -52,7 +64,7 @@ impl WasmThread {
         Ok(Self {
             runtime: Rc::new(runtime),
             installed_module: None,
-            ct
+            ct,
         })
     }
 
@@ -96,10 +108,16 @@ impl WasmThread {
         Ok(())
     }
 
-    pub fn run(&mut self, progress: Sender<AutoScriptRunProgress>, ct: CancellationToken) -> Result<()> {
+    pub fn run(
+        &mut self,
+        progress: Sender<AutoScriptRunProgress>,
+        ct: CancellationToken,
+    ) -> Result<()> {
         info!("running");
 
-        let installed_module = self.installed_module.clone().ok_or(anyhow::anyhow!("installed module not found. did you install first before running?"))?;
+        let installed_module = self.installed_module.clone().ok_or(anyhow::anyhow!(
+            "installed module not found. did you install first before running?"
+        ))?;
 
         let instance = Rc::new(
             Instance::new(installed_module.clone(), 1024 * 16)
@@ -129,7 +147,6 @@ impl WasmThread {
             progress.send(AutoScriptRunProgress::Starting).unwrap(); // TODO say we cancelled
             log::info!("cancelled");
         }
-
 
         log::info!("done");
         Ok(())

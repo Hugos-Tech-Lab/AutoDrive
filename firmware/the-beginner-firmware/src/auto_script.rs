@@ -141,8 +141,6 @@ impl AutoScript {
         self.producer
             .send_async(WasmThreadCommand::Run { progress })
             .await?;
-
-        // _guard goes out of scope here and automatically cleanly restores the state to `Installed`.
         Ok(())
     }
 

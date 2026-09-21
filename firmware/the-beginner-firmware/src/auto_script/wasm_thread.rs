@@ -1,14 +1,16 @@
 use std::{
     ffi::c_void,
-    sync::mpsc::SyncSender,
-    thread::{self, JoinHandle},
-    time::Duration,
+    rc::Rc,
 };
 
 use crate::{
-    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token, exposed_functions::CURRENT_RUN_PROGRESS}, inter_thread::{self, InterThreadListener, InterThreadProducer}, utils::heap,
+    auto_script::{
+        AutoScriptRunProgress, WasmResponse, cancellation_token,
+        exposed_functions::CURRENT_RUN_PROGRESS,
+    },
+    inter_thread::{InterThreadListener},
 };
-use anyhow::{Result, bail};
+use anyhow::{Result};
 use flume::Sender;
 use log::info;
 use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
@@ -22,10 +24,15 @@ pub enum WasmThreadCommand {
     },
 }
 
-pub struct WasmThread;
+pub struct WasmThread {
+    runtime: Rc<Runtime>,
+    installed_module: Option<Rc<Module>>,
+    running_instance: Option<Rc<Instance>>,
+    running_instance_main: Option<Function>,
+}
 
 impl WasmThread {
-    fn build_runtime(memory_pool: &mut Vec<u8>) -> Runtime {
+    pub fn new() -> Result<Self> {
         let runtime = Runtime::builder()
             .use_system_allocator()
             .register_host_function(
@@ -40,191 +47,32 @@ impl WasmThread {
                 "set_onboard_led_color",
                 crate::auto_script::exposed_functions::set_onboard_led_color as *mut c_void,
             )
-            .build()
-            .unwrap();
-        runtime
+            .build()?;
+
+        Ok(Self {
+            runtime: Rc::new(runtime),
+            installed_module: None,
+            running_instance: None,
+            running_instance_main: None,
+        })
     }
 
-    #[allow(
-        unused_assignments,
-        reason = "it seems the compiler is used how we are using objects through references..."
-    )]
-    pub fn listen(listener: &InterThreadListener<WasmThreadCommand, WasmResponse>) -> Result<()> {
-        info!("2: {:?}", heap());
-        let mut memory_pool = vec![0u8; 0];
-        let runtime = Self::build_runtime(&mut memory_pool);
-        let mut maybe_module = None;
-        let mut maybe_instance = None;
-        let mut maybe_main_function = None;
+    pub fn listen(
+        &mut self,
+        listener: &InterThreadListener<WasmThreadCommand, WasmResponse>,
+    ) -> Result<()> {
         info!("WASM runtime started");
         loop {
             match listener.listen() {
                 Ok((command, response)) => match command {
                     WasmThreadCommand::Install { data } => {
-                        maybe_main_function = None; // when commenting this line, the compiler doesn't complain... isn't that a memory bug?
-                        maybe_instance = None;
-                        maybe_module = None;
-
-                        let module = maybe_module.insert(
-                            Module::from_vec(&runtime, data, "env")
-                                .map_err(|e| format!("failed to create module: {e:?}"))
-                                .unwrap(),
-                        );
-
-                        let mut instance_create_error = Option::None;
-                        match Instance::new(&runtime, module, 1024 * 16) {
-                            Ok(instance) => maybe_instance = Some(instance),
-                            Err(error) => instance_create_error = Some(error),
-                        }
-
-                        if let Some(instance_create_error) = instance_create_error {
-                            response.send(WasmResponse::InstallError(format!(
-                                "failed to create instance: {}",
-                                instance_create_error
-                            )))?;
-                            maybe_main_function = None;
-                            maybe_instance = None;
-                            maybe_module = None;
-                            continue;
-                        }
-
-                        // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
-                        let Some(instance) = maybe_instance.as_ref() else {
-                            response.send(WasmResponse::InternalError(format!(
-                            "failed to get the created instance. This is a code bug in the library"
-                        )))?;
-                            maybe_main_function = None;
-                            maybe_instance = None;
-                            maybe_module = None;
-                            continue;
-                        };
-
-                        let mut main_function_find_error = Option::None;
-                        match Function::find_export_func(instance, "main") {
-                            Ok(main_function) => maybe_main_function = Some(main_function),
-                            Err(error) => main_function_find_error = Some(error),
-                        }
-
-                        if let Some(main_function_find_error) = main_function_find_error {
-                            response.send(WasmResponse::InstallError(format!(
-                                "failed to find export function (is main defined?): {}",
-                                main_function_find_error
-                            )))?;
-                            maybe_main_function = None;
-                            maybe_instance = None;
-                            maybe_module = None;
-                            continue;
-                        }
-
+                        self.install(data).unwrap();
                         response.send(WasmResponse::SuccessfullyInstalled)?;
                     }
                     WasmThreadCommand::Run { progress } => {
-                        {
-                            let mut current_run_progress = CURRENT_RUN_PROGRESS.lock().unwrap();
-                            *current_run_progress = Some(progress.clone());
-                        }
-                        info!("running");
-                        {
-                            progress.send(AutoScriptRunProgress::Starting)?;
-
-                            let Some(ref instance) = maybe_instance else {
-                                response.send(WasmResponse::StartError(
-                                    "Wasm instance not installed. Try to install first before running"
-                                        .to_string(),
-                                ))?;
-                                continue;
-                            };
-                            crate::auto_script::cancellation_token::reset();
-
-                            progress.send(AutoScriptRunProgress::Starting).unwrap();
-                            if let Some(ref main_function) = maybe_main_function {
-                                progress.send(AutoScriptRunProgress::Starting)?;
-                                let res = main_function.call(&instance, &vec![]);
-                                log::info!("{:?}", res);
-                            } else {
-                                response.send(WasmResponse::StartError(
-                                    "Main function not found. Try to reinstall before running"
-                                        .to_string(),
-                                ))?;
-                                continue;
-                            }
-                        }
-
-                        // cleanup after cancellation
-                        if cancellation_token::is_cancelled() {
-                            log::info!("cancelled");
-                            maybe_main_function = None;
-                            maybe_instance = None;
-
-                            // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
-                            let Some(module) = maybe_module.as_ref() else {
-                                response.send(WasmResponse::InternalError(format!(
-                                "failed to get the created instance. This is a code bug in the library"
-                            )))?;
-                                maybe_main_function = None;
-                                maybe_instance = None;
-                                maybe_module = None;
-                                log::info!("1111");
-
-                                continue;
-                            };
-
-                            let mut instance_create_error = Option::None;
-                            match Instance::new(&runtime, module, 1024 * 16) {
-                                Ok(instance) => maybe_instance = Some(instance),
-                                Err(error) => instance_create_error = Some(error),
-                            }
-
-                            if let Some(instance_create_error) = instance_create_error {
-                                log::info!("{:?}", instance_create_error);
-
-                                response.send(WasmResponse::InstallError(format!(
-                                    "failed to create instance: {}",
-                                    instance_create_error
-                                )))?;
-                                maybe_main_function = None;
-                                maybe_instance = None;
-                                maybe_module = None;
-                                log::info!("4444");
-
-                                continue;
-                            }
-
-                            // Unfortunately Rust doesn't seem to provide a way to get immutable references on insert.
-                            let Some(instance) = maybe_instance.as_ref() else {
-                                response.send(WasmResponse::InternalError(format!(
-                            "failed to get the created instance. This is a code bug in the library"
-                        )))?;
-
-                                maybe_main_function = None;
-                                maybe_instance = None;
-                                maybe_module = None;
-                                log::info!("6666");
-
-                                continue;
-                            };
-                            log::info!("7777");
-
-                            let mut main_function_find_error = Option::None;
-                            match Function::find_export_func(instance, "main") {
-                                Ok(main_function) => maybe_main_function = Some(main_function),
-                                Err(error) => main_function_find_error = Some(error),
-                            }
-
-                            if let Some(main_function_find_error) = main_function_find_error {
-                                response.send(WasmResponse::InstallError(format!(
-                                    "failed to find export function (is main defined?): {}",
-                                    main_function_find_error
-                                )))?;
-                                maybe_main_function = None;
-                                maybe_instance = None;
-                                maybe_module = None;
-                                continue;
-                            }
-                        }
-                        log::info!("done");
-
-                        response.send(WasmResponse::SuccessfullyRun)?;
+                        let mut current_run_progress = CURRENT_RUN_PROGRESS.lock().unwrap();
+                        *current_run_progress = Some(progress.clone());
+                        self.run();
                     }
                 },
                 Err(error) => {
@@ -236,5 +84,58 @@ impl WasmThread {
 
         info!("WASM thread stopped");
         Ok(())
+    }
+
+    fn install(&mut self, data: Vec<u8>) -> Result<(), WasmResponse> {
+        self.running_instance_main = None;
+        self.running_instance = None;
+        self.installed_module = None;
+
+        let module = self
+            .installed_module
+            .insert(Rc::new(
+                Module::from_vec(self.runtime.clone(), data, "env")
+                    .map_err(|e| format!("failed to create module: {e:?}"))
+                    .unwrap(),
+            ))
+            .clone();
+
+        self.instantiate(module.clone());
+        Ok(())
+    }
+
+    fn instantiate(&mut self, module: Rc<Module>) {
+        self.running_instance_main = None;
+        self.running_instance = None;
+        self.installed_module = Some(module.clone());
+
+        let instance = self.running_instance.insert(
+            Instance::new(module.clone(), 1024 * 16)
+                .map_err(|e| format!("failed to create instance: {}", e)) // TODO these should be more specific types for wasm and no unwrap AND CLEANUP TOO
+                .unwrap()
+                .into(),
+        );
+
+        self.running_instance_main =
+            Some(Function::find_export_func(instance.clone(), "main").unwrap());
+    }
+
+    pub fn run(&mut self) {
+        info!("running");
+        if let Some(ref main_function) = self.running_instance_main {
+            let res = main_function.call(&vec![]);
+            log::info!("{:?}", res);
+        } else {
+            // TODO: tell the user
+        }
+
+        // cleanup after cancellation
+        if cancellation_token::is_cancelled() {
+            let module = self.installed_module.clone().unwrap();
+
+            log::info!("cancelled");
+            self.instantiate(module)
+        }
+        log::info!("done");
     }
 }

@@ -1,19 +1,16 @@
-use std::{
-    ffi::c_void,
-    rc::Rc,
-};
+use std::{ffi::c_void, rc::Rc};
 
 use crate::{
-    auto_script::{
-        AutoScriptRunProgress, WasmResponse, cancellation_token,
-        exposed_functions::CURRENT_RUN_PROGRESS,
-    },
-    inter_thread::{InterThreadListener},
+    auto_script::{AutoScriptRunProgress, WasmResponse, cancellation_token},
+    inter_thread::InterThreadListener,
 };
-use anyhow::{Result};
+use anyhow::Result;
 use flume::Sender;
 use log::info;
-use wamr_rust_sdk::{function::Function, instance::Instance, module::Module, runtime::Runtime};
+use wamr_rust_sdk::{
+    function::Function, instance::Instance, module::Module, runtime::Runtime,
+    sys::wasm_runtime_set_custom_data,
+};
 
 pub enum WasmThreadCommand {
     Install {
@@ -24,11 +21,13 @@ pub enum WasmThreadCommand {
     },
 }
 
+pub struct WasmData {
+    pub progress: flume::Sender<AutoScriptRunProgress>,
+}
+
 pub struct WasmThread {
     runtime: Rc<Runtime>,
     installed_module: Option<Rc<Module>>,
-    running_instance: Option<Rc<Instance>>,
-    running_instance_main: Option<Function>,
 }
 
 impl WasmThread {
@@ -52,8 +51,6 @@ impl WasmThread {
         Ok(Self {
             runtime: Rc::new(runtime),
             installed_module: None,
-            running_instance: None,
-            running_instance_main: None,
         })
     }
 
@@ -70,9 +67,7 @@ impl WasmThread {
                         response.send(WasmResponse::SuccessfullyInstalled)?;
                     }
                     WasmThreadCommand::Run { progress } => {
-                        let mut current_run_progress = CURRENT_RUN_PROGRESS.lock().unwrap();
-                        *current_run_progress = Some(progress.clone());
-                        self.run();
+                        self.run(progress);
                     }
                 },
                 Err(error) => {
@@ -87,8 +82,6 @@ impl WasmThread {
     }
 
     fn install(&mut self, data: Vec<u8>) -> Result<(), WasmResponse> {
-        self.running_instance_main = None;
-        self.running_instance = None;
         self.installed_module = None;
 
         let module = self
@@ -100,41 +93,41 @@ impl WasmThread {
             ))
             .clone();
 
-        self.instantiate(module.clone());
+        self.installed_module = Some(module);
         Ok(())
     }
 
-    fn instantiate(&mut self, module: Rc<Module>) {
-        self.running_instance_main = None;
-        self.running_instance = None;
-        self.installed_module = Some(module.clone());
+    pub fn run(&mut self, progress: Sender<AutoScriptRunProgress>) {
+        info!("running");
 
-        let instance = self.running_instance.insert(
-            Instance::new(module.clone(), 1024 * 16)
+        let Some(ref installed_module) = self.installed_module else {
+            // TODO: give error module should be installed
+            return;
+        };
+
+        let instance = Rc::new(
+            Instance::new(installed_module.clone(), 1024 * 16)
                 .map_err(|e| format!("failed to create instance: {}", e)) // TODO these should be more specific types for wasm and no unwrap AND CLEANUP TOO
-                .unwrap()
-                .into(),
+                .unwrap(),
         );
 
-        self.running_instance_main =
-            Some(Function::find_export_func(instance.clone(), "main").unwrap());
-    }
+        let mut wasm_data = Box::new(WasmData { progress });
 
-    pub fn run(&mut self) {
-        info!("running");
-        if let Some(ref main_function) = self.running_instance_main {
-            let res = main_function.call(&vec![]);
-            log::info!("{:?}", res);
-        } else {
-            // TODO: tell the user
-        }
+        unsafe {
+            wasm_runtime_set_custom_data(
+                instance.get_inner_instance(),
+                wasm_data.as_mut() as *mut WasmData as *mut c_void,
+            )
+        }; //  disable WAMR_BUILD_LIB_PTHREAD
+
+        let main_function = Function::find_export_func(instance.clone(), "main").unwrap();
+
+        let res = main_function.call(&vec![]);
+        log::info!("{:?}", res);
 
         // cleanup after cancellation
         if cancellation_token::is_cancelled() {
-            let module = self.installed_module.clone().unwrap();
-
             log::info!("cancelled");
-            self.instantiate(module)
         }
         log::info!("done");
     }

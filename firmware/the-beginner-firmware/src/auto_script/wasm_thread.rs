@@ -46,7 +46,10 @@ impl WasmThread {
         let hea = heap();
         dbg!("before alloc {:?}", hea);
         let runtime_pool = vec![0u8; 32 * 1024].into_boxed_slice();
-        let linear_pool = vec![0u8; 64 * 1024 + 32].into_boxed_slice();
+        // 64kb is one page
+        // ~1kb for static strings
+        // ~1kb for allocator header
+        let linear_pool = vec![0u8; 66 * 1024].into_boxed_slice();
         dbg!("1111111111111111111111111");
         let hea = heap();
         dbg!("after alloc {:?}", hea);

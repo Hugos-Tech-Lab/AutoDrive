@@ -10,6 +10,10 @@ int main(void) {
     while (1) {
         print(text, len);
         delay(1000);
+        print(text, len);
+        delay(1000);
+        print(text, len);
+
     }
 
     return 0;

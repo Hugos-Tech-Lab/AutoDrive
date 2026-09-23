@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [build-dependencies]
-auto-drive-interface = { path = "../auto-drive-interface" }
+auto-drive-interface = { path = "../../auto-drive-interface" }
 
 [[bin]]
 name = "auto-drive"

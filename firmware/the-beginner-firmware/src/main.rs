@@ -21,7 +21,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    auto_script::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, utils::heap,
+    auto_script::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::OnBoardLed, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, logger::init_logging, utils::{heap, stack},
 };
 use esp_idf_sys::{
     CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL
@@ -52,7 +52,6 @@ pub fn main() -> anyhow::Result<()> {
 
     init_logging();
     info!("starting");
-
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
@@ -64,10 +63,8 @@ pub fn main() -> anyhow::Result<()> {
         sys_loop,
     )?;
     connect_to_wifi(&mut wifi)?;
-
     let mut mdns = EspMdns::take()?;
     mdns.set_hostname("the-beginner")?;
-
     let mut ota = EspOta::new().context("failed to obtain OTA instance")?;
 
     verify_and_set_valid(&mut ota)?;
@@ -76,7 +73,7 @@ pub fn main() -> anyhow::Result<()> {
     info!("1: {:?}", heap());
 
     let handle = std::thread::Builder::new()
-        .name("async_main".into())
+        .name("http_server".into())
         .stack_size(70 * 1024)
         .spawn(|| {
             let mut server = SmallServer::new();

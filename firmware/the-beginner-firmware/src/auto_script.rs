@@ -11,8 +11,7 @@ use crate::{
     auto_script::{
         cancellation_token::CancellationToken,
         wasm_thread::{WasmThread, WasmThreadCommand},
-    },
-    inter_thread::{self, InterThreadProducer},
+    }, inter_thread::{self, InterThreadProducer}, utils::stack,
 };
 use anyhow::{Result, bail};
 use flume::Sender;
@@ -88,8 +87,7 @@ impl AutoScript {
                                 info!("wasm thread processed command successfully");
                             }
                             Err(err) => {
-                                warn!("wasm thread crashed: '{:?}'. Restarting in 1s", err);
-                                thread::sleep(Duration::from_secs(1));
+                                panic!("wasm thread crashed: '{:?}'", err);
                             }
                         }
                     }

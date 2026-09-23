@@ -4,11 +4,9 @@ use crate::{
     auto_script::{
         AutoScriptRunProgress, WasmResponse,
         cancellation_token::{self, CancellationToken},
-    },
-    hardware::on_board_led::OnBoardLed,
-    inter_thread::InterThreadListener,
+    }, hardware::on_board_led::OnBoardLed, inter_thread::InterThreadListener, utils::heap,
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use flume::Sender;
 use log::info;
 use smart_leds_trait::RGB8;
@@ -45,8 +43,15 @@ pub struct WasmThread {
 
 impl WasmThread {
     pub fn new(ct: CancellationToken) -> Result<Self> {
+        let hea = heap();
+        dbg!("before alloc {:?}", hea);
+        let runtime_pool = vec![0u8; 32 * 1024].into_boxed_slice();
+        let linear_pool = vec![0u8; 64 * 1024 + 32].into_boxed_slice();
+        dbg!("1111111111111111111111111");
+        let hea = heap();
+        dbg!("after alloc {:?}", hea);
         let runtime = Runtime::builder()
-            .use_system_allocator()
+            .use_memory_pool(runtime_pool, linear_pool)
             .register_host_function(
                 "delay",
                 crate::auto_script::exposed_functions::delay as *mut c_void,
@@ -60,6 +65,8 @@ impl WasmThread {
                 crate::auto_script::exposed_functions::set_onboard_led_color as *mut c_void,
             )
             .build()?;
+
+        dbg!("2222222222222222222222222");
 
         Ok(Self {
             runtime: Rc::new(runtime),
@@ -86,14 +93,10 @@ impl WasmThread {
                     }
                 },
                 Err(error) => {
-                    log::error!("error listening in wasm thread: {:?}", error);
-                    break;
+                    return Err(anyhow!("error listening in wasm thread: {:?}", error));
                 }
             }
         }
-
-        info!("WASM runtime stopped listening for requests.");
-        Ok(())
     }
 
     fn install(&mut self, data: Vec<u8>) -> Result<()> {

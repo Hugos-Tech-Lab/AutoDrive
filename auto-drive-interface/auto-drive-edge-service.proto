@@ -1,0 +1,9 @@
+service AutoDriveEdgeService {
+    // Auto Script
+    rpc InstallAutoScript (GetBookRequest) returns (Book) {}
+    rpc StartAutoScript (GetBookViaAuthor) returns (stream Book) {}
+    // Manual
+    rpc GetGreatestBook (stream GetBookRequest) returns (Book) {}
+    rpc GetBooks (stream GetBookRequest) returns (stream Book) {}
+    // 
+}

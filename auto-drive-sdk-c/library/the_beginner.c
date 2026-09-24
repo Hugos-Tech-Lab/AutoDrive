@@ -21,7 +21,7 @@ extern void set_onboard_led_color(uint8_t r, uint8_t g, uint8_t b);
 #define WASM_EXPORT __attribute__((export_name(#__VA_ARGS__)))
 
 __attribute__((export_name("delay")))
-void robot_delay(uint64_t milliseconds) {
+void delay(uint64_t milliseconds) {
     while (milliseconds > 255) {
         delay(255);
         milliseconds -= 255;
@@ -33,11 +33,11 @@ void robot_delay(uint64_t milliseconds) {
 }
 
 __attribute__((export_name("print")))
-void robot_print(const char* text, uint32_t len) {
+void print(const char* text, uint32_t len) {
     print(text, len);
 }
 
 __attribute__((export_name("set_onboard_led_color")))
-void robot_set_onboard_led_color(uint8_t r, uint8_t g, uint8_t b) {
+void set_onboard_led_color(uint8_t r, uint8_t g, uint8_t b) {
     set_onboard_led_color(r, g, b);
 }

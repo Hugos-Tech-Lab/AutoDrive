@@ -116,12 +116,10 @@ msgid "Website"
 msgstr "Website"
 
 #: src/lib/Account.svelte
-#: src/lib/components/Account.svelte
 msgid "Saving ..."
 msgstr "Saving ..."
 
 #: src/lib/Account.svelte
-#: src/lib/components/Account.svelte
 msgid "Update profile"
 msgstr "Update profile"
 
@@ -293,7 +291,7 @@ msgstr "Auto Drive"
 #~ msgid "Hugo's Tesch Lab"
 #~ msgstr "Hugo's Tesch Lab"
 
-#: src/lib/components/Account.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Leaderboard"
 msgstr "Leaderboard"
 
@@ -351,17 +349,15 @@ msgstr "THINK YOU CAN CODE? <0>Prove</0> it"
 #~ msgid "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
 #~ msgstr "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
 
-#: src/lib/components/Account.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "My Algorithms"
 msgstr "My Algorithms"
 
-#: src/lib/components/Account.svelte
-msgid "Real Time Play"
-msgstr "Real Time Play"
+#~ msgid "Real Time Play"
+#~ msgstr "Real Time Play"
 
-#: src/lib/components/Account.svelte
-msgid "Live Debug"
-msgstr "Live Debug"
+#~ msgid "Live Debug"
+#~ msgstr "Live Debug"
 
 #~ msgid "Try"
 #~ msgstr "Try"
@@ -369,9 +365,8 @@ msgstr "Live Debug"
 #~ msgid "Cars"
 #~ msgstr "Cars"
 
-#: src/lib/components/LandingPage.svelte
-msgid "Control a real small machine remotely"
-msgstr "Control a real small machine remotely"
+#~ msgid "Control a real small machine remotely"
+#~ msgstr "Control a real small machine remotely"
 
 #~ msgid "Machines"
 #~ msgstr "Machines"
@@ -382,10 +377,37 @@ msgstr "Control a real small machine remotely"
 #~ msgid "The Tracks"
 #~ msgstr "The Tracks"
 
-#: src/lib/components/LandingPage.svelte
-msgid "The Track"
-msgstr "The Track"
+#~ msgid "The Track"
+#~ msgstr "The Track"
+
+#~ msgid "The Machine"
+#~ msgstr "The Machine"
+
+#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second - 0 - 100(cm): 5 seconds - Power: 200 mA - Weight: 500 grams - Steering: Skid - Wheels: 2 powered, 1 non-powered - Inputs: 4 light sensors - Outputs: 2 motor speeds <4>The Track</4>"
+#~ msgstr "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second - 0 - 100(cm): 5 seconds - Power: 200 mA - Weight: 500 grams - Steering: Skid - Wheels: 2 powered, 1 non-powered - Inputs: 4 light sensors - Outputs: 2 motor speeds <4>The Track</4>"
+
+#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second <4/> - 0 - 100(cm): 5 seconds <5/> - Power: 200 mA <6/> - Weight: 500 grams <7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors <10/> - Outputs: 2 motor speeds <11/> <12>The Track</12>"
+#~ msgstr "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second <4/> - 0 - 100(cm): 5 seconds <5/> - Power: 200 mA <6/> - Weight: 500 grams <7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors <10/> - Outputs: 2 motor speeds <11/> <12>The Track</12>"
+
+#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second <4/> - 0 - 100(cm): 5 seconds <5/> - Power: 200 mA <6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors <10/> - Outputs: 2 motor speeds <11/> <12>The Track</12>"
+#~ msgstr "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second <4/> - 0 - 100(cm): 5 seconds <5/> - Power: 200 mA <6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors <10/> - Outputs: 2 motor speeds <11/> <12>The Track</12>"
+
+#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> - 0 - 100(cm): 5 seconds (placeholder)<5/> - Power: 200 mA (placeholder)<6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors (placeholder)<10/> - Outputs: 2 motor speeds (placeholder)<11/> <12>The Track</12>"
+#~ msgstr "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> - 0 - 100(cm): 5 seconds (placeholder)<5/> - Power: 200 mA (placeholder)<6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors (placeholder)<10/> - Outputs: 2 motor speeds (placeholder)<11/> <12>The Track</12>"
 
 #: src/lib/components/LandingPage.svelte
-msgid "The Machine"
-msgstr "The Machine"
+msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> - 0 - 100(cm): 5 seconds (placeholder)<5/> - Power: 200 mA (placeholder)<6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors (placeholder)<10/> - Outputs: 2 motor speeds (placeholder)<11/><12/> <13>The Track</13>"
+msgstr "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> - 0 - 100(cm): 5 seconds (placeholder)<5/> - Power: 200 mA (placeholder)<6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors (placeholder)<10/> - Outputs: 2 motor speeds (placeholder)<11/><12/> <13>The Track</13>"
+
+#~ msgid "Submit and Forget"
+#~ msgstr "Submit and Forget"
+
+#~ msgid "Submit And Forget"
+#~ msgstr "Submit And Forget"
+
+#~ msgid "Code A Solution"
+#~ msgstr "Code A Solution"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Code Now"
+msgstr "Code Now"

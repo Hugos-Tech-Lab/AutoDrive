@@ -60,15 +60,12 @@
     <label for="website">Website</label>
     <input id="website" type="text" bind:value={website} />
   </div>
-  <div>
+  <!-- <div>
     <button type="submit" class="button primary block" disabled={loading}>
       {loading ? "Saving ..." : "Update profile"}
     </button>
-  </div>
-  <button type="button" class="button block">Leaderboard</button>
-  <button type="button" class="button block">My Algorithms</button>
-  <button type="button" class="button block">Real Time Play</button>
-  <button type="button" class="button block">Live Debug</button>
+  </div> -->
+
 
   <button
     type="button"

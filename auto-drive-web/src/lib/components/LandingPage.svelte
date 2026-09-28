@@ -20,6 +20,14 @@
   </div>
   <br/>
   <h1 class="text-2xl mb-4 min-w-0 flex-1">The Machine</h1>
+  - Top Speed: 15cm / second (placeholder)<br>
+  - 0 - 100(cm): 5 seconds (placeholder)<br>
+  - Power: 200 mA (placeholder)<br>
+  - Weight: 500 grams (placeholder)<br>
+  - Steering: Skid <br>
+  - Wheels: 2 powered, 1 non-powered <br>
+  - Inputs: 4 light sensors (placeholder)<br>
+  - Outputs: 2 motor speeds (placeholder)<br><br>
   <h1 class="text-2xl mb-4 min-w-0 flex-1">The Track</h1>
   <!-- <h2 class="mb-6">
     Manage software on real physical hardware devices in the lab.

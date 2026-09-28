@@ -10,6 +10,7 @@
   import Translations from "$lib/components/Translations.svelte";
   import InnerHeader from "$lib/components//InnerHeader.svelte";
   import Account from "$lib/components/Account.svelte";
+  import Dashboard from '$lib/components/Dashboard.svelte';
 
   let session = $state<AuthSession | null>(null)
   onMount(() => {
@@ -34,7 +35,7 @@
     {#if !session}
      <h1>Logged Out</h1>
 
-        <Account />
+        <Dashboard />
 
     {:else}
     <Account {session} />

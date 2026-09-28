@@ -7,7 +7,7 @@
     session: AuthSession;
   }
 
-  let { session }: Props = $props();
+  // let { session }: Props = $props();
 
   let loading = $state(false);
   let username = $state<string | null>(null);
@@ -17,10 +17,10 @@
   const updateProfile = async () => {
     try {
       loading = true;
-      const { user } = session;
+      // const { user } = session;
 
       const updates = {
-        id: user.id,
+        // id: user.id,
         username,
         website,
         avatar_url: avatarUrl,
@@ -42,10 +42,15 @@
   };
 </script>
 
-<form onsubmit={(e) => { e.preventDefault(); updateProfile(); }} class="form-widget">
-  <div>Email: {session.user.email}</div>
+<form
+  onsubmit={(e) => {
+    e.preventDefault();
+    updateProfile();
+  }}
+  class="form-widget"
+>
+  <!-- <div>Email: {session.user.email}</div> -->
   <div>
-
     // ...
 
     <label for="username">Name</label>
@@ -60,6 +65,11 @@
       {loading ? "Saving ..." : "Update profile"}
     </button>
   </div>
+  <button type="button" class="button block">Leaderboard</button>
+  <button type="button" class="button block">My Algorithms</button>
+  <button type="button" class="button block">Real Time Play</button>
+  <button type="button" class="button block">Live Debug</button>
+
   <button
     type="button"
     class="button block"

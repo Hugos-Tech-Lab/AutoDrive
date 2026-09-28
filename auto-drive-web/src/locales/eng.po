@@ -33,6 +33,7 @@ msgid "Hugo's Tech Lab"
 msgstr "Hugo's Tech Lab"
 
 #: src/lib/Translations.svelte
+#: src/lib/components/Translations.svelte
 msgid "ENG"
 msgstr "ENG"
 
@@ -50,10 +51,12 @@ msgid "Not found"
 msgstr "Not found"
 
 #: src/lib/Translations.svelte
+#: src/lib/components/Translations.svelte
 msgid "CZE"
 msgstr "CZE"
 
 #: src/lib/Translations.svelte
+#: src/lib/components/Translations.svelte
 msgid "UKR"
 msgstr "UKR"
 
@@ -108,14 +111,17 @@ msgid "Send magic link"
 msgstr "Send magic link"
 
 #: src/lib/Account.svelte
+#: src/lib/components/Account.svelte
 msgid "Website"
 msgstr "Website"
 
 #: src/lib/Account.svelte
+#: src/lib/components/Account.svelte
 msgid "Saving ..."
 msgstr "Saving ..."
 
 #: src/lib/Account.svelte
+#: src/lib/components/Account.svelte
 msgid "Update profile"
 msgstr "Update profile"
 
@@ -125,13 +131,16 @@ msgid "Email: {0}"
 msgstr "Email: {0}"
 
 #: src/lib/Account.svelte
+#: src/lib/components/Account.svelte
 msgid "Name"
 msgstr "Name"
 
 #: src/lib/Account.svelte
+#: src/lib/components/Account.svelte
 msgid "Sign Out"
 msgstr "Sign Out"
 
+#: src/routes/[locale]/dashboard/+page.svelte
 #: src/routes/[locale]/settings/+page.svelte
 msgid "Logged Out"
 msgstr "Logged Out"
@@ -284,7 +293,7 @@ msgstr "Auto Drive"
 #~ msgid "Hugo's Tesch Lab"
 #~ msgstr "Hugo's Tesch Lab"
 
-#: src/lib/components/LandingPage.svelte
+#: src/lib/components/Account.svelte
 msgid "Leaderboard"
 msgstr "Leaderboard"
 
@@ -313,9 +322,8 @@ msgstr "YouTube video player"
 #~ msgid "Control a small car"
 #~ msgstr "Control a small car"
 
-#: src/lib/components/LandingPage.svelte
-msgid "Control a real small car remotely"
-msgstr "Control a real small car remotely"
+#~ msgid "Control a real small car remotely"
+#~ msgstr "Control a real small car remotely"
 
 #: src/lib/components/UserAccount.svelte
 msgid "DASHBOARD"
@@ -342,3 +350,42 @@ msgstr "THINK YOU CAN CODE? <0>Prove</0> it"
 
 #~ msgid "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
 #~ msgstr "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
+
+#: src/lib/components/Account.svelte
+msgid "My Algorithms"
+msgstr "My Algorithms"
+
+#: src/lib/components/Account.svelte
+msgid "Real Time Play"
+msgstr "Real Time Play"
+
+#: src/lib/components/Account.svelte
+msgid "Live Debug"
+msgstr "Live Debug"
+
+#~ msgid "Try"
+#~ msgstr "Try"
+
+#~ msgid "Cars"
+#~ msgstr "Cars"
+
+#: src/lib/components/LandingPage.svelte
+msgid "Control a real small machine remotely"
+msgstr "Control a real small machine remotely"
+
+#~ msgid "Machines"
+#~ msgstr "Machines"
+
+#~ msgid "The Machines"
+#~ msgstr "The Machines"
+
+#~ msgid "The Tracks"
+#~ msgstr "The Tracks"
+
+#: src/lib/components/LandingPage.svelte
+msgid "The Track"
+msgstr "The Track"
+
+#: src/lib/components/LandingPage.svelte
+msgid "The Machine"
+msgstr "The Machine"

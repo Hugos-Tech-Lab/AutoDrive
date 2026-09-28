@@ -7,7 +7,7 @@
 <InnerHeader {username}>THINK YOU CAN CODE? <u>Prove</u> it</InnerHeader>
 <div class="px-4 py-4">
   <h1 class="text-2xl mb-4 min-w-0 flex-1">
-    Control a real small car remotely
+    Control a real small machine remotely
   </h1>
   <div class="video">
     <iframe
@@ -18,7 +18,9 @@
       allowfullscreen
     ></iframe>
   </div>
-  <h1 class="text-2xl mb-4 min-w-0 flex-1">Leaderboard</h1>
+  <br/>
+  <h1 class="text-2xl mb-4 min-w-0 flex-1">The Machine</h1>
+  <h1 class="text-2xl mb-4 min-w-0 flex-1">The Track</h1>
   <!-- <h2 class="mb-6">
     Manage software on real physical hardware devices in the lab.
   </h2>

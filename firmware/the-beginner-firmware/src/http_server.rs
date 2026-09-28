@@ -1,8 +1,9 @@
-use std::sync::{Arc};
+use std::sync::Arc;
 
 use edge_nal::TcpBind;
 
 pub mod auto_script;
+pub mod hardware;
 pub mod info;
 pub mod logs;
 pub mod update;
@@ -54,7 +55,11 @@ impl Handler for HttpHandler {
         let method = request_headers.method;
 
         match (method, path) {
-            (Method::Options, "/autoscript/upload") | (Method::Options, "/autoscript/run") => {
+            (Method::Options, "/autoscript/upload")
+            | (Method::Options, "/autoscript/run")
+            | (Method::Options, "/hardware/set_motor_a_speed")
+            | (Method::Options, "/hardware/set_motor_b_speed")
+            | (Method::Options, "/logs") => {
                 conn.initiate_response(204, None, &CORS_HEADERS).await?;
             }
             (Method::Post, "/autoscript/upload") => {
@@ -65,6 +70,14 @@ impl Handler for HttpHandler {
             }
             (Method::Post, "/autoscript/cancel") => {
                 auto_script::cancel(conn, self.auto_script.clone()).await?
+            }
+            (Method::Post, "/hardware/set_motor_a_speed") => {
+                hardware::set_motor_a_speed(conn).await?
+            }
+            (Method::Get, "/logs") => logs::logs(conn).await?,
+            (Method::Get, "/coredump") => logs::coredump(conn).await?,
+            (Method::Post, "/hardware/set_motor_b_speed") => {
+                hardware::set_motor_b_speed(conn).await?
             }
             (_, "/autoscript/upload") | (_, "/autoscript/run") | (_, "/autoscript/cancel") => {
                 conn.initiate_response(405, Some("Method Not Allowed"), &[])
@@ -79,19 +92,21 @@ impl Handler for HttpHandler {
     }
 }
 
-pub async fn run(server: &mut SmallServer, auto_script: Arc<AutoScript>) -> Result<(), anyhow::Error> {
-    let addr ="0.0.0.0:80".parse().unwrap();
+pub async fn run(
+    server: &mut SmallServer,
+    auto_script: Arc<AutoScript>,
+) -> Result<(), anyhow::Error> {
+    let addr = "0.0.0.0:80".parse().unwrap();
     log::info!("Running HTTP server on {addr}");
 
-    let acceptor = edge_nal_std::Stack::new()
-        .bind(addr)
-        .await?;
+    let acceptor = edge_nal_std::Stack::new().bind(addr).await?;
 
-    server.run(None, acceptor, HttpHandler { auto_script }).await?;
+    server
+        .run(None, acceptor, HttpHandler { auto_script })
+        .await?;
 
     Ok(())
 }
-
 
 static CORS_HEADERS: [(&str, &str); 3] = [
     ("Access-Control-Allow-Origin", "*"),

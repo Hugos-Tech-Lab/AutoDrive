@@ -1,0 +1,38 @@
+edition = "2024";
+
+package proto.v1;
+
+service AutoDriveEdgeService {
+  rpc Uptime(InstallAutoScriptRequest) returns (InstallAutoScriptResponse) {}
+
+  rpc UpdateCoordinates(Empty) returns (Empty);
+  // Auto Script
+  // rpc InstallAutoScript(InstallAutoScriptRequest) returns (InstallAutoScriptResponse) {}
+  // rpc StartAutoScript (GetBookViaAuthor) returns (stream Book) {}
+  // Manual
+  // rpc GetGreatestBook (stream GetBookRequest) returns (Book) {}
+  // rpc GetBooks (stream GetBookRequest) returns (stream Book) {}
+  //
+}
+
+service TheBeginnerCarService {
+  rpc GetCars(Empty) returns (Empty);
+
+  // Generic Device Control
+  rpc StartAutoScript(Empty) returns (Empty);
+  rpc Stop(Empty) returns (Empty);
+
+  // Specific Device Control
+
+  // Monitoring and Metrics
+  // Ultimately sent to Loki.
+  rpc StreamLogs(Empty) returns (stream Empty) {}
+  // Ultimately sent to InfluxDB. Vehicle telemetry at a high sampling rate.
+  // High sampling rate, i.e. 33.333ms.
+  rpc StreamVehicleData(Empty) returns (stream Empty) {}
+  // Ultimately sent to Prometheus. System / health metrics to monitor / alert on. I.e. low memory. Rarely useful for historical data.
+  // Slow sampling rate, i.e. 5 seconds.
+  rpc StreamSystemHealth(Empty) returns (stream Empty) {}
+}
+
+message Empty {}

@@ -1,0 +1,64 @@
+openapi: 3.1.0
+
+info:
+  title: Hardware Override
+  version: 1.0.0
+  description: |
+    Manage the ESP32 firmware remotely.
+
+servers:
+  - url: http://the-beginner.local
+
+paths:
+  /hardware/set_motor_a_speed:
+    post:
+      summary: Set motor A speed
+      operationId: setMotorASpeed
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: integer
+              format: int8
+              minimum: -128
+              maximum: 127
+      responses:
+        '200':
+          description: Motor A speed was set successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    const: ok
+  /hardware/set_motor_b_speed:
+    post:
+      summary: Set motor B speed
+      operationId: setMotorBSpeed
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: integer
+              format: int8
+              minimum: -128
+              maximum: 127
+      responses:
+        '200':
+          description: Motor B speed was set successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    const: ok

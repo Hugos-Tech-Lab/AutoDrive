@@ -1,0 +1,18 @@
+openapi: 3.0.3
+info:
+  title: Device API
+  version: 1.0.0
+
+paths:
+  /firmware/logs:
+    get:
+      summary: Get device logs
+      responses:
+        '200':
+          description: Device logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string

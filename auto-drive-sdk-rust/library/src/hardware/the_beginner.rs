@@ -8,6 +8,8 @@ mod ffi {
         pub fn delay(milliseconds: u8);
         pub fn print(ptr: u32, len: u32);
         pub fn set_onboard_led_color(r: u8, g: u8, b: u8);
+        pub fn set_motor_a_speed(speed: i8);
+        pub fn set_motor_b_speed(speed: i8);
     }
 }
 

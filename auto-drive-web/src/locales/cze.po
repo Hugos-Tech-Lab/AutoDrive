@@ -16,7 +16,7 @@ msgstr "/"
 #. /profile
 #. /sign-in
 #. /profile
-#. /sign-in
+#. /dashboard
 #: src/lib/UserAccount.svelte
 #: src/lib/UserAccount.svelte
 #: src/lib/components/UserAccount.svelte
@@ -138,6 +138,7 @@ msgstr ""
 msgid "Sign Out"
 msgstr ""
 
+#: src/lib/components/Dashboard.svelte
 #: src/routes/[locale]/dashboard/+page.svelte
 #: src/routes/[locale]/settings/+page.svelte
 msgid "Logged Out"
@@ -356,8 +357,9 @@ msgstr ""
 #~ msgid "Real Time Play"
 #~ msgstr ""
 
-#~ msgid "Live Debug"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "Live Debug"
+msgstr ""
 
 #~ msgid "Try"
 #~ msgstr ""
@@ -408,6 +410,126 @@ msgstr ""
 #~ msgid "Code A Solution"
 #~ msgstr ""
 
+#~ msgid "Code Now"
+#~ msgstr ""
+
+#~ msgid "Global Leaderboard"
+#~ msgstr ""
+
+#~ msgid "Live Upload"
+#~ msgstr ""
+
+#~ msgid "Car Right Now"
+#~ msgstr ""
+
+#~ msgid "Status"
+#~ msgstr ""
+
+#~ msgid "The Beginner Car"
+#~ msgstr ""
+
+#~ msgid "The Beginner Car V"
+#~ msgstr ""
+
+#~ msgid "The Beginner Car v"
+#~ msgstr ""
+
 #: src/lib/components/Dashboard.svelte
-msgid "Code Now"
+msgid "The Beginner Car (dropdown)"
+msgstr ""
+
+#~ msgid "Hugo"
+#~ msgstr ""
+
+#~ msgid "Unit A"
+#~ msgstr ""
+
+#~ msgid "Unit B"
+#~ msgstr ""
+
+#~ msgid "Unit C"
+#~ msgstr ""
+
+#~ msgid "Unit D"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Build A"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Build B"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Build C"
+msgstr ""
+
+#~ msgid "SDK"
+#~ msgstr ""
+
+#~ msgid "The SDK"
+#~ msgstr ""
+
+#~ msgid "Software Development Kit (SDL)"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Software Development Kit (SDK)"
+msgstr ""
+
+#~ msgid "Best Algorithms"
+#~ msgstr ""
+
+#~ msgid "Calendar"
+#~ msgstr ""
+
+#~ msgid "ssss"
+#~ msgstr ""
+
+#~ msgid "Tracks"
+#~ msgstr ""
+
+#~ msgid "Track"
+#~ msgstr ""
+
+#~ msgid "Algorithm Leaderboard"
+#~ msgstr ""
+
+#~ msgid "History (Car)"
+#~ msgstr ""
+
+#~ msgid "History (shown in selected Build only)"
+#~ msgstr ""
+
+#~ msgid "Future (shown in selected Build only)"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Upcoming (shown in selected Build only)"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Past (shown in selected Build only)"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Logs (shown in selected Build only)"
+msgstr ""
+
+#~ msgid "Current Status (shown in selected Build only)"
+#~ msgstr ""
+
+#~ msgid "Live Control (shown in selected Build only)"
+#~ msgstr ""
+
+#~ msgid "Status (shown in selected Build only)"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Sensors (shown in selected Build only)"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Status (shown in selected Build only) (shows firmware, last online, etc)"
 msgstr ""

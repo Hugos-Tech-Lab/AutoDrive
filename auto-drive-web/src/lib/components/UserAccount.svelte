@@ -9,5 +9,5 @@
 {#if username}
   <button onclick={() => goto("/profile")}>{username}</button>
 {:else}
-  <button onclick={() => goto("/sign-in")}>DASHBOARD</button>
+  <button onclick={() => goto("/dashboard")}>DASHBOARD</button>
 {/if}

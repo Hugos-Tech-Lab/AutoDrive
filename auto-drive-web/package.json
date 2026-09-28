@@ -1,0 +1,36 @@
+{
+  "name": "firmware.hugostechlab.com",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "start": "vite --host",
+    "build": "vite build",
+    "preview": "serve dist",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
+    "translations": "wuchale",
+    "translations-check": "wuchale check --full && pnpm run translations-check-full",
+    "translations-check-full": "node -e \"const s=JSON.parse(require('child_process').execSync('wuchale status --json',{encoding:'utf8'}));const x=s.flatMap(a=>a.storage?.details??[]).filter(d=>d?.untranslated>0);if(x.length){console.error(x.map(d=>d.locale+': '+d.untranslated+' untranslated').join('\\n'));process.exit(1)}\"",
+    "translations-clean": "wuchale --clean"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/vite-plugin-svelte": "7.2.0",
+    "@tsconfig/svelte": "5.0.8",
+    "@types/node": "24.12.3",
+    "serve": "^14.2.6",
+    "svelte": "5.55.5",
+    "svelte-check": "4.4.8",
+    "typescript": "6.0.2",
+    "vite": "8.2.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "@wuchale/svelte": "0.20.7",
+    "better-auth": "1.6.23",
+    "tailwindcss": "^4.3.3",
+    "wuchale": "0.25.8"
+  }
+}

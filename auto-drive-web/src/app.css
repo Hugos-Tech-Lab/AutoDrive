@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Cousin";
+  src: url("./assets/fonts/Cousin-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+button {
+  width: fit-content;
+  background: none;
+  border: 1px solid rgb(11, 0, 75);
+  padding: 10px;
+  border-radius: 2px;
+  font: inherit;
+  font-weight: bolder;
+  cursor: pointer;
+  margin: 5px;
+  font-size: 12px;
+}
+
+
+
+@keyframes materialise {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(1.08);
+  }
+
+  45% {
+    opacity: 0.6;
+    filter: blur(3px);
+    transform: scale(1.02);
+  }
+
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+

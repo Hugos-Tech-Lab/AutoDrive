@@ -1,0 +1,271 @@
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=2; plural=n == 1 ? 0 : 1;\n"
+"Source-Language: eng\n"
+"Language: cze\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/lib/Header.svelte
+#: src/lib/components/Header.svelte
+#, url:main
+msgid "/"
+msgstr "/"
+
+#. /profile
+#. /sign-in
+#. /profile
+#. /sign-in
+#: src/lib/UserAccount.svelte
+#: src/lib/UserAccount.svelte
+#: src/lib/components/UserAccount.svelte
+#: src/lib/components/UserAccount.svelte
+#, url:main
+msgid "/**"
+msgstr "/**"
+
+#: src/lib/Logo.svelte
+#: src/lib/components/Logo.svelte
+#: src/routes/[locale]/+page.svelte
+#: src/routes/[locale]/location/+page.svelte
+msgid "Hugo's Tech Lab"
+msgstr "Hugo's Tech Lab"
+
+#: src/lib/Translations.svelte
+msgid "ENG"
+msgstr "ENG"
+
+#: src/ThemeButton.svelte
+msgid "Light"
+msgstr "Light"
+
+#: src/ThemeButton.svelte
+msgid "Dark"
+msgstr "Dark"
+
+#: src/routes/+error.svelte
+#: src/routes/not-found/+page.svelte
+msgid "Not found"
+msgstr "Nenalezeno"
+
+#: src/lib/Translations.svelte
+msgid "CZE"
+msgstr "CZE"
+
+#: src/lib/Translations.svelte
+msgid "UKR"
+msgstr "UKR"
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/routes/[locale]/sign-in/+page.svelte
+msgid "Sign in"
+msgstr ""
+
+#. 0: locale
+#: src/routes/+page.svelte
+msgid "Redirecting to {0}..."
+msgstr ""
+
+#: src/lib/Header.svelte
+#: src/lib/LandingPage.svelte
+#: src/lib/components/Header.svelte
+#: src/lib/components/LandingPage.svelte
+msgid "Remote Firmware Manager"
+msgstr ""
+
+#. 0: new Date().getFullYear()
+#. 0: new Date().getFullYear()
+#: src/lib/Footer.svelte
+#: src/lib/components/Footer.svelte
+msgid "© {0} Hugo Luccarini. All Rights Reserved. Czech Business Number (IČO): 29876834."
+msgstr ""
+
+#: src/routes/[locale]/settings/+page.svelte
+msgid "Settings"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Your email"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Email"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Send magic link"
+msgstr ""
+
+#: src/lib/Account.svelte
+msgid "Website"
+msgstr ""
+
+#: src/lib/Account.svelte
+msgid "Saving ..."
+msgstr ""
+
+#: src/lib/Account.svelte
+msgid "Update profile"
+msgstr ""
+
+#. 0: session.user.email
+#: src/lib/Account.svelte
+msgid "Email: {0}"
+msgstr ""
+
+#: src/lib/Account.svelte
+msgid "Name"
+msgstr ""
+
+#: src/lib/Account.svelte
+msgid "Sign Out"
+msgstr ""
+
+#: src/routes/[locale]/settings/+page.svelte
+msgid "Logged Out"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Sign in via password"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Password"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Your password"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Sign up"
+msgstr ""
+
+#: src/routes/[locale]/+page.svelte
+#: src/routes/[locale]/location/+page.svelte
+msgid "Location"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Car 1"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Car 2"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Device"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Status: Online / Offline"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Overview"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Firmware Time: Online / Offline"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Firmware Hash: Online / Offline"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Firmware Name: Online / Offline"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Model:"
+msgstr ""
+
+#: src/routes/[locale]/location/+page.svelte
+msgid "Firmware"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Check your email for the login link!"
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Something went wrong."
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Account created! Check your email if confirmation is required."
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Loading..."
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Sign in via a magic link sent to your email."
+msgstr ""
+
+#: src/lib/Auth.svelte
+#: src/lib/components/Auth.svelte
+msgid "Create account"
+msgstr ""
+
+#~ msgid "Authentication failed."
+#~ msgstr ""
+
+#: src/lib/LandingPage.svelte
+#: src/lib/components/LandingPage.svelte
+msgid "Manage software on real physical hardware devices in the lab."
+msgstr ""
+
+#: src/lib/LandingPage.svelte
+#: src/lib/components/LandingPage.svelte
+msgid "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
+msgstr ""
+
+#: src/lib/UserAccount.svelte
+#: src/lib/components/UserAccount.svelte
+msgid "SIGN IN / SIGN UP"
+msgstr ""
+
+#~ msgid "Sign out"
+#~ msgstr ""
+
+#: src/routes/[locale]/+page.svelte
+msgid "Dashboard"
+msgstr ""

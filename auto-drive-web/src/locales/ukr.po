@@ -70,8 +70,6 @@ msgstr ""
 
 #: src/lib/Header.svelte
 #: src/lib/LandingPage.svelte
-#: src/lib/components/Header.svelte
-#: src/lib/components/LandingPage.svelte
 msgid "Remote Firmware Manager"
 msgstr ""
 
@@ -249,17 +247,14 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/LandingPage.svelte
-#: src/lib/components/LandingPage.svelte
 msgid "Manage software on real physical hardware devices in the lab."
 msgstr ""
 
 #: src/lib/LandingPage.svelte
-#: src/lib/components/LandingPage.svelte
 msgid "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
 msgstr ""
 
 #: src/lib/UserAccount.svelte
-#: src/lib/components/UserAccount.svelte
 msgid "SIGN IN / SIGN UP"
 msgstr ""
 
@@ -269,3 +264,81 @@ msgstr ""
 #: src/routes/[locale]/+page.svelte
 msgid "Dashboard"
 msgstr ""
+
+#~ msgid "AutoDrive"
+#~ msgstr ""
+
+#: src/lib/components/Header.svelte
+msgid "Auto Drive"
+msgstr ""
+
+#~ msgid "hi"
+#~ msgstr ""
+
+#~ msgid "Hello"
+#~ msgstr ""
+
+#~ msgid "Hellaaaaaaaaaaaaaaaaaaaaaao"
+#~ msgstr ""
+
+#~ msgid "Hugo's Tesch Lab"
+#~ msgstr ""
+
+#: src/lib/components/LandingPage.svelte
+msgid "Leaderboard"
+msgstr ""
+
+#~ msgid "Hi"
+#~ msgstr ""
+
+#~ msgid "Hiiiiiiiiii"
+#~ msgstr ""
+
+#: src/lib/components/LandingPage.svelte
+msgid "YouTube video player"
+msgstr ""
+
+#~ msgid "Auto Drive Dashboard"
+#~ msgstr ""
+
+#~ msgid "Think you can code? Prove it"
+#~ msgstr ""
+
+#~ msgid "Code a car in a real lab"
+#~ msgstr ""
+
+#~ msgid "Control a car in a real lab"
+#~ msgstr ""
+
+#~ msgid "Control a small car"
+#~ msgstr ""
+
+#: src/lib/components/LandingPage.svelte
+msgid "Control a real small car remotely"
+msgstr ""
+
+#: src/lib/components/UserAccount.svelte
+msgid "DASHBOARD"
+msgstr ""
+
+#~ msgid "THINK YOU CAN CODE? Prove it"
+#~ msgstr ""
+
+#: src/lib/components/LandingPage.svelte
+msgid "THINK YOU CAN CODE? <0>Prove</0> it"
+msgstr ""
+
+#~ msgid "THINK YOU CAN CODE? <0>Prove</0>it"
+#~ msgstr ""
+
+#~ msgid "TAKE CONTROL"
+#~ msgstr ""
+
+#~ msgid "Just write the algorithm to control a real small car remotely"
+#~ msgstr ""
+
+#~ msgid "Write the algorithm to control a real small car remotely"
+#~ msgstr ""
+
+#~ msgid "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
+#~ msgstr ""

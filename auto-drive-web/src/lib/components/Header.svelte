@@ -9,7 +9,7 @@
   <div class="flex items-center justify-between section-inner py-6">
     <Logo />
     <a href="/">
-      <h1 class="text-right">Remote Firmware Manager</h1>
+      <h1 class="text-right">Auto Drive</h1>
     </a>
   </div>
 </header>

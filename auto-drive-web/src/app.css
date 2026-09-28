@@ -11,17 +11,15 @@
 button {
   width: fit-content;
   background: none;
-  border: 1px solid rgb(11, 0, 75);
+  border: 2px solid rgb(0, 0, 0);
   padding: 10px;
   border-radius: 2px;
   font: inherit;
   font-weight: bolder;
   cursor: pointer;
   margin: 5px;
-  font-size: 12px;
+  font-size: 16px;
 }
-
-
 
 @keyframes materialise {
   0% {

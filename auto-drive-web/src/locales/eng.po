@@ -70,8 +70,6 @@ msgstr "Redirecting to {0}..."
 
 #: src/lib/Header.svelte
 #: src/lib/LandingPage.svelte
-#: src/lib/components/Header.svelte
-#: src/lib/components/LandingPage.svelte
 msgid "Remote Firmware Manager"
 msgstr "Remote Firmware Manager"
 
@@ -249,17 +247,14 @@ msgstr "Create account"
 #~ msgstr "Authentication failed."
 
 #: src/lib/LandingPage.svelte
-#: src/lib/components/LandingPage.svelte
 msgid "Manage software on real physical hardware devices in the lab."
 msgstr "Manage software on real physical hardware devices in the lab."
 
 #: src/lib/LandingPage.svelte
-#: src/lib/components/LandingPage.svelte
 msgid "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
 msgstr "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
 
 #: src/lib/UserAccount.svelte
-#: src/lib/components/UserAccount.svelte
 msgid "SIGN IN / SIGN UP"
 msgstr "SIGN IN / SIGN UP"
 
@@ -269,3 +264,81 @@ msgstr "SIGN IN / SIGN UP"
 #: src/routes/[locale]/+page.svelte
 msgid "Dashboard"
 msgstr "Dashboard"
+
+#~ msgid "AutoDrive"
+#~ msgstr "AutoDrive"
+
+#: src/lib/components/Header.svelte
+msgid "Auto Drive"
+msgstr "Auto Drive"
+
+#~ msgid "hi"
+#~ msgstr "hi"
+
+#~ msgid "Hello"
+#~ msgstr "Hello"
+
+#~ msgid "Hellaaaaaaaaaaaaaaaaaaaaaao"
+#~ msgstr "Hellaaaaaaaaaaaaaaaaaaaaaao"
+
+#~ msgid "Hugo's Tesch Lab"
+#~ msgstr "Hugo's Tesch Lab"
+
+#: src/lib/components/LandingPage.svelte
+msgid "Leaderboard"
+msgstr "Leaderboard"
+
+#~ msgid "Hi"
+#~ msgstr "Hi"
+
+#~ msgid "Hiiiiiiiiii"
+#~ msgstr "Hiiiiiiiiii"
+
+#: src/lib/components/LandingPage.svelte
+msgid "YouTube video player"
+msgstr "YouTube video player"
+
+#~ msgid "Auto Drive Dashboard"
+#~ msgstr "Auto Drive Dashboard"
+
+#~ msgid "Think you can code? Prove it"
+#~ msgstr "Think you can code? Prove it"
+
+#~ msgid "Code a car in a real lab"
+#~ msgstr "Code a car in a real lab"
+
+#~ msgid "Control a car in a real lab"
+#~ msgstr "Control a car in a real lab"
+
+#~ msgid "Control a small car"
+#~ msgstr "Control a small car"
+
+#: src/lib/components/LandingPage.svelte
+msgid "Control a real small car remotely"
+msgstr "Control a real small car remotely"
+
+#: src/lib/components/UserAccount.svelte
+msgid "DASHBOARD"
+msgstr "DASHBOARD"
+
+#~ msgid "THINK YOU CAN CODE? Prove it"
+#~ msgstr "THINK YOU CAN CODE? Prove it"
+
+#: src/lib/components/LandingPage.svelte
+msgid "THINK YOU CAN CODE? <0>Prove</0> it"
+msgstr "THINK YOU CAN CODE? <0>Prove</0> it"
+
+#~ msgid "THINK YOU CAN CODE? <0>Prove</0>it"
+#~ msgstr "THINK YOU CAN CODE? <0>Prove</0>it"
+
+#~ msgid "TAKE CONTROL"
+#~ msgstr "TAKE CONTROL"
+
+#~ msgid "Just write the algorithm to control a real small car remotely"
+#~ msgstr "Just write the algorithm to control a real small car remotely"
+
+#~ msgid "Write the algorithm to control a real small car remotely"
+#~ msgstr "Write the algorithm to control a real small car remotely"
+
+#~ msgid "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
+#~ msgstr "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"

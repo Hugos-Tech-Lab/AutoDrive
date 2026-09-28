@@ -34,7 +34,7 @@
 
     return () => subscription.unsubscribe();
   });
-  
+
   $effect(() => {
     if (session && username === null) {
       (async () => {
@@ -51,16 +51,18 @@
 <section>
   <div class="section-inner main relative">
     {#if session}
-      <InnerHeader username={username}>Dashboard</InnerHeader>
+      <InnerHeader {username}>Dashboard</InnerHeader>
       <div class="px-4 py-4">
-          <h2>Location</h2>
-          <button>Hugo's Tech Lab</button>
+        <h2>Location</h2>
+        <button>Hugo's Tech Lab</button>
       </div>
+    {:else if loading}
+      <LandingPage {username} />
     {:else if !loading}
       <LandingPage {username} />
     {/if}
-
   </div>
 </section>
 
 <Footer />
+

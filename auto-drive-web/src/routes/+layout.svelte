@@ -22,7 +22,7 @@
   :global(html) {
     font-family: "Cousin", system-ui, sans-serif;
     color: #08060d;
-    background: rgb(245, 249, 255);
+    background: rgb(251, 253, 255);
     font-weight: bold;
   }
 
@@ -38,7 +38,7 @@
 	}
 
 	:global(.main) {
-    border: 1px solid rgb(0, 36, 156);
+    /* border: 1px solid rgb(0, 36, 156); */
 	}
 
 	:global(form) {

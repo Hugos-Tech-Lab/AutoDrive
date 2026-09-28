@@ -19,7 +19,7 @@ use serde::Serialize;
 
 use crate::auto_script::AutoScript;
 
-pub type SmallServer = Server<2, 1024, 16>;
+pub type SmallServer = Server<2, 1024, 8>;
 
 #[derive(Serialize)]
 struct FirmwareUpdate200Response {
@@ -44,7 +44,7 @@ impl Handler for HttpHandler {
 
     async fn handle<T, const N: usize>(
         &self,
-        _task_id: impl Display + Copy,
+        task_id: impl Display + Copy,
         conn: &mut Connection<'_, T, N>,
     ) -> Result<(), Self::Error<T::Error>>
     where
@@ -53,6 +53,8 @@ impl Handler for HttpHandler {
         let request_headers = conn.headers()?;
         let path = request_headers.path;
         let method = request_headers.method;
+
+        log::info!("HTTP request: task={} {:?} {}", task_id, method, path);
 
         match (method, path) {
             (Method::Options, "/autoscript/upload")
@@ -72,7 +74,9 @@ impl Handler for HttpHandler {
                 auto_script::cancel(conn, self.auto_script.clone()).await?
             }
             (Method::Post, "/hardware/set_motor_a_speed") => {
-                hardware::set_motor_a_speed(conn).await?
+                log::info!("waiting");
+                hardware::set_motor_a_speed(conn).await?;
+                log::info!("response");
             }
             (Method::Get, "/logs") => logs::logs(conn).await?,
             (Method::Get, "/coredump") => logs::coredump(conn).await?,

@@ -103,7 +103,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let handle = std::thread::Builder::new()
         .name("http_server".into())
-        .stack_size(70 * 1024)
+        .stack_size(80 * 1024)
         .spawn(|| {
             let mut server = SmallServer::new();
             futures_lite::future::block_on(http_server::run(&mut server, auto_script))

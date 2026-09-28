@@ -6,7 +6,7 @@ use std::{
 use esp_idf_svc::log::EspIdfLogger;
 use log::{LevelFilter, Log, Metadata, Record};
 
-const MAX_LOGS: usize = 500;
+const MAX_LOGS: usize = 100;
 
 pub static LOG_BUFFER: OnceLock<Mutex<VecDeque<String>>> = OnceLock::new();
 

@@ -11,9 +11,6 @@ harness = false
 [dependencies]
 wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.1", default-features = false, features = ["esp-idf"] }
 anyhow = "1.0.104"
-# wasmtime = "48.0.1"
-# wasmtime-wasi = "48.0.1"
-wit-bindgen = "0.61.1"
 log = "0.4"
 esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
 esp-idf-sys = "0.37.2"
@@ -30,7 +27,7 @@ edge-http = "0.8.0"
 edge-nal = "0.7.0"
 embedded-io-async = "0.7.0"
 futures-lite = "2.6.1"
-async-io = "2.3" # Added: Required for driving async I/O sockets properly in STD
+async-io = "2.3"
 edge-nal-std = "0.7.0"
 embassy-sync = { version = "0.8.0" }
 futures = "0.3.34"

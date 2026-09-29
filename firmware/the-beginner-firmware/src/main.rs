@@ -154,37 +154,46 @@ pub fn main() -> anyhow::Result<()> {
 
     OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
 
+    let auto_script = Arc::new(AutoScript::new()?);
+    let mut wifi = BlockingWifi::wrap(
+        EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
+        sys_loop,
+    )?;
+
+    info!("123123123: {:?}", heap());
+
+    connect_to_wifi(&mut wifi)?;
+    info!("2333333333333: {:?}", heap());
+
+
+    let mut mdns = EspMdns::take()?;
+        info!("3434334343434: {:?}", heap());
+
+    mdns.set_hostname("the-beginner")?;
+
+    info!("444444444444: {:?}", heap());
+
+    info!("55555: {:?}", heap());
+
+    info!("1: {:?}", heap());
+
+    let handle = std::thread::Builder::new()
+        .name("http_server".into())
+        .stack_size(80 * 1024)
+        .spawn(|| {
+            let mut server = SmallServer::new();
+            futures_lite::future::block_on(http_server::run(&mut server, auto_script))
+        })?;
+    OnBoardLed::set_color(RGB8 {
+        r: 15,
+        g: 15,
+        b: 15,
+    });
+
+    print_memory_stats();
+    handle.join().unwrap().unwrap();
     loop {
-        thread::sleep(Duration::from_millis(1000));
+        thread::sleep(Duration::from_secs(1));
     }
-
-    // let auto_script = Arc::new(AutoScript::new()?);
-    // let mut wifi = BlockingWifi::wrap(
-    //     EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
-    //     sys_loop,
-    // )?;
-    // connect_to_wifi(&mut wifi)?;
-    // let mut mdns = EspMdns::take()?;
-    // mdns.set_hostname("the-beginner")?;
-    // let mut ota = EspOta::new().context("failed to obtain OTA instance")?;
-    // verify_and_set_valid(&mut ota)?;
-    // let esp_ota = Arc::new(Mutex::new(ota));
-
-    // info!("1: {:?}", heap());
-
-    // let handle = std::thread::Builder::new()
-    //     .name("http_server".into())
-    //     .stack_size(80 * 1024)
-    //     .spawn(|| {
-    //         let mut server = SmallServer::new();
-    //         futures_lite::future::block_on(http_server::run(&mut server, auto_script))
-    //     })?;
-    // OnBoardLed::set_color(RGB8 {
-    //     r: 15,
-    //     g: 15,
-    //     b: 15,
-    // });
-
-    // handle.join().unwrap().unwrap();
     Ok(())
 }

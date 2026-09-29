@@ -92,16 +92,18 @@ impl OnBoardLed {
         motor_b_pwm_driver.set_duty(0).unwrap();
 
         // Give the NEXT pthread these settings.
-        esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration {
-            name: Some(c"hardware"),
-            stack_size: 4096,
-            priority: 5,
-            ..Default::default()
-        }
-        .set()
-        .unwrap();
+        // esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration {
+        //     name: Some(c"hard2ware"),
+        //     stack_size: 70000,
+        //     priority: 5,
+        //     ..Default::default()
+        // }
+        // .set()
+        // .unwrap();
 
         std::thread::Builder::new()
+            .name("hardware".to_string())
+            .stack_size(8192)
             .spawn(move || {
                 let bus_config = SpiDriverConfig::new().dma(Dma::Auto(4096));
 

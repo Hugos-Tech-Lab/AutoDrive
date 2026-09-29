@@ -87,7 +87,8 @@ impl AutoScript {
                                 info!("wasm thread processed command successfully");
                             }
                             Err(err) => {
-                                panic!("wasm thread crashed: '{:?}'", err);
+                                warn!("wasm thread crashed: '{:?}'", err);
+                                thread::sleep(Duration::from_secs(1));
                             }
                         }
                     }

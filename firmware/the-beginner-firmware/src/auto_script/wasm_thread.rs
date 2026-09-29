@@ -49,7 +49,7 @@ impl WasmThread {
         // 64kb is one page
         // ~1kb for static strings
         // ~1kb for allocator header
-        let linear_pool = vec![0u8; 66 * 1024].into_boxed_slice();
+        let linear_pool = vec![0u8; 8 * 1024].into_boxed_slice();
         dbg!("1111111111111111111111111");
         let hea = heap();
         dbg!("after alloc {:?}", hea);
@@ -68,8 +68,6 @@ impl WasmThread {
                 crate::auto_script::exposed_functions::set_onboard_led_color as *mut c_void,
             )
             .build()?;
-
-        dbg!("2222222222222222222222222");
 
         Ok(Self {
             runtime: Rc::new(runtime),

@@ -4,7 +4,7 @@ use std::{
 };
 
 use esp_idf_svc::hal::{
-    gpio::{AnyIOPin, Gpio8, Gpio9, Gpio10, Gpio11, Gpio12, Gpio15, Gpio21, PinDriver}, ledc::{CHANNEL0, CHANNEL1, LedcDriver, LedcTimerDriver, TIMER0, TIMER1, config::TimerConfig}, spi::{self, Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, task::queue::Queue, units::Hertz,
+    gpio::{AnyIOPin, Gpio9, Gpio10, Gpio11, Gpio12, Gpio15, Gpio21, Gpio38, Gpio48, PinDriver}, ledc::{CHANNEL0, CHANNEL1, LedcDriver, LedcTimerDriver, TIMER0, TIMER1, config::TimerConfig}, spi::{self, Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, task::queue::Queue, units::Hertz,
 };
 
 use esp_idf_svc::hal::units::*;
@@ -41,7 +41,7 @@ pub struct OnBoardLed;
 
 impl OnBoardLed {
     pub fn new(
-        pin_8: Gpio8<'static>,
+        pin_38: Gpio38<'static>,
         spi_2: spi::SPI2<'static>,
         pin_9: Gpio9<'static>,
         pin_10: Gpio10<'static>,
@@ -107,7 +107,7 @@ impl OnBoardLed {
 
                 let spi_driver = SpiDriver::new_without_sclk(
                     spi_2,
-                    pin_8,
+                    pin_38,
                     Option::<AnyIOPin>::None,
                     &bus_config,
                 )

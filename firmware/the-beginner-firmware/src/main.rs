@@ -49,6 +49,73 @@ pub mod utils;
 
 use anyhow::Context;
 
+pub fn print_memory_stats() {
+    unsafe {
+        let internal_free =
+            esp_idf_sys::heap_caps_get_free_size(
+                esp_idf_sys::MALLOC_CAP_INTERNAL as u32,
+            );
+
+        let internal_min =
+            esp_idf_sys::heap_caps_get_minimum_free_size(
+                esp_idf_sys::MALLOC_CAP_INTERNAL as u32,
+            );
+
+        let dma_free =
+            esp_idf_sys::heap_caps_get_free_size(
+                esp_idf_sys::MALLOC_CAP_DMA as u32,
+            );
+
+        let dma_min =
+            esp_idf_sys::heap_caps_get_minimum_free_size(
+                esp_idf_sys::MALLOC_CAP_DMA as u32,
+            );
+
+        let psram_free =
+            esp_idf_sys::heap_caps_get_free_size(
+                esp_idf_sys::MALLOC_CAP_SPIRAM as u32,
+            );
+
+        let psram_min =
+            esp_idf_sys::heap_caps_get_minimum_free_size(
+                esp_idf_sys::MALLOC_CAP_SPIRAM as u32,
+            );
+
+        println!();
+        println!("========== MEMORY ==========");
+
+        println!(
+            "Internal RAM : {:>6} KiB free | {:>6} KiB low",
+            internal_free / 1024,
+            internal_min / 1024
+        );
+
+        println!(
+            "  └─ DMA     : {:>6} KiB free | {:>6} KiB low",
+            dma_free / 1024,
+            dma_min / 1024
+        );
+
+        println!(
+            "PSRAM        : {:>6} KiB free | {:>6} KiB low",
+            psram_free / 1024,
+            psram_min / 1024
+        );
+
+        println!("-----------------------------");
+
+        println!(
+            "Approx total : {:>6} KiB",
+            (internal_free + psram_free) / 1024
+        );
+
+        println!("  DMA is a capability of internal RAM,");
+        println!("  not additional memory.");
+        println!("=============================");
+        println!();
+    }
+}
+
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
 
@@ -60,6 +127,7 @@ pub fn main() -> anyhow::Result<()> {
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
+    print_memory_stats();
     init_logging();
     info!("starting");
     let peripherals = Peripherals::take()?;

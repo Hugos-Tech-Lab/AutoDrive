@@ -74,7 +74,7 @@ impl AutoScript {
 
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
-            .stack_size(8 * 1024)
+            .stack_size(64 * 1024)
             .spawn({
                 let ct = ct.clone();
                 move || {

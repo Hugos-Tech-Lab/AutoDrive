@@ -120,8 +120,18 @@ pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
 
     unsafe {
-        let config = esp_idf_sys::esp_vfs_eventfd_config_t { max_fds: 5 };
-        esp_idf_sys::esp_vfs_eventfd_register(&config);
+        let config = esp_idf_sys::esp_vfs_eventfd_config_t {
+            max_fds: 16,
+        };
+
+        let ret = esp_idf_sys::esp_vfs_eventfd_register(&config);
+
+        assert_eq!(
+            ret,
+            esp_idf_sys::ESP_OK,
+            "esp_vfs_eventfd_register failed: {:?}",
+            ret
+        );
     }
 
     let reason = unsafe { esp_reset_reason() };
@@ -145,6 +155,18 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.channel0,
         peripherals.ledc.channel1,
     );
+
+    unsafe {
+        let mut cfg = esp_idf_sys::esp_pthread_get_default_config();
+
+        cfg.stack_size = 32 * 1024;
+        cfg.stack_alloc_caps =
+            (esp_idf_sys::MALLOC_CAP_SPIRAM | esp_idf_sys::MALLOC_CAP_8BIT) as u32;
+
+        cfg.inherit_cfg = true;
+
+        esp_idf_sys::esp_pthread_set_cfg(&cfg);
+    }
 
     if reason == 9 {
         OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
@@ -179,7 +201,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let handle = std::thread::Builder::new()
         .name("http_server".into())
-        .stack_size(80 * 1024)
+        .stack_size(140 * 1024)
         .spawn(|| {
             let mut server = SmallServer::new();
             futures_lite::future::block_on(http_server::run(&mut server, auto_script))

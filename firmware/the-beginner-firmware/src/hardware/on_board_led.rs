@@ -4,7 +4,7 @@ use std::{
 };
 
 use esp_idf_svc::hal::{
-    gpio::{AnyIOPin, Gpio8, Gpio15, Gpio21, Gpio22, Gpio23, PinDriver}, ledc::{CHANNEL0, CHANNEL1, LedcDriver, LedcTimerDriver, TIMER0, TIMER1, config::TimerConfig}, spi::{self, Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, task::queue::Queue, units::Hertz,
+    gpio::{AnyIOPin, Gpio8, Gpio9, Gpio10, Gpio11, Gpio12, Gpio15, Gpio21, PinDriver}, ledc::{CHANNEL0, CHANNEL1, LedcDriver, LedcTimerDriver, TIMER0, TIMER1, config::TimerConfig}, spi::{self, Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, task::queue::Queue, units::Hertz,
 };
 
 use esp_idf_svc::hal::units::*;
@@ -43,10 +43,10 @@ impl OnBoardLed {
     pub fn new(
         pin_8: Gpio8<'static>,
         spi_2: spi::SPI2<'static>,
-        pin_15: Gpio15<'static>,
-        pin_21: Gpio21<'static>,
-        pin_22: Gpio22<'static>,
-        pin_23: Gpio23<'static>,
+        pin_9: Gpio9<'static>,
+        pin_10: Gpio10<'static>,
+        pin_11: Gpio11<'static>,
+        pin_12: Gpio12<'static>,
         timer0: TIMER0<'static>,
         timer1: TIMER1<'static>,
         channel0: CHANNEL0<'static>,
@@ -59,7 +59,7 @@ impl OnBoardLed {
             panic!("LED queue already initialized");
         }
 
-        let mut motor_a_dir_pin = PinDriver::output(pin_15).unwrap();
+        let mut motor_a_dir_pin = PinDriver::output(pin_9).unwrap();
 
         
         let motor_a_timer_driver =
@@ -67,9 +67,9 @@ impl OnBoardLed {
                 .unwrap();
 
         let mut motor_a_pwm_driver =
-            LedcDriver::new(channel0, motor_a_timer_driver, pin_23).unwrap();
+            LedcDriver::new(channel0, motor_a_timer_driver, pin_12).unwrap();
 
-        let mut motor_b_dir_pin = PinDriver::output(pin_22).unwrap();
+        let mut motor_b_dir_pin = PinDriver::output(pin_11).unwrap();
 
         
         let motor_b_timer_driver =
@@ -77,7 +77,7 @@ impl OnBoardLed {
                 .unwrap();
 
         let mut motor_b_pwm_driver =
-            LedcDriver::new(channel1, motor_b_timer_driver, pin_21).unwrap();
+            LedcDriver::new(channel1, motor_b_timer_driver, pin_10).unwrap();
 
         motor_a_dir_pin.set_low().unwrap();
         motor_b_dir_pin.set_low().unwrap();

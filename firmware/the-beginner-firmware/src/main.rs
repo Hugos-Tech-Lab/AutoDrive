@@ -49,8 +49,6 @@ pub mod utils;
 
 use anyhow::Context;
 
-// esp_app_desc_2! {}
-
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
 

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use edge_nal::TcpBind;
 
@@ -17,6 +17,39 @@ use edge_http::io::server::{Connection, Handler, Server};
 use embedded_io_async::{Read, Write};
 use serde::Serialize;
 
+// enum WasmLifetime {
+//     Installed,
+//     Running
+// }
+
+// struct WasmInstance {
+//     installed_script: ()
+// }
+
+// struct Wasm {
+//     wasm_instance: Mutex<WasmInstance>,
+//     // state: 
+// }
+
+// impl Wasm {
+//     fn cancel(&self) {
+//         //
+//     }
+// }
+
+// struct AutoScript {
+//     wasm: Mutex<Wasm>
+// }
+
+// #[derive(Serialize)]
+// enum WasmCommand {
+//     InstallWasm,
+//     StartWasm,
+//     StopWasm,
+//     GetMotorASpeed,
+//     GetMotorBSpeed,
+// }
+
 use crate::auto_script::AutoScript;
 
 pub type SmallServer = Server<2, 1024, 8>;
@@ -26,12 +59,11 @@ struct FirmwareUpdate200Response {
     status: String,
 }
 
-pub struct HttpHandler {
-}
+pub struct HttpHandler {}
 
 impl HttpHandler {
     pub fn new() -> Self {
-        Self { }
+        Self {}
     }
 }
 
@@ -86,18 +118,14 @@ impl Handler for HttpHandler {
     }
 }
 
-pub async fn run(
-    server: &mut SmallServer
-) -> Result<(), anyhow::Error> {
+pub async fn run(server: &mut SmallServer) -> Result<(), anyhow::Error> {
     let addr = "0.0.0.0:80".parse().unwrap();
     log::info!("Running HTTP server on {addr}");
 
     let acceptor = edge_nal_std::Stack::new().bind(addr).await?;
     // let acceptor = EspTcpAcceptor::new(2);
 
-    server
-        .run(None, acceptor, HttpHandler { })
-        .await?;
+    server.run(None, acceptor, HttpHandler {}).await?;
 
     Ok(())
 }

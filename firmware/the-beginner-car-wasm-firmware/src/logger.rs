@@ -1,24 +1,22 @@
-use std::{
-    collections::VecDeque,
-    sync::{Mutex, OnceLock},
-};
+use std::sync::mpsc::{self, Receiver, SyncSender};
 
 use esp_idf_svc::log::EspIdfLogger;
 use log::{LevelFilter, Log, Metadata, Record};
+use serde::{Deserialize, Serialize};
 
-const MAX_LOGS: usize = 100;
-
-pub static LOG_BUFFER: OnceLock<Mutex<VecDeque<String>>> = OnceLock::new();
-
-struct BufferedLogger {
-    inner: EspIdfLogger<()>,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LogMessage {
+    pub level: u8,
+    pub target: String,
+    pub message: String,
 }
 
-static LOGGER: BufferedLogger = BufferedLogger {
-    inner: EspIdfLogger::new(()),
-};
+struct Logger {
+    inner: EspIdfLogger<()>,
+    sender: SyncSender<LogMessage>,
+}
 
-impl Log for BufferedLogger {
+impl Log for Logger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         self.inner.enabled(metadata)
     }
@@ -28,24 +26,16 @@ impl Log for BufferedLogger {
             return;
         }
 
-        let line = format!(
-            "[{}] {}: {}",
-            record.level(),
-            record.target(),
-            record.args()
-        );
+        let message = LogMessage {
+            level: record.level() as u8,
+            target: record.target().to_owned(),
+            message: record.args().to_string(),
+        };
 
-        if let Some(buffer) = LOG_BUFFER.get() {
-            if let Ok(mut buffer) = buffer.lock() {
-                if buffer.len() >= MAX_LOGS {
-                    buffer.pop_front();
-                }
+        // Don't block the application if the I2C consumer is slow.
+        let _ = self.sender.try_send(message);
 
-                buffer.push_back(line);
-            }
-        }
-
-        // Also send the log to the normal ESP-IDF serial logger.
+        // Also keep the normal ESP-IDF serial logging.
         self.inner.log(record);
     }
 
@@ -54,11 +44,18 @@ impl Log for BufferedLogger {
     }
 }
 
-pub fn init_logging() {
-    LOG_BUFFER
-        .set(Mutex::new(VecDeque::with_capacity(MAX_LOGS)))
-        .ok();
+pub fn init_logging() -> Receiver<LogMessage> {
+    let (sender, receiver) = mpsc::sync_channel(100);
 
-    log::set_logger(&LOGGER).expect("failed to initialize logger");
+    let logger = Box::leak(Box::new(Logger {
+        inner: EspIdfLogger::new(()),
+        sender,
+    }));
+
+    log::set_logger(logger)
+        .expect("failed to initialize logger");
+
     log::set_max_level(LevelFilter::Debug);
+
+    receiver
 }

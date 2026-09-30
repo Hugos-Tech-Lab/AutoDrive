@@ -111,7 +111,7 @@ fn i2c_slave_init<'d>(
 }
 
 
-pub fn receiving_requests(peripherals: Peripherals) -> anyhow::Result<()> {
+pub fn receive_loop(peripherals: Peripherals) -> anyhow::Result<()> {
     let mut i2c_slave = i2c_slave_init(
         peripherals.i2c0,
         peripherals.pins.gpio18.into(),

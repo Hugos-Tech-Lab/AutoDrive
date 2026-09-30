@@ -26,7 +26,6 @@ use esp_idf_svc::{
 use crate::{
     auto_script::AutoScript,
     hardware::on_board_led::OnBoardLed,
-    http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
     logger::init_logging,
     utils::{heap, stack},
 };
@@ -41,7 +40,6 @@ use smart_leds_trait::RGB8;
 pub mod auto_script;
 pub mod esp_app_desc_2;
 pub mod hardware;
-pub mod http_server;
 pub mod inter_thread;
 pub mod logger;
 pub mod utils;
@@ -50,7 +48,8 @@ use esp_idf_svc::hal::delay::BLOCK;
 use anyhow::Context;
 
 
-pub mod incoming_requests;
+pub mod incoming_messages;
+pub mod outgoing_messages;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -63,7 +62,9 @@ pub fn main() -> anyhow::Result<()> {
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
-    init_logging();
+    let log_message_receiver = init_logging();
+
+
     info!("starting");
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
@@ -101,7 +102,7 @@ pub fn main() -> anyhow::Result<()> {
     let thread0 = std::thread::Builder::new()
         .stack_size(7000)
         .spawn(move || {
-            incoming_requests::receiving_requests(peripherals).unwrap();
+            incoming_messages::receive_loop(peripherals).unwrap();
         })?;
 
     Ok(())

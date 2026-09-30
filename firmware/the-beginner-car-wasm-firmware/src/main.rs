@@ -5,8 +5,7 @@ use std::{
 };
 
 use edge_http::io::server::Server;
-use edge_nal::TcpBind;
-use esp_idf_svc::hal::i2c::I2cSlaveDriver;
+use esp_idf_svc::hal::i2c::{I2c, I2cSlaveDriver};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     hal::{
@@ -15,10 +14,7 @@ use esp_idf_svc::{
         ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
         spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
         units::Hertz,
-    },
-    mdns::EspMdns,
-    ota::EspOta,
-    wifi::{BlockingWifi, EspWifi},
+    }
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -29,7 +25,6 @@ use esp_idf_svc::{
 
 use crate::{
     auto_script::AutoScript,
-    connect_to_wifi::connect_to_wifi,
     hardware::on_board_led::OnBoardLed,
     http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
     logger::init_logging,
@@ -50,24 +45,12 @@ pub mod http_server;
 pub mod inter_thread;
 pub mod logger;
 pub mod utils;
+use esp_idf_svc::hal::delay::BLOCK;
 
 use anyhow::Context;
 
-esp_app_desc_2! {}
 
-fn i2c_slave_init<'d>(
-    i2c: impl I2c + 'd,
-    sda: AnyIOPin<'d>,
-    scl: AnyIOPin<'d>,
-    buflen: usize,
-    slave_addr: u8,
-) -> anyhow::Result<I2cSlaveDriver<'d>> {
-    let config = I2cSlaveConfig::new()
-        .rx_buffer_length(buflen)
-        .tx_buffer_length(buflen);
-    let driver = I2cSlaveDriver::new(i2c, sda, scl, slave_addr, &config)?;
-    Ok(driver)
-}
+pub mod incoming_requests;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -85,18 +68,18 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let _hardware = OnBoardLed::new(
-        peripherals.pins.gpio8,
-        peripherals.spi2,
-        peripherals.pins.gpio15,
-        peripherals.pins.gpio21,
-        peripherals.pins.gpio22,
-        peripherals.pins.gpio23,
-        peripherals.ledc.timer0,
-        peripherals.ledc.timer1,
-        peripherals.ledc.channel0,
-        peripherals.ledc.channel1,
-    );
+    // let _hardware = OnBoardLed::new(
+    //     peripherals.pins.gpio,
+    //     peripherals.spi2,
+    //     peripherals.pins.gpio15,
+    //     peripherals.pins.gpio21,
+    //     peripherals.pins.gpio22,
+    //     peripherals.pins.gpio23,
+    //     peripherals.ledc.timer0,
+    //     peripherals.ledc.timer1,
+    //     peripherals.ledc.channel0,
+    //     peripherals.ledc.channel1,
+    // );
 
     if reason == 9 {
         OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
@@ -115,44 +98,10 @@ pub fn main() -> anyhow::Result<()> {
         b: 15,
     });
 
-    let mut i2c_slave = i2c_slave_init(
-        peripherals.i2c1,
-        peripherals.pins.gpio18.into(),
-        peripherals.pins.gpio19.into(),
-        SLAVE_BUFFER_SIZE,
-        SLAVE_ADDR,
-    )?;
-
     let thread0 = std::thread::Builder::new()
         .stack_size(7000)
         .spawn(move || {
-            let mut data: [u8; 256] = [0; 256];
-            loop {
-                let mut reg_addr: [u8; 1] = [0];
-                let res = i2c_slave.read(&mut reg_addr, BLOCK);
-                if let Err(e) = res {
-                    println!("SLAVE: failed to read register address from master: Error: {e:?}");
-                    continue;
-                }
-                let mut rx_data: [u8; 1] = [0];
-                match i2c_slave.read(&mut rx_data, 0) {
-                    Ok(_) => {
-                        println!(
-                            "SLAVE: write operation {:#04x} to reg addr {:#04x}",
-                            rx_data[0], reg_addr[0]
-                        );
-                        data[reg_addr[0] as usize] = rx_data[0];
-                    }
-                    Err(_) => {
-                        let d = data[reg_addr[0] as usize];
-                        println!(
-                            "SLAVE: read operation {:#04x} from reg addr {:#04x}",
-                            d, reg_addr[0]
-                        );
-                        i2c_slave.write(&[d], BLOCK).unwrap();
-                    }
-                }
-            }
+            incoming_requests::receiving_requests(peripherals).unwrap();
         })?;
 
     Ok(())

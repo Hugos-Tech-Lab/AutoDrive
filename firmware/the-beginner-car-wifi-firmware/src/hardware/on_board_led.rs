@@ -31,7 +31,7 @@ impl BorrowMut<SpiDriver<'static>> for SpiDriverHolder {
 }
 
 // Bundle all our active hardware drivers into one state struct
-struct HardwareState {
+pub struct HardwareState {
     led: Ws2812<SpiBusDriver<'static, SpiDriverHolder>, devices::Ws2812>,
     motor_a_dir: PinDriver<'static, Output>, // Removed Gpio9
     motor_a_pwm: LedcDriver<'static>,

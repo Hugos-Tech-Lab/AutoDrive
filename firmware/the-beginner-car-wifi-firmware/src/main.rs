@@ -28,7 +28,6 @@ use esp_idf_svc::{
 use crate::{
     auto_script::AutoScript,
     connect_to_wifi::connect_to_wifi,
-    hardware::on_board_led::Hardware,
     http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
     logger::init_logging,
     utils::{heap, stack},
@@ -108,6 +107,9 @@ pub fn print_memory_stats() {
             "Approx total : {:>6} KiB",
             (internal_free + psram_free) / 1024
         );
+
+        println!("  DMA is a capability of internal RAM,");
+        println!("  not additional memory.");
         println!("=============================");
         println!();
     }
@@ -115,7 +117,6 @@ pub fn print_memory_stats() {
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
-    dbg!("{}", stack());
 
     unsafe {
         let config = esp_idf_sys::esp_vfs_eventfd_config_t {
@@ -134,7 +135,6 @@ pub fn main() -> anyhow::Result<()> {
 
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
-    dbg!("{}", stack());
 
     print_memory_stats();
     init_logging();
@@ -142,54 +142,59 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let _hardware = Hardware::new(
-        peripherals.pins.gpio38,
-        peripherals.spi2,
-        peripherals.pins.gpio9,
-        peripherals.pins.gpio10,
-        peripherals.pins.gpio11,
-        peripherals.pins.gpio12,
-        peripherals.ledc.timer0,
-        peripherals.ledc.timer1,
-        peripherals.ledc.channel0,
-        peripherals.ledc.channel1,
-    );
-
-    print_memory_stats();
+    // let _hardware = HardwareState::new(
+    //     peripherals.pins.gpio38,
+    //     peripherals.spi2,
+    //     peripherals.pins.gpio9,
+    //     peripherals.pins.gpio10,
+    //     peripherals.pins.gpio11,
+    //     peripherals.pins.gpio12,
+    //     peripherals.ledc.timer0,
+    //     peripherals.ledc.timer1,
+    //     peripherals.ledc.channel0,
+    //     peripherals.ledc.channel1,
+    // );
 
     if reason == 9 {
-        Hardware::set_color(RGB8 { r: 9, g: 0, b: 255 });
+        // OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
         thread::sleep(Duration::from_secs(1));
     }
 
-    Hardware::set_color(RGB8 { r: 15, g: 0, b: 0 });
-    dbg!("{}", stack());
 
-    // let auto_script = Arc::new(AutoScript::new()?);
-    // let mut wifi = BlockingWifi::wrap(
-    //     EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
-    //     sys_loop,
-    // )?;
+    // OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
+
+    let auto_script = Arc::new(AutoScript::new()?);
+    let mut wifi = BlockingWifi::wrap(
+        EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
+        sys_loop,
+    )?;
 
     info!("123123123: {:?}", heap());
-    dbg!("{}", stack());
 
-    // connect_to_wifi(&mut wifi)?;
+    connect_to_wifi(&mut wifi)?;
     info!("2333333333333: {:?}", heap());
 
 
-    // let mut mdns = EspMdns::take()?;
-    //     info!("3434334343434: {:?}", heap());
+    let mut mdns = EspMdns::take()?;
+        info!("3434334343434: {:?}", heap());
 
-    // mdns.set_hostname("the-beginner")?;
+    mdns.set_hostname("the-beginner")?;
+
+    let handle = std::thread::Builder::new()
+        .name("http_server".into())
+        .stack_size(50 * 1024)
+        .spawn(|| {
+            let mut server = SmallServer::new();
+            futures_lite::future::block_on(http_server::run(&mut server))
+        })?;
+    // OnBoardLed::set_color(RGB8 {
+    //     r: 15,
+    //     g: 15,
+    //     b: 15,
+    // });
 
     print_memory_stats();
-
-    let mut server = SmallServer::new();
-
-    dbg!("{}", stack());
-    // futures_lite::future::block_on(http_server::run(&mut server)).unwrap();
-    print_memory_stats();
+    handle.join().unwrap().unwrap();
     loop {
         thread::sleep(Duration::from_secs(1));
     }

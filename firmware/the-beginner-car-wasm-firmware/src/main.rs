@@ -47,8 +47,7 @@ use esp_idf_svc::hal::delay::BLOCK;
 
 use anyhow::Context;
 
-pub mod incoming_messages;
-pub mod outgoing_messages;
+pub mod i2c_listener;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -95,7 +94,7 @@ pub fn main() -> anyhow::Result<()> {
         std::thread::Builder::new()
             .stack_size(7000)
             .spawn(move || {
-                incoming_messages::receive_loop(
+                i2c_listener::receive_loop(
                     peripherals.i2c0,
                     peripherals.pins.gpio18.into(),
                     peripherals.pins.gpio19.into(),

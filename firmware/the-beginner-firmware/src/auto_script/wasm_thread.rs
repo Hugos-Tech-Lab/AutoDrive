@@ -4,7 +4,7 @@ use crate::{
     auto_script::{
         AutoScriptRunProgress, WasmResponse,
         cancellation_token::{self, CancellationToken},
-    }, hardware::on_board_led::OnBoardLed, inter_thread::InterThreadListener, utils::heap,
+    }, hardware::on_board_led::Hardware, inter_thread::InterThreadListener, utils::heap,
 };
 use anyhow::{Result, anyhow};
 use flume::Sender;
@@ -31,7 +31,7 @@ pub struct WasmData {
 
 impl Drop for WasmData {
     fn drop(&mut self) {
-        OnBoardLed::set_color(RGB8 { r: 0, g: 0, b: 0 })
+        Hardware::set_color(RGB8 { r: 0, g: 0, b: 0 })
     }
 }
 

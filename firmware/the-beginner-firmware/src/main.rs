@@ -28,7 +28,7 @@ use esp_idf_svc::{
 use crate::{
     auto_script::AutoScript,
     connect_to_wifi::connect_to_wifi,
-    hardware::on_board_led::OnBoardLed,
+    hardware::on_board_led::Hardware,
     http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
     logger::init_logging,
     utils::{heap, stack},
@@ -108,9 +108,6 @@ pub fn print_memory_stats() {
             "Approx total : {:>6} KiB",
             (internal_free + psram_free) / 1024
         );
-
-        println!("  DMA is a capability of internal RAM,");
-        println!("  not additional memory.");
         println!("=============================");
         println!();
     }
@@ -118,6 +115,7 @@ pub fn print_memory_stats() {
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
+    dbg!("{}", stack());
 
     unsafe {
         let config = esp_idf_sys::esp_vfs_eventfd_config_t {
@@ -136,6 +134,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
+    dbg!("{}", stack());
 
     print_memory_stats();
     init_logging();
@@ -143,7 +142,7 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let _hardware = OnBoardLed::new(
+    let _hardware = Hardware::new(
         peripherals.pins.gpio38,
         peripherals.spi2,
         peripherals.pins.gpio9,
@@ -156,64 +155,41 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.channel1,
     );
 
-    unsafe {
-        let mut cfg = esp_idf_sys::esp_pthread_get_default_config();
-
-        cfg.stack_size = 32 * 1024;
-        cfg.stack_alloc_caps =
-            (esp_idf_sys::MALLOC_CAP_SPIRAM | esp_idf_sys::MALLOC_CAP_8BIT) as u32;
-
-        cfg.inherit_cfg = true;
-
-        esp_idf_sys::esp_pthread_set_cfg(&cfg);
-    }
+    print_memory_stats();
 
     if reason == 9 {
-        OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
+        Hardware::set_color(RGB8 { r: 9, g: 0, b: 255 });
         thread::sleep(Duration::from_secs(1));
     }
 
+    Hardware::set_color(RGB8 { r: 15, g: 0, b: 0 });
+    dbg!("{}", stack());
 
-    OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
-
-    let auto_script = Arc::new(AutoScript::new()?);
-    let mut wifi = BlockingWifi::wrap(
-        EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
-        sys_loop,
-    )?;
+    // let auto_script = Arc::new(AutoScript::new()?);
+    // let mut wifi = BlockingWifi::wrap(
+    //     EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
+    //     sys_loop,
+    // )?;
 
     info!("123123123: {:?}", heap());
+    dbg!("{}", stack());
 
-    connect_to_wifi(&mut wifi)?;
+    // connect_to_wifi(&mut wifi)?;
     info!("2333333333333: {:?}", heap());
 
 
-    let mut mdns = EspMdns::take()?;
-        info!("3434334343434: {:?}", heap());
+    // let mut mdns = EspMdns::take()?;
+    //     info!("3434334343434: {:?}", heap());
 
-    mdns.set_hostname("the-beginner")?;
-
-    info!("444444444444: {:?}", heap());
-
-    info!("55555: {:?}", heap());
-
-    info!("1: {:?}", heap());
-
-    let handle = std::thread::Builder::new()
-        .name("http_server".into())
-        .stack_size(140 * 1024)
-        .spawn(|| {
-            let mut server = SmallServer::new();
-            futures_lite::future::block_on(http_server::run(&mut server, auto_script))
-        })?;
-    OnBoardLed::set_color(RGB8 {
-        r: 15,
-        g: 15,
-        b: 15,
-    });
+    // mdns.set_hostname("the-beginner")?;
 
     print_memory_stats();
-    handle.join().unwrap().unwrap();
+
+    let mut server = SmallServer::new();
+
+    dbg!("{}", stack());
+    // futures_lite::future::block_on(http_server::run(&mut server)).unwrap();
+    print_memory_stats();
     loop {
         thread::sleep(Duration::from_secs(1));
     }

@@ -7,7 +7,7 @@ use log::info;
 
 use crate::{
     auto_script::{AutoScript, AutoScriptRunProgress},
-    hardware::on_board_led::OnBoardLed,
+    hardware::on_board_led::Hardware,
     http_server::{CORS_HEADERS, FirmwareUpdate200Response},
 };
 
@@ -30,7 +30,7 @@ where
 
     log::info!("Setting motor A speed to {}", speed);
 
-    OnBoardLed::set_motor_a_speed(speed);
+    Hardware::set_motor_a_speed(speed);
 
     let body = serde_json::to_vec(&FirmwareUpdate200Response {
         status: "ok".to_string(),
@@ -68,7 +68,7 @@ where
 
     log::info!("Setting motor B speed to {}", speed);
 
-    OnBoardLed::set_motor_b_speed(speed);
+    Hardware::set_motor_b_speed(speed);
 
     let body = serde_json::to_vec(&FirmwareUpdate200Response {
         status: "ok".to_string(),

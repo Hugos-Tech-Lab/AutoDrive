@@ -27,12 +27,11 @@ struct FirmwareUpdate200Response {
 }
 
 pub struct HttpHandler {
-    pub auto_script: Arc<AutoScript>,
 }
 
 impl HttpHandler {
-    pub fn new(auto_script: Arc<AutoScript>) -> Self {
-        Self { auto_script }
+    pub fn new() -> Self {
+        Self { }
     }
 }
 
@@ -64,15 +63,6 @@ impl Handler for HttpHandler {
             | (Method::Options, "/logs") => {
                 conn.initiate_response(204, None, &CORS_HEADERS).await?;
             }
-            (Method::Post, "/autoscript/upload") => {
-                auto_script::upload(conn, self.auto_script.clone()).await?
-            }
-            (Method::Post, "/autoscript/run") => {
-                auto_script::run(conn, self.auto_script.clone()).await?
-            }
-            (Method::Post, "/autoscript/cancel") => {
-                auto_script::cancel(conn, self.auto_script.clone()).await?
-            }
             (Method::Post, "/hardware/set_motor_a_speed") => {
                 log::info!("waiting");
                 hardware::set_motor_a_speed(conn).await?;
@@ -97,16 +87,16 @@ impl Handler for HttpHandler {
 }
 
 pub async fn run(
-    server: &mut SmallServer,
-    auto_script: Arc<AutoScript>,
+    server: &mut SmallServer
 ) -> Result<(), anyhow::Error> {
     let addr = "0.0.0.0:80".parse().unwrap();
     log::info!("Running HTTP server on {addr}");
 
     let acceptor = edge_nal_std::Stack::new().bind(addr).await?;
+    // let acceptor = EspTcpAcceptor::new(2);
 
     server
-        .run(None, acceptor, HttpHandler { auto_script })
+        .run(None, acceptor, HttpHandler { })
         .await?;
 
     Ok(())

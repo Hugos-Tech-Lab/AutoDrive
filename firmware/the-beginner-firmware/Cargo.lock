@@ -73,7 +73,6 @@ name = "auto-drive-the-beginner-fw"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-io",
  "dotenvy_macro",
  "edge-http",
  "edge-nal",

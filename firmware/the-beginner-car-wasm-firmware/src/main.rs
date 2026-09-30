@@ -14,7 +14,7 @@ use esp_idf_svc::{
         ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
         spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
         units::Hertz,
-    }
+    },
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -47,7 +47,6 @@ use esp_idf_svc::hal::delay::BLOCK;
 
 use anyhow::Context;
 
-
 pub mod incoming_messages;
 pub mod outgoing_messages;
 
@@ -63,7 +62,6 @@ pub fn main() -> anyhow::Result<()> {
     println!("Last reset reason: {:?}", reason);
 
     let log_message_receiver = init_logging();
-
 
     info!("starting");
     let peripherals = Peripherals::take()?;
@@ -83,27 +81,30 @@ pub fn main() -> anyhow::Result<()> {
     // );
 
     if reason == 9 {
-        OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
+        // OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
         thread::sleep(Duration::from_secs(1));
     }
 
-    OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
+    // OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
 
     // let auto_script = Arc::new(AutoScript::new()?);
 
     info!("1: {:?}", heap());
 
-    OnBoardLed::set_color(RGB8 {
-        r: 15,
-        g: 15,
-        b: 15,
-    });
+    let thread_receive_incoming_messages =
+        std::thread::Builder::new()
+            .stack_size(7000)
+            .spawn(move || {
+                incoming_messages::receive_loop(
+                    peripherals.i2c0,
+                    peripherals.pins.gpio18.into(),
+                    peripherals.pins.gpio19.into(),
+                    log_message_receiver
+                )
+                .unwrap();
+            })?;
 
-    let thread0 = std::thread::Builder::new()
-        .stack_size(7000)
-        .spawn(move || {
-            incoming_messages::receive_loop(peripherals).unwrap();
-        })?;
+    thread_receive_incoming_messages.join().unwrap();
 
     Ok(())
 }

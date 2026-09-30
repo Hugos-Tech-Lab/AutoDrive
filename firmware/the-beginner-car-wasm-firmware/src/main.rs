@@ -6,10 +6,12 @@ use std::{
 
 use edge_http::io::server::Server;
 use edge_nal::TcpBind;
+use esp_idf_svc::hal::i2c::I2cSlaveDriver;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     hal::{
         gpio::{AnyIOPin, PinDriver},
+        i2c::I2cSlaveConfig,
         ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
         spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
         units::Hertz,
@@ -34,12 +36,14 @@ use crate::{
     utils::{heap, stack},
 };
 
-use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason, esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power};
+use esp_idf_sys::{
+    CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason,
+    esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power,
+};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
 use smart_leds_trait::RGB8;
 pub mod auto_script;
-pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
 pub mod hardware;
 pub mod http_server;
@@ -50,6 +54,20 @@ pub mod utils;
 use anyhow::Context;
 
 esp_app_desc_2! {}
+
+fn i2c_slave_init<'d>(
+    i2c: impl I2c + 'd,
+    sda: AnyIOPin<'d>,
+    scl: AnyIOPin<'d>,
+    buflen: usize,
+    slave_addr: u8,
+) -> anyhow::Result<I2cSlaveDriver<'d>> {
+    let config = I2cSlaveConfig::new()
+        .rx_buffer_length(buflen)
+        .tx_buffer_length(buflen);
+    let driver = I2cSlaveDriver::new(i2c, sda, scl, slave_addr, &config)?;
+    Ok(driver)
+}
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -87,33 +105,55 @@ pub fn main() -> anyhow::Result<()> {
 
     OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
 
-    let auto_script = Arc::new(AutoScript::new()?);
-    let mut wifi = BlockingWifi::wrap(
-        EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
-        sys_loop,
-    )?;
-    connect_to_wifi(&mut wifi)?;
-    let mut mdns = EspMdns::take()?;
-    mdns.set_hostname("the-beginner")?;
-    let mut ota = EspOta::new().context("failed to obtain OTA instance")?;
-    verify_and_set_valid(&mut ota)?;
-    let esp_ota = Arc::new(Mutex::new(ota));
+    // let auto_script = Arc::new(AutoScript::new()?);
 
     info!("1: {:?}", heap());
 
-    let handle = std::thread::Builder::new()
-        .name("http_server".into())
-        .stack_size(80 * 1024)
-        .spawn(|| {
-            let mut server = SmallServer::new();
-            futures_lite::future::block_on(http_server::run(&mut server, auto_script))
-        })?;
     OnBoardLed::set_color(RGB8 {
         r: 15,
         g: 15,
         b: 15,
     });
 
-    handle.join().unwrap().unwrap();
+    let mut i2c_slave = i2c_slave_init(
+        peripherals.i2c1,
+        peripherals.pins.gpio18.into(),
+        peripherals.pins.gpio19.into(),
+        SLAVE_BUFFER_SIZE,
+        SLAVE_ADDR,
+    )?;
+
+    let thread0 = std::thread::Builder::new()
+        .stack_size(7000)
+        .spawn(move || {
+            let mut data: [u8; 256] = [0; 256];
+            loop {
+                let mut reg_addr: [u8; 1] = [0];
+                let res = i2c_slave.read(&mut reg_addr, BLOCK);
+                if let Err(e) = res {
+                    println!("SLAVE: failed to read register address from master: Error: {e:?}");
+                    continue;
+                }
+                let mut rx_data: [u8; 1] = [0];
+                match i2c_slave.read(&mut rx_data, 0) {
+                    Ok(_) => {
+                        println!(
+                            "SLAVE: write operation {:#04x} to reg addr {:#04x}",
+                            rx_data[0], reg_addr[0]
+                        );
+                        data[reg_addr[0] as usize] = rx_data[0];
+                    }
+                    Err(_) => {
+                        let d = data[reg_addr[0] as usize];
+                        println!(
+                            "SLAVE: read operation {:#04x} from reg addr {:#04x}",
+                            d, reg_addr[0]
+                        );
+                        i2c_slave.write(&[d], BLOCK).unwrap();
+                    }
+                }
+            }
+        })?;
+
     Ok(())
 }

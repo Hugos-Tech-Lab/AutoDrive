@@ -55,8 +55,6 @@ pub fn i2c_master_init<'d>(
     scl: AnyIOPin<'d>,
     baudrate: u32,
 ) -> anyhow::Result<I2cDriver<'d>> {
-        dbg!("i2c_master_init");
-
     let config = I2cConfig::new().baudrate(Hertz(baudrate)).scl_enable_pullup(true).sda_enable_pullup(true);
         dbg!("set baud rate");
 
@@ -76,7 +74,6 @@ pub fn send_request(i2c: &mut I2cDriver<'_>, request: &Request, ready_pin: &mut 
         .map_err(|e| anyhow::anyhow!("Failed to encode request: {e:?}"))?;
 
     i2c.write(SLAVE_ADDR, encoded, BLOCK)?;
-    info!("after right");
 
     let timeout = Duration::from_millis(150); // Maximum time we will wait
     let start_time = Instant::now();
@@ -89,12 +86,9 @@ pub fn send_request(i2c: &mut I2cDriver<'_>, request: &Request, ready_pin: &mut 
         FreeRtos::delay_ms(1);
     }
 
-    info!("after_delay");
-
     // 4. Read the response chunk
     let mut rx_buf = [0u8; MASTER_BUFFER_SIZE];
     i2c.read(SLAVE_ADDR, &mut rx_buf, BLOCK)?;
-    info!("after_message");
 
     // 5. Find the COBS terminator (0x00)
     // The slave's logic drops the 0x00 before decoding, so we must do the same here.

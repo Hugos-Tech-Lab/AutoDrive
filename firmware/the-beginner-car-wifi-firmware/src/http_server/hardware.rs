@@ -30,7 +30,7 @@ where
 
     log::info!("Setting motor A speed to {}", speed);
 
-    Hardware::set_motor_a_speed(speed);
+    // Hardware::set_motor_a_speed(speed);
 
     let body = serde_json::to_vec(&FirmwareUpdate200Response {
         status: "ok".to_string(),
@@ -68,7 +68,7 @@ where
 
     log::info!("Setting motor B speed to {}", speed);
 
-    Hardware::set_motor_b_speed(speed);
+    // Hardware::set_motor_b_speed(speed);
 
     let body = serde_json::to_vec(&FirmwareUpdate200Response {
         status: "ok".to_string(),

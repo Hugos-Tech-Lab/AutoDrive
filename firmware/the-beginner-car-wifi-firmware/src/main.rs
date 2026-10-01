@@ -19,7 +19,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    auto_script::AutoScript, connect_to_wifi::connect_to_wifi, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, i2c_master::{Request, i2c_master_init, send_request}, logger::init_logging, utils::{heap, stack},
+    auto_script::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::{Hardware, HardwareState}, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, i2c_master::{Request, i2c_master_init, send_request}, logger::init_logging, utils::{heap, stack},
 };
 
 pub mod i2c_master;
@@ -120,18 +120,12 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    // let _hardware = HardwareState::new(
-    //     peripherals.pins.gpio38,
-    //     peripherals.spi2,
-    //     peripherals.pins.gpio9,
-    //     peripherals.pins.gpio10,
-    //     peripherals.pins.gpio11,
-    //     peripherals.pins.gpio12,
-    //     peripherals.ledc.timer0,
-    //     peripherals.ledc.timer1,
-    //     peripherals.ledc.channel0,
-    //     peripherals.ledc.channel1,
-    // );
+    let mut hardware = Hardware::new(
+        peripherals.pins.gpio38,
+        peripherals.spi2
+    );
+
+    hardware.off();
 
     if reason == 9 {
         // OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
@@ -152,7 +146,6 @@ pub fn main() -> anyhow::Result<()> {
     info!("2333333333333: {:?}", heap());
 
     let mut mdns = EspMdns::take()?;
-    info!("3434334343434: {:?}", heap());
 
     mdns.set_hostname("the-beginner")?;
 
@@ -171,7 +164,6 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.pins.gpio7.into(),
         100_000,
     );
-
 
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio21, Pull::Down)?;
 

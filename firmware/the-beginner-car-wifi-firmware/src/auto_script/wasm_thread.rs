@@ -31,7 +31,7 @@ pub struct WasmData {
 
 impl Drop for WasmData {
     fn drop(&mut self) {
-        Hardware::set_color(RGB8 { r: 0, g: 0, b: 0 })
+        // Hardware::set_color(RGB8 { r: 0, g: 0, b: 0 })
     }
 }
 

@@ -77,7 +77,7 @@ pub extern "C" fn set_onboard_led_color(exec_env: *mut WASMExecEnv, r: u8, g: u8
         terminate(exec_env);
     }
 
-    Hardware::set_color(RGB8 { r, g, b })
+    // Hardware::set_color(RGB8 { r, g, b })
 }
 
 fn get_wasm_data<'a>(exec_env: *mut WASMExecEnv) -> &'a mut WasmData {

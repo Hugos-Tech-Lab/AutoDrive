@@ -173,13 +173,12 @@ pub fn main() -> anyhow::Result<()> {
     );
 
 
-    let mut ready_pin: PinDriver<'_, esp_idf_svc::hal::gpio::Input> = PinDriver::input(peripherals.pins.gpio21, Pull::Down)?;
+    let mut ready_pin = PinDriver::input(peripherals.pins.gpio21, Pull::Down)?;
 
     match i2c_driver  {
         Ok(mut i2c_driver) => loop {
-        dbg!("sending request");
         let res = send_request(&mut i2c_driver, &Request::LightOn, &mut ready_pin).unwrap();
-        dbg!("RESPONSE", res);
+        info!("RESPONSE: {:?}", res);
         // i2c_driver
         thread::sleep(Duration::from_secs(1));
     },

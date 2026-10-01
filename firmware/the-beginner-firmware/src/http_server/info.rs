@@ -10,57 +10,57 @@ use esp_idf_svc::{
 use serde::Serialize;
 
 #[derive(Serialize)]
-struct Device {
-    id: String,
+pub struct Device {
+    pub id: String,
     esp_idf_version: String,
     mac: String,
     firmware_version: String,
     firmware_build_time_utc: String,
     firmware_description: String,
-    uptime_seconds: i64,
+    pub uptime_seconds: i64,
     running_slot_label: String,
     running_slot_state: SlotState,
     #[serde(rename = "freeHeap")]
     free_heap: i64,
 }
 
-pub fn set_handles(server: &mut EspHttpServer, esp_ota: Arc<Mutex<EspOta>>) -> anyhow::Result<()> {
-    server.fn_handler("/firmware/info", Method::Options, |req| -> anyhow::Result<()> {
-        req.into_response(
-            204,
-            None,
-            &[
-                ("Access-Control-Allow-Origin", "*"),
-                ("Access-Control-Allow-Methods", "GET, OPTIONS"),
-                ("Access-Control-Allow-Headers", "Content-Type"),
-            ],
-        )?;
-        Ok(())
-    })?;
-    server.fn_handler("/firmware/info", Method::Get, move |req| -> anyhow::Result<()> {
-        let esp_ota = esp_ota.lock().unwrap();
-        let device = get_device_info(&esp_ota)?;
+// pub fn set_handles(server: &mut EspHttpServer, esp_ota: Arc<Mutex<EspOta>>) -> anyhow::Result<()> {
+//     server.fn_handler("/firmware/info", Method::Options, |req| -> anyhow::Result<()> {
+//         req.into_response(
+//             204,
+//             None,
+//             &[
+//                 ("Access-Control-Allow-Origin", "*"),
+//                 ("Access-Control-Allow-Methods", "GET, OPTIONS"),
+//                 ("Access-Control-Allow-Headers", "Content-Type"),
+//             ],
+//         )?;
+//         Ok(())
+//     })?;
+//     server.fn_handler("/firmware/info", Method::Get, move |req| -> anyhow::Result<()> {
+//         let esp_ota = esp_ota.lock().unwrap();
+//         let device = get_device_info(esp_ota)?;
 
-        let body = serde_json::to_vec(&device)?;
+//         let body = serde_json::to_vec(&device)?;
 
-        let mut response = req.into_response(
-            200,
-            None,
-            &[
-                ("Content-Type", "application/json"),
-                ("Access-Control-Allow-Origin", "*"),
-            ],
-        )?;
+//         let mut response = req.into_response(
+//             200,
+//             None,
+//             &[
+//                 ("Content-Type", "application/json"),
+//                 ("Access-Control-Allow-Origin", "*"),
+//             ],
+//         )?;
 
-        response.write(&body)?;
+//         response.write(&body)?;
 
-        Ok(())
-    })?;
+//         Ok(())
+//     })?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-fn get_device_info(ota: &EspOta) -> anyhow::Result<Device> {
+pub fn get_device_info(ota: &Arc<Mutex<EspOta>>) -> anyhow::Result<Device> {
     let mut mac = [0u8; 6];
 
     unsafe {
@@ -83,6 +83,7 @@ fn get_device_info(ota: &EspOta) -> anyhow::Result<Device> {
 
     let free_heap = unsafe { sys::esp_get_free_heap_size() };
 
+    let ota = ota.lock().unwrap();
     let slot = ota.get_running_slot()?;
 
     let firmware_info = slot

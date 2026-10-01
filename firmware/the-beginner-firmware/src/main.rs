@@ -45,8 +45,6 @@ pub mod hardware;
 
 use anyhow::Context;
 
-esp_app_desc_2! {}
-
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
 
@@ -88,7 +86,7 @@ unsafe {
         .stack_size(96 * 1024)
         .spawn(|| {
             let mut server = SmallServer::new();
-            futures_lite::future::block_on(http_server::run(&mut server, auto_script))
+            futures_lite::future::block_on(http_server::run(&mut server, auto_script, esp_ota))
         })?;
 
     handle.join().unwrap().unwrap();

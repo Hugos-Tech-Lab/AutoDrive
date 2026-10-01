@@ -1,4 +1,9 @@
-use std::sync::{Arc};
+use std::{
+    sync::{Arc, Mutex},
+};
+
+use esp_idf_svc::{ota::EspOta, wifi::BlockingWifi};
+
 
 use edge_nal::TcpBind;
 
@@ -6,6 +11,7 @@ pub mod auto_script;
 pub mod info;
 pub mod logs;
 pub mod update;
+pub mod metrics;
 pub mod verify_and_set_valid;
 
 use core::fmt::{Debug, Display};
@@ -17,6 +23,8 @@ use embedded_io_async::{Read, Write};
 use serde::Serialize;
 
 use crate::auto_script::AutoScript;
+use crate::http_server::metrics::MetricsHandler;
+
 
 pub type SmallServer = Server<2, 1024, 16>;
 
@@ -27,11 +35,12 @@ struct FirmwareUpdate200Response {
 
 pub struct HttpHandler {
     pub auto_script: Arc<AutoScript>,
+    pub metrics_handler: metrics::MetricsHandler,
 }
 
 impl HttpHandler {
-    pub fn new(auto_script: Arc<AutoScript>) -> Self {
-        Self { auto_script }
+    pub fn new(auto_script: Arc<AutoScript>, metrics_handler: MetricsHandler) -> Self {
+        Self { auto_script, metrics_handler }
     }
 }
 
@@ -66,6 +75,9 @@ impl Handler for HttpHandler {
             (Method::Post, "/autoscript/cancel") => {
                 auto_script::cancel(conn, self.auto_script.clone()).await?
             }
+            (Method::Get, "/metrics") => {
+                self.metrics_handler.write_metrics(conn).await?
+            }
             (_, "/autoscript/upload") | (_, "/autoscript/run") | (_, "/autoscript/cancel") => {
                 conn.initiate_response(405, Some("Method Not Allowed"), &[])
                     .await?;
@@ -79,7 +91,12 @@ impl Handler for HttpHandler {
     }
 }
 
-pub async fn run(server: &mut SmallServer, auto_script: Arc<AutoScript>) -> Result<(), anyhow::Error> {
+pub async fn run(
+    server: &mut SmallServer,
+    auto_script: Arc<AutoScript>,
+    esp_ota: Arc<Mutex<EspOta>>,
+    // wifi: &BlockingWifi<esp_idf_svc::wifi::EspWifi<'_>>
+) -> Result<(), anyhow::Error> {
     let addr ="0.0.0.0:80".parse().unwrap();
     log::info!("Running HTTP server on {addr}");
 
@@ -87,7 +104,20 @@ pub async fn run(server: &mut SmallServer, auto_script: Arc<AutoScript>) -> Resu
         .bind(addr)
         .await?;
 
-    server.run(None, acceptor, HttpHandler { auto_script }).await?;
+    let device: info::Device = info::get_device_info(&esp_ota).unwrap();
+    let cpu: Arc<Mutex<metrics::CpuSampler>> = Arc::new(Mutex::new(metrics::CpuSampler::new()));
+    let metrics_handler = metrics::MetricsHandler{
+        device,
+        // wifi,
+        cpu
+    };
+
+    let http_handler: HttpHandler = HttpHandler{
+        auto_script,
+        metrics_handler
+    };
+
+    server.run(None, acceptor, http_handler).await?;
 
     Ok(())
 }

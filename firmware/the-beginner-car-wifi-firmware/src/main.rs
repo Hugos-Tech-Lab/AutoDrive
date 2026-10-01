@@ -7,16 +7,9 @@ use std::{
 use edge_http::io::server::Server;
 use edge_nal::TcpBind;
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    hal::{
-        gpio::{AnyIOPin, PinDriver},
-        ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
-        spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
-        units::Hertz,
-    },
-    mdns::EspMdns,
-    ota::EspOta,
-    wifi::{BlockingWifi, EspWifi},
+    eventloop::EspSystemEventLoop, hal::{
+        gpio::{AnyIOPin, PinDriver, Pull}, ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig}, spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, units::Hertz,
+    }, mdns::EspMdns, ota::EspOta, wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -174,15 +167,18 @@ pub fn main() -> anyhow::Result<()> {
 
     let mut i2c_driver = i2c_master_init(
         peripherals.i2c0,
-        peripherals.pins.gpio47.into(),
-        peripherals.pins.gpio48.into(),
+        peripherals.pins.gpio6.into(),
+        peripherals.pins.gpio7.into(),
         100_000,
     );
+
+
+    let mut ready_pin: PinDriver<'_, esp_idf_svc::hal::gpio::Input> = PinDriver::input(peripherals.pins.gpio21, Pull::Down)?;
 
     match i2c_driver  {
         Ok(mut i2c_driver) => loop {
         dbg!("sending request");
-        let res = send_request(&mut i2c_driver, &Request::LightOn).unwrap();
+        let res = send_request(&mut i2c_driver, &Request::LightOn, &mut ready_pin).unwrap();
         dbg!("RESPONSE", res);
         // i2c_driver
         thread::sleep(Duration::from_secs(1));

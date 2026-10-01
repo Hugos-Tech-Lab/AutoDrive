@@ -5,7 +5,7 @@ use std::{
 };
 
 use edge_http::io::server::Server;
-use esp_idf_svc::hal::i2c::{I2c, I2cSlaveDriver};
+use esp_idf_svc::hal::{gpio::Pull, i2c::{I2c, I2cSlaveDriver}};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     hal::{
@@ -96,9 +96,10 @@ pub fn main() -> anyhow::Result<()> {
             .spawn(move || {
                 i2c_slave::receive_loop(
                     peripherals.i2c0,
-                    peripherals.pins.gpio19.into(),
-                    peripherals.pins.gpio20.into(),
-                    log_message_receiver
+                    peripherals.pins.gpio22.into(),
+                    peripherals.pins.gpio23.into(),
+                    log_message_receiver,
+                    peripherals.pins.gpio21
                 )
                 .unwrap();
             })?;

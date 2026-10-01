@@ -120,7 +120,7 @@ impl Handler for HttpHandler {
 
 pub async fn run(server: &mut SmallServer) -> Result<(), anyhow::Error> {
     let addr = "0.0.0.0:80".parse().unwrap();
-    log::info!("Running HTTP server on {addr}");
+    log::info!("Running HTTP server o n {addr}");
 
     let acceptor = edge_nal_std::Stack::new().bind(addr).await?;
     // let acceptor = EspTcpAcceptor::new(2);

@@ -2,15 +2,8 @@ use std::{sync::mpsc::Receiver, time::Duration};
 
 use edge_http::io::server::Server;
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    hal::{
-        delay::{FreeRtos, TickType},
-        gpio::{AnyIOPin, Gpio21, PinDriver, Pull},
-        i2c::{I2c, I2cSlaveConfig, I2cSlaveDriver},
-        ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
-        peripherals::Peripherals,
-        spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
-        units::Hertz,
+    eventloop::EspSystemEventLoop, hal::{
+        delay::{FreeRtos, TickType}, gpio::{AnyIOPin, Gpio21, PinDriver, Pull}, i2c::{I2c, I2cSlaveConfig, I2cSlaveDriver}, ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig}, peripherals::Peripherals, spi::{Dma, SpiBusDriver, SpiConfig, SpiDeviceDriver, SpiDriver, SpiDriverConfig}, units::Hertz,
     },
 };
 
@@ -82,6 +75,9 @@ pub fn receive_loop<'d>(
 
     let mut ready_pin: PinDriver<'_, esp_idf_svc::hal::gpio::Output> =
         PinDriver::output(gpio_pin21)?;
+
+    // let mut device_1 = SpiDeviceDriver::new(&driver, Some(cs_1), &config_1)?;
+
     ready_pin.set_low().unwrap();
     let mut registers = [0u8; 256];
     let mut light_on = false;

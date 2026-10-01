@@ -26,14 +26,14 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    auto_script::AutoScript,
-    connect_to_wifi::connect_to_wifi,
-    http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
-    logger::init_logging,
-    utils::{heap, stack},
+    auto_script::AutoScript, connect_to_wifi::connect_to_wifi, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, i2c_master::{Request, i2c_master_init, send_request}, logger::init_logging, utils::{heap, stack},
 };
 
-use esp_idf_sys::{CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason, esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power};
+pub mod i2c_master;
+use esp_idf_sys::{
+    CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason,
+    esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power,
+};
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
 use smart_leds_trait::RGB8;
@@ -51,34 +51,21 @@ use anyhow::Context;
 pub fn print_memory_stats() {
     unsafe {
         let internal_free =
-            esp_idf_sys::heap_caps_get_free_size(
-                esp_idf_sys::MALLOC_CAP_INTERNAL as u32,
-            );
+            esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_INTERNAL as u32);
 
         let internal_min =
-            esp_idf_sys::heap_caps_get_minimum_free_size(
-                esp_idf_sys::MALLOC_CAP_INTERNAL as u32,
-            );
+            esp_idf_sys::heap_caps_get_minimum_free_size(esp_idf_sys::MALLOC_CAP_INTERNAL as u32);
 
-        let dma_free =
-            esp_idf_sys::heap_caps_get_free_size(
-                esp_idf_sys::MALLOC_CAP_DMA as u32,
-            );
+        let dma_free = esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_DMA as u32);
 
         let dma_min =
-            esp_idf_sys::heap_caps_get_minimum_free_size(
-                esp_idf_sys::MALLOC_CAP_DMA as u32,
-            );
+            esp_idf_sys::heap_caps_get_minimum_free_size(esp_idf_sys::MALLOC_CAP_DMA as u32);
 
         let psram_free =
-            esp_idf_sys::heap_caps_get_free_size(
-                esp_idf_sys::MALLOC_CAP_SPIRAM as u32,
-            );
+            esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_SPIRAM as u32);
 
         let psram_min =
-            esp_idf_sys::heap_caps_get_minimum_free_size(
-                esp_idf_sys::MALLOC_CAP_SPIRAM as u32,
-            );
+            esp_idf_sys::heap_caps_get_minimum_free_size(esp_idf_sys::MALLOC_CAP_SPIRAM as u32);
 
         println!();
         println!("========== MEMORY ==========");
@@ -119,9 +106,7 @@ pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
 
     unsafe {
-        let config = esp_idf_sys::esp_vfs_eventfd_config_t {
-            max_fds: 16,
-        };
+        let config = esp_idf_sys::esp_vfs_eventfd_config_t { max_fds: 16 };
 
         let ret = esp_idf_sys::esp_vfs_eventfd_register(&config);
 
@@ -160,7 +145,6 @@ pub fn main() -> anyhow::Result<()> {
         thread::sleep(Duration::from_secs(1));
     }
 
-
     // OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
 
     let auto_script = Arc::new(AutoScript::new()?);
@@ -174,29 +158,42 @@ pub fn main() -> anyhow::Result<()> {
     connect_to_wifi(&mut wifi)?;
     info!("2333333333333: {:?}", heap());
 
-
     let mut mdns = EspMdns::take()?;
-        info!("3434334343434: {:?}", heap());
+    info!("3434334343434: {:?}", heap());
 
     mdns.set_hostname("the-beginner")?;
 
-    let handle = std::thread::Builder::new()
-        .name("http_server".into())
-        .stack_size(50 * 1024)
-        .spawn(|| {
-            let mut server = SmallServer::new();
-            futures_lite::future::block_on(http_server::run(&mut server))
-        })?;
-    // OnBoardLed::set_color(RGB8 {
-    //     r: 15,
-    //     g: 15,
-    //     b: 15,
-    // });
+    info!("setting host name");
+    // let handle = std::thread::Builder::new()
+    //     .name("http_server".into())
+    //     .stack_size(40 * 1024)
+    //     .spawn(|| {
+    //         let mut server = SmallServer::new();
+    //         futures_lite::future::block_on(http_server::run(&mut server))
+    //     })?;
+
+    let mut i2c_driver = i2c_master_init(
+        peripherals.i2c0,
+        peripherals.pins.gpio47.into(),
+        peripherals.pins.gpio48.into(),
+        100_000,
+    );
+
+    match i2c_driver  {
+        Ok(mut i2c_driver) => loop {
+        dbg!("sending request");
+        let res = send_request(&mut i2c_driver, &Request::LightOn).unwrap();
+        dbg!("RESPONSE", res);
+        // i2c_driver
+        thread::sleep(Duration::from_secs(1));
+    },
+        Err(err) => dbg!("{:?}", err),
+    };
+    info!("init done");
+
+    
 
     print_memory_stats();
-    handle.join().unwrap().unwrap();
-    loop {
-        thread::sleep(Duration::from_secs(1));
-    }
+    // handle.join().unwrap().unwrap();
     Ok(())
 }

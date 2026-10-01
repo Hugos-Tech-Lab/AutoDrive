@@ -49,13 +49,21 @@ pub enum Request {
     SetMotorSpeed(i32),
 
     /// Set motor speed with an explicit motor ID.
-    SetMotorSpeedFor { motor: u8, speed: i32 },
+    SetMotorSpeedFor {
+        motor: u8,
+        speed: i32,
+    },
 
     /// Read a register.
-    ReadRegister { address: u8 },
+    ReadRegister {
+        address: u8,
+    },
 
     /// Write a register.
-    WriteRegister { address: u8, value: u8 },
+    WriteRegister {
+        address: u8,
+        value: u8,
+    },
 
     Logs,
 }
@@ -70,12 +78,20 @@ pub enum Response {
     Error,
 
     /// Response containing a register value.
-    RegisterValue { address: u8, value: u8 },
+    RegisterValue {
+        address: u8,
+        value: u8,
+    },
 
     /// Generic status information.
-    Status { light_on: bool, motor_speed: i32 },
+    Status {
+        light_on: bool,
+        motor_speed: i32,
+    },
 
-    Logs { logs: Vec<LogMessage> }
+    Logs {
+        logs: Vec<LogMessage>,
+    },
 }
 
 fn i2c_slave_init<'d>(
@@ -98,15 +114,9 @@ pub fn receive_loop<'d>(
     i2c: impl I2c + 'd,
     sda: AnyIOPin<'d>,
     scl: AnyIOPin<'d>,
-    log_message_receiver: Receiver<LogMessage>
+    log_message_receiver: Receiver<LogMessage>,
 ) -> anyhow::Result<()> {
-    let mut i2c_slave = i2c_slave_init(
-        i2c,
-        sda,
-        scl,
-        SLAVE_BUFFER_SIZE,
-        SLAVE_ADDR,
-    )?;
+    let mut i2c_slave = i2c_slave_init(i2c, sda, scl, SLAVE_BUFFER_SIZE, SLAVE_ADDR)?;
 
     // Example device state.
     let mut registers = [0u8; 256];
@@ -131,15 +141,18 @@ pub fn receive_loop<'d>(
     let mut chunk = [0u8; SLAVE_BUFFER_SIZE];
 
     loop {
+        info!("loop waiting");
+
         match i2c_slave.read(&mut chunk, BLOCK) {
             Ok(n) => {
+                info!("GOT BYTES");
+
                 // We received bytes from the master.
                 //
                 // IMPORTANT:
                 // `n` is the number of bytes actually received.
                 for &byte in &chunk[..n] {
                     if byte == 0 {
-                        // 0x00 terminates a COBS frame.
                         if rx_len == 0 {
                             continue;
                         }
@@ -155,7 +168,7 @@ pub fn receive_loop<'d>(
                                     &mut registers,
                                     &mut light_on,
                                     &mut motor_speed,
-                                    &log_message_receiver
+                                    &log_message_receiver,
                                 );
 
                                 println!("SLAVE: response: {response:?}");
@@ -166,7 +179,6 @@ pub fn receive_loop<'d>(
                                             println!("SLAVE: failed to write response: {e:?}");
                                         }
                                     }
-
                                     Err(e) => {
                                         println!("SLAVE: failed to encode response: {e:?}");
                                     }
@@ -175,24 +187,13 @@ pub fn receive_loop<'d>(
 
                             Err(e) => {
                                 println!("SLAVE: failed to decode Postcard frame: {e:?}");
-
-                                let response = Response::Error;
-
-                                if let Ok(encoded) =
-                                    postcard::to_slice_cobs(&response, &mut tx_frame)
-                                {
-                                    let _ = i2c_slave.write(encoded, BLOCK);
-                                }
                             }
                         }
 
-                        // Start accumulating the next frame.
                         rx_len = 0;
                     } else {
-                        // Add byte to our frame accumulator.
                         if rx_len >= rx_frame.len() {
                             println!("SLAVE: RX frame too large, discarding frame");
-
                             rx_len = 0;
                             continue;
                         }
@@ -221,7 +222,7 @@ fn handle_request(
     registers: &mut [u8; 256],
     light_on: &mut bool,
     motor_speed: &mut i32,
-    log_message_receiver: &Receiver<LogMessage>
+    log_message_receiver: &Receiver<LogMessage>,
 ) -> Response {
     match request {
         Request::LightOn => {
@@ -276,6 +277,6 @@ fn handle_request(
 
             let logs = log_message_receiver.try_iter().collect();
             Response::Logs { logs }
-        },
+        }
     }
 }

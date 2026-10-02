@@ -1,10 +1,7 @@
 use std::time::{Duration, Instant};
 
 use esp_idf_svc::hal::{
-    delay::FreeRtos,
-    gpio::{AnyIOPin, Input, PinDriver},
-    spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config},
-    units::Hertz,
+    delay::FreeRtos, gpio::{AnyIOPin, Input, Output, PinDriver}, spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config}, units::Hertz,
 };
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -12,7 +9,8 @@ use crate::spi_packet::{PACKET_SIZE, SpiPacket, SpiPackets};
 
 pub struct SpiMaster<'d> {
     device_driver: SpiDeviceDriver<'d, SpiDriver<'d>>,
-    ready_pin: PinDriver<'d, Input>,
+    slave_ready: PinDriver<'d, Input>,
+    master_has_transaction: PinDriver<'d, Output>,
 }
 
 impl<'d> SpiMaster<'d> {
@@ -27,8 +25,9 @@ impl<'d> SpiMaster<'d> {
         a_sclk: AnyIOPin<'d>,
         b_mosi: AnyIOPin<'d>,
         c_miso: AnyIOPin<'d>,
-        d_ready_pin: PinDriver<'d, Input>,
+        d_slave_ready_pin: PinDriver<'d, Input>,
         e_cs: AnyIOPin<'d>,
+        f_master_ready_pin: PinDriver<'d, Output>,
         baudrate: u32,
     ) -> anyhow::Result<Self> {
         let driver_config = SpiDriverConfig::new();
@@ -37,7 +36,8 @@ impl<'d> SpiMaster<'d> {
         let device_driver = SpiDeviceDriver::new(driver, Some(e_cs), &device_config)?;
         Ok(Self {
             device_driver,
-            ready_pin: d_ready_pin,
+            slave_ready: d_slave_ready_pin,
+            master_has_transaction: f_master_ready_pin
         })
     }
 
@@ -45,15 +45,13 @@ impl<'d> SpiMaster<'d> {
         let start = Instant::now();
         let timeout = Duration::from_millis(15000);
 
-        while self.ready_pin.is_high() != is_high {
+        while self.slave_ready.is_high() != is_high {
             if start.elapsed() > timeout {
-                let str = if is_high {
+                return Err(anyhow::anyhow!("SPI timeout waiting for pin {}", if is_high {
                     "high"
                 } else {
                     "low"
-                };
-
-                return Err(anyhow::anyhow!("SPI timeout waiting for pin {str}"));
+                }));
             }
 
             FreeRtos::delay_ms(1);
@@ -62,11 +60,11 @@ impl<'d> SpiMaster<'d> {
         Ok(())
     }
 
-    pub fn wait_until_ready_pin_is_low(&self) -> anyhow::Result<()> {
+    pub fn wait_until_slave_doesnt_want_data(&self) -> anyhow::Result<()> {
         self.wait_until_ready_pin(false)
     }
 
-    pub fn wait_until_ready_pin_is_high(&self) -> anyhow::Result<()> {
+    pub fn wait_until_slave_wants_data(&self) -> anyhow::Result<()> {
         self.wait_until_ready_pin(true)
     }
 
@@ -80,32 +78,27 @@ impl<'d> SpiMaster<'d> {
 
         let packets = SpiPackets::from_payload(&encoded).unwrap();
         for packet in packets.iter() {
-            println!("waiting to send packet");
             let payload = packet.to_bytes();
-            self.wait_until_ready_pin_is_high()?;
-            println!("writing");
-            if payload.iter().all(|&b| b == 0) {
-                println!("RX contains only zeros");
-            }
+            self.wait_until_slave_wants_data()?;
+            self.master_has_transaction.set_high().unwrap();
             self.device_driver.write(&payload).unwrap();
-
-            println!("waiting here");
-            self.wait_until_ready_pin_is_low()?;
-            println!("stopped waiting");
+            self.wait_until_slave_doesnt_want_data()?;
+            self.master_has_transaction.set_low().unwrap();
         }
 
         let mut response = Vec::<SpiPacket>::new();
         loop {
-            println!("waiting to go high again to read");
-            self.wait_until_ready_pin_is_high()?;
+            self.wait_until_slave_wants_data()?;
+            self.master_has_transaction.set_high().unwrap();
             let mut packet = [0u8; PACKET_SIZE];
             self.device_driver.read(&mut packet)?;
 
             let packet = SpiPacket::from_bytes(&packet).unwrap();
             let packet = response.push_mut(packet);
-            println!("waiting to go low");
-            self.wait_until_ready_pin_is_low()?;
-            println!("this should never be printed");
+            println!("wait_until_slave_doesnt_want_data");
+            self.wait_until_slave_doesnt_want_data()?;
+            println!("master_has_transaction.set_low");
+            self.master_has_transaction.set_low().unwrap();
 
             if packet.is_last() {
                 break;

@@ -92,7 +92,8 @@ pub fn main() -> anyhow::Result<()> {
                     peripherals.pins.gpio18,
                     peripherals.pins.gpio19,
                     peripherals.pins.gpio9,
-                    peripherals.pins.gpio21
+                    peripherals.pins.gpio21,
+                    peripherals.pins.gpio22
                 )
                 .unwrap();
                 spi.listen(|request: RequestToHardware| -> ResponseFromHardware {

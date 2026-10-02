@@ -1,15 +1,16 @@
 use esp_idf_svc::{
-    hal::{gpio::{AnyIOPin, Input, InputPin, Output, OutputPin, PinDriver}, spi::{SPI2, SpiAnyPins}}, sys::*,
+    hal::{delay::FreeRtos, gpio::{AnyIOPin, Input, InputPin, Output, OutputPin, PinDriver, Pull}, spi::{SPI2, SpiAnyPins}}, sys::*,
 };
 use serde::{Serialize, de::DeserializeOwned};
-use std::{ffi::c_void, marker::PhantomData, ptr, thread, time::Duration};
+use std::{ffi::c_void, marker::PhantomData, ptr, thread, time::{Duration, Instant}};
 
 use crate::spi_packet::{PACKET_SIZE, SpiPacket, SpiPackets};
 
 pub struct SpiSlave<'d> {
     host: spi_host_device_t,
     _not_send_sync: PhantomData<*mut ()>,
-    ready_pin: PinDriver<'d, Output>,
+    slave_wants_data: PinDriver<'d, Output>,
+    master_ready: PinDriver<'d, Input>,
 }
 
 impl<'d> SpiSlave<'d> {
@@ -18,10 +19,12 @@ impl<'d> SpiSlave<'d> {
         a_sclk: impl InputPin + 'd, 
         b_sdi: impl InputPin + 'd,
         c_sdo: impl OutputPin + 'd,
-        d_ready_pin: impl OutputPin + 'd,
-        e_cs: impl InputPin + 'd
+        d_slave_ready_pin: impl OutputPin + 'd,
+        e_cs: impl InputPin + 'd,
+        f_master_ready_pin: impl InputPin  + 'd,
     ) -> Result<Self, EspError> {
-        let ready_pin = PinDriver::output(d_ready_pin)?;
+        let slave_wants_data = PinDriver::output(d_slave_ready_pin)?;
+        let master_ready = PinDriver::input(f_master_ready_pin, Pull::Down)?;
 
         let bus_config = spi_bus_config_t {
             __bindgen_anon_1: spi_bus_config_t__bindgen_ty_1 {
@@ -52,7 +55,8 @@ impl<'d> SpiSlave<'d> {
         Ok(Self {
             host,
             _not_send_sync: PhantomData,
-            ready_pin,
+            slave_wants_data,
+            master_ready
         })
     }
 
@@ -77,6 +81,30 @@ impl<'d> SpiSlave<'d> {
         Ok((transaction.trans_len as usize + 7) / 8)
     }
 
+
+    pub fn wait_until_master_ready_pin(&self, is_high: bool) -> anyhow::Result<()> {
+        let start = Instant::now();
+        let timeout = Duration::from_millis(15000);
+
+        while self.master_ready.is_high() != is_high {
+            if start.elapsed() > timeout {
+                return Err(anyhow::anyhow!("SPI timeout waiting for pin {}", if is_high {
+                    "high"
+                } else {
+                    "low"
+                }));
+            }
+
+            FreeRtos::delay_ms(1);
+        }
+
+        Ok(())
+    }
+
+    pub fn wait_until_master_has_no_transaction(&self) -> anyhow::Result<()> {
+        self.wait_until_master_ready_pin(false)
+    }
+
     fn read(&mut self) -> anyhow::Result<Box<[u8; PACKET_SIZE]>> {
         let mut rx = [0u8; PACKET_SIZE];
         let tx = [0u8; PACKET_SIZE];
@@ -96,12 +124,15 @@ impl<'d> SpiSlave<'d> {
         };
 
         self.queue_trans(&transaction).unwrap();
+        println!("slave wants data");
 
-        self.ready_pin.set_high().unwrap();
+        self.slave_wants_data.set_high().unwrap();
 
         let _ = self.trans_result(&mut transaction).unwrap();
 
-        self.ready_pin.set_low().unwrap();
+        self.slave_wants_data.set_low().unwrap();
+        println!("wait_until_master_has_no_transaction");
+        self.wait_until_master_has_no_transaction()?;
 
         Ok(Box::new(rx))
     }
@@ -125,13 +156,15 @@ impl<'d> SpiSlave<'d> {
 
         self.queue_trans(&transaction).unwrap();
 
-        self.ready_pin.set_high().unwrap();
+        self.slave_wants_data.set_high().unwrap();
 
         let _ = self.trans_result(&mut transaction).unwrap();
 
-        thread::sleep(Duration::from_millis(50));
-        self.ready_pin.set_low().unwrap();
-        println!("set pin low");
+        self.slave_wants_data.set_low().unwrap();
+        println!("wait_until_master_has_no_transaction");
+        self.wait_until_master_has_no_transaction().unwrap();
+
+        
         Ok(())
     }
 

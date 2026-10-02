@@ -7,9 +7,16 @@ use std::{
 use edge_http::io::server::Server;
 use edge_nal::TcpBind;
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop, hal::{
-        gpio::{AnyIOPin, PinDriver, Pull}, ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig}, spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig}, units::Hertz,
-    }, mdns::EspMdns, ota::EspOta, wifi::{BlockingWifi, EspWifi},
+    eventloop::EspSystemEventLoop,
+    hal::{
+        gpio::{AnyIOPin, PinDriver, Pull},
+        ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
+        spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
+        units::Hertz,
+    },
+    mdns::EspMdns,
+    ota::EspOta,
+    wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -19,10 +26,18 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    auto_script::AutoScript, connect_to_wifi::connect_to_wifi, hardware::on_board_led::{Hardware, HardwareState}, http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid}, i2c_master::{Request, i2c_master_init, send_request}, logger::init_logging, utils::{heap, stack},
+    auto_script::AutoScript,
+    connect_to_wifi::connect_to_wifi,
+    hardware::on_board_led::{Hardware, HardwareState},
+    http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
+    logger::init_logging,
+    spi_master::{Request, SpiMaster},
+    utils::{heap, stack},
 };
 
-pub mod i2c_master;
+pub mod spi_master;
+pub mod spi_packet;
+pub mod spi_slave;
 use esp_idf_sys::{
     CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason,
     esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power,
@@ -120,10 +135,7 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let mut hardware = Hardware::new(
-        peripherals.pins.gpio38,
-        peripherals.spi2
-    );
+    let mut hardware = Hardware::new(peripherals.pins.gpio38, peripherals.spi2);
 
     hardware.off();
 
@@ -158,29 +170,31 @@ pub fn main() -> anyhow::Result<()> {
     //         futures_lite::future::block_on(http_server::run(&mut server))
     //     })?;
 
-    let mut i2c_driver = i2c_master_init(
-        peripherals.i2c0,
-        peripherals.pins.gpio6.into(),
-        peripherals.pins.gpio7.into(),
-        100_000,
-    );
 
-    let mut ready_pin = PinDriver::input(peripherals.pins.gpio21, Pull::Down)?;
+    let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
 
-    match i2c_driver  {
-        Ok(mut i2c_driver) => loop {
-        let res = send_request(&mut i2c_driver, &Request::LightOn, &mut ready_pin).unwrap();
-        info!("RESPONSE: {:?}", res);
-        // i2c_driver
-        thread::sleep(Duration::from_secs(1));
-    },
-        Err(err) => dbg!("{:?}", err),
-    };
+    let (sender, receiver) = std::sync::mpsc::channel::<Request>();
+    // below code is in other thread behind some kind of channel that it reads when it's ready to get the next request
+
+    let handle = std::thread::Builder::new()
+        .name("i2c_driver".into())
+        .stack_size(40 * 1024)
+        .spawn(move || {
+            let mut spi = SpiMaster::new(peripherals.spi3, peripherals.pins.gpio12.into(), peripherals.pins.gpio10.into(), peripherals.pins.gpio11.into(), peripherals.pins.gpio13.into(), 1_000_000).unwrap();
+
+            loop {
+                let res = spi.send_request(&Request::LightOn, &mut ready_pin).unwrap();
+                info!("RESPONSE: {:?}", res);
+                thread::sleep(Duration::from_secs(1));
+            }
+        })?;
+
+
     info!("init done");
 
-    
-
     print_memory_stats();
+        handle.join().unwrap();
+
     // handle.join().unwrap().unwrap();
     Ok(())
 }

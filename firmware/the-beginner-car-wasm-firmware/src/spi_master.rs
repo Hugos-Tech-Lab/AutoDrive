@@ -1,10 +1,7 @@
 use std::time::{Duration, Instant};
 
 use esp_idf_svc::hal::{
-    delay::FreeRtos,
-    gpio::{AnyIOPin, Input, PinDriver},
-    spi::{SPI2, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config},
-    units::Hertz,
+    delay::FreeRtos, gpio::{AnyIOPin, Input, PinDriver}, spi::{SPI2, SPI3, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config}, units::Hertz,
 };
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +45,7 @@ impl<'d> SpiMaster<'d> {
     /// MISO -> master in / slave out
     /// CS   -> chip select
     pub fn new(
-        spi: SPI2<'d>,
+        spi: SPI3<'d>,
         sclk: AnyIOPin<'d>,
         mosi: AnyIOPin<'d>,
         miso: AnyIOPin<'d>,
@@ -72,8 +69,14 @@ impl<'d> SpiMaster<'d> {
 
         let packets = SpiPackets::from_payload(&encoded).unwrap();
         for packet in packets.iter() {
+            println!("waiting to send packet");
+            let payload = packet.to_bytes();
             wait_until_pin_is_high(ready_pin)?;
-            self.device_driver.write(packet.payload());
+            println!("writing");
+            if payload.iter().all(|&b| b == 0) {
+                println!("RX contains only zeros");
+            }
+            self.device_driver.write(&payload).unwrap();
             wait_until_pin_is_low(ready_pin)?;
         }
 
@@ -102,7 +105,7 @@ impl<'d> SpiMaster<'d> {
 pub fn wait_until_pin_is_low(ready_pin: &mut PinDriver<'_, Input>) -> anyhow::Result<()> {
     let timeout = Duration::from_millis(150);
     let start_time = Instant::now();
-    while ready_pin.is_low() {
+    while ready_pin.is_high() {
         if start_time.elapsed() > timeout {
             return Err(anyhow::anyhow!("SPI timeout: slave did not pull DRDY high"));
         }
@@ -116,9 +119,9 @@ pub fn wait_until_pin_is_low(ready_pin: &mut PinDriver<'_, Input>) -> anyhow::Re
 pub fn wait_until_pin_is_high(ready_pin: &mut PinDriver<'_, Input>) -> anyhow::Result<()> {
     let timeout = Duration::from_millis(150);
     let start_time = Instant::now();
-    while ready_pin.is_high() {
+    while ready_pin.is_low() {
         if start_time.elapsed() > timeout {
-            return Err(anyhow::anyhow!("SPI timeout: slave did not pull DRDY high"));
+            return Err(anyhow::anyhow!("SPI timeout: slave did not pull DRDY low"));
         }
 
         // Yield to FreeRTOS instead of busy-spinning.

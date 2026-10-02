@@ -2,7 +2,7 @@ use esp_idf_svc::{
     hal::gpio::{Output, PinDriver},
     sys::*,
 };
-use std::{ffi::c_void, marker::PhantomData, ptr};
+use std::{ffi::c_void, marker::PhantomData, ptr, thread, time::Duration};
 
 use crate::{
     spi_master::{Request, Response},
@@ -108,46 +108,47 @@ impl SpiSlave {
 
         self.queue_trans(&transaction).unwrap();
 
-        ready_pin.set_high();
+        ready_pin.set_high().unwrap();
 
         let _ = self.trans_result(&mut transaction).unwrap();
 
-        ready_pin.set_low();
-
+        ready_pin.set_low().unwrap();
         Ok(())
     }
 
     pub fn handle_requests(&self, ready_pin: &mut PinDriver<'_, Output>) {
-        let mut request = Vec::<SpiPacket>::new();
         loop {
-            let packet = self.read(ready_pin).unwrap();
-            if packet.iter().all(|&b| b == 0) {
-                println!("RX contains only zeros");
-                continue;
+            let mut request = Vec::<SpiPacket>::new();
+            loop {
+                let packet = self.read(ready_pin).unwrap();
+                if packet.iter().all(|&b| b == 0) {
+                    println!("RX contains only zeros");
+                    continue;
+                }
+                let packet = SpiPacket::from_bytes(packet.as_ref()).unwrap();
+                let packet = request.push_mut(packet);
+                if packet.is_last() {
+                    break;
+                }
             }
-            let packet = SpiPacket::from_bytes(packet.as_ref()).unwrap();
-            let packet = request.push_mut(packet);
-            if packet.is_last() {
-                break;
+            let request = SpiPackets::from_vec(request);
+            let request: Request = postcard::from_bytes(&request.to_bytes()).unwrap();
+            // TODO: proper handling
+            match request {
+                Request::LightOn => println!("LightOn"),
+                Request::LightOff => println!("LightOff"),
+                Request::SetMotorSpeed(_) => println!("SetMotorSpeed"),
+                Request::SetMotorSpeedFor { motor, speed } => println!("SetMotorSpeedFor"),
+                Request::ReadRegister { address } => println!("ReadRegister"),
+                Request::WriteRegister { address, value } => println!("WriteRegister"),
+                Request::Logs => println!("logs"),
             }
-        }
-        let request = SpiPackets::from_vec(request);
-        let request: Request = postcard::from_bytes(&request.payload()).unwrap();
-        // TODO: proper handling
-        match request {
-            Request::LightOn => println!("LightOn"),
-            Request::LightOff => println!("LightOff"),
-            Request::SetMotorSpeed(_) => println!("SetMotorSpeed"),
-            Request::SetMotorSpeedFor { motor, speed } => println!("SetMotorSpeedFor"),
-            Request::ReadRegister { address } => println!("ReadRegister"),
-            Request::WriteRegister { address, value } => println!("WriteRegister"),
-            Request::Logs => println!("logs"),
-        }
 
-        let response = postcard::to_allocvec(&Response::Ok).unwrap();
-        let packets = SpiPackets::from_payload(&response).unwrap();
-        for packet in packets.iter() {
-            self.write(ready_pin, Box::new(packet.to_bytes()));
+            let response = postcard::to_allocvec(&Response::Ok).unwrap();
+            let packets = SpiPackets::from_payload(&response).unwrap();
+            for packet in packets.iter() {
+                self.write(ready_pin, Box::new(packet.to_bytes())).unwrap();
+            }
         }
     }
 }

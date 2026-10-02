@@ -84,6 +84,11 @@ impl SpiPacket {
         let total_packets = bytes[1];
         let data_length = bytes[2];
 
+        println!("from bytes");
+        println!("{:?}", packet_number);
+        println!("{:?}", total_packets);
+        println!("{:?}", data_length);
+
         if total_packets == 0 {
             return Err(SpiPacketError::InvalidTotalPackets);
         }
@@ -149,6 +154,7 @@ impl SpiPackets {
         self.packets.push(packet);
     }
 
+    /// Create an empty packet collection that will be filled incrementally.
     pub fn from_payload(data: &[u8]) -> Result<Self, SpiPacketError> {
         let total_packets = data.len().div_ceil(DATA_SIZE);
 
@@ -160,7 +166,6 @@ impl SpiPackets {
         }
 
         let total_packets = total_packets as u8;
-        println!("total packets: {}", total_packets);
 
         let packets = data
             .chunks(DATA_SIZE)
@@ -169,7 +174,6 @@ impl SpiPackets {
             .collect::<Result<Vec<_>, _>>()?;
 
         let packets = if packets.is_empty() {
-            println!("empty");
             vec![SpiPacket::new(0, 1, &[])?]
         } else {
             packets

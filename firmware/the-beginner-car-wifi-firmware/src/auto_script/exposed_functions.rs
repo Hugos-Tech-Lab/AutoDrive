@@ -1,7 +1,6 @@
 use std::{thread, time::Duration};
 
 use log::info;
-use smart_leds_trait::RGB8;
 use wamr_rust_sdk::sys::{
     WASMExecEnv, wasm_runtime_addr_app_to_native, wasm_runtime_get_custom_data,
     wasm_runtime_get_module_inst, wasm_runtime_terminate, wasm_runtime_validate_app_addr,
@@ -9,7 +8,6 @@ use wamr_rust_sdk::sys::{
 
 use crate::{
     auto_script::{AutoScriptRunProgress, wasm_thread::WasmData},
-    hardware::on_board_led::Hardware,
 };
 
 pub fn terminate(exec_env: *mut WASMExecEnv) {
@@ -77,7 +75,6 @@ pub extern "C" fn set_onboard_led_color(exec_env: *mut WASMExecEnv, r: u8, g: u8
         terminate(exec_env);
     }
 
-    // Hardware::set_color(RGB8 { r, g, b })
 }
 
 fn get_wasm_data<'a>(exec_env: *mut WASMExecEnv) -> &'a mut WasmData {

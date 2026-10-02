@@ -5,7 +5,7 @@ use std::{
 
 use esp_idf_svc::hal::units::*;
 use esp_idf_svc::hal::{
-    gpio::{AnyIOPin, Gpio9, Gpio10, Gpio11, Gpio12, Gpio38, Output, PinDriver},
+    gpio::{AnyIOPin},
     ledc::{CHANNEL0, CHANNEL1, LedcDriver, LedcTimerDriver, TIMER0, TIMER1, config::TimerConfig},
     spi::{self, Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
     units::Hertz,
@@ -43,11 +43,11 @@ pub struct Hardware {
 }
 
 impl Hardware {
-    pub fn new(pin_38: Gpio38<'static>, spi_2: spi::SPI2<'static>) -> Self {
+    pub fn new(rgb_pin: AnyIOPin<'static>, spi_2: spi::SPI2<'static>) -> Self {
         // --- Setup LED ---
         let bus_config = SpiDriverConfig::new().dma(Dma::Auto(4096));
         let spi_driver =
-            SpiDriver::new_without_sclk(spi_2, pin_38, Option::<AnyIOPin>::None, &bus_config)
+            SpiDriver::new_without_sclk(spi_2, rgb_pin, Option::<AnyIOPin>::None, &bus_config)
                 .unwrap();
 
         let spi_driver = SpiDriverHolder { spi_driver };
@@ -77,11 +77,12 @@ impl Hardware {
         (output, negative)
     }
 
-    pub fn set_color(&mut self, color: RGB8) {
-        self.hardware.led.write([color]).unwrap();
+    pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
+        self.hardware.led.write([RGB8{ r, g, b }]).unwrap();
     }
 
     pub fn off(&mut self) {
         self.hardware.led.write([RGB8 { r: 0, g: 0, b: 0 }]).unwrap();
     }
 }
+

@@ -78,38 +78,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
-name = "auto-drive-the-beginner-fw"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "crc",
- "dotenvy_macro",
- "edge-http",
- "edge-nal",
- "edge-nal-std",
- "embassy-sync 0.8.0",
- "embassy-time",
- "embedded-dht-rs",
- "embedded-io-async 0.7.0",
- "embedded-svc",
- "embuild",
- "esp-idf-svc",
- "esp-idf-sys",
- "flume",
- "futures",
- "futures-lite",
- "heapless 0.9.3",
- "log",
- "postcard",
- "serde",
- "serde_json",
- "smart-leds-trait",
- "static_cell",
- "wamr-rust-sdk",
- "ws2812-spi",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -309,6 +277,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fa961b519f0b462e3a3b4a34b64d119eeaca1d59af726fe450bbba07a9fc0a1"
 dependencies = [
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "common-firmware"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crc",
+ "embuild",
+ "esp-idf-svc",
+ "postcard",
+ "serde",
+ "smart-leds-trait",
+ "ws2812-spi",
 ]
 
 [[package]]
@@ -1807,6 +1789,37 @@ dependencies = [
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "the-beginner-car-wifi-firmware"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "common-firmware",
+ "crc",
+ "dotenvy_macro",
+ "edge-http",
+ "edge-nal",
+ "edge-nal-std",
+ "embassy-sync 0.8.0",
+ "embassy-time",
+ "embedded-dht-rs",
+ "embedded-io-async 0.7.0",
+ "embedded-svc",
+ "embuild",
+ "esp-idf-svc",
+ "esp-idf-sys",
+ "flume",
+ "futures",
+ "futures-lite",
+ "heapless 0.9.3",
+ "log",
+ "postcard",
+ "serde",
+ "serde_json",
+ "static_cell",
+ "wamr-rust-sdk",
 ]
 
 [[package]]

@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 
+use common_firmware::{on_board_led::Hardware, spi_master::SpiMaster, the_beginner_car::{RequestToHardware, ResponseFromHardware}};
 use edge_http::io::server::Server;
 use edge_nal::TcpBind;
 use esp_idf_svc::{
@@ -28,33 +29,24 @@ use esp_idf_svc::{
 use crate::{
     auto_script::AutoScript,
     connect_to_wifi::connect_to_wifi,
-    hardware::on_board_led::{Hardware, HardwareState},
     http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
     logger::init_logging,
-    spi_master::{Request, SpiMaster},
     utils::{heap, stack},
 };
 
-pub mod spi_master;
-pub mod spi_packet;
-pub mod spi_slave;
 use esp_idf_sys::{
     CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason,
     esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power,
 };
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
-use smart_leds_trait::RGB8;
 pub mod auto_script;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
-pub mod hardware;
 pub mod http_server;
 pub mod inter_thread;
 pub mod logger;
 pub mod utils;
-
-use anyhow::Context;
 
 pub fn print_memory_stats() {
     unsafe {
@@ -135,7 +127,7 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let mut hardware = Hardware::new(peripherals.pins.gpio38, peripherals.spi2);
+    let mut hardware = Hardware::new(peripherals.pins.gpio38.into(), peripherals.spi2);
 
     hardware.off();
 
@@ -173,17 +165,17 @@ pub fn main() -> anyhow::Result<()> {
 
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
 
-    let (sender, receiver) = std::sync::mpsc::channel::<Request>();
+    // let (sender, receiver) = std::sync::mpsc::channel::<Request>();
     // below code is in other thread behind some kind of channel that it reads when it's ready to get the next request
 
     let handle = std::thread::Builder::new()
         .name("i2c_driver".into())
         .stack_size(40 * 1024)
         .spawn(move || {
-            let mut spi = SpiMaster::new(peripherals.spi3, peripherals.pins.gpio12.into(), peripherals.pins.gpio10.into(), peripherals.pins.gpio11.into(), peripherals.pins.gpio13.into(), 1_000_000).unwrap();
+            let mut spi = SpiMaster::new(peripherals.spi3, peripherals.pins.gpio12.into(), peripherals.pins.gpio10.into(), peripherals.pins.gpio11.into(), ready_pin.into(), peripherals.pins.gpio13.into(), 1_000_000).unwrap();
 
             loop {
-                let res = spi.send_request(&Request::LightOn, &mut ready_pin).unwrap();
+                let res: Result<ResponseFromHardware, anyhow::Error> = spi.send_request(&RequestToHardware::LightOn);
                 info!("RESPONSE: {:?}", res);
                 thread::sleep(Duration::from_secs(1));
             }

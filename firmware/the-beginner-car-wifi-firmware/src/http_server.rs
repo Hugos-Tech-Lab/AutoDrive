@@ -3,7 +3,6 @@ use std::sync::{Arc, Mutex};
 use edge_nal::TcpBind;
 
 pub mod auto_script;
-pub mod hardware;
 pub mod info;
 pub mod logs;
 pub mod update;
@@ -97,13 +96,13 @@ impl Handler for HttpHandler {
             }
             (Method::Post, "/hardware/set_motor_a_speed") => {
                 log::info!("waiting");
-                hardware::set_motor_a_speed(conn).await?;
+                // hardware::set_motor_a_speed(conn).await?;
                 log::info!("response");
             }
             (Method::Get, "/logs") => logs::logs(conn).await?,
             (Method::Get, "/coredump") => logs::coredump(conn).await?,
             (Method::Post, "/hardware/set_motor_b_speed") => {
-                hardware::set_motor_b_speed(conn).await?
+                // hardware::set_motor_b_speed(conn).await?
             }
             (_, "/autoscript/upload") | (_, "/autoscript/run") | (_, "/autoscript/cancel") => {
                 conn.initiate_response(405, Some("Method Not Allowed"), &[])

@@ -4,12 +4,13 @@ use crate::{
     auto_script::{
         AutoScriptRunProgress, WasmResponse,
         cancellation_token::{self, CancellationToken},
-    }, hardware::on_board_led::Hardware, inter_thread::InterThreadListener, utils::heap,
+    },
+    inter_thread::InterThreadListener,
+    utils::heap,
 };
 use anyhow::{Result, anyhow};
 use flume::Sender;
 use log::info;
-use smart_leds_trait::RGB8;
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime,
     sys::wasm_runtime_set_custom_data,
@@ -118,13 +119,17 @@ impl WasmThread {
         ct: CancellationToken,
     ) -> Result<()> {
         info!("running");
-        progress.send(AutoScriptRunProgress::ReceivedRunAction).unwrap();
+        progress
+            .send(AutoScriptRunProgress::ReceivedRunAction)
+            .unwrap();
 
         let installed_module = self.installed_module.clone().ok_or(anyhow::anyhow!(
             "installed module not found. did you install first before running?"
         ))?;
 
-        progress.send(AutoScriptRunProgress::InstantiatingInstance).unwrap();
+        progress
+            .send(AutoScriptRunProgress::InstantiatingInstance)
+            .unwrap();
         let instance = Rc::new(
             Instance::new(installed_module.clone(), 1024 * 16)
                 .map_err(|e| format!("failed to create instance: {}", e)) // TODO these should be more specific types for wasm and no unwrap AND CLEANUP TOO
@@ -146,7 +151,6 @@ impl WasmThread {
         progress.send(AutoScriptRunProgress::FindingMain).unwrap();
 
         let main_function = Function::find_export_func(instance.clone(), "main").unwrap();
-
 
         progress.send(AutoScriptRunProgress::CallingMain).unwrap();
         let res = main_function.call(&vec![]);

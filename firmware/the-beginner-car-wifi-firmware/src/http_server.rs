@@ -10,11 +10,9 @@ pub mod set_motor_b_speed;
 pub mod update;
 pub mod verify_and_set_valid;
 
-use common_firmware::the_beginner_car::{RequestToHardware, ResponseFromHardware};
 use esp_idf_svc::http::Method;
 use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use esp_idf_svc::io::Write;
-use serde::Serialize;
 
 use crate::HardwareMessage;
 

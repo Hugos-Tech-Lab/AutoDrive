@@ -1,8 +1,12 @@
 pub mod motor;
 
 pub struct Hardware {
-  
+
 // 
+}
+
+impl Hardware {
+  // pub fn new();
 }
 
 // pub struct Hardware {

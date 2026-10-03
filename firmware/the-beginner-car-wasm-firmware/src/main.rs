@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use common_firmware::{on_board_led::OnBoardLED, spi_slave::SpiSlave, the_beginner_car::{RequestToHardware, ResponseFromHardware}};
+use common_firmware::{get_mac_address::{format_mac_address, get_mac_address}, on_board_led::OnBoardLED, spi_slave::SpiSlave, the_beginner_car::{RequestToHardware, ResponseFromHardware}};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, hal::gpio::PinDriver};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -14,10 +14,7 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    auto_script::AutoScript,
-    hardware::motor::OnBoardLed,
-    logger::init_logging,
-    // spi_slave::SpiSlave,
+    auto_script::AutoScript, hardware::{Hardware, motor::OnBoardLed}, logger::init_logging
 };
 
 use esp_idf_sys::{
@@ -51,12 +48,17 @@ pub fn main() -> anyhow::Result<()> {
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
+    let addr = format_mac_address(&get_mac_address()?);
+    dbg!(addr);
+
     let log_message_receiver = init_logging();
 
     info!("starting");
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
+    // let hardware = Hardware::
+
     // let pin = OnBoardLED::new(peripherals.pins.gpio8.into(), peripherals.spi2);
 
     // pin.set_color(20, 2, 2);

@@ -3,7 +3,7 @@ target = "riscv32imac-esp-espidf"
 
 [target.'cfg(target_os = "espidf")']
 linker = "ldproxy"
-runner = "espflash flash --partition-table partitions_two_ota.csv --monitor"
+runner = "espflash flash --partition-table partitions.csv --monitor"
 rustflags = ["--cfg", "espidf_time64"]
 
 [unstable]

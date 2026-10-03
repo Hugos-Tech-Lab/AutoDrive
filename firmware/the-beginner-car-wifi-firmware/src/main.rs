@@ -27,12 +27,13 @@ use esp_idf_svc::{
     nvs::EspDefaultNvsPartition,
     sys::{build_time::build_time_utc, const_format},
 };
+use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 
 use crate::{
     auto_script::AutoScript,
     connect_to_wifi::connect_to_wifi,
-    tcp_server::verify_and_set_valid::verify_and_set_valid,
     logger::init_logging,
+    tcp_server::{accept, verify_and_set_valid::verify_and_set_valid},
     utils::{heap, stack},
 };
 
@@ -45,9 +46,9 @@ use log::info;
 pub mod auto_script;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
-pub mod tcp_server;
 pub mod inter_thread;
 pub mod logger;
+pub mod tcp_server;
 pub mod utils;
 
 pub fn print_memory_stats() {
@@ -111,6 +112,20 @@ pub struct HardwareMessage {
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
+
+    unsafe {
+        let config = esp_idf_sys::esp_vfs_eventfd_config_t { max_fds: 16 };
+
+        let ret = esp_idf_sys::esp_vfs_eventfd_register(&config);
+
+        assert_eq!(
+            ret,
+            esp_idf_sys::ESP_OK,
+            "esp_vfs_eventfd_register failed: {:?}",
+            ret
+        );
+    }
+
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
@@ -145,10 +160,34 @@ pub fn main() -> anyhow::Result<()> {
     info!("setting host name");
     let (sender, receiver) = std::sync::mpsc::sync_channel::<HardwareMessage>(100);
 
-    let _http_server = tcp_server::run(sender).unwrap();
+    // let _http_server = tcp_server::run(sender).unwrap();
 
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
     let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio46)?;
+
+    std::thread::Builder::new()
+        .stack_size(40 * 1000)
+        .spawn(|| {
+            let mut local_executor = LocalPool::new();
+            let spawner = local_executor.spawner();
+
+            local_executor
+                .spawner()
+                .spawn_local(
+                    async move {
+                        accept(spawner, sender).await.unwrap();
+
+                        Result::<_, anyhow::Error>::Ok(())
+                    }
+                    .map(Result::unwrap),
+                )
+                .unwrap();
+
+            local_executor.run();
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 
     let handle = std::thread::Builder::new()
         .name("i2c_driver".into())
@@ -174,7 +213,8 @@ pub fn main() -> anyhow::Result<()> {
                     Ok(message) => {
                         println!("{:?}", message.request);
 
-                        let res: Result<ResponseFromHardware, anyhow::Error> = spi.send_request(&message.request);
+                        let res: Result<ResponseFromHardware, anyhow::Error> =
+                            spi.send_request(&message.request);
 
                         info!("RESPONSE: {:?}", res);
 

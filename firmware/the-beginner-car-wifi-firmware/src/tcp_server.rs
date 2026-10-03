@@ -17,6 +17,7 @@ use esp_idf_svc::io::Write;
 use futures::AsyncReadExt;
 use log::error;
 use log::info;
+use serde::{Deserialize, Serialize};
 use std::io;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 
@@ -25,14 +26,16 @@ use futures::task::LocalSpawnExt;
 
 use crate::HardwareMessage;
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum TheBeginnerCarIncomingMessages {
     SetMotorASpeed { speed: i8 },
     SetMotorBSpeed { speed: i8 },
     InformPositionFromCamera { x: i32, y: i32 },
     InstallWasm { bytes: Vec<u8> },
-    RunWasm
+    RunWasm,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum TheBeginnerCarOutgoingMessages {
     Logs { logs: Vec<()> },
     SystemState {},
@@ -42,14 +45,37 @@ pub enum TheBeginnerCarOutgoingMessages {
     WasmRunning,
 }
 
-async fn handle(mut stream: Async<TcpStream>) {
+async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<HardwareMessage>) {
     loop {
-        let mut read = [0; 256];
-        match stream.read_exact(&mut read).await {
-            Ok(n) => {
-                //
+        let mut len_bytes = [0u8; 4];
+        stream.read_exact(&mut len_bytes).await.unwrap();
+        let len = u32::from_be_bytes(len_bytes) as usize;
+        if len > 1024 {
+            panic!("message too large: {len} bytes");
+        }
 
-                // let _ = stream.write_all(&read[0..n]).await;
+        let mut bytes = vec![0; len];
+        match stream.read_exact(&mut bytes).await {
+            Ok(_) => {
+                let message: TheBeginnerCarIncomingMessages = postcard::from_bytes(&bytes).unwrap();
+
+                match message {
+                    TheBeginnerCarIncomingMessages::SetMotorASpeed { speed } => {
+                        let _ = set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed);
+                        println!("SetMotorASpeed: {:?}", speed)
+                    }
+                    TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
+                        let _ = set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed);
+                        println!("SetMotorBSpeed: {:?}", speed)
+                    }
+                    TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {
+                        println!("InformPositionFromCamera: {:?} {:?}", x, y)
+                    }
+                    TheBeginnerCarIncomingMessages::InstallWasm { bytes } => {
+                        println!("InstallWasm: {:?}", bytes)
+                    }
+                    TheBeginnerCarIncomingMessages::RunWasm => println!("RunWasm"),
+                }
             }
             Err(err) => {
                 panic!("{}", err);
@@ -58,7 +84,7 @@ async fn handle(mut stream: Async<TcpStream>) {
     }
 }
 
-async fn accept(spawner: LocalSpawner) -> Result<(), io::Error> {
+pub async fn accept(spawner: LocalSpawner, hardware_sender: SyncSender<HardwareMessage>) -> Result<(), io::Error> {
     info!("About to bind a simple echo service to port 8080; do `telnet <ip-from-above>:8080`");
 
     let addr = "0.0.0.0:8080".to_socket_addrs()?.next().unwrap();
@@ -70,7 +96,7 @@ async fn accept(spawner: LocalSpawner) -> Result<(), io::Error> {
             Ok((stream, addr)) => {
                 info!("Accepted client {addr}");
 
-                spawner.spawn_local(handle(stream)).unwrap();
+                spawner.spawn_local(handle(stream, hardware_sender.clone())).unwrap();
             }
             Err(e) => {
                 error!("Error: {e}");

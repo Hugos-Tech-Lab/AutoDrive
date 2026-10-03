@@ -9,7 +9,7 @@ use wamr_rust_sdk::sys::{
 
 use crate::{
     auto_script::{AutoScriptRunProgress, wasm_thread::WasmData},
-    hardware::on_board_led::OnBoardLed,
+    hardware::motor::OnBoardLed,
 };
 
 pub fn terminate(exec_env: *mut WASMExecEnv) {

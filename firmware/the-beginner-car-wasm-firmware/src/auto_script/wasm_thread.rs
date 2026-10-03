@@ -4,7 +4,7 @@ use crate::{
     auto_script::{
         AutoScriptRunProgress, WasmResponse,
         cancellation_token::{self, CancellationToken},
-    }, hardware::on_board_led::OnBoardLed, inter_thread::InterThreadListener,
+    }, hardware::motor::OnBoardLed, inter_thread::InterThreadListener,
 };
 use anyhow::{Result, anyhow};
 use flume::Sender;

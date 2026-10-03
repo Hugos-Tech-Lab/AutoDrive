@@ -15,7 +15,7 @@ use esp_idf_svc::{
 
 use crate::{
     auto_script::AutoScript,
-    hardware::on_board_led::OnBoardLed,
+    hardware::motor::OnBoardLed,
     logger::init_logging,
     // spi_slave::SpiSlave,
 };
@@ -91,8 +91,8 @@ pub fn main() -> anyhow::Result<()> {
                     match request {
                         RequestToHardware::LightOn => println!("LightOn"),
                         RequestToHardware::LightOff => println!("LightOff"),
-                        RequestToHardware::SetMotorSpeed(_) => println!("SetMotorSpeed"),
-                        RequestToHardware::SetMotorSpeedFor { motor, speed } => todo!(),
+                        RequestToHardware::SetMotorASpeed(speed) => println!("SetMotorASpeed"),
+                        RequestToHardware::SetMotorBSpeed(speed) => println!("SetMotorBSpeed"),
                         RequestToHardware::Logs => println!("Logs"),
                     }
 

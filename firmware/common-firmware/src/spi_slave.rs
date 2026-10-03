@@ -1,8 +1,8 @@
 use esp_idf_svc::{
-    hal::{delay::FreeRtos, gpio::{AnyIOPin, Input, InputPin, Output, OutputPin, PinDriver, Pull}, spi::{SPI2, SpiAnyPins}}, sys::*,
+    hal::{delay::FreeRtos, gpio::{Input, InputPin, Output, OutputPin, PinDriver, Pull}, spi::SPI2}, sys::*,
 };
 use serde::{Serialize, de::DeserializeOwned};
-use std::{ffi::c_void, marker::PhantomData, ptr, thread, time::{Duration, Instant}};
+use std::{ffi::c_void, marker::PhantomData, ptr, time::{Duration, Instant}};
 
 use crate::spi_packet::{PACKET_SIZE, SpiPacket, SpiPackets};
 

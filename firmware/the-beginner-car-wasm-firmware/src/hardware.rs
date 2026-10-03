@@ -1,9 +1,9 @@
+pub mod motor;
 
-// use crate::device_control::DeviceControl;
-
-// static HARDWARE: OnceLock<Arc<Mutex<Hardware>>> = OnceLock::new();
-
-pub mod on_board_led;
+pub struct Hardware {
+  
+// 
+}
 
 // pub struct Hardware {
 //   //

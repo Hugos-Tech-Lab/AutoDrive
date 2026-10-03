@@ -6,7 +6,6 @@ use std::{
 
 use common_firmware::{
     memory::{print_heap, print_stack},
-    on_board_led::Hardware,
     spi_master::SpiMaster,
     the_beginner_car::{RequestToHardware, ResponseFromHardware},
 };
@@ -121,9 +120,9 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let mut hardware = Hardware::new(peripherals.pins.gpio38.into(), peripherals.spi2);
+    // let mut hardware = Hardware::new(peripherals.pins.gpio38.into(), peripherals.spi2);
 
-    hardware.off();
+    // hardware.off();
 
     if reason == 9 {
         // OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });

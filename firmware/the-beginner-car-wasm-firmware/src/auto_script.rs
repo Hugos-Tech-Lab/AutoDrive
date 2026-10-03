@@ -11,7 +11,7 @@ use crate::{
     auto_script::{
         cancellation_token::CancellationToken,
         wasm_thread::{WasmThread, WasmThreadCommand},
-    }, inter_thread::{self, InterThreadProducer}, utils::stack,
+    }, inter_thread::{self, InterThreadProducer},
 };
 use anyhow::{Result, bail};
 use flume::Sender;

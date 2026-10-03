@@ -38,11 +38,11 @@ pub struct HardwareState {
 // yeee hawwhh
 unsafe impl Send for HardwareState {}
 
-pub struct Hardware {
+pub struct OnBoardLED {
     hardware: HardwareState
 }
 
-impl Hardware {
+impl OnBoardLED {
     pub fn new(rgb_pin: AnyIOPin<'static>, spi_2: spi::SPI2<'static>) -> Self {
         // --- Setup LED ---
         let bus_config = SpiDriverConfig::new().dma(Dma::Auto(4096));

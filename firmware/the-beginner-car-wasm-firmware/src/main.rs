@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use common_firmware::{spi_slave::SpiSlave, the_beginner_car::{RequestToHardware, ResponseFromHardware}};
+use common_firmware::{on_board_led::OnBoardLED, spi_slave::SpiSlave, the_beginner_car::{RequestToHardware, ResponseFromHardware}};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, hal::gpio::PinDriver};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -18,7 +18,6 @@ use crate::{
     hardware::on_board_led::OnBoardLed,
     logger::init_logging,
     // spi_slave::SpiSlave,
-    utils::{heap, stack},
 };
 
 use esp_idf_sys::{
@@ -58,28 +57,17 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    // let _hardware = OnBoardLed::new(
-    //     peripherals.pins.gpio,
-    //     peripherals.spi2,
-    //     peripherals.pins.gpio15,
-    //     peripherals.pins.gpio21,
-    //     peripherals.pins.gpio22,
-    //     peripherals.pins.gpio23,
-    //     peripherals.ledc.timer0,
-    //     peripherals.ledc.timer1,
-    //     peripherals.ledc.channel0,
-    //     peripherals.ledc.channel1,
-    // );
+    // let pin = OnBoardLED::new(peripherals.pins.gpio8.into(), peripherals.spi2);
+
+    // pin.set_color(20, 2, 2);
     if reason == 9 {
-        // OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
+        // pin.set_color(9, 0, 200);
         thread::sleep(Duration::from_secs(1));
     }
 
-    // OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
-
     // let auto_script = Arc::new(AutoScript::new()?);
 
-    info!("1: {:?}", heap());
+    // info!("1: {:?}", heap());
 
     let thread_receive_incoming_messages =
         std::thread::Builder::new()
@@ -95,7 +83,11 @@ pub fn main() -> anyhow::Result<()> {
                     peripherals.pins.gpio22
                 )
                 .unwrap();
+
+                // pin.set_color(3, 20, 3);
                 spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
+                    // pin.set_color(3, 10, 30);
+
                     match request {
                         RequestToHardware::LightOn => println!("LightOn"),
                         RequestToHardware::LightOff => println!("LightOff"),
@@ -104,6 +96,7 @@ pub fn main() -> anyhow::Result<()> {
                         RequestToHardware::Logs => println!("Logs"),
                     }
 
+                    // pin.set_color(3, 20, 3);
                     ResponseFromHardware::Ok
                 });
             })?;

@@ -13,8 +13,59 @@ pub mod verify_and_set_valid;
 use esp_idf_svc::http::Method;
 use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use esp_idf_svc::io::Write;
+use log::info;
+use std::env;
+use std::io;
+use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use log::error;
+use async_io::Async;
+
+use futures::executor::{LocalPool, LocalSpawner};
+use futures::task::LocalSpawnExt;
+use futures::{AsyncReadExt, AsyncWriteExt, FutureExt};
+
+use esp_idf_svc::sys::EspError;
+use esp_idf_svc::timer::EspTaskTimerService;
 
 use crate::HardwareMessage;
+
+async fn handle(mut stream: Async<TcpStream>) {
+    loop {
+        let mut read = [0; 256];
+        match stream.read_exact(&mut read).await {
+            Ok(n) => {
+            //  
+
+
+                // let _ = stream.write_all(&read[0..n]).await;
+            }
+            Err(err) => {
+                panic!("{}", err);
+            }
+        }
+    }
+}
+
+async fn accept(spawner: LocalSpawner) -> Result<(), io::Error> {
+    info!("About to bind a simple echo service to port 8080; do `telnet <ip-from-above>:8080`");
+
+    let addr = "0.0.0.0:8080".to_socket_addrs()?.next().unwrap();
+    let listener = Async::<TcpListener>::bind(addr)?;
+
+    loop {
+        let stream = listener.accept().await;
+        match stream {
+            Ok((stream, addr)) => {
+                info!("Accepted client {addr}");
+
+                spawner.spawn_local(handle(stream)).unwrap();
+            }
+            Err(e) => {
+                error!("Error: {e}");
+            }
+        }
+    }
+}
 
 static CORS_HEADERS: [(&str, &str); 3] = [
     ("Access-Control-Allow-Origin", "*"),

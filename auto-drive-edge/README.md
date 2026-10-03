@@ -13,8 +13,8 @@ flowchart LR
         C62 <-->|SPI| S32
     end
 
-    E["Auto Drive Edge"]
-    C["Auto Drive Cloud"]
+    E["Auto Drive Edge <br/> <br/> - keeps track of all devices"]
+    C["Auto Drive Cloud <br/> <br/> - user authenication / authorization <br/> - keeps track of the state of all devices "]
     W2["John Doe Web Browser"]
     W1["Jan Novák Web Browser"]
 

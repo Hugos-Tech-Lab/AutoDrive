@@ -95,9 +95,7 @@ impl<'d> SpiMaster<'d> {
 
             let packet = SpiPacket::from_bytes(&packet).unwrap();
             let packet = response.push_mut(packet);
-            println!("wait_until_slave_doesnt_want_data");
             self.wait_until_slave_doesnt_want_data()?;
-            println!("master_has_transaction.set_low");
             self.master_has_transaction.set_low().unwrap();
 
             if packet.is_last() {

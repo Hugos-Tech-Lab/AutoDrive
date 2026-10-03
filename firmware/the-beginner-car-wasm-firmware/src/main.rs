@@ -97,7 +97,6 @@ pub fn main() -> anyhow::Result<()> {
                 )
                 .unwrap();
                 spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-
                     match request {
                         RequestToHardware::LightOn => println!("LightOn"),
                         RequestToHardware::LightOff => println!("LightOff"),

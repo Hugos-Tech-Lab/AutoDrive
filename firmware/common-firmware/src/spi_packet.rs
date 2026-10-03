@@ -84,11 +84,6 @@ impl SpiPacket {
         let total_packets = bytes[1];
         let data_length = bytes[2];
 
-        println!("from bytes");
-        println!("{:?}", packet_number);
-        println!("{:?}", total_packets);
-        println!("{:?}", data_length);
-
         if total_packets == 0 {
             return Err(SpiPacketError::InvalidTotalPackets);
         }

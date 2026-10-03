@@ -178,7 +178,7 @@ pub fn main() -> anyhow::Result<()> {
             loop {
                 let res: Result<ResponseFromHardware, anyhow::Error> = spi.send_request(&RequestToHardware::LightOn);
                 info!("RESPONSE: {:?}", res);
-                thread::sleep(Duration::from_secs(1));
+                thread::sleep(Duration::from_millis(300));
             }
         })?;
 

@@ -2,23 +2,21 @@ use std::sync::mpsc::SyncSender;
 use std::time::Duration;
 
 pub mod auto_script;
+pub mod error;
 pub mod info;
 pub mod logs;
+pub mod set_motor_a_speed;
+pub mod set_motor_b_speed;
 pub mod update;
 pub mod verify_and_set_valid;
 
 use common_firmware::the_beginner_car::{RequestToHardware, ResponseFromHardware};
 use esp_idf_svc::http::Method;
-use esp_idf_svc::http::server::{Configuration, EspHttpServer, Request};
+use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use esp_idf_svc::io::Write;
 use serde::Serialize;
 
 use crate::HardwareMessage;
-
-#[derive(Serialize)]
-struct FirmwareUpdate200Response {
-    status: String,
-}
 
 static CORS_HEADERS: [(&str, &str); 3] = [
     ("Access-Control-Allow-Origin", "*"),
@@ -62,45 +60,51 @@ pub fn run(
         options_handler,
     )?;
     server.fn_handler("/logs", Method::Options, options_handler)?;
-
-    // --- Active Routes ---
-
-    // POST /hardware/set_motor_a_speed
-    let sender_a = hardware_sender.clone();
-    server.fn_handler(
-        "/hardware/set_motor_a_speed",
-        Method::Post,
+    server.fn_handler("/hardware/set_motor_a_speed", Method::Post, {
+        let hardware_sender = hardware_sender.clone();
         move |mut req| -> Result<(), anyhow::Error> {
-            log::info!("waiting");
+            let speed = set_motor_a_speed::get_speed(&mut req);
+            let speed = match speed {
+                Ok(speed) => speed,
+                Err(err) => return handle_http_error(req, err),
+            };
 
-
-            let (sender, receiver) = std::sync::mpsc::sync_channel::<Result<ResponseFromHardware, anyhow::Error>>(1);
-            sender_a.send(HardwareMessage { request: RequestToHardware::SetMotorSpeed(0), response_tx: sender }).unwrap();
-
-            let receive = receiver.recv_timeout(Duration::from_secs(1)).unwrap().unwrap();
-            dbg!(receive);
-            // Example: hardware::set_motor_a_speed(&mut req, &sender_a)?;
-
-            log::info!("response");
-            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
-            response.write_all(b"OK")?;
-            Ok(())
-        },
-    )?;
-
-    // POST /hardware/set_motor_b_speed
-    let sender_b = hardware_sender.clone();
-    server.fn_handler(
-        "/hardware/set_motor_b_speed",
-        Method::Post,
-        move |mut req| -> Result<(), anyhow::Error> {
-            // hardware::set_motor_b_speed(&mut req, &sender_b)?;
+            let speed =
+                set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed);
+            let res = match speed {
+                Ok(speed) => speed,
+                Err(err) => return handle_http_error(req, err),
+            };
 
             let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
-            response.write_all(b"OK")?;
+            response.write_all(&res)?;
+
             Ok(())
-        },
-    )?;
+        }
+    })?;
+
+    server.fn_handler("/hardware/set_motor_b_speed", Method::Post, {
+        let hardware_sender = hardware_sender.clone();
+        move |mut req| -> Result<(), anyhow::Error> {
+            let speed = set_motor_b_speed::get_speed(&mut req);
+            let speed = match speed {
+                Ok(speed) => speed,
+                Err(err) => return handle_http_error(req, err),
+            };
+
+            let speed =
+                set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed);
+            let res = match speed {
+                Ok(speed) => speed,
+                Err(err) => return handle_http_error(req, err),
+            };
+
+            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
+            response.write_all(&res)?;
+
+            Ok(())
+        }
+    })?;
 
     // GET /logs
     server.fn_handler(
@@ -140,4 +144,33 @@ pub fn run(
     server.fn_handler("/autoscript/cancel", Method::Get, method_not_allowed)?;
 
     Ok(server)
+}
+
+fn handle_http_error(
+    req: Request<&mut EspHttpConnection<'_>>,
+    err: error::HttpServerError,
+) -> Result<(), anyhow::Error> {
+    let (status, reason) = match &err {
+        error::HttpServerError::UserError(_) => (400, "Bad Request"),
+        error::HttpServerError::InternalProgrammerError(_) => (500, "Internal Server Error"),
+    };
+
+    if let error::HttpServerError::InternalProgrammerError(err) = &err {
+        log::error!("Internal server error: {err:?}");
+    }
+
+    let body = match err {
+        error::HttpServerError::UserError(err) => {
+            format!("User error: {:?}", err)
+        }
+        error::HttpServerError::InternalProgrammerError(err) => {
+            format!("Internal programmer error: {:?}", err)
+        }
+    };
+
+    let mut response = req.into_response(status, Some(reason), &CORS_HEADERS)?;
+
+    response.write_all(body.as_bytes())?;
+
+    Ok(())
 }

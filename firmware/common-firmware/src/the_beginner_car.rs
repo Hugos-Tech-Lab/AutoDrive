@@ -10,8 +10,8 @@ pub struct LogMessage {
 pub enum RequestToHardware {
     LightOn,
     LightOff,
-    SetMotorSpeed(i32),
-    SetMotorSpeedFor { motor: u8, speed: i32 },
+    SetMotorASpeed(i8),
+    SetMotorBSpeed(i8),
     Logs,
 }
 

@@ -1,0 +1,7 @@
+[[devices]]
+mac_address = "80:45:6B:2A:45:2C"
+mdns_address = "the_beginner_car_build_a"
+
+[[devices]]
+mac_address = "80:45:6B:2A:45:2C"
+mdns_address = "the_beginner_car_build_b"

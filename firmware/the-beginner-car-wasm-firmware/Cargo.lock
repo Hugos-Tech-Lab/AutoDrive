@@ -320,6 +320,7 @@ dependencies = [
  "crc",
  "embuild",
  "esp-idf-svc",
+ "esp-idf-sys",
  "postcard",
  "serde",
  "smart-leds-trait",

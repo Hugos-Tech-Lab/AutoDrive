@@ -36,7 +36,6 @@ pub mod esp_app_desc_2;
 pub mod hardware;
 pub mod inter_thread;
 pub mod logger;
-pub mod utils;
 use anyhow::Context;
 use esp_idf_svc::hal::delay::BLOCK;
 use esp_idf_svc::sys::spi_host_device_t;

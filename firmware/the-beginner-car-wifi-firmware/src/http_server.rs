@@ -1,3 +1,4 @@
+use std::sync::mpsc::SyncSender;
 use std::sync::{Arc, Mutex};
 
 use edge_nal::TcpBind;
@@ -49,6 +50,7 @@ use serde::Serialize;
 //     GetMotorBSpeed,
 // }
 
+use crate::HardwareMessage;
 use crate::auto_script::AutoScript;
 
 pub type SmallServer = Server<2, 1024, 8>;
@@ -117,7 +119,7 @@ impl Handler for HttpHandler {
     }
 }
 
-pub async fn run(server: &mut SmallServer) -> Result<(), anyhow::Error> {
+pub async fn run(server: &mut SmallServer, hardware_sender: SyncSender<HardwareMessage>) -> Result<(), anyhow::Error> {
     let addr = "0.0.0.0:80".parse().unwrap();
     log::info!("Running HTTP server o n {addr}");
 

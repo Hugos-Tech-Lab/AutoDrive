@@ -1,10 +1,12 @@
 use std::{
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, mpsc::SyncSender},
     thread,
     time::Duration,
 };
 
-use common_firmware::{on_board_led::Hardware, spi_master::SpiMaster, the_beginner_car::{RequestToHardware, ResponseFromHardware}};
+use common_firmware::{
+    memory::{print_heap, print_stack}, on_board_led::Hardware, spi_master::SpiMaster, the_beginner_car::{RequestToHardware, ResponseFromHardware},
+};
 use edge_http::io::server::Server;
 use edge_nal::TcpBind;
 use esp_idf_svc::{
@@ -102,6 +104,11 @@ pub fn print_memory_stats() {
     }
 }
 
+pub struct HardwareMessage {
+    request: RequestToHardware,
+    response_tx: SyncSender<anyhow::Result<ResponseFromHardware>>,
+}
+
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
 
@@ -138,7 +145,6 @@ pub fn main() -> anyhow::Result<()> {
 
     // OnBoardLed::set_color(RGB8 { r: 15, g: 0, b: 0 });
 
-    let auto_script = Arc::new(AutoScript::new()?);
     let mut wifi = BlockingWifi::wrap(
         EspWifi::new(peripherals.modem, sys_loop.clone(), Some(nvs))?,
         sys_loop,
@@ -154,39 +160,55 @@ pub fn main() -> anyhow::Result<()> {
     mdns.set_hostname("the-beginner")?;
 
     info!("setting host name");
-    // let handle = std::thread::Builder::new()
-    //     .name("http_server".into())
-    //     .stack_size(40 * 1024)
-    //     .spawn(|| {
-    //         let mut server = SmallServer::new();
-    //         futures_lite::future::block_on(http_server::run(&mut server))
-    //     })?;
+    let (sender, receiver) = std::sync::mpsc::sync_channel::<HardwareMessage>(100);
 
+    let handle = std::thread::Builder::new()
+        .name("http_server".into())
+        .stack_size(50 * 1024)
+        .spawn(|| {
+            let mut server = SmallServer::new();
+            futures_lite::future::block_on(http_server::run(&mut server, sender))
+        })?;
 
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
     let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio46)?;
 
-    // let (sender, receiver) = std::sync::mpsc::channel::<Request>();
-    // below code is in other thread behind some kind of channel that it reads when it's ready to get the next request
-
     let handle = std::thread::Builder::new()
         .name("i2c_driver".into())
-        .stack_size(40 * 1024)
+        .stack_size(15 * 1024)
         .spawn(move || {
-            let mut spi = SpiMaster::new(peripherals.spi3, peripherals.pins.gpio12.into(), peripherals.pins.gpio10.into(), peripherals.pins.gpio11.into(), ready_pin.into(), peripherals.pins.gpio13.into(), master_ready_pin, 1_000_000).unwrap();
+            let mut spi = SpiMaster::new(
+                peripherals.spi3,
+                peripherals.pins.gpio12.into(),
+                peripherals.pins.gpio10.into(),
+                peripherals.pins.gpio11.into(),
+                ready_pin.into(),
+                peripherals.pins.gpio13.into(),
+                master_ready_pin,
+                1_000_000,
+            )
+            .unwrap();
 
-            loop {
-                let res: Result<ResponseFromHardware, anyhow::Error> = spi.send_request(&RequestToHardware::LightOn);
+            print_heap();   
+            print_stack();   
+
+            while let Ok(message) = receiver.recv() {
+                
+
+                let res: Result<_, anyhow::Error> = spi.send_request(&message.request);
+
                 info!("RESPONSE: {:?}", res);
-                thread::sleep(Duration::from_millis(300));
+
+                // Send the response back to whoever made the request.
+                let _ = message.response_tx.send(res);
             }
         })?;
-
 
     info!("init done");
 
     print_memory_stats();
-        handle.join().unwrap();
+    handle.join().unwrap();
+    handle.join().unwrap();
 
     // handle.join().unwrap().unwrap();
     Ok(())

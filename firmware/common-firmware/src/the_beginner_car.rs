@@ -18,8 +18,6 @@ pub enum RequestToHardware {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ResponseFromHardware {
     Ok,
-    Error,
     Status { light_on: bool, motor_speed: i32 },
     Logs { logs: Vec<LogMessage> },
 }
-

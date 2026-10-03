@@ -1,7 +1,5 @@
 use std::sync::mpsc::SyncSender;
-use std::sync::{Arc, Mutex};
-
-use edge_nal::TcpBind;
+use std::time::Duration;
 
 pub mod auto_script;
 pub mod info;
@@ -9,126 +7,17 @@ pub mod logs;
 pub mod update;
 pub mod verify_and_set_valid;
 
-use core::fmt::{Debug, Display};
-
-use edge_http::Method;
-use edge_http::io::Error;
-use edge_http::io::server::{Connection, Handler, Server};
-use embedded_io_async::{Read, Write};
+use common_firmware::the_beginner_car::{RequestToHardware, ResponseFromHardware};
+use esp_idf_svc::http::Method;
+use esp_idf_svc::http::server::{Configuration, EspHttpServer, Request};
+use esp_idf_svc::io::Write;
 use serde::Serialize;
 
-// enum WasmLifetime {
-//     Installed,
-//     Running
-// }
-
-// struct WasmInstance {
-//     installed_script: ()
-// }
-
-// struct Wasm {
-//     wasm_instance: Mutex<WasmInstance>,
-//     // state: 
-// }
-
-// impl Wasm {
-//     fn cancel(&self) {
-//         //
-//     }
-// }
-
-// struct AutoScript {
-//     wasm: Mutex<Wasm>
-// }
-
-// #[derive(Serialize)]
-// enum WasmCommand {
-//     InstallWasm,
-//     StartWasm,
-//     StopWasm,
-//     GetMotorASpeed,
-//     GetMotorBSpeed,
-// }
-
 use crate::HardwareMessage;
-use crate::auto_script::AutoScript;
-
-pub type SmallServer = Server<2, 1024, 8>;
 
 #[derive(Serialize)]
 struct FirmwareUpdate200Response {
     status: String,
-}
-
-pub struct HttpHandler {}
-
-impl HttpHandler {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl Handler for HttpHandler {
-    type Error<E>
-        = Error<E>
-    where
-        E: Debug;
-
-    async fn handle<T, const N: usize>(
-        &self,
-        task_id: impl Display + Copy,
-        conn: &mut Connection<'_, T, N>,
-    ) -> Result<(), Self::Error<T::Error>>
-    where
-        T: Read + Write,
-    {
-        let request_headers = conn.headers()?;
-        let path = request_headers.path;
-        let method = request_headers.method;
-
-        log::info!("HTTP request: task={} {:?} {}", task_id, method, path);
-
-        match (method, path) {
-            (Method::Options, "/autoscript/upload")
-            | (Method::Options, "/autoscript/run")
-            | (Method::Options, "/hardware/set_motor_a_speed")
-            | (Method::Options, "/hardware/set_motor_b_speed")
-            | (Method::Options, "/logs") => {
-                conn.initiate_response(204, None, &CORS_HEADERS).await?;
-            }
-            (Method::Post, "/hardware/set_motor_a_speed") => {
-                log::info!("waiting");
-                // hardware::set_motor_a_speed(conn).await?;
-                log::info!("response");
-            }
-            (Method::Get, "/logs") => logs::logs(conn).await?,
-            (Method::Get, "/coredump") => logs::coredump(conn).await?,
-            (Method::Post, "/hardware/set_motor_b_speed") => {
-                // hardware::set_motor_b_speed(conn).await?
-            }
-            (_, "/autoscript/upload") | (_, "/autoscript/run") | (_, "/autoscript/cancel") => {
-                conn.initiate_response(405, Some("Method Not Allowed"), &[])
-                    .await?;
-            }
-            _ => {
-                conn.initiate_response(404, Some("Not Found"), &[]).await?;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-pub async fn run(server: &mut SmallServer, hardware_sender: SyncSender<HardwareMessage>) -> Result<(), anyhow::Error> {
-    let addr = "0.0.0.0:80".parse().unwrap();
-    log::info!("Running HTTP server o n {addr}");
-
-    let acceptor = edge_nal_std::Stack::new().bind(addr).await?;
-    // let acceptor = EspTcpAcceptor::new(2);
-
-    server.run(None, acceptor, HttpHandler {}).await?;
-
-    Ok(())
 }
 
 static CORS_HEADERS: [(&str, &str); 3] = [
@@ -136,3 +25,119 @@ static CORS_HEADERS: [(&str, &str); 3] = [
     ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
     ("Access-Control-Allow-Headers", "Content-Type"),
 ];
+
+/// Starts the HTTP server and routes the endpoints.
+/// Note: You MUST store the returned `EspHttpServer` in your `main()` function
+/// so it doesn't drop out of scope. If it drops, the server stops.
+pub fn run(
+    hardware_sender: SyncSender<HardwareMessage>,
+) -> Result<EspHttpServer<'static>, anyhow::Error> {
+    // We boost the stack size to 10k to safely handle JSON parsing and larger strings
+    let config = Configuration {
+        stack_size: 10240,
+        max_sessions: 4,
+        ..Default::default()
+    };
+
+    let mut server = EspHttpServer::new(&config)?;
+    log::info!("Running native ESP HTTP server on port 80");
+
+    // --- OPTIONS / CORS Preflight Routes ---
+    // In esp-idf-svc, we can reuse this handler for all OPTIONS routes
+    let options_handler = |req: Request<&mut esp_idf_svc::http::server::EspHttpConnection>| -> Result<(), anyhow::Error> {
+        req.into_response(204, None, &CORS_HEADERS)?;
+        Ok(())
+    };
+
+    server.fn_handler("/autoscript/upload", Method::Options, options_handler)?;
+    server.fn_handler("/autoscript/run", Method::Options, options_handler)?;
+    server.fn_handler(
+        "/hardware/set_motor_a_speed",
+        Method::Options,
+        options_handler,
+    )?;
+    server.fn_handler(
+        "/hardware/set_motor_b_speed",
+        Method::Options,
+        options_handler,
+    )?;
+    server.fn_handler("/logs", Method::Options, options_handler)?;
+
+    // --- Active Routes ---
+
+    // POST /hardware/set_motor_a_speed
+    let sender_a = hardware_sender.clone();
+    server.fn_handler(
+        "/hardware/set_motor_a_speed",
+        Method::Post,
+        move |mut req| -> Result<(), anyhow::Error> {
+            log::info!("waiting");
+
+
+            let (sender, receiver) = std::sync::mpsc::sync_channel::<Result<ResponseFromHardware, anyhow::Error>>(1);
+            sender_a.send(HardwareMessage { request: RequestToHardware::SetMotorSpeed(0), response_tx: sender }).unwrap();
+
+            let receive = receiver.recv_timeout(Duration::from_secs(1)).unwrap().unwrap();
+            dbg!(receive);
+            // Example: hardware::set_motor_a_speed(&mut req, &sender_a)?;
+
+            log::info!("response");
+            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
+            response.write_all(b"OK")?;
+            Ok(())
+        },
+    )?;
+
+    // POST /hardware/set_motor_b_speed
+    let sender_b = hardware_sender.clone();
+    server.fn_handler(
+        "/hardware/set_motor_b_speed",
+        Method::Post,
+        move |mut req| -> Result<(), anyhow::Error> {
+            // hardware::set_motor_b_speed(&mut req, &sender_b)?;
+
+            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
+            response.write_all(b"OK")?;
+            Ok(())
+        },
+    )?;
+
+    // GET /logs
+    server.fn_handler(
+        "/logs",
+        Method::Get,
+        move |mut req| -> Result<(), anyhow::Error> {
+            logs::logs(req)?;
+            Ok(())
+        },
+    )?;
+
+    // GET /coredump
+    server.fn_handler(
+        "/coredump",
+        Method::Get,
+        move |mut req| -> Result<(), anyhow::Error> {
+            // You will need to update `logs::coredump` to accept `Request<&mut EspHttpConnection>`
+            // logs::coredump(req)?;
+
+            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
+            response.write_all(b"Coredump output")?;
+            Ok(())
+        },
+    )?;
+
+    // --- Method Not Allowed / 405 Handling ---
+    // Note: EspHttpServer handles 404 (Not Found) automatically for unregistered paths.
+    // If you explicitly want 405s for specific paths with wrong methods, you map them like this:
+    let method_not_allowed = |req: Request<&mut esp_idf_svc::http::server::EspHttpConnection>| -> Result<(), anyhow::Error> {
+        req.into_response(405, Some("Method Not Allowed"), &CORS_HEADERS)?;
+        Ok(())
+    };
+
+    server.fn_handler("/autoscript/upload", Method::Get, method_not_allowed)?;
+    server.fn_handler("/autoscript/upload", Method::Post, method_not_allowed)?;
+    server.fn_handler("/autoscript/run", Method::Get, method_not_allowed)?;
+    server.fn_handler("/autoscript/cancel", Method::Get, method_not_allowed)?;
+
+    Ok(server)
+}

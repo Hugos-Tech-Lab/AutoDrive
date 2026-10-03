@@ -3,13 +3,13 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Semaphore;
 
-const URL: &str = "http://192.168.0.116/logs";
+const URL: &str = "http://192.168.0.180/logs";
 
 // Total number of requests to make.
-const TOTAL_REQUESTS: usize = 1000;
+const TOTAL_REQUESTS: usize = 100;
 
 // Maximum number of requests in flight at once.
-const CONCURRENCY: usize = 1;
+const CONCURRENCY: usize = 2;
 
 #[tokio::main]
 async fn main() {

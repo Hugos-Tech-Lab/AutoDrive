@@ -22,11 +22,8 @@ dotenvy_macro = "0.15.7"
 heapless = "0.9.3"
 serde = "1.0.229"
 serde_json = "1.0.151"
-edge-http = "0.8.0"
-edge-nal = "0.7.0"
 embedded-io-async = "0.7.0"
 futures-lite = { version = "2.6.1", default-features = false }
-edge-nal-std = "0.7.0"
 embassy-sync = { version = "0.8.0" }
 futures = "0.3.34"
 static_cell = "2.1.1"

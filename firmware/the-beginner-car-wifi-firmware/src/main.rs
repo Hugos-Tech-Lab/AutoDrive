@@ -5,10 +5,11 @@ use std::{
 };
 
 use common_firmware::{
-    memory::{print_heap, print_stack}, on_board_led::Hardware, spi_master::SpiMaster, the_beginner_car::{RequestToHardware, ResponseFromHardware},
+    memory::{print_heap, print_stack},
+    on_board_led::Hardware,
+    spi_master::SpiMaster,
+    the_beginner_car::{RequestToHardware, ResponseFromHardware},
 };
-use edge_http::io::server::Server;
-use edge_nal::TcpBind;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     hal::{
@@ -31,7 +32,7 @@ use esp_idf_svc::{
 use crate::{
     auto_script::AutoScript,
     connect_to_wifi::connect_to_wifi,
-    http_server::{SmallServer, verify_and_set_valid::verify_and_set_valid},
+    http_server::verify_and_set_valid::verify_and_set_valid,
     logger::init_logging,
     utils::{heap, stack},
 };
@@ -111,20 +112,6 @@ pub struct HardwareMessage {
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
-
-    unsafe {
-        let config = esp_idf_sys::esp_vfs_eventfd_config_t { max_fds: 16 };
-
-        let ret = esp_idf_sys::esp_vfs_eventfd_register(&config);
-
-        assert_eq!(
-            ret,
-            esp_idf_sys::ESP_OK,
-            "esp_vfs_eventfd_register failed: {:?}",
-            ret
-        );
-    }
-
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
@@ -150,10 +137,7 @@ pub fn main() -> anyhow::Result<()> {
         sys_loop,
     )?;
 
-    info!("123123123: {:?}", heap());
-
     connect_to_wifi(&mut wifi)?;
-    info!("2333333333333: {:?}", heap());
 
     let mut mdns = EspMdns::take()?;
 
@@ -162,13 +146,7 @@ pub fn main() -> anyhow::Result<()> {
     info!("setting host name");
     let (sender, receiver) = std::sync::mpsc::sync_channel::<HardwareMessage>(100);
 
-    let handle = std::thread::Builder::new()
-        .name("http_server".into())
-        .stack_size(50 * 1024)
-        .spawn(|| {
-            let mut server = SmallServer::new();
-            futures_lite::future::block_on(http_server::run(&mut server, sender))
-        })?;
+    let _http_server = http_server::run(sender).unwrap();
 
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
     let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio46)?;
@@ -189,25 +167,29 @@ pub fn main() -> anyhow::Result<()> {
             )
             .unwrap();
 
-            print_heap();   
-            print_stack();   
+            print_heap();
+            print_stack();
 
-            while let Ok(message) = receiver.recv() {
-                
+            loop {
+                match receiver.recv() {
+                    Ok(message) => {
+                        let res = spi.send_request(&message.request);
 
-                let res: Result<_, anyhow::Error> = spi.send_request(&message.request);
+                        info!("RESPONSE: {:?}", res);
 
-                info!("RESPONSE: {:?}", res);
-
-                // Send the response back to whoever made the request.
-                let _ = message.response_tx.send(res);
+                        let _ = message.response_tx.send(res);
+                    }
+                    Err(err) => {
+                        info!("Hardware receiver closed: {:?}", err);
+                        break;
+                    }
+                }
             }
         })?;
 
     info!("init done");
 
     print_memory_stats();
-    handle.join().unwrap();
     handle.join().unwrap();
 
     // handle.join().unwrap().unwrap();

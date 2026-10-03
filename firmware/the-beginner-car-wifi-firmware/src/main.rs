@@ -31,7 +31,7 @@ use esp_idf_svc::{
 use crate::{
     auto_script::AutoScript,
     connect_to_wifi::connect_to_wifi,
-    http_server::verify_and_set_valid::verify_and_set_valid,
+    tcp_server::verify_and_set_valid::verify_and_set_valid,
     logger::init_logging,
     utils::{heap, stack},
 };
@@ -45,7 +45,7 @@ use log::info;
 pub mod auto_script;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
-pub mod http_server;
+pub mod tcp_server;
 pub mod inter_thread;
 pub mod logger;
 pub mod utils;
@@ -145,7 +145,7 @@ pub fn main() -> anyhow::Result<()> {
     info!("setting host name");
     let (sender, receiver) = std::sync::mpsc::sync_channel::<HardwareMessage>(100);
 
-    let _http_server = http_server::run(sender).unwrap();
+    let _http_server = tcp_server::run(sender).unwrap();
 
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
     let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio46)?;

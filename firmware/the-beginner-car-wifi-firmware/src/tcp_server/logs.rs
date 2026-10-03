@@ -1,6 +1,6 @@
 use esp_idf_svc::io::Write;
 use esp_idf_svc::http::server::{EspHttpConnection, Request};
-use crate::http_server::CORS_HEADERS;
+use crate::tcp_server::CORS_HEADERS;
 
 use crate::{
     logger::LOG_BUFFER,

@@ -3,7 +3,7 @@ use std::{sync::mpsc::SyncSender, time::Duration};
 use common_firmware::the_beginner_car::{RequestToHardware, ResponseFromHardware};
 use esp_idf_svc::http::server::Request;
 
-use crate::{HardwareMessage, http_server::error::HttpServerError};
+use crate::{HardwareMessage, tcp_server::error::HttpServerError};
 
 pub fn get_speed(
     req: &mut Request<&mut esp_idf_svc::http::server::EspHttpConnection<'_>>,

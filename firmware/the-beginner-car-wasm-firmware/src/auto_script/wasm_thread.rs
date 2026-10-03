@@ -4,7 +4,7 @@ use crate::{
     auto_script::{
         AutoScriptRunProgress, WasmResponse,
         cancellation_token::{self, CancellationToken},
-    }, hardware::motor::OnBoardLed, inter_thread::InterThreadListener,
+    }, inter_thread::InterThreadListener,
 };
 use anyhow::{Result, anyhow};
 use flume::Sender;
@@ -48,7 +48,6 @@ impl WasmThread {
         // ~1kb for static strings
         // ~1kb for allocator header
         let linear_pool = vec![0u8; 66 * 1024].into_boxed_slice();
-        dbg!("1111111111111111111111111");
 
         let runtime = Runtime::builder()
             .use_memory_pool(runtime_pool, linear_pool)

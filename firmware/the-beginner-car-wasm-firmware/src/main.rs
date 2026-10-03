@@ -4,7 +4,12 @@ use std::{
     time::Duration,
 };
 
-use common_firmware::{get_mac_address::{format_mac_address, get_mac_address}, on_board_led::OnBoardLED, spi_slave::SpiSlave, the_beginner_car::{RequestToHardware, ResponseFromHardware}};
+use common_firmware::{
+    get_mac_address::{format_mac_address, get_mac_address},
+    on_board_led::OnBoardLED,
+    spi_slave::SpiSlave,
+    the_beginner_car::{RequestToHardware, ResponseFromHardware},
+};
 use esp_idf_svc::{eventloop::EspSystemEventLoop, hal::gpio::PinDriver};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
@@ -14,7 +19,9 @@ use esp_idf_svc::{
 };
 
 use crate::{
-    auto_script::AutoScript, hardware::{Hardware, motor::OnBoardLed}, logger::init_logging
+    auto_script::AutoScript,
+    hardware::{TheBeginnerCarHardware, motor::Motor},
+    logger::init_logging,
 };
 
 use esp_idf_sys::{
@@ -31,11 +38,8 @@ pub mod auto_script;
 pub mod esp_app_desc_2;
 pub mod hardware;
 pub mod inter_thread;
-pub mod logger;
-use anyhow::Context;
-use esp_idf_svc::hal::delay::BLOCK;
-use esp_idf_svc::sys::spi_host_device_t;
 pub mod lib;
+pub mod logger;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -57,7 +61,19 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    // let hardware = Hardware::
+    let mut motor_a = Arc::new(Mutex::new(Motor::new(
+        peripherals.pins.gpio0.into(),
+        peripherals.pins.gpio7.into(),
+        peripherals.ledc.channel0,
+        peripherals.ledc.timer1,
+    )));
+    let mut motor_b = Arc::new(Mutex::new(Motor::new(
+        peripherals.pins.gpio5.into(),
+        peripherals.pins.gpio6.into(),
+        peripherals.ledc.channel1,
+        peripherals.ledc.timer2,
+    )));
+    // let hardware = TheBeginnerCarHardware::
 
     // let pin = OnBoardLED::new(peripherals.pins.gpio8.into(), peripherals.spi2);
 
@@ -82,7 +98,7 @@ pub fn main() -> anyhow::Result<()> {
                     peripherals.pins.gpio19,
                     peripherals.pins.gpio9,
                     peripherals.pins.gpio21,
-                    peripherals.pins.gpio22
+                    peripherals.pins.gpio22,
                 )
                 .unwrap();
 
@@ -93,8 +109,18 @@ pub fn main() -> anyhow::Result<()> {
                     match request {
                         RequestToHardware::LightOn => println!("LightOn"),
                         RequestToHardware::LightOff => println!("LightOff"),
-                        RequestToHardware::SetMotorASpeed(speed) => println!("SetMotorASpeed"),
-                        RequestToHardware::SetMotorBSpeed(speed) => println!("SetMotorBSpeed"),
+                        RequestToHardware::SetMotorASpeed(speed) => {
+                            println!("set motor A speed {}", speed);
+                            let mut motor_a = motor_a.lock().unwrap();
+                            motor_a.set_speed(speed).unwrap();
+                            println!("done set motor A speed {}", speed);
+                        }
+                        RequestToHardware::SetMotorBSpeed(speed) => {
+                            println!("set motor B speed {}", speed);
+                            let mut motor_b = motor_b.lock().unwrap();
+                            motor_b.set_speed(speed).unwrap();
+                            println!("done set motor B speed {}", speed);
+                        }
                         RequestToHardware::Logs => println!("Logs"),
                     }
 

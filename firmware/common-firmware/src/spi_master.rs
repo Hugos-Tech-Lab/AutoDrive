@@ -75,7 +75,6 @@ impl<'d> SpiMaster<'d> {
     {
         let encoded = postcard::to_allocvec(request)
             .map_err(|e| anyhow::anyhow!("Failed to encode request: {e:?}"))?;
-
         let packets = SpiPackets::from_payload(&encoded).unwrap();
         for packet in packets.iter() {
             let payload = packet.to_bytes();

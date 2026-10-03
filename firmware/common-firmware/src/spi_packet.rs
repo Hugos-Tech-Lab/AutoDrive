@@ -7,7 +7,7 @@ pub const HEADER_SIZE: usize = 4;
 pub const CRC_SIZE: usize = 4;
 pub const DATA_SIZE: usize = PACKET_SIZE - HEADER_SIZE - CRC_SIZE;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SpiPacket {
     pub packet_number: u8,
     pub total_packets: u8,
@@ -199,14 +199,30 @@ impl SpiPackets {
 
         output
     }
+}
 
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut output = Vec::with_capacity(self.packets.len() * PACKET_SIZE);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        for packet in &self.packets {
-            output.extend_from_slice(&packet.to_bytes());
-        }
+#[test]
+fn test_packet_serialization_round_trip() {
+    let payload: Vec<u8> = (0..1000)
+        .map(|i| (i % 256) as u8)
+        .collect();
 
-        output
-    }
+    let packets = SpiPackets::from_payload(&payload).unwrap();
+    let bytes = packets.to_bytes();
+
+    let decoded_packets = bytes
+        .chunks_exact(PACKET_SIZE)
+        .map(SpiPacket::from_bytes)
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+
+    let decoded = SpiPackets::from_vec(decoded_packets);
+
+    assert_eq!(decoded.payload(), payload);
+    assert_eq!(decoded.packets(), packets.packets());
+}
 }

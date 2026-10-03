@@ -124,14 +124,12 @@ impl<'d> SpiSlave<'d> {
         };
 
         self.queue_trans(&transaction).unwrap();
-        println!("slave wants data");
 
         self.slave_wants_data.set_high().unwrap();
 
         let _ = self.trans_result(&mut transaction).unwrap();
 
         self.slave_wants_data.set_low().unwrap();
-        println!("wait_until_master_has_no_transaction");
         self.wait_until_master_has_no_transaction()?;
 
         Ok(Box::new(rx))
@@ -161,7 +159,6 @@ impl<'d> SpiSlave<'d> {
         let _ = self.trans_result(&mut transaction).unwrap();
 
         self.slave_wants_data.set_low().unwrap();
-        println!("wait_until_master_has_no_transaction");
         self.wait_until_master_has_no_transaction().unwrap();
 
         
@@ -185,7 +182,9 @@ impl<'d> SpiSlave<'d> {
                 }
             }
             let request = SpiPackets::from_vec(request);
-            let request: TReq = postcard::from_bytes(&request.to_bytes()).unwrap();
+            // dbg!(packet.clone());
+
+            let request: TReq = postcard::from_bytes(&request.payload()).unwrap();
             // TODO: proper handling
             let response = handler(request);
 

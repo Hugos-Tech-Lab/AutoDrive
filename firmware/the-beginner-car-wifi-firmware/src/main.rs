@@ -172,7 +172,9 @@ pub fn main() -> anyhow::Result<()> {
             loop {
                 match receiver.recv() {
                     Ok(message) => {
-                        let res = spi.send_request(&message.request);
+                        println!("{:?}", message.request);
+
+                        let res: Result<ResponseFromHardware, anyhow::Error> = spi.send_request(&message.request);
 
                         info!("RESPONSE: {:?}", res);
 

@@ -10,32 +10,44 @@ pub mod set_motor_b_speed;
 pub mod update;
 pub mod verify_and_set_valid;
 
+use async_io::Async;
 use esp_idf_svc::http::Method;
 use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use esp_idf_svc::io::Write;
+use futures::AsyncReadExt;
+use log::error;
 use log::info;
-use std::env;
 use std::io;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use log::error;
-use async_io::Async;
 
-use futures::executor::{LocalPool, LocalSpawner};
+use futures::executor::LocalSpawner;
 use futures::task::LocalSpawnExt;
-use futures::{AsyncReadExt, AsyncWriteExt, FutureExt};
-
-use esp_idf_svc::sys::EspError;
-use esp_idf_svc::timer::EspTaskTimerService;
 
 use crate::HardwareMessage;
+
+pub enum TheBeginnerCarIncomingMessages {
+    SetMotorASpeed { speed: i8 },
+    SetMotorBSpeed { speed: i8 },
+    InformPositionFromCamera { x: i32, y: i32 },
+    InstallWasm { bytes: Vec<u8> },
+    RunWasm
+}
+
+pub enum TheBeginnerCarOutgoingMessages {
+    Logs { logs: Vec<()> },
+    SystemState {},
+    MotorASpeedUpdated { speed: i8 },
+    MotorBSpeedUpdated { speed: i8 },
+    WasmInstalled,
+    WasmRunning,
+}
 
 async fn handle(mut stream: Async<TcpStream>) {
     loop {
         let mut read = [0; 256];
         match stream.read_exact(&mut read).await {
             Ok(n) => {
-            //  
-
+                //
 
                 // let _ = stream.write_all(&read[0..n]).await;
             }

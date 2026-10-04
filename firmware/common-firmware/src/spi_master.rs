@@ -82,27 +82,27 @@ impl<'d> SpiMaster<'d> {
     {
         let encoded = postcard::to_allocvec(request)
             .map_err(|e| anyhow::anyhow!("Failed to encode request: {e:?}"))?;
-        let packets = SpiPackets::from_payload(&encoded).unwrap();
+        let packets = SpiPackets::from_payload(&encoded).map_err(|err| anyhow::anyhow!("Could not construct payload: {:?}", err))?;
         for packet in packets.iter() {
             let payload = packet.to_bytes();
             self.wait_until_slave_wants_data()?;
-            self.master_has_transaction.set_high().unwrap();
-            self.device_driver.write(&payload).unwrap();
+            self.master_has_transaction.set_high()?;
+            self.device_driver.write(&payload)?;
             self.wait_until_slave_doesnt_want_data()?;
-            self.master_has_transaction.set_low().unwrap();
+            self.master_has_transaction.set_low()?;
         }
 
         let mut response = Vec::<SpiPacket>::new();
         loop {
             self.wait_until_slave_wants_data()?;
-            self.master_has_transaction.set_high().unwrap();
+            self.master_has_transaction.set_high()?;
             let mut packet = [0u8; PACKET_SIZE];
             self.device_driver.read(&mut packet)?;
 
-            let packet = SpiPacket::from_bytes(&packet).unwrap();
+            let packet = SpiPacket::from_bytes(&packet).map_err(|err| anyhow::anyhow!("Could not reconstruct payload: {:?}", err))?;
             let packet = response.push_mut(packet);
             self.wait_until_slave_doesnt_want_data()?;
-            self.master_has_transaction.set_low().unwrap();
+            self.master_has_transaction.set_low()?;
 
             if packet.is_last() {
                 break;

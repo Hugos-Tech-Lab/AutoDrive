@@ -140,14 +140,14 @@ impl<'d> SpiSlave<'d> {
             flags: 0,
         };
 
-        self.wait_until_master_has_no_transaction()?; // maybe move this above?
-        self.queue_trans(&transaction).unwrap();
+        self.wait_until_master_has_no_transaction()?;
+        self.queue_trans(&transaction)?;
 
-        self.slave_wants_data.set_high().unwrap();
+        self.slave_wants_data.set_high()?;
 
-        let _ = self.trans_result(&mut transaction).unwrap();
+        let _ = self.trans_result(&mut transaction)?;
 
-        self.slave_wants_data.set_low().unwrap();
+        self.slave_wants_data.set_low()?;
 
         Ok(Box::new(rx))
     }
@@ -169,14 +169,14 @@ impl<'d> SpiSlave<'d> {
             flags: 0,
         };
 
-        self.wait_until_master_has_no_transaction().unwrap();
-        self.queue_trans(&transaction).unwrap();
+        self.wait_until_master_has_no_transaction()?;
+        self.queue_trans(&transaction)?;
 
-        self.slave_wants_data.set_high().unwrap();
+        self.slave_wants_data.set_high()?;
 
-        let _ = self.trans_result(&mut transaction).unwrap();
+        let _ = self.trans_result(&mut transaction)?;
 
-        self.slave_wants_data.set_low().unwrap();
+        self.slave_wants_data.set_low()?;
 
         Ok(())
     }
@@ -230,9 +230,19 @@ impl<'d> SpiSlave<'d> {
                 }
             };
 
-            let packets = SpiPackets::from_payload(&response).unwrap();
+            let packets = match SpiPackets::from_payload(&response) {
+                Ok(packets) => packets,
+                Err(e) => {
+                    log::error!("Cannot recreate packets: {:?}", e);
+                    continue 'requests;
+                }
+            };
+
             for packet in packets.iter() {
-                self.write(Box::new(packet.to_bytes())).unwrap();
+                if let Err(err) = self.write(Box::new(packet.to_bytes())) {
+                    log::error!("Cannot write packet: {:?}", err);
+                    continue 'requests;
+                }
             }
         }
     }

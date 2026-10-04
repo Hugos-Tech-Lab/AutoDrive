@@ -4,7 +4,6 @@ use std::{
 
 use esp_idf_svc::hal::{
     gpio::{AnyIOPin},
-    ledc::{CHANNEL0, CHANNEL1, LedcDriver, LedcTimerDriver, TIMER0, TIMER1, config::TimerConfig},
     spi::{self, Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
     units::Hertz,
 };
@@ -65,15 +64,15 @@ impl OnBoardLED {
         }
     }
 
-    fn convert(value: i8, max: u32) -> (u32, bool) {
-        let negative = value < 0;
-        let magnitude = value.unsigned_abs() as u32;
+    // fn convert(value: i8, max: u32) -> (u32, bool) {
+    //     let negative = value < 0;
+    //     let magnitude = value.unsigned_abs() as u32;
 
-        // Example mapping: -128..=127 → 0..=max
-        let output = magnitude * max / 128;
+    //     // Example mapping: -128..=127 → 0..=max
+    //     let output = magnitude * max / 128;
 
-        (output, negative)
-    }
+    //     (output, negative)
+    // }
 
     pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
         self.hardware.led.write([RGB8{ r, g, b }]).unwrap();

@@ -41,7 +41,7 @@ impl<'d> Motor<'d> {
     }
 
     pub fn stop(&mut self) -> anyhow::Result<()> {
-        self.power_driver.set_duty(0);
+        self.power_driver.set_duty(0)?;
         Ok(())
     }
 

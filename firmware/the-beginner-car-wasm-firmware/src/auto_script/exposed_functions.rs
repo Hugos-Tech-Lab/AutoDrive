@@ -1,7 +1,6 @@
 use std::{thread, time::Duration};
 
 use log::info;
-use smart_leds_trait::RGB8;
 use wamr_rust_sdk::sys::{
     WASMExecEnv, wasm_runtime_addr_app_to_native, wasm_runtime_get_custom_data,
     wasm_runtime_get_module_inst, wasm_runtime_terminate, wasm_runtime_validate_app_addr,

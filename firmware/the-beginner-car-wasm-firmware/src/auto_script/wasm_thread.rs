@@ -65,8 +65,6 @@ impl WasmThread {
             )
             .build()?;
 
-        dbg!("2222222222222222222222222");
-
         Ok(Self {
             runtime: Rc::new(runtime),
             installed_module: None,

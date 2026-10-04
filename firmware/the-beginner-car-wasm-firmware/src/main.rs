@@ -59,19 +59,18 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    let mut motor_a = Arc::new(Mutex::new(Motor::new(
+    let motor_a = Arc::new(Mutex::new(Motor::new(
         peripherals.pins.gpio15.into(),
         peripherals.pins.gpio23.into(),
         peripherals.ledc.channel0,
         peripherals.ledc.timer1,
     )));
-    let mut motor_b = Arc::new(Mutex::new(Motor::new(
+    let motor_b = Arc::new(Mutex::new(Motor::new(
         peripherals.pins.gpio21.into(),
         peripherals.pins.gpio22.into(),
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
     )));
-    // let hardware = TheBeginnerCarHardware::
 
     // let pin = OnBoardLED::new(peripherals.pins.gpio8.into(), peripherals.spi2);
 

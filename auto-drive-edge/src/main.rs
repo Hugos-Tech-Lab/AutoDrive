@@ -1,9 +1,18 @@
-use std::{error::Error, thread::sleep, time::Duration};
-use gilrs::{Gilrs, Button, Event};
-
+use gilrs::{Button, EventType, Gilrs};
 use serde::{Deserialize, Serialize};
+use std::{
+    error::Error,
+    sync::{
+        atomic::{AtomicU32, Ordering},
+        Arc,
+    },
+    thread,
+    time::Duration,
+};
 use tokio::{
-    io::AsyncWriteExt, net::TcpStream, time::timeout,
+    io::AsyncWriteExt,
+    net::TcpStream,
+    time::{interval, timeout},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,72 +26,123 @@ pub enum TheBeginnerCarIncomingMessages {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    // Latest LeftTrigger2 value.
+    //
+    // We store f32 as its raw u32 bits because AtomicF32 doesn't
+    // exist in std.
+    let left_trigger2 = Arc::new(AtomicU32::new(0.0_f32.to_bits()));
+
+    // Give the gamepad thread its own copy of the shared value.
+    let trigger_for_thread = Arc::clone(&left_trigger2);
+
+    // ------------------------------------------------------------
+    // Gamepad thread
+    // ------------------------------------------------------------
+    //
+    // This thread does nothing except wait for gamepad events.
+    // next_event_blocking() puts the thread to sleep until an
+    // event arrives.
+    //
+    thread::spawn(move || {
+        let mut gilrs = match Gilrs::new() {
+            Ok(gilrs) => gilrs,
+            Err(error) => {
+                eprintln!("Failed to initialize gilrs: {error}");
+                return;
+            }
+        };
+
+        println!("Gamepad thread started.");
+
+        loop {
+            let Some(event) = gilrs.next_event_blocking(None) else {
+                continue;
+            };
+
+            match event.event {
+                EventType::ButtonChanged(Button::LeftTrigger2, value, _) => {
+                    trigger_for_thread.store(value.to_bits(), Ordering::Relaxed);
+                }
+
+                EventType::ButtonPressed(Button::LeftTrigger2, _) => {
+                    trigger_for_thread.store(1.0_f32.to_bits(), Ordering::Relaxed);
+                }
+
+                EventType::ButtonReleased(Button::LeftTrigger2, _) => {
+                    trigger_for_thread.store(0.0_f32.to_bits(), Ordering::Relaxed);
+                }
+
+                _ => {}
+            }
+        }
+    });
+
+    // ------------------------------------------------------------
+    // TCP connection
+    // ------------------------------------------------------------
+
+    println!("Connecting...");
+
     let mut stream = match timeout(
         Duration::from_secs(5),
         TcpStream::connect("192.168.0.180:8080"),
     )
     .await
     {
-        Ok(result) => {
-            match result {
-                Ok(stream) => {
-                    println!("Connected!");
-                    stream
-                }
-                Err(error) => {
-                    eprintln!("Failed to connect: {error}");
-                    return Ok(());
-                }
-            }
+        Ok(Ok(stream)) => {
+            println!("Connected!");
+            stream
         }
+
+        Ok(Err(error)) => {
+            eprintln!("Failed to connect: {error}");
+            return Ok(());
+        }
+
         Err(_) => {
             eprintln!("Connection timed out after 5 seconds");
             return Ok(());
         }
     };
 
-    let message = TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed: 0 };
+    // ------------------------------------------------------------
+    // Send the current trigger value every 50 ms
+    // ------------------------------------------------------------
 
-    let bytes = postcard::to_stdvec(&message)?;
-    let len = u32::try_from(bytes.len())?;
-
-    let mut gilrs = Gilrs::new().unwrap();
-
-
-    for (_id, gamepad) in gilrs.gamepads() {
-        println!("{} is {:?}", gamepad.name(), gamepad.power_info());
-    }
+    let mut ticker = interval(Duration::from_millis(20));
 
 
-    let mut active_gamepad = None;
-
+    let mut previous_message = 1;
     loop {
-        println!("hi");
-        // Examine new events
-        while let Some(Event { id, event, time, .. }) = gilrs.next_event() {
-            println!("{:?} New event from {}: {:?}", time, id, event);
-            active_gamepad = Some(id);
+        ticker.tick().await;
+
+        // Read the latest value produced by the gamepad thread.
+        let trigger = f32::from_bits(
+            left_trigger2.load(Ordering::Relaxed)
+        );
+
+        // Convert 0.0..=1.0 into the i8 speed range.
+        let mut speed = (trigger * i8::MAX as f32) as i8;
+        if speed < 4 {
+            speed = 0;
         }
 
-        // You can also use cached gamepad state
-        if let Some(gamepad) = active_gamepad.map(|id| gilrs.gamepad(id)) {
-            if gamepad.is_pressed(Button::South) {
-                println!("Button South is pressed (XBox - A, PS - X)");
-            }
+        if (previous_message - speed).abs() <= 3 {
+            continue;
         }
+        previous_message = speed;
 
-         sleep(Duration::from_secs(1));
+
+        let message =
+            TheBeginnerCarIncomingMessages::SetMotorASpeed { speed };
+
+        let bytes = postcard::to_stdvec(&message)?;
+        let len = u32::try_from(bytes.len())?;
+
+        // Send [4-byte length][postcard message]
+        stream.write_all(&len.to_be_bytes()).await?;
+        stream.write_all(&bytes).await?;
+
+        println!("LeftTrigger2: {trigger:.3} -> speed: {speed}");
     }
-
-    loop {
-    // Send [4-byte length][postcard message]
-    stream.write_all(&len.to_be_bytes()).await?;
-    stream.write_all(&bytes).await?;
-
-        println!("Sent SetMotorASpeed {{ speed: 42 }}");
-        sleep(Duration::from_secs(1));
-    }
-
-
-    Ok(())
 }

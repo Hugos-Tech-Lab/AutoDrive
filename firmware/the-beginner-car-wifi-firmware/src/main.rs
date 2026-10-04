@@ -162,8 +162,8 @@ pub fn main() -> anyhow::Result<()> {
 
     // let _http_server = tcp_server::run(sender).unwrap();
 
-    let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
-    let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio46)?;
+    let mut ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
+    let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
     let tcp = std::thread::Builder::new()
         .stack_size(40 * 1000)
@@ -193,11 +193,11 @@ pub fn main() -> anyhow::Result<()> {
         .spawn(move || {
             let mut spi = SpiMaster::new(
                 peripherals.spi3,
-                peripherals.pins.gpio12.into(),
-                peripherals.pins.gpio10.into(),
-                peripherals.pins.gpio11.into(),
+                peripherals.pins.gpio1.into(),
+                peripherals.pins.gpio2.into(),
+                peripherals.pins.gpio42.into(),
                 ready_pin.into(),
-                peripherals.pins.gpio13.into(),
+                peripherals.pins.gpio40.into(),
                 master_ready_pin,
                 5_000_000,
             )

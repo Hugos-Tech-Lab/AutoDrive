@@ -60,14 +60,14 @@ pub fn main() -> anyhow::Result<()> {
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
     let mut motor_a = Arc::new(Mutex::new(Motor::new(
-        peripherals.pins.gpio0.into(),
-        peripherals.pins.gpio7.into(),
+        peripherals.pins.gpio15.into(),
+        peripherals.pins.gpio23.into(),
         peripherals.ledc.channel0,
         peripherals.ledc.timer1,
     )));
     let mut motor_b = Arc::new(Mutex::new(Motor::new(
-        peripherals.pins.gpio5.into(),
-        peripherals.pins.gpio6.into(),
+        peripherals.pins.gpio21.into(),
+        peripherals.pins.gpio22.into(),
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
     )));
@@ -91,12 +91,12 @@ pub fn main() -> anyhow::Result<()> {
             .spawn(move || {
                 let mut spi = SpiSlave::new(
                     peripherals.spi2,
-                    peripherals.pins.gpio20,
-                    peripherals.pins.gpio18,
-                    peripherals.pins.gpio19,
-                    peripherals.pins.gpio9,
-                    peripherals.pins.gpio21,
-                    peripherals.pins.gpio22,
+                    peripherals.pins.gpio4,
+                    peripherals.pins.gpio5,
+                    peripherals.pins.gpio6,
+                    peripherals.pins.gpio7,
+                    peripherals.pins.gpio0,
+                    peripherals.pins.gpio1,
                 )
                 .unwrap();
 

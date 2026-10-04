@@ -187,6 +187,8 @@ impl<'d> SpiSlave<'d> {
         TRes: Serialize,
         F: Fn(TReq) -> TRes,
     {
+        let mut connection_maybe_lost = false; 
+     
         'requests: loop {
             let mut request = Vec::<SpiPacket>::new();
             loop {
@@ -194,6 +196,7 @@ impl<'d> SpiSlave<'d> {
                     Ok(packet) => packet,
                     Err(e) => {
                         log::error!("Cannot read packet: {}", e);
+                        connection_maybe_lost = true;
                         continue 'requests;
                     }
                 };
@@ -202,6 +205,7 @@ impl<'d> SpiSlave<'d> {
                     Err(e) => {
                         log::error!("Cannot decode packet: '{:?}'. Is the SPI bridge OKAY?", e);
                         thread::sleep(Duration::from_millis(1));
+                        connection_maybe_lost = true;
                         continue 'requests;
                     }
                 };
@@ -211,6 +215,11 @@ impl<'d> SpiSlave<'d> {
                     break;
                 }
             }
+            if connection_maybe_lost {
+                log::info!("Success. Recovered after a potential lost connection.");
+                connection_maybe_lost = false;
+            }
+            
             let request = SpiPackets::from_vec(request);
             let request: TReq = match postcard::from_bytes(&request.payload()) {
                 Ok(packet) => packet,

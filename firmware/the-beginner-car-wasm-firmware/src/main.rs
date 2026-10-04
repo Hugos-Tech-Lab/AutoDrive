@@ -1,7 +1,5 @@
 use std::{
-    sync::{Arc, Mutex},
-    thread,
-    time::Duration,
+    sync::{Arc, Mutex}, thread, time::{Duration, Instant},
 };
 
 use common_firmware::{
@@ -104,22 +102,17 @@ pub fn main() -> anyhow::Result<()> {
 
                 // pin.set_color(3, 20, 3);
                 spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                    println!("{:?}", request);
-
                     match request {
                         RequestToHardware::LightOn => println!("LightOn"),
                         RequestToHardware::LightOff => println!("LightOff"),
                         RequestToHardware::SetMotorASpeed(speed) => {
-                            println!("set motor A speed {}", speed);
                             let mut motor_a = motor_a.lock().unwrap();
                             motor_a.set_speed(speed).unwrap();
-                            println!("done set motor A speed {}", speed);
+
                         }
                         RequestToHardware::SetMotorBSpeed(speed) => {
-                            println!("set motor B speed {}", speed);
                             let mut motor_b = motor_b.lock().unwrap();
                             motor_b.set_speed(speed).unwrap();
-                            println!("done set motor B speed {}", speed);
                         }
                         RequestToHardware::Logs => println!("Logs"),
                     }

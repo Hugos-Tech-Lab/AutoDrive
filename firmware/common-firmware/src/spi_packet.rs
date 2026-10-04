@@ -212,7 +212,7 @@ fn test_packet_serialization_round_trip() {
         .collect();
 
     let packets = SpiPackets::from_payload(&payload).unwrap();
-    let bytes = packets.to_bytes();
+    let bytes = packets.payload();
 
     let decoded_packets = bytes
         .chunks_exact(PACKET_SIZE)

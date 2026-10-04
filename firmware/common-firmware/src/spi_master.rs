@@ -54,7 +54,7 @@ impl<'d> SpiMaster<'d> {
             }
         };
 
-        match block_on(with_timeout(embassy_time::Duration::from_millis(200), fut)) {
+        match block_on(with_timeout(embassy_time::Duration::from_secs(1), fut)) {
             Ok(result) => {
                 result.map_err(|err| anyhow::anyhow!("Failed to wait until ready pin: '{err:?}'"))
             }

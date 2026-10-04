@@ -1,3 +1,4 @@
+use embassy_time::with_timeout;
 use esp_idf_svc::{
     hal::{
         gpio::{Input, InputPin, Output, OutputPin, PinDriver, Pull},
@@ -96,25 +97,23 @@ impl<'d> SpiSlave<'d> {
     }
 
     pub fn wait_until_master_ready_pin(&mut self, is_high: bool) -> anyhow::Result<()> {
-        // let start = Instant::now();
-        // let timeout = Duration::from_millis(15000);
+        let fut = async {
+            if is_high {
+                self.master_ready.wait_for_high().await
+            } else {
+                self.master_ready.wait_for_low().await
+            }
+        };
 
-        // while self.master_ready.is_high() != is_high {
-        //     if start.elapsed() > timeout {
-        //         return Err(anyhow::anyhow!("SPI timeout waiting for pin {}", if is_high {
-        //             "high"
-        //         } else {
-        //             "low"
-        //         }));
-        //     }
-
-        //     Ets::delay_us(10); // TODO: figure out good delay
-        // }
-        if is_high {
-            block_on(self.master_ready.wait_for_high()).unwrap();
-        } else {
-            block_on(self.master_ready.wait_for_low()).unwrap();
-        }
+        match block_on(with_timeout(embassy_time::Duration::from_secs(1), fut)) {
+            Ok(result) => {
+                result.map_err(|err| anyhow::anyhow!("Failed to wait until ready pin: '{err:?}'"))
+            }
+            Err(_) => Err(anyhow::anyhow!(
+                "Timeout waiting for READY pin {}",
+                if is_high { "HIGH" } else { "LOW" }
+            )),
+        }?;
 
         Ok(())
     }

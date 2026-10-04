@@ -13,6 +13,7 @@ crc = "3.4.0"
 ws2812-spi = { version = "0.5", features = ["mosi_idle_high"] }
 smart-leds-trait = "0.3.2"
 futures = "0.3.34"
+log = "0.4"
 
 [build-dependencies]
 embuild = "0.33"

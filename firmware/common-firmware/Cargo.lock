@@ -245,6 +245,7 @@ dependencies = [
  "esp-idf-svc",
  "esp-idf-sys",
  "futures",
+ "log",
  "postcard",
  "serde",
  "smart-leds-trait",

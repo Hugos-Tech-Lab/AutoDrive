@@ -1,9 +1,13 @@
 use esp_idf_svc::{
-    hal::{delay::{Ets, FreeRtos}, gpio::{Input, InputPin, Output, OutputPin, PinDriver, Pull}, spi::SPI2}, sys::*,
+    hal::{
+        gpio::{Input, InputPin, Output, OutputPin, PinDriver, Pull},
+        spi::SPI2,
+    },
+    sys::*,
 };
-use serde::{Serialize, de::DeserializeOwned};
-use std::{ffi::c_void, marker::PhantomData, ptr, time::{Duration, Instant}};
 use futures::executor::block_on;
+use serde::{Serialize, de::DeserializeOwned};
+use std::{ffi::c_void, marker::PhantomData, ptr, thread, time::Duration};
 
 use crate::spi_packet::{PACKET_SIZE, SpiPacket, SpiPackets};
 
@@ -17,12 +21,12 @@ pub struct SpiSlave<'d> {
 impl<'d> SpiSlave<'d> {
     pub fn new(
         _spi_2: SPI2,
-        a_sclk: impl InputPin + 'd, 
+        a_sclk: impl InputPin + 'd,
         b_sdi: impl InputPin + 'd,
         c_sdo: impl OutputPin + 'd,
         d_slave_ready_pin: impl OutputPin + 'd,
         e_cs: impl InputPin + 'd,
-        f_master_ready_pin: impl InputPin  + 'd,
+        f_master_ready_pin: impl InputPin + 'd,
     ) -> Result<Self, EspError> {
         let slave_wants_data = PinDriver::output(d_slave_ready_pin)?;
         let master_ready = PinDriver::input(f_master_ready_pin, Pull::Down)?;
@@ -31,7 +35,9 @@ impl<'d> SpiSlave<'d> {
             __bindgen_anon_1: spi_bus_config_t__bindgen_ty_1 {
                 data0_io_num: b_sdi.pin() as _, // SDI (slave) - MOSI (master)
             },
-            __bindgen_anon_2: spi_bus_config_t__bindgen_ty_2 { data1_io_num: c_sdo.pin() as _ },
+            __bindgen_anon_2: spi_bus_config_t__bindgen_ty_2 {
+                data1_io_num: c_sdo.pin() as _,
+            },
             sclk_io_num: a_sclk.pin() as _,
             max_transfer_sz: 256,
             ..Default::default()
@@ -48,7 +54,14 @@ impl<'d> SpiSlave<'d> {
         };
 
         let host = spi_host_device_t_SPI2_HOST;
-        let err = unsafe { spi_slave_initialize(host, &bus_config, &slave_config, spi_common_dma_t_SPI_DMA_CH_AUTO) };
+        let err = unsafe {
+            spi_slave_initialize(
+                host,
+                &bus_config,
+                &slave_config,
+                spi_common_dma_t_SPI_DMA_CH_AUTO,
+            )
+        };
         if let Some(err) = EspError::from(err) {
             return Err(err);
         }
@@ -57,7 +70,7 @@ impl<'d> SpiSlave<'d> {
             host,
             _not_send_sync: PhantomData,
             slave_wants_data,
-            master_ready
+            master_ready,
         })
     }
 
@@ -82,7 +95,6 @@ impl<'d> SpiSlave<'d> {
         Ok((transaction.trans_len as usize + 7) / 8)
     }
 
-
     pub fn wait_until_master_ready_pin(&mut self, is_high: bool) -> anyhow::Result<()> {
         // let start = Instant::now();
         // let timeout = Duration::from_millis(15000);
@@ -103,7 +115,6 @@ impl<'d> SpiSlave<'d> {
         } else {
             block_on(self.master_ready.wait_for_low()).unwrap();
         }
-
 
         Ok(())
     }
@@ -137,7 +148,7 @@ impl<'d> SpiSlave<'d> {
         let _ = self.trans_result(&mut transaction).unwrap();
 
         self.slave_wants_data.set_low().unwrap();
-        self.wait_until_master_has_no_transaction()?;
+        self.wait_until_master_has_no_transaction()?; // maybe move this above?
 
         Ok(Box::new(rx))
     }
@@ -168,7 +179,6 @@ impl<'d> SpiSlave<'d> {
         self.slave_wants_data.set_low().unwrap();
         self.wait_until_master_has_no_transaction().unwrap();
 
-        
         Ok(())
     }
 
@@ -178,24 +188,50 @@ impl<'d> SpiSlave<'d> {
         TRes: Serialize,
         F: Fn(TReq) -> TRes,
     {
-        loop {
+        'requests: loop {
             let mut request = Vec::<SpiPacket>::new();
             loop {
-                let packet = self.read().unwrap();
-                let packet = SpiPacket::from_bytes(packet.as_ref()).unwrap();
+                let packet = match self.read() {
+                    Ok(packet) => packet,
+                    Err(e) => {
+                        log::error!("Cannot read packet: {}", e);
+                        continue 'requests;
+                    }
+                };
+                let packet = match SpiPacket::from_bytes(packet.as_ref()) {
+                    Ok(packet) => packet,
+                    Err(e) => {
+                        log::error!("Cannot decode packet: '{:?}'. Is the SPI bridge OKAY?", e);
+                        thread::sleep(Duration::from_millis(200));
+
+                        continue 'requests;
+                    }
+                };
+
                 let packet = request.push_mut(packet);
                 if packet.is_last() {
                     break;
                 }
             }
             let request = SpiPackets::from_vec(request);
-            // dbg!(packet.clone());
+            let request: TReq = match postcard::from_bytes(&request.payload()) {
+                Ok(packet) => packet,
+                Err(e) => {
+                    log::error!("Cannot get request from bytes: {:?}", e);
+                    continue 'requests;
+                }
+            };
 
-            let request: TReq = postcard::from_bytes(&request.payload()).unwrap();
-            // TODO: proper handling
             let response = handler(request);
 
-            let response = postcard::to_allocvec(&response).unwrap();
+            let response = match postcard::to_allocvec(&response) {
+                Ok(bytes) => bytes,
+                Err(e) => {
+                    log::error!("Cannot serialize response: {:?}", e);
+                    continue 'requests;
+                }
+            };
+
             let packets = SpiPackets::from_payload(&response).unwrap();
             for packet in packets.iter() {
                 self.write(Box::new(packet.to_bytes())).unwrap();

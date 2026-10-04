@@ -1,7 +1,7 @@
 use std::{
     sync::{Arc, Mutex, mpsc::SyncSender},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use common_firmware::{
@@ -199,7 +199,7 @@ pub fn main() -> anyhow::Result<()> {
                 ready_pin.into(),
                 peripherals.pins.gpio13.into(),
                 master_ready_pin,
-                1_000_000,
+                5_000_000,
             )
             .unwrap();
 
@@ -209,12 +209,8 @@ pub fn main() -> anyhow::Result<()> {
             loop {
                 match receiver.recv() {
                     Ok(message) => {
-                        println!("{:?}", message.request);
-
                         let res: Result<ResponseFromHardware, anyhow::Error> =
                             spi.send_request(&message.request);
-
-                        info!("RESPONSE: {:?}", res);
 
                         let _ = message.response_tx.send(res);
                     }

@@ -1,8 +1,9 @@
 use esp_idf_svc::{
-    hal::{delay::FreeRtos, gpio::{Input, InputPin, Output, OutputPin, PinDriver, Pull}, spi::SPI2}, sys::*,
+    hal::{delay::{Ets, FreeRtos}, gpio::{Input, InputPin, Output, OutputPin, PinDriver, Pull}, spi::SPI2}, sys::*,
 };
 use serde::{Serialize, de::DeserializeOwned};
 use std::{ffi::c_void, marker::PhantomData, ptr, time::{Duration, Instant}};
+use futures::executor::block_on;
 
 use crate::spi_packet::{PACKET_SIZE, SpiPacket, SpiPackets};
 
@@ -82,26 +83,32 @@ impl<'d> SpiSlave<'d> {
     }
 
 
-    pub fn wait_until_master_ready_pin(&self, is_high: bool) -> anyhow::Result<()> {
-        let start = Instant::now();
-        let timeout = Duration::from_millis(15000);
+    pub fn wait_until_master_ready_pin(&mut self, is_high: bool) -> anyhow::Result<()> {
+        // let start = Instant::now();
+        // let timeout = Duration::from_millis(15000);
 
-        while self.master_ready.is_high() != is_high {
-            if start.elapsed() > timeout {
-                return Err(anyhow::anyhow!("SPI timeout waiting for pin {}", if is_high {
-                    "high"
-                } else {
-                    "low"
-                }));
-            }
+        // while self.master_ready.is_high() != is_high {
+        //     if start.elapsed() > timeout {
+        //         return Err(anyhow::anyhow!("SPI timeout waiting for pin {}", if is_high {
+        //             "high"
+        //         } else {
+        //             "low"
+        //         }));
+        //     }
 
-            FreeRtos::delay_ms(1);
+        //     Ets::delay_us(10); // TODO: figure out good delay
+        // }
+        if is_high {
+            block_on(self.master_ready.wait_for_high()).unwrap();
+        } else {
+            block_on(self.master_ready.wait_for_low()).unwrap();
         }
+
 
         Ok(())
     }
 
-    pub fn wait_until_master_has_no_transaction(&self) -> anyhow::Result<()> {
+    pub fn wait_until_master_has_no_transaction(&mut self) -> anyhow::Result<()> {
         self.wait_until_master_ready_pin(false)
     }
 
@@ -193,7 +200,6 @@ impl<'d> SpiSlave<'d> {
             for packet in packets.iter() {
                 self.write(Box::new(packet.to_bytes())).unwrap();
             }
-            println!("sent response");
         }
     }
 }

@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use esp_idf_svc::hal::{
-    delay::FreeRtos, gpio::{AnyIOPin, Input, Output, PinDriver}, spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config}, units::Hertz,
+    delay::{Ets, FreeRtos}, gpio::{AnyIOPin, Input, Output, PinDriver}, spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config}, task::block_on, units::Hertz,
 };
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -37,34 +37,28 @@ impl<'d> SpiMaster<'d> {
         Ok(Self {
             device_driver,
             slave_ready: d_slave_ready_pin,
-            master_has_transaction: f_master_ready_pin
+            master_has_transaction: f_master_ready_pin,
         })
     }
 
-    pub fn wait_until_ready_pin(&self, is_high: bool) -> anyhow::Result<()> {
-        let start = Instant::now();
-        let timeout = Duration::from_millis(15000);
+    pub fn wait_until_ready_pin(&mut self, is_high: bool) -> anyhow::Result<()> {
+        // let start = Instant::now();
+        // let timeout = Duration::from_millis(15000);
 
-        while self.slave_ready.is_high() != is_high {
-            if start.elapsed() > timeout {
-                return Err(anyhow::anyhow!("SPI timeout waiting for pin {}", if is_high {
-                    "high"
-                } else {
-                    "low"
-                }));
-            }
-
-            FreeRtos::delay_ms(1);
+        if is_high {
+            block_on(self.slave_ready.wait_for_high()).unwrap();
+        } else {
+            block_on(self.slave_ready.wait_for_low()).unwrap();
         }
 
         Ok(())
     }
 
-    pub fn wait_until_slave_doesnt_want_data(&self) -> anyhow::Result<()> {
+    pub fn wait_until_slave_doesnt_want_data(&mut self) -> anyhow::Result<()> {
         self.wait_until_ready_pin(false)
     }
 
-    pub fn wait_until_slave_wants_data(&self) -> anyhow::Result<()> {
+    pub fn wait_until_slave_wants_data(&mut self) -> anyhow::Result<()> {
         self.wait_until_ready_pin(true)
     }
 
@@ -101,10 +95,15 @@ impl<'d> SpiMaster<'d> {
                 break;
             }
         }
+
+        let start = Instant::now();
+
         let response = SpiPackets::from_vec(response);
         let response: TRes = postcard::from_bytes(&response.payload())
             .map_err(|e| anyhow::anyhow!("Failed to decode response: {e:?}"))?;
+        let elapsed = start.elapsed();
 
+        println!("decoding took {} ms", elapsed.as_millis());
         Ok(response)
     }
 }

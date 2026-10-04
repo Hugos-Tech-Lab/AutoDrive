@@ -104,7 +104,7 @@ pub fn main() -> anyhow::Result<()> {
 
                 // pin.set_color(3, 20, 3);
                 spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                    // pin.set_color(3, 10, 30);
+                    println!("{:?}", request);
 
                     match request {
                         RequestToHardware::LightOn => println!("LightOn"),

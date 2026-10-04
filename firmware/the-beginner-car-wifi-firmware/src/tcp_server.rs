@@ -61,11 +61,11 @@ async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<Hardwa
 
                 match message {
                     TheBeginnerCarIncomingMessages::SetMotorASpeed { speed } => {
-                        let _ = set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed);
+                        let _ = set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed).unwrap();
                         println!("SetMotorASpeed: {:?}", speed)
                     }
                     TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
-                        let _ = set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed);
+                        let _ = set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed).unwrap();
                         println!("SetMotorBSpeed: {:?}", speed)
                     }
                     TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {

@@ -165,7 +165,7 @@ pub fn main() -> anyhow::Result<()> {
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio9, Pull::Down)?;
     let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio46)?;
 
-    std::thread::Builder::new()
+    let tcp = std::thread::Builder::new()
         .stack_size(40 * 1000)
         .spawn(|| {
             let mut local_executor = LocalPool::new();
@@ -185,8 +185,6 @@ pub fn main() -> anyhow::Result<()> {
 
             local_executor.run();
         })
-        .unwrap()
-        .join()
         .unwrap();
 
     let handle = std::thread::Builder::new()
@@ -232,6 +230,7 @@ pub fn main() -> anyhow::Result<()> {
 
     print_memory_stats();
     handle.join().unwrap();
+    tcp.join().unwrap();
 
     // handle.join().unwrap().unwrap();
     Ok(())

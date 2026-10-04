@@ -279,6 +279,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crc",
+ "embassy-time",
  "embuild",
  "esp-idf-svc",
  "esp-idf-sys",

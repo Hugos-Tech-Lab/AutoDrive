@@ -1,7 +1,11 @@
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
+use embassy_time::with_timeout;
 use esp_idf_svc::hal::{
-    delay::{Ets, FreeRtos}, gpio::{AnyIOPin, Input, Output, PinDriver}, spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config}, task::block_on, units::Hertz,
+    gpio::{AnyIOPin, Input, Output, PinDriver},
+    spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config},
+    task::block_on,
+    units::Hertz,
 };
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -42,14 +46,23 @@ impl<'d> SpiMaster<'d> {
     }
 
     pub fn wait_until_ready_pin(&mut self, is_high: bool) -> anyhow::Result<()> {
-        // let start = Instant::now();
-        // let timeout = Duration::from_millis(15000);
+        let fut = async {
+            if is_high {
+                self.slave_ready.wait_for_high().await
+            } else {
+                self.slave_ready.wait_for_low().await
+            }
+        };
 
-        if is_high {
-            block_on(self.slave_ready.wait_for_high()).unwrap();
-        } else {
-            block_on(self.slave_ready.wait_for_low()).unwrap();
-        }
+        match block_on(with_timeout(embassy_time::Duration::from_millis(200), fut)) {
+            Ok(result) => {
+                result.map_err(|err| anyhow::anyhow!("Failed to wait until ready pin: '{err:?}'"))
+            }
+            Err(_) => Err(anyhow::anyhow!(
+                "Timeout waiting for READY pin {}",
+                if is_high { "HIGH" } else { "LOW" }
+            )),
+        }?;
 
         Ok(())
     }

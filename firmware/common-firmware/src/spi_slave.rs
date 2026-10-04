@@ -202,8 +202,7 @@ impl<'d> SpiSlave<'d> {
                     Ok(packet) => packet,
                     Err(e) => {
                         log::error!("Cannot decode packet: '{:?}'. Is the SPI bridge OKAY?", e);
-                        thread::sleep(Duration::from_millis(200));
-
+                        thread::sleep(Duration::from_millis(1));
                         continue 'requests;
                     }
                 };

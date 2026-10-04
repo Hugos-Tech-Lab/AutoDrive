@@ -1,9 +1,7 @@
 use std::{
     borrow::{Borrow, BorrowMut},
-    sync::{Mutex, OnceLock},
 };
 
-use esp_idf_svc::hal::units::*;
 use esp_idf_svc::hal::{
     gpio::{AnyIOPin},
     ledc::{CHANNEL0, CHANNEL1, LedcDriver, LedcTimerDriver, TIMER0, TIMER1, config::TimerConfig},

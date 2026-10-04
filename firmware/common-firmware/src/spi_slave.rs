@@ -140,6 +140,7 @@ impl<'d> SpiSlave<'d> {
             flags: 0,
         };
 
+        self.wait_until_master_has_no_transaction()?; // maybe move this above?
         self.queue_trans(&transaction).unwrap();
 
         self.slave_wants_data.set_high().unwrap();
@@ -147,7 +148,6 @@ impl<'d> SpiSlave<'d> {
         let _ = self.trans_result(&mut transaction).unwrap();
 
         self.slave_wants_data.set_low().unwrap();
-        self.wait_until_master_has_no_transaction()?; // maybe move this above?
 
         Ok(Box::new(rx))
     }
@@ -169,6 +169,7 @@ impl<'d> SpiSlave<'d> {
             flags: 0,
         };
 
+        self.wait_until_master_has_no_transaction().unwrap();
         self.queue_trans(&transaction).unwrap();
 
         self.slave_wants_data.set_high().unwrap();
@@ -176,7 +177,6 @@ impl<'d> SpiSlave<'d> {
         let _ = self.trans_result(&mut transaction).unwrap();
 
         self.slave_wants_data.set_low().unwrap();
-        self.wait_until_master_has_no_transaction().unwrap();
 
         Ok(())
     }

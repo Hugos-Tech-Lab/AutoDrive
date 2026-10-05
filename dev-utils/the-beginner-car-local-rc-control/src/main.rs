@@ -1,10 +1,10 @@
-use gilrs::{Button, EventType, Gilrs};
+use gilrs::{Axis, EventType, Gilrs};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
     sync::{
-        Arc,
         atomic::{AtomicU32, Ordering},
+        Arc,
     },
     thread,
     time::Duration,
@@ -24,34 +24,48 @@ pub enum TheBeginnerCarIncomingMessages {
     RunWasm,
 }
 
-pub async fn maybe_send_message(
+/// Convert joystick value (-1.0..=1.0) to motor speed.
+///
+/// -1.0 = full reverse
+///  0.0 = stopped
+/// +1.0 = full forward
+fn joystick_to_speed(value: f32) -> i8 {
+    // Deadzone to prevent joystick drift.
+    let deadzone = 0.10;
+
+    if value.abs() < deadzone {
+        return 0;
+    }
+
+    // Remap the value outside the deadzone so that
+    // movement still reaches full speed.
+    let value = if value > 0.0 {
+        (value - deadzone) / (1.0 - deadzone)
+    } else {
+        (value + deadzone) / (1.0 - deadzone)
+    };
+
+    (value.clamp(-1.0, 1.0) * 127.0) as i8
+}
+
+async fn send_motor_speed(
     previous_value: &mut i8,
-    latest_value: &AtomicU32,
+    speed: i8,
     stream: &mut TcpStream,
     is_left: bool,
 ) {
-    // Read the latest value produced by the gamepad thread.
-    let speed = f32::from_bits(latest_value.load(Ordering::Relaxed));
-
-    // Convert 0.0..=1.0 into the i8 speed range.
-    let mut speed = (speed * i8::MIN as f32) as i8;
-
-    if speed > -4 {
-        speed = 0;
-    }
-
+    // Don't send tiny changes caused by joystick noise.
     if ((*previous_value as i16) - (speed as i16)).abs() <= 3 {
         return;
     }
 
     *previous_value = speed;
 
-    let message;
-    if is_left {
-        message = TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed };
+    let message = if is_left {
+        TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed }
     } else {
-        message = TheBeginnerCarIncomingMessages::SetMotorASpeed { speed };
-    }
+        TheBeginnerCarIncomingMessages::SetMotorASpeed { speed }
+    };
 
     let bytes = postcard::to_stdvec(&message).unwrap();
     let len = u32::try_from(bytes.len()).unwrap();
@@ -60,30 +74,36 @@ pub async fn maybe_send_message(
     stream.write_all(&len.to_be_bytes()).await.unwrap();
     stream.write_all(&bytes).await.unwrap();
 
-    println!("SetMotorASpeed: speed: {speed}");
+    println!(
+        "{} motor: {}",
+        if is_left { "Left" } else { "Right" },
+        speed
+    );
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // Latest LeftTrigger2 value.
+    // ------------------------------------------------------------
+    // Shared joystick state
+    // ------------------------------------------------------------
     //
-    // We store f32 as its raw u32 bits because AtomicF32 doesn't
-    // exist in std.
-    let left_trigger2 = Arc::new(AtomicU32::new(0.0_f32.to_bits()));
-    let right_trigger2 = Arc::new(AtomicU32::new(0.0_f32.to_bits()));
+    // X = steering
+    // Y = forward/backward
+    //
+    // AtomicU32 is used to store f32 bits.
+    //
+
+    let joystick_x = Arc::new(AtomicU32::new(0.0_f32.to_bits()));
+    let joystick_y = Arc::new(AtomicU32::new(0.0_f32.to_bits()));
 
     // ------------------------------------------------------------
     // Gamepad thread
     // ------------------------------------------------------------
-    //
-    // This thread does nothing except wait for gamepad events.
-    // next_event_blocking() puts the thread to sleep until an
-    // event arrives.
-    //
+
     thread::spawn({
-        // Give the gamepad thread its own copy of the shared value.
-        let left_trigger2 = left_trigger2.clone();
-        let right_trigger2 = right_trigger2.clone();
+        let joystick_x = joystick_x.clone();
+        let joystick_y = joystick_y.clone();
+
         move || {
             let mut gilrs = match Gilrs::new() {
                 Ok(gilrs) => gilrs,
@@ -101,27 +121,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 };
 
                 match event.event {
-                    EventType::ButtonChanged(Button::LeftTrigger2, value, _) => {
-                        left_trigger2.store(value.to_bits(), Ordering::Relaxed);
+                    // Left stick X
+                    EventType::AxisChanged(Axis::LeftStickX, value, _) => {
+                        joystick_x.store(value.to_bits(), Ordering::Relaxed);
                     }
 
-                    EventType::ButtonPressed(Button::LeftTrigger2, _) => {
-                        left_trigger2.store(1.0_f32.to_bits(), Ordering::Relaxed);
-                    }
-
-                    EventType::ButtonReleased(Button::LeftTrigger2, _) => {
-                        left_trigger2.store(0.0_f32.to_bits(), Ordering::Relaxed);
-                    }
-                    EventType::ButtonChanged(Button::RightTrigger2, value, _) => {
-                        right_trigger2.store(value.to_bits(), Ordering::Relaxed);
-                    }
-
-                    EventType::ButtonPressed(Button::RightTrigger2, _) => {
-                        right_trigger2.store(1.0_f32.to_bits(), Ordering::Relaxed);
-                    }
-
-                    EventType::ButtonReleased(Button::RightTrigger2, _) => {
-                        right_trigger2.store(0.0_f32.to_bits(), Ordering::Relaxed);
+                    // Left stick Y
+                    EventType::AxisChanged(Axis::LeftStickY, value, _) => {
+                        joystick_y.store(value.to_bits(), Ordering::Relaxed);
                     }
 
                     _ => {}
@@ -159,31 +166,69 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // ------------------------------------------------------------
-    // Send the current trigger value every 50 ms
+    // Send motor speeds
     // ------------------------------------------------------------
 
     let mut ticker = interval(Duration::from_millis(20));
 
-    let mut previous_right_message = 1;
-    let mut previous_left_message = 1;
+    let mut previous_left_motor: i8 = 0;
+    let mut previous_right_motor: i8 = 0;
+
     loop {
         ticker.tick().await;
 
-        maybe_send_message(
-            &mut previous_left_message,
-            &left_trigger2,
+        // Read joystick values.
+        let x = f32::from_bits(joystick_x.load(Ordering::Relaxed));
+        let y = f32::from_bits(joystick_y.load(Ordering::Relaxed));
+
+        // gilrs normally reports LeftStickY as:
+        //
+        //   -1 = up
+        //   +1 = down
+        //
+        // We want:
+        //
+        //   +1 = forward
+        //   -1 = reverse
+        //
+        let forward = -y;
+        let steering = -x;
+
+        // Differential drive mixing.
+        //
+        // Forward + steering:
+        //
+        //             left     right
+        // straight    +1       +1
+        // turn left   -/+      +1
+        // turn right  +1       -/+
+        //
+        let left = forward + steering;
+        let right = forward - steering;
+
+        // Normalize so that neither motor exceeds [-1, 1].
+        let max = left.abs().max(right.abs()).max(1.0);
+
+        let left = left / max;
+        let right = right / max;
+
+        let left_speed = joystick_to_speed(left);
+        let right_speed = joystick_to_speed(right);
+
+        send_motor_speed(
+            &mut previous_left_motor,
+            left_speed,
             &mut stream,
             true,
         )
         .await;
-        maybe_send_message(
-            &mut previous_right_message,
-            &right_trigger2,
+
+        send_motor_speed(
+            &mut previous_right_motor,
+            right_speed,
             &mut stream,
             false,
         )
         .await;
-
-        // println!("LeftTrigger2: {trigger:.3} -> speed: {speed}");
     }
 }

@@ -1750,6 +1750,7 @@ dependencies = [
  "embedded-io-async 0.7.0",
  "embedded-svc",
  "embuild",
+ "esp-idf-hal",
  "esp-idf-svc",
  "esp-idf-sys",
  "flume",

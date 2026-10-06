@@ -3,12 +3,14 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+pub mod battery_monitor;
 
 use common_firmware::{
     memory::{print_heap, print_stack},
     spi_master::SpiMaster,
     the_beginner_car::{RequestToHardware, ResponseFromHardware},
 };
+use esp_idf_hal::adc::{AdcContDriver, oneshot::AdcDriver};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     hal::{
@@ -30,11 +32,7 @@ use esp_idf_svc::{
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 
 use crate::{
-    auto_script::AutoScript,
-    connect_to_wifi::connect_to_wifi,
-    logger::init_logging,
-    tcp_server::{accept, verify_and_set_valid::verify_and_set_valid},
-    utils::{heap, stack},
+    auto_script::AutoScript, battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, logger::init_logging, tcp_server::{accept, verify_and_set_valid::verify_and_set_valid}, utils::{heap, stack},
 };
 
 use esp_idf_sys::{
@@ -165,6 +163,20 @@ pub fn main() -> anyhow::Result<()> {
     let mut ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
     let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
+
+    // let (senderaaa, receiveraaa) = std::sync::mpsc::sync_channel::<f32>(100);
+
+
+    let adc = AdcDriver::new(peripherals.adc1).unwrap();
+
+    let mut motor_battery: Battery<'_, esp_idf_hal::adc::ADCCH9<esp_idf_hal::adc::ADCU1>> = Battery::new(
+        &adc,
+        peripherals.pins.gpio10,
+    ).unwrap();
+
+    let v = motor_battery.read().unwrap().voltage;
+    dbg!(v);
+
     let tcp = std::thread::Builder::new()
         .stack_size(40 * 1000)
         .spawn(|| {
@@ -175,7 +187,7 @@ pub fn main() -> anyhow::Result<()> {
                 .spawner()
                 .spawn_local(
                     async move {
-                        accept(spawner, sender).await.unwrap();
+                        accept(spawner, sender, receiveraaa).await.unwrap();
 
                         Result::<_, anyhow::Error>::Ok(())
                     }
@@ -186,6 +198,13 @@ pub fn main() -> anyhow::Result<()> {
             local_executor.run();
         })
         .unwrap();
+
+
+    // let mcu_battery_reading = mcu_battery.read()?;
+    // let motor_battery_reading = motor_battery.read()?;
+
+    // dbg!(motor_battery_reading);
+    // dbg!(mcu_battery_reading);
 
     let handle = std::thread::Builder::new()
         .name("i2c_driver".into())

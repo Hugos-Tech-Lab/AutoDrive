@@ -11,7 +11,6 @@ harness = false
 [dependencies]
 auto-drive-interfaces = { path = "../../interfaces" }
 common-firmware = { path = "../common-firmware" }
-wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.1", default-features = false, features = ["esp-idf"] }
 anyhow = "1.0.104"
 log = "0.4"
 esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }

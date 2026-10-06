@@ -1,6 +1,7 @@
 use std::{sync::mpsc::SyncSender, thread, time::Duration};
 pub mod battery_monitor;
 
+use auto_drive_interfaces::the_beginner_car::hardware_mcu::{RequestToHardware, ResponseFromHardware};
 use common_firmware::{
     spi_master::SpiMaster,
 };
@@ -26,7 +27,6 @@ use esp_idf_sys::{
 };
 use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
-pub mod auto_script;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
 pub mod inter_thread;

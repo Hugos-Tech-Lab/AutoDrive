@@ -1,7 +1,7 @@
 use anyhow::Result;
 use esp_idf_hal::{
     adc::{
-        Adc, AdcChannel, AdcUnit, attenuation::DB_12, oneshot::{
+        AdcChannel, attenuation::DB_12, oneshot::{
             AdcChannelDriver, AdcDriver, config::{AdcChannelConfig, Calibration},
         },
     }, gpio::ADCPin,
@@ -17,6 +17,7 @@ pub struct Battery<'a, C>
 where
     C: AdcChannel,
 {
+    adc: &'a AdcDriver<'a, C::AdcUnit>,
     pin: AdcChannelDriver<
         'a,
         C,
@@ -27,7 +28,7 @@ where
 #[derive(Debug)]
 pub struct BatteryReading {
     pub voltage: f32,
-    pub percentage: u8,
+    // pub percentage: u8,
 }
 
 impl<'a, C> Battery<'a, C>
@@ -38,7 +39,6 @@ where
         adc: &'a AdcDriver<'a, C::AdcUnit>,
         pin: impl ADCPin<AdcChannel = C> + 'a,
     ) -> Result<Self> {
-      
         let config = AdcChannelConfig {
             attenuation: DB_12,
             calibration: Calibration::Curve,
@@ -51,7 +51,10 @@ where
             &config,
         )?;
 
-        Ok(Self { pin })
+        Ok(Self {
+            adc,
+            pin,
+        })
     }
 
     pub fn read(&mut self) -> Result<BatteryReading> {
@@ -68,8 +71,8 @@ where
         let battery_voltage = corrected_mv * DIVIDER_RATIO / 1000.0;
 
         Ok(BatteryReading {
-            voltage: battery_voltage,
-            percentage: battery_percentage(battery_voltage),
+            voltage: battery_voltage
+            // percentage: battery_percentage(battery_voltage),
         })
     }
 }

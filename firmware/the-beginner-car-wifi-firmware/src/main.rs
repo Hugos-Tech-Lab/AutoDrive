@@ -1,26 +1,15 @@
-use std::{
-    sync::{Arc, Mutex, mpsc::SyncSender},
-    thread,
-    time::{Duration, Instant},
-};
+use std::{sync::mpsc::SyncSender, thread, time::Duration};
 pub mod battery_monitor;
 
 use common_firmware::{
-    memory::{print_heap, print_stack},
     spi_master::SpiMaster,
     the_beginner_car::{RequestToHardware, ResponseFromHardware},
 };
-use esp_idf_hal::adc::{AdcContDriver, oneshot::AdcDriver};
+use esp_idf_hal::adc::oneshot::AdcDriver;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
-    hal::{
-        gpio::{AnyIOPin, PinDriver, Pull},
-        ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
-        spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
-        units::Hertz,
-    },
+    hal::gpio::{PinDriver, Pull},
     mdns::EspMdns,
-    ota::EspOta,
     wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
@@ -32,7 +21,12 @@ use esp_idf_svc::{
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 
 use crate::{
-    auto_script::AutoScript, battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, logger::init_logging, tcp_server::{accept, verify_and_set_valid::verify_and_set_valid}, utils::{heap, stack},
+    auto_script::AutoScript,
+    battery_monitor::battery_monitor::Battery,
+    connect_to_wifi::connect_to_wifi,
+    logger::init_logging,
+    tcp_server::{accept, verify_and_set_valid::verify_and_set_valid},
+    utils::{heap, stack},
 };
 
 use esp_idf_sys::{
@@ -133,9 +127,6 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    // let mut hardware = Hardware::new(peripherals.pins.gpio38.into(), peripherals.spi2);
-
-    // hardware.off();
 
     if reason == 9 {
         // OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
@@ -156,57 +147,84 @@ pub fn main() -> anyhow::Result<()> {
     mdns.set_hostname("the-beginner")?;
 
     info!("setting host name");
-    let (sender, receiver) = std::sync::mpsc::sync_channel::<HardwareMessage>(100);
+    let (hardware_sender, hardware_receiver) =
+        std::sync::mpsc::sync_channel::<HardwareMessage>(100);
 
-    // let _http_server = tcp_server::run(sender).unwrap();
+    let ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
+    let master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
-    let mut ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
-    let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
-
-
-    let (senderaaa, receiveraaa) = std::sync::mpsc::sync_channel::<f32>(100);
-
-
-    let adc = AdcDriver::new(peripherals.adc1).unwrap();
-
-    let mut motor_battery: Battery<'_, esp_idf_hal::adc::ADCCH9<esp_idf_hal::adc::ADCU1>> = Battery::new(
-        &adc,
-        peripherals.pins.gpio10,
-    ).unwrap();
-
-    let v = motor_battery.read().unwrap().voltage;
-    dbg!(v);
-
-    let tcp = std::thread::Builder::new()
+    let tcp_handle = std::thread::Builder::new()
         .stack_size(40 * 1000)
-        .spawn(|| {
-            let mut local_executor = LocalPool::new();
-            let spawner = local_executor.spawner();
+        .spawn({
+            let hardware_sender = hardware_sender.clone();
+            || {
+                let mut local_executor = LocalPool::new();
+                let spawner = local_executor.spawner();
+                local_executor
+                    .spawner()
+                    .spawn_local(
+                        async move {
+                            accept(spawner, hardware_sender).await.unwrap();
 
-            local_executor
-                .spawner()
-                .spawn_local(
-                    async move {
-                        accept(spawner, sender, receiveraaa).await.unwrap();
+                            Result::<_, anyhow::Error>::Ok(())
+                        }
+                        .map(Result::unwrap),
+                    )
+                    .unwrap();
 
-                        Result::<_, anyhow::Error>::Ok(())
-                    }
-                    .map(Result::unwrap),
-                )
-                .unwrap();
-
-            local_executor.run();
+                local_executor.run();
+            }
         })
         .unwrap();
 
+    let battery_poll_handle =
+        std::thread::Builder::new()
+            .stack_size(4 * 1000)
+            .spawn(move || {
+                let adc = AdcDriver::new(peripherals.adc1).unwrap();
+                let mut motor_battery = Battery::new(&adc, peripherals.pins.gpio10).unwrap();
 
-    // let mcu_battery_reading = mcu_battery.read()?;
-    // let motor_battery_reading = motor_battery.read()?;
+                let mut mcu_battery = Battery::new(&adc, peripherals.pins.gpio9).unwrap();
 
-    // dbg!(motor_battery_reading);
-    // dbg!(mcu_battery_reading);
+                loop {
+                    let motor_battery_reading = motor_battery.read().unwrap();
+                    let mcu_battery_reading = mcu_battery.read().unwrap();
 
-    let handle = std::thread::Builder::new()
+                    let (sender, receiver) = std::sync::mpsc::sync_channel::<
+                        Result<ResponseFromHardware, anyhow::Error>,
+                    >(1);
+
+                    hardware_sender
+                        .send(HardwareMessage {
+                            request: RequestToHardware::NotifyBatteryReadings {
+                                motor_battery: motor_battery_reading.voltage,
+                                mcu_battery: mcu_battery_reading.voltage,
+                            },
+                            response_tx: sender,
+                        })
+                        .unwrap();
+
+                    let receive = match receiver.recv_timeout(Duration::from_secs(1)) {
+                        Ok(Ok(response)) => response,
+                        Ok(Err(e)) => {
+                            panic!("{e}");
+                        }
+                        Err(e) => {
+                            panic!("{e}");
+                        }
+                    };
+
+                    if !matches!(receive, ResponseFromHardware::Ok) {
+                        panic!("response other than ok?"); // Received response other than ok
+                    }
+
+                    // TODO: keep track of battery reading for the PC
+
+                    thread::sleep(Duration::from_secs(1));
+                }
+            })?;
+
+    let i2c_handle = std::thread::Builder::new()
         .name("i2c_driver".into())
         .stack_size(15 * 1024)
         .spawn(move || {
@@ -222,11 +240,8 @@ pub fn main() -> anyhow::Result<()> {
             )
             .unwrap();
 
-            print_heap();
-            print_stack();
-
             loop {
-                match receiver.recv() {
+                match hardware_receiver.recv() {
                     Ok(message) => {
                         let res: Result<ResponseFromHardware, anyhow::Error> =
                             spi.send_request(&message.request);
@@ -243,10 +258,8 @@ pub fn main() -> anyhow::Result<()> {
 
     info!("init done");
 
-    print_memory_stats();
-    handle.join().unwrap();
-    tcp.join().unwrap();
-
-    // handle.join().unwrap().unwrap();
+    i2c_handle.join().unwrap();
+    tcp_handle.join().unwrap();
+    battery_poll_handle.join().unwrap();
     Ok(())
 }

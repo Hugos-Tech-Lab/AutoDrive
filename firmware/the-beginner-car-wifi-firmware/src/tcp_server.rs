@@ -48,7 +48,7 @@ pub enum TheBeginnerCarOutgoingMessages {
     BatteryReading { voltage: f32 }
 }
 
-async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<HardwareMessage>, volt: Arc<Receiver<f32>>) {
+async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<HardwareMessage>) {
     loop {
         let mut len_bytes = [0u8; 4];
         stream.read_exact(&mut len_bytes).await.unwrap();
@@ -79,16 +79,16 @@ async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<Hardwa
                     }
                     TheBeginnerCarIncomingMessages::RunWasm => println!("RunWasm"),
                     TheBeginnerCarIncomingMessages::GetBatteryReading => {
-                        let voltage = volt.recv().unwrap();
-                        let message = TheBeginnerCarOutgoingMessages::BatteryReading { voltage };
-                        let bytes = postcard::to_stdvec(&message).unwrap();
-                        let len = u32::try_from(bytes.len()).unwrap();
+                        // let voltage = volt.recv().unwrap();
+                        // let message = TheBeginnerCarOutgoingMessages::BatteryReading { voltage };
+                        // let bytes = postcard::to_stdvec(&message).unwrap();
+                        // let len = u32::try_from(bytes.len()).unwrap();
 
-                        // Send [4-byte length][postcard message]
-                        stream.write_all(&len.to_be_bytes()).await.unwrap();
-                        stream.write_all(&bytes).await.unwrap();
+                        // // Send [4-byte length][postcard message]
+                        // stream.write_all(&len.to_be_bytes()).await.unwrap();
+                        // stream.write_all(&bytes).await.unwrap();
 
-                        dbg!("wrote");
+                        // dbg!("wrote");
 
                         // stream.write(buf)
 
@@ -104,13 +104,11 @@ async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<Hardwa
     }
 }
 
-pub async fn accept(spawner: LocalSpawner, hardware_sender: SyncSender<HardwareMessage>, volt: Receiver<f32>) -> Result<(), io::Error> {
+pub async fn accept(spawner: LocalSpawner, hardware_sender: SyncSender<HardwareMessage>) -> Result<(), io::Error> {
     info!("About to bind a simple echo service to port 8080; do `telnet <ip-from-above>:8080`");
 
     let addr = "0.0.0.0:8080".to_socket_addrs()?.next().unwrap();
     let listener = Async::<TcpListener>::bind(addr)?;
-
-    let volt : Arc<Receiver<f32>> = volt.into();
 
     loop {
         let stream = listener.accept().await;
@@ -118,7 +116,7 @@ pub async fn accept(spawner: LocalSpawner, hardware_sender: SyncSender<HardwareM
             Ok((stream, addr)) => {
                 info!("Accepted client {addr}");
 
-                spawner.spawn_local(handle(stream, hardware_sender.clone(), volt.clone())).unwrap();
+                spawner.spawn_local(handle(stream, hardware_sender.clone())).unwrap();
             }
             Err(e) => {
                 error!("Error: {e}");

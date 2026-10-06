@@ -9,6 +9,7 @@ path = "src/main.rs"
 harness = false
 
 [dependencies]
+auto-drive-interfaces = { path = "../../interfaces" }
 common-firmware = { path = "../common-firmware" }
 wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.1", default-features = false, features = ["esp-idf"] }
 anyhow = "1.0.104"

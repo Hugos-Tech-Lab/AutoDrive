@@ -3,7 +3,6 @@ pub mod battery_monitor;
 
 use common_firmware::{
     spi_master::SpiMaster,
-    the_beginner_car::{RequestToHardware, ResponseFromHardware},
 };
 use esp_idf_hal::adc::oneshot::AdcDriver;
 use esp_idf_svc::{

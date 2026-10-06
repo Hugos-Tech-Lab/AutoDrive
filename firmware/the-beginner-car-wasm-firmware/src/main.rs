@@ -1,25 +1,20 @@
 use std::{
-    sync::{Arc, Mutex}, thread, time::{Duration, Instant},
+    sync::{Arc, Mutex}, thread, time::Duration,
 };
 
 use common_firmware::{
     get_mac_address::{format_mac_address, get_mac_address},
-    on_board_led::OnBoardLED,
     spi_slave::SpiSlave,
-    the_beginner_car::{RequestToHardware, ResponseFromHardware},
 };
-use esp_idf_svc::{eventloop::EspSystemEventLoop, hal::gpio::PinDriver};
+use esp_idf_svc::eventloop::EspSystemEventLoop;
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
     hal::peripherals::Peripherals,
-    nvs::EspDefaultNvsPartition,
-    sys::{build_time::build_time_utc, const_format},
+    nvs::EspDefaultNvsPartition
 };
 
 use crate::{
-    auto_script::AutoScript,
-    hardware::{TheBeginnerCarHardware, motor::Motor},
-    logger::init_logging,
+    hardware::motor::Motor, logger::init_logging, the_beginner_car_spi_messages::{RequestToHardware, ResponseFromHardware},
 };
 
 use esp_idf_sys::{
@@ -29,14 +24,12 @@ use esp_idf_sys::{
     spi_common_dma_t_SPI_DMA_CH_AUTO, spi_dma_chan_t, spi_host_device_t_SPI1_HOST,
     spi_host_device_t_SPI2_HOST, spi_slave_interface_config_t,
 };
-use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
-use smart_leds_trait::RGB8;
 pub mod auto_script;
 pub mod esp_app_desc_2;
 pub mod hardware;
 pub mod inter_thread;
-pub mod lib;
+pub mod the_beginner_car_spi_messages;
 pub mod logger;
 
 pub fn main() -> anyhow::Result<()> {
@@ -114,6 +107,8 @@ pub fn main() -> anyhow::Result<()> {
                             motor_b.set_speed(speed).unwrap();
                         }
                         RequestToHardware::Logs => println!("Logs"),
+                        RequestToHardware::NotifyPositionFromCamera { x, y } => println!("pos from camera"),
+                        RequestToHardware::NotifyBatteryReadings { motor_battery, mcu_battery }  => println!("motor battery from mcu"),
                     }
 
                     // pin.set_color(3, 20, 3);

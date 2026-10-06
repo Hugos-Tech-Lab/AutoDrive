@@ -13,20 +13,12 @@ use esp_idf_svc::{
     wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
-use esp_idf_svc::{
-    hal::peripherals::Peripherals,
-    nvs::EspDefaultNvsPartition,
-    sys::{build_time::build_time_utc, const_format},
-};
+use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 
 use crate::{
-    auto_script::AutoScript,
-    battery_monitor::battery_monitor::Battery,
-    connect_to_wifi::connect_to_wifi,
-    logger::init_logging,
-    tcp_server::{accept, verify_and_set_valid::verify_and_set_valid},
-    utils::{heap, stack},
+    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
+    logger::init_logging, tcp_server::accept,
 };
 
 use esp_idf_sys::{

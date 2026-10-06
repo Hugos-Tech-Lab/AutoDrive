@@ -23,3 +23,4 @@ pub enum ResponseFromHardware {
     Status { light_on: bool, motor_speed: i32 },
     Logs { logs: Vec<LogMessage> },
 }
+

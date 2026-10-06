@@ -164,7 +164,7 @@ pub fn main() -> anyhow::Result<()> {
     let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
 
-    // let (senderaaa, receiveraaa) = std::sync::mpsc::sync_channel::<f32>(100);
+    let (senderaaa, receiveraaa) = std::sync::mpsc::sync_channel::<f32>(100);
 
 
     let adc = AdcDriver::new(peripherals.adc1).unwrap();

@@ -214,8 +214,8 @@ pub fn main() -> anyhow::Result<()> {
                 }
             })?;
 
-    let i2c_handle = std::thread::Builder::new()
-        .name("i2c_driver".into())
+    let spi_handle = std::thread::Builder::new()
+        .name("spi_driver".into())
         .stack_size(15 * 1024)
         .spawn(move || {
             let mut spi = SpiMaster::new(
@@ -248,7 +248,7 @@ pub fn main() -> anyhow::Result<()> {
 
     info!("init done");
 
-    i2c_handle.join().unwrap();
+    spi_handle.join().unwrap();
     tcp_handle.join().unwrap();
     battery_poll_handle.join().unwrap();
     Ok(())

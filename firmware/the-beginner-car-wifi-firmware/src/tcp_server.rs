@@ -18,7 +18,7 @@ use esp_idf_svc::io::Write;
 use futures::{AsyncReadExt, AsyncWriteExt};
 use log::error;
 use log::info;
-use serde::{Deserialize, Serialize};
+use the_beginner_car_tcp_protocol::TheBeginnerCarIncomingMessages;
 use std::{io, thread};
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 
@@ -26,27 +26,6 @@ use futures::executor::LocalSpawner;
 use futures::task::LocalSpawnExt;
 
 use crate::HardwareMessage;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum TheBeginnerCarIncomingMessages {
-    SetMotorASpeed { speed: i8 },
-    SetMotorBSpeed { speed: i8 },
-    InformPositionFromCamera { x: i32, y: i32 },
-    InstallWasm { bytes: Vec<u8> },
-    RunWasm,
-    GetBatteryReading
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum TheBeginnerCarOutgoingMessages {
-    Logs { logs: Vec<()> },
-    SystemState {},
-    MotorASpeedUpdated { speed: i8 },
-    MotorBSpeedUpdated { speed: i8 },
-    WasmInstalled,
-    WasmRunning,
-    BatteryReading { voltage: f32 }
-}
 
 async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<HardwareMessage>) {
     loop {

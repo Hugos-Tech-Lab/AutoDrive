@@ -9,6 +9,7 @@ path = "src/main.rs"
 harness = false
 
 [dependencies]
+the-beginner-car-tcp-protocol = { path = "api/the-beginner-car-tcp-protocol" }
 the-beginner-car-spi-protocol = { path = "../the-beginner-car-wasm-firmware/api/the-beginner-car-spi-protocol" }
 auto-drive-interfaces = { path = "../../interfaces" }
 common-firmware = { path = "../common-firmware" }

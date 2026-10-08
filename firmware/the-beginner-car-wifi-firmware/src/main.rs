@@ -1,7 +1,6 @@
 use std::{sync::mpsc::SyncSender, thread, time::Duration};
 pub mod battery_monitor;
 
-use auto_drive_interfaces::the_beginner_car::hardware_mcu::{RequestToHardware, ResponseFromHardware};
 use common_firmware::{
     spi_master::SpiMaster,
 };
@@ -15,6 +14,7 @@ use esp_idf_svc::{
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
+use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 
 use crate::{
     battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
@@ -174,7 +174,6 @@ pub fn main() -> anyhow::Result<()> {
             .spawn(move || {
                 let adc = AdcDriver::new(peripherals.adc1).unwrap();
                 let mut motor_battery = Battery::new(&adc, peripherals.pins.gpio10).unwrap();
-
                 let mut mcu_battery = Battery::new(&adc, peripherals.pins.gpio9).unwrap();
 
                 loop {

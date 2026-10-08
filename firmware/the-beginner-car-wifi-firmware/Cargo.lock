@@ -1705,6 +1705,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "the-beginner-car-spi-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "the-beginner-car-wifi-firmware"
 version = "0.1.0"
 dependencies = [
@@ -1732,6 +1739,7 @@ dependencies = [
  "serde",
  "serde_json",
  "static_cell",
+ "the-beginner-car-spi-protocol",
  "thiserror 2.0.21",
 ]
 

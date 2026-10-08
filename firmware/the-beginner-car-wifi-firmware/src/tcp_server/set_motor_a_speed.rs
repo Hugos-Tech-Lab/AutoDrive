@@ -1,7 +1,7 @@
 use std::{sync::mpsc::SyncSender, time::Duration};
 
-use auto_drive_interfaces::the_beginner_car::hardware_mcu::{RequestToHardware, ResponseFromHardware};
 use esp_idf_svc::http::server::Request;
+use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 
 use crate::{HardwareMessage, tcp_server::error::HttpServerError};
 

@@ -9,13 +9,22 @@ path = "src/main.rs"
 harness = false
 
 [dependencies]
+the-beginner-car-spi-protocol = { path = "../the-beginner-car-wasm-firmware/api/the-beginner-car-spi-protocol" }
 auto-drive-interfaces = { path = "../../interfaces" }
 common-firmware = { path = "../common-firmware" }
 anyhow = "1.0.104"
 log = "0.4"
-esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
+esp-idf-svc = { version = "0.52.1", features = [
+    "critical-section",
+    "embassy-time-driver",
+    "embassy-sync",
+    "std",
+    "experimental",
+    "alloc",
+    "default",
+] }
 esp-idf-sys = "0.37.2"
-esp-idf-hal = { version = "0.46.2" }
+esp-idf-hal = "0.46.2"
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }
 embedded-svc = "0.29.0"
 embedded-dht-rs = { version = "0.5.0", features = ["dht11"] }

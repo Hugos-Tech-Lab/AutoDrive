@@ -12,9 +12,10 @@ use esp_idf_svc::{
     hal::peripherals::Peripherals,
     nvs::EspDefaultNvsPartition
 };
+use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 
 use crate::{
-    hardware::motor::Motor, logger::init_logging, the_beginner_car_spi_messages::{RequestToHardware, ResponseFromHardware},
+    hardware::motor::Motor, logger::init_logging,
 };
 
 use esp_idf_sys::{
@@ -29,7 +30,6 @@ pub mod auto_script;
 pub mod esp_app_desc_2;
 pub mod hardware;
 pub mod inter_thread;
-pub mod the_beginner_car_spi_messages;
 pub mod logger;
 
 pub fn main() -> anyhow::Result<()> {

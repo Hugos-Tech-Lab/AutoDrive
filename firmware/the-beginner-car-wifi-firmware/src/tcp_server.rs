@@ -1,5 +1,5 @@
-use std::sync::{Arc, Mutex};
 use std::sync::mpsc::SyncSender;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub mod auto_script;
@@ -20,7 +20,9 @@ use log::error;
 use log::info;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::{io, thread};
-use the_beginner_car_tcp_protocol::{TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages};
+use the_beginner_car_tcp_protocol::{
+    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+};
 
 use futures::executor::LocalSpawner;
 use futures::task::LocalSpawnExt;
@@ -34,10 +36,18 @@ async fn handle(
 ) {
     loop {
         let mut len_bytes = [0u8; 4];
-        stream.read_exact(&mut len_bytes).await.unwrap();
+        match stream.read_exact(&mut len_bytes).await {
+            Ok(_) => {}
+            Err(err) => {
+                info!("Stream closed or failed while reading length: {err}");
+                break;
+            }
+        }
         let len = u32::from_be_bytes(len_bytes) as usize;
         if len > 1024 {
-            panic!("message too large: {len} bytes");
+            error!("message too large: {len} bytes");
+            thread::sleep(Duration::from_secs(1));
+            continue;
         }
 
         let mut bytes = vec![0; len];
@@ -72,7 +82,9 @@ async fn handle(
                     TheBeginnerCarIncomingMessages::GetBatteryReading => {
                         let battery_reading = { battery_reading.lock().unwrap().clone() };
 
-                        let message = TheBeginnerCarOutgoingMessages::BatteryReading { voltage: battery_reading };
+                        let message = TheBeginnerCarOutgoingMessages::BatteryReading {
+                            voltage: battery_reading,
+                        };
                         let bytes = postcard::to_stdvec(&message).unwrap();
                         let len = u32::try_from(bytes.len()).unwrap();
 
@@ -83,11 +95,11 @@ async fn handle(
                 }
             }
             Err(err) => {
-                panic!("{}", err);
+                error!("Received error: {}", err);
+                thread::sleep(Duration::from_secs(1));
+                continue;
             }
         }
-
-        thread::sleep(Duration::from_secs(1));
     }
 }
 

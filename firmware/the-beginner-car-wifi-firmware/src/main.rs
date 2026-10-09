@@ -22,10 +22,8 @@ use crate::{
 };
 
 use esp_idf_sys::{
-    CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason,
-    esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power,
+    esp_reset_reason,
 };
-use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
 use log::info;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;

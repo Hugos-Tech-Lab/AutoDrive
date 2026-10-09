@@ -1,5 +1,4 @@
-use std::sync::Arc;
-use std::sync::mpsc::{Receiver, SyncSender};
+use std::sync::mpsc::SyncSender;
 use std::time::Duration;
 
 pub mod auto_script;
@@ -15,7 +14,7 @@ use async_io::Async;
 use esp_idf_svc::http::Method;
 use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use esp_idf_svc::io::Write;
-use futures::{AsyncReadExt, AsyncWriteExt};
+use futures::AsyncReadExt;
 use log::error;
 use log::info;
 use the_beginner_car_tcp_protocol::TheBeginnerCarIncomingMessages;

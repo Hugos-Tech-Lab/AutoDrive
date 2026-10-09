@@ -117,14 +117,10 @@ impl<'d> SpiMaster<'d> {
             }
         }
 
-        let start = Instant::now();
-
         let response = SpiPackets::from_vec(response);
         let response: TRes = postcard::from_bytes(&response.payload())
             .map_err(|e| anyhow::anyhow!("Failed to decode response: {e:?}"))?;
-        let elapsed = start.elapsed();
 
-        println!("decoding took {} ms", elapsed.as_millis());
         Ok(response)
     }
 }

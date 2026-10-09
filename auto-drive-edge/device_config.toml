@@ -1,0 +1,4 @@
+[[devices]]
+device_type = "TheBeginnerCar"
+build = "BuildA"
+mdns_address = "the_beginner_car_build_a"

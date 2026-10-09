@@ -28,26 +28,36 @@ impl Log for BufferedLogger {
             return;
         }
 
-        let line = format!(
-            "[{}] {}: {}",
+        let file = record.file().unwrap_or("unknown");
+        let line = record
+            .line()
+            .map(|n| n.to_string())
+            .unwrap_or_else(|| "?".to_string());
+
+        let entry = format!(
+            "[{}] [{}:{}] {}: {}",
             record.level(),
+            file,
+            line,
             record.target(),
             record.args()
         );
 
+        // Print the enriched message to serial output.
+        println!("{}", entry);
+
+        // Store the same message for the HTTP logs endpoint.
         if let Some(buffer) = LOG_BUFFER.get() {
             if let Ok(mut buffer) = buffer.lock() {
                 if buffer.len() >= MAX_LOGS {
                     buffer.pop_front();
                 }
 
-                buffer.push_back(line);
+                buffer.push_back(entry);
             }
         }
-
-        // Also send the log to the normal ESP-IDF serial logger.
-        self.inner.log(record);
     }
+
 
     fn flush(&self) {
         self.inner.flush();

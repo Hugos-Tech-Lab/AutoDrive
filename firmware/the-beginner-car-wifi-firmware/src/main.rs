@@ -145,6 +145,7 @@ pub fn main() -> anyhow::Result<()> {
     let master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
     let tcp_handle = std::thread::Builder::new()
+        .name("tcp_handle".to_string())
         .stack_size(40 * 1000)
         .spawn({
             let hardware_sender = hardware_sender.clone();
@@ -170,6 +171,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let battery_poll_handle =
         std::thread::Builder::new()
+            .name("battery_poll_handle".to_string())
             .stack_size(4 * 1000)
             .spawn(move || {
                 let adc = AdcDriver::new(peripherals.adc1).unwrap();
@@ -196,18 +198,20 @@ pub fn main() -> anyhow::Result<()> {
                         })
                         .unwrap();
 
-                    let receive = match receiver.recv_timeout(Duration::from_secs(1)) {
+                    let receive = match receiver.recv_timeout(Duration::from_secs(2)) {
                         Ok(Ok(response)) => response,
                         Ok(Err(e)) => {
-                            panic!("{e}");
+                            log::error!("{e}");
+                            continue;
                         }
                         Err(e) => {
-                            panic!("{e}");
+                            log::error!("{e}");
+                            continue;
                         }
                     };
 
                     if !matches!(receive, ResponseFromHardware::Ok) {
-                        panic!("response other than ok?"); // Received response other than ok
+                        log::error!("response other than ok?"); // Received response other than ok
                     }
 
                     // TODO: keep track of battery reading for the PC

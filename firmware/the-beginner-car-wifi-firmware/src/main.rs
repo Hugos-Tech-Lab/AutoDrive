@@ -1,9 +1,11 @@
-use std::{sync::mpsc::SyncSender, thread, time::Duration};
+use std::{
+    sync::{Arc, Mutex, mpsc::SyncSender},
+    thread,
+    time::Duration,
+};
 pub mod battery_monitor;
 
-use common_firmware::{
-    spi_master::SpiMaster,
-};
+use common_firmware::spi_master::SpiMaster;
 use esp_idf_hal::adc::oneshot::AdcDriver;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
@@ -21,9 +23,7 @@ use crate::{
     logger::init_logging, tcp_server::accept,
 };
 
-use esp_idf_sys::{
-    esp_reset_reason,
-};
+use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
@@ -132,7 +132,6 @@ pub fn main() -> anyhow::Result<()> {
     connect_to_wifi(&mut wifi)?;
 
     let mut mdns = EspMdns::take()?;
-
     mdns.set_hostname("the-beginner")?;
 
     info!("setting host name");
@@ -142,11 +141,14 @@ pub fn main() -> anyhow::Result<()> {
     let ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
     let master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
+    let battery_reading = Arc::new(Mutex::new(0.0f32));
+
     let tcp_handle = std::thread::Builder::new()
         .name("tcp_handle".to_string())
         .stack_size(40 * 1000)
         .spawn({
             let hardware_sender = hardware_sender.clone();
+            let battery_reading = battery_reading.clone();
             || {
                 let mut local_executor = LocalPool::new();
                 let spawner = local_executor.spawner();
@@ -154,7 +156,9 @@ pub fn main() -> anyhow::Result<()> {
                     .spawner()
                     .spawn_local(
                         async move {
-                            accept(spawner, hardware_sender).await.unwrap();
+                            accept(spawner, hardware_sender, battery_reading)
+                                .await
+                                .unwrap();
 
                             Result::<_, anyhow::Error>::Ok(())
                         }
@@ -167,11 +171,12 @@ pub fn main() -> anyhow::Result<()> {
         })
         .unwrap();
 
-    let battery_poll_handle =
-        std::thread::Builder::new()
-            .name("battery_poll_handle".to_string())
-            .stack_size(4 * 1000)
-            .spawn(move || {
+    let battery_poll_handle = std::thread::Builder::new()
+        .name("battery_poll_handle".to_string())
+        .stack_size(4 * 1000)
+        .spawn({
+            let battery_reading = battery_reading.clone();
+            move || {
                 let adc = AdcDriver::new(peripherals.adc1).unwrap();
                 let mut motor_battery = Battery::new(&adc, peripherals.pins.gpio10).unwrap();
                 let mut mcu_battery = Battery::new(&adc, peripherals.pins.gpio9).unwrap();
@@ -179,6 +184,10 @@ pub fn main() -> anyhow::Result<()> {
                 loop {
                     let motor_battery_reading = motor_battery.read().unwrap();
                     let mcu_battery_reading = mcu_battery.read().unwrap();
+
+                    {
+                        *battery_reading.lock().unwrap() = motor_battery_reading.voltage;
+                    }
 
                     // dbg!(motor_battery_reading);
                     // dbg!(mcu_battery_reading);
@@ -216,7 +225,8 @@ pub fn main() -> anyhow::Result<()> {
 
                     thread::sleep(Duration::from_secs(1));
                 }
-            })?;
+            }
+        })?;
 
     let spi_handle = std::thread::Builder::new()
         .name("spi_driver".into())

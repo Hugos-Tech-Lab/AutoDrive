@@ -180,6 +180,8 @@ pub fn main() -> anyhow::Result<()> {
                     let motor_battery_reading = motor_battery.read().unwrap();
                     let mcu_battery_reading = mcu_battery.read().unwrap();
 
+                    // dbg!(motor_battery_reading);
+                    // dbg!(mcu_battery_reading);
                     let (sender, receiver) = std::sync::mpsc::sync_channel::<
                         Result<ResponseFromHardware, anyhow::Error>,
                     >(1);

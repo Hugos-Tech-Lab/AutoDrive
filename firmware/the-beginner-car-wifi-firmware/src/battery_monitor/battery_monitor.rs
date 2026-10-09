@@ -63,7 +63,6 @@ where
         for _ in 0..NUM_SAMPLES {
             let sample_mv = self.pin.read()? as u32;
             total_mv += sample_mv;
-            dbg!(sample_mv);
         }
 
         let adc_mv = total_mv as f32 / NUM_SAMPLES as f32;

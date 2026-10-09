@@ -6,7 +6,7 @@ use common_firmware::{
     get_mac_address::{format_mac_address, get_mac_address},
     spi_slave::SpiSlave,
 };
-use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::{eventloop::EspSystemEventLoop, hal::{adc::{AdcContDriver, attenuation::DB_12, oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig}}, gpio::Pin}};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{
     hal::peripherals::Peripherals,
@@ -72,6 +72,28 @@ pub fn main() -> anyhow::Result<()> {
         // pin.set_color(9, 0, 200);
         thread::sleep(Duration::from_secs(1));
     }
+
+    let adc = AdcDriver::new(peripherals.adc1)?;
+    // Configure ADC input attenuation
+    let config = AdcChannelConfig {
+        attenuation: DB_12,
+        ..Default::default()
+    };
+
+    // let aaa = ;
+    // dbg!(aaa.pin());
+
+    let mut pin =
+        AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config)?;
+
+    // loop {
+    //     let value = adc.read(&mut pin)?;
+
+    //     println!("TCRT5000 ADC: {}", value);
+
+    //     thread::sleep(Duration::from_millis(100));
+    // }
+
 
     // let auto_script = Arc::new(AutoScript::new()?);
 

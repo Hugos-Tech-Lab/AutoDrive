@@ -1,69 +1,75 @@
 use std::{thread, time::Duration};
 
-use metrics::{Gauge, gauge};
+use opentelemetry::{
+    KeyValue,
+    metrics::{Gauge, Meter},
+};
 use tokio::{net::TcpStream, time::timeout};
 
-use crate::devices_config::{DeviceBuild, DeviceMetadata};
+use crate::{devices_config::{DeviceBuild, DeviceMetadata}, the_beginner_cars::TheBeginnerCarVehicleTelemetry};
 
 //
-pub struct VehicleTelemetry {
-    motor_a_set_speed: Gauge,
-    motor_b_set_speed: Gauge,
-    motor_battery_voltage: Gauge,
-    wifi_battery_voltage: Gauge,
-}
+// pub struct VehicleTelemetry {
+//     // motor_a_set_speed: Gauge<f64>,
+//     // motor_b_set_speed: Gauge<f64>,
+//     motor_battery_voltage: Gauge<f64>,
+//     // wifi_battery_voltage: Gauge<f64>,
+// }
 
-impl VehicleTelemetry {
-    pub fn new() -> Self {
-        Self {
-            motor_a_set_speed: gauge!("motor_a_set_speed"),
-            motor_b_set_speed: gauge!("motor_b_set_speed"),
-            motor_battery_voltage: gauge!("motor_battery_voltage"),
-            wifi_battery_voltage: gauge!("wifi_battery_voltage"),
-        }
-    }
-}
+// impl VehicleTelemetry {
+//     pub fn new(meter: Meter, identifier: [KeyValue; 1]) -> Self {
+
+
+//         motor_battery_voltage.record(2.0, &identifier);
+
+//         Self {
+//             motor_battery_voltage,
+//         }
+//     }
+// }
 
 // Answers questions like:
 // Is CPU usage too high?
 // What's the average over 5 minutes?
 // Hows the Memory?
-pub struct SoftwareTelemetry {
-    cpu_percentage: Gauge,
-}
+// pub struct SoftwareTelemetry {
+//     cpu_percentage: Gauge,
+// }
 
-impl Default for SoftwareTelemetry {
-    fn default() -> Self {
-        Self {
-            cpu_percentage: gauge!("cpu_percentage"),
-        }
-    }
-}
+// impl Default for SoftwareTelemetry {
+//     fn default() -> Self {
+//         Self {
+//             cpu_percentage: gauge!("cpu_percentage"),
+//         }
+//     }
+// }
 
-impl SoftwareTelemetry {
-    pub fn new() -> Self {
-        Self {
-            cpu_percentage: gauge!("cpu_percentage"),
-        }
-    }
-}
+// impl SoftwareTelemetry {
+//     pub fn new() -> Self {
+//         Self {
+//             cpu_percentage: gauge!("cpu_percentage"),
+//         }
+//     }
+// }
 
 pub struct TheBeginnerCar {
     build: DeviceBuild,
     mdns_address: String,
     connected: bool,
-    software_telemetry: SoftwareTelemetry,
-    vehicle_telemetry: VehicleTelemetry,
+    vehicle_telemetry: TheBeginnerCarVehicleTelemetry
+    // software_telemetry: SoftwareTelemetry,
+    // vehicle_telemetry: VehicleTelemetry,
 }
 
 impl TheBeginnerCar {
-    pub fn new(device_metadata: DeviceMetadata) -> Self {
+    pub fn new(device_metadata: DeviceMetadata, vehicle_telemetry: TheBeginnerCarVehicleTelemetry) -> Self {
         Self {
             build: device_metadata.build,
             mdns_address: device_metadata.mdns_address,
             connected: false,
-            software_telemetry: SoftwareTelemetry::new(),
-            vehicle_telemetry: VehicleTelemetry::new(),
+            vehicle_telemetry
+            // software_telemetry: SoftwareTelemetry::new(),
+            // vehicle_telemetry: VehicleTelemetry::new(),
         }
     }
 

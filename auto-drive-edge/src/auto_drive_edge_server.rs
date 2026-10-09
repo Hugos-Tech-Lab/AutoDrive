@@ -23,7 +23,7 @@ impl AutoDriveEdgeServer {
         Self { the_beginner_cars }
     }
 
-    pub async fn run(&self) {
-        //
+    pub async fn run(self) {
+        self.the_beginner_cars.run().await;
     }
 }

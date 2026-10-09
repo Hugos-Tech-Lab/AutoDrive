@@ -6,7 +6,7 @@ use crate::{devices_config::DeviceMetadata, the_beginner_car::TheBeginnerCar};
 pub struct TheBeginnerCarVehicleTelemetry {
     // motor_a_set_speed: Gauge<f64>,
     // motor_b_set_speed: Gauge<f64>,
-    motor_battery_voltage: Gauge<f64>,
+    pub motor_battery_voltage: Gauge<f64>,
     // wifi_battery_voltage: Gauge<f64>,
 }
 
@@ -42,7 +42,19 @@ impl TheBeginnerCars {
         Self { telemetry, builds }
     }
 
-    pub fn run(self) {
-        //
+    pub async fn run(self) {
+        let mut tasks = tokio::task::JoinSet::new();
+
+        for build in self.builds {
+            tasks.spawn(async move {
+                build.run().await;
+            });
+        }
+
+        while let Some(result) = tasks.join_next().await {
+            if let Err(error) = result {
+                eprintln!("A car task failed: {error}");
+            }
+        }
     }
 }

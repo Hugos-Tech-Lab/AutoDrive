@@ -38,6 +38,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build();
     opentelemetry::global::set_meter_provider(meter_provider.clone());
 
+
+    auto_drive_edge_server.run().await;
        
 
     // let counter = meter

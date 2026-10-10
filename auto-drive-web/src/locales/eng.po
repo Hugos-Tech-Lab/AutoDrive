@@ -611,9 +611,8 @@ msgstr "Sign In / Sign up"
 #~ msgid "Build {0} Information"
 #~ msgstr "Build {0} Information"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Sensors"
-msgstr "Sensors"
+#~ msgid "Sensors"
+#~ msgstr "Sensors"
 
 #~ msgid "Upcoming"
 #~ msgstr "Upcoming"
@@ -822,9 +821,8 @@ msgstr "Build"
 msgid "Control"
 msgstr "Control"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Cameras"
-msgstr "Cameras"
+#~ msgid "Cameras"
+#~ msgstr "Cameras"
 
 #: src/lib/components/Dashboard.svelte
 msgid "Run Script"
@@ -839,3 +837,10 @@ msgstr "Navigate To Start"
 
 #~ msgid "<0>Car Control</0> Is \"Hugo\" authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
 #~ msgstr "<0>Car Control</0> Is \"Hugo\" authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
+
+#~ msgid "Vehicle Telemetry"
+#~ msgstr "Vehicle Telemetry"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Telemetry"
+msgstr "Telemetry"

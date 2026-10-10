@@ -15,14 +15,13 @@
     "Algorithms",
   ];
 
-  type BuildOption = "Status" | "Sensors" | "Control" | "Cameras";
+  type BuildOption = "Status" | "Telemetry" | "Control";
   let selectedBuildOption = $state<BuildOption>("Status");
 
   const buildOptions: BuildOption[] = [
     "Status",
-    "Sensors",
+    "Telemetry",
     "Control",
-    "Cameras"
   ];
 </script>
 

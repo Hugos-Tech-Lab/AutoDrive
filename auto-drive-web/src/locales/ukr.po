@@ -611,9 +611,8 @@ msgstr ""
 #~ msgid "Build {0} Information"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Sensors"
-msgstr ""
+#~ msgid "Sensors"
+#~ msgstr ""
 
 #~ msgid "Upcoming"
 #~ msgstr ""
@@ -822,9 +821,8 @@ msgstr ""
 msgid "Control"
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Cameras"
-msgstr ""
+#~ msgid "Cameras"
+#~ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 msgid "Run Script"
@@ -839,3 +837,10 @@ msgstr ""
 
 #~ msgid "<0>Car Control</0> Is \"Hugo\" authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
 #~ msgstr ""
+
+#~ msgid "Vehicle Telemetry"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Telemetry"
+msgstr ""

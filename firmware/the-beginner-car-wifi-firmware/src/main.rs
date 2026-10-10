@@ -1,49 +1,30 @@
 use std::{
     sync::{Arc, Mutex, mpsc::SyncSender},
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
+pub mod battery_monitor;
 
-use common_firmware::{
-    memory::{print_heap, print_stack},
-    spi_master::SpiMaster,
-    the_beginner_car::{RequestToHardware, ResponseFromHardware},
-};
+use common_firmware::spi_master::SpiMaster;
+use esp_idf_hal::adc::oneshot::AdcDriver;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
-    hal::{
-        gpio::{AnyIOPin, PinDriver, Pull},
-        ledc::{LedcDriver, LedcTimerDriver, config::TimerConfig},
-        spi::{Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
-        units::Hertz,
-    },
+    hal::gpio::{PinDriver, Pull},
     mdns::EspMdns,
-    ota::EspOta,
     wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
-use esp_idf_svc::{
-    hal::peripherals::Peripherals,
-    nvs::EspDefaultNvsPartition,
-    sys::{build_time::build_time_utc, const_format},
-};
+use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
+use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 
 use crate::{
-    auto_script::AutoScript,
-    connect_to_wifi::connect_to_wifi,
-    logger::init_logging,
-    tcp_server::{accept, verify_and_set_valid::verify_and_set_valid},
-    utils::{heap, stack},
+    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
+    logger::init_logging, tcp_server::accept,
 };
 
-use esp_idf_sys::{
-    CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL, CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL, esp_reset_reason,
-    esp_reset_reason_t_ESP_RST_BROWNOUT, esp_wifi_set_max_tx_power,
-};
-use esp_idf_sys::{ESP_APP_DESC_MAGIC_WORD, esp_app_desc_t};
+use esp_idf_sys::esp_reset_reason;
 use log::info;
-pub mod auto_script;
 pub mod connect_to_wifi;
 pub mod esp_app_desc_2;
 pub mod inter_thread;
@@ -135,9 +116,6 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
-    // let mut hardware = Hardware::new(peripherals.pins.gpio38.into(), peripherals.spi2);
-
-    // hardware.off();
 
     if reason == 9 {
         // OnBoardLed::set_color(RGB8 { r: 9, g: 0, b: 255 });
@@ -154,41 +132,104 @@ pub fn main() -> anyhow::Result<()> {
     connect_to_wifi(&mut wifi)?;
 
     let mut mdns = EspMdns::take()?;
-
     mdns.set_hostname("the-beginner")?;
 
     info!("setting host name");
-    let (sender, receiver) = std::sync::mpsc::sync_channel::<HardwareMessage>(100);
+    let (hardware_sender, hardware_receiver) =
+        std::sync::mpsc::sync_channel::<HardwareMessage>(100);
 
-    // let _http_server = tcp_server::run(sender).unwrap();
+    let ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
+    let master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
-    let mut ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
-    let mut master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
+    let battery_reading = Arc::new(Mutex::new(0.0f32));
 
-    let tcp = std::thread::Builder::new()
+    let tcp_handle = std::thread::Builder::new()
+        .name("tcp_handle".to_string())
         .stack_size(40 * 1000)
-        .spawn(|| {
-            let mut local_executor = LocalPool::new();
-            let spawner = local_executor.spawner();
+        .spawn({
+            let hardware_sender = hardware_sender.clone();
+            let battery_reading = battery_reading.clone();
+            || {
+                let mut local_executor = LocalPool::new();
+                let spawner = local_executor.spawner();
+                local_executor
+                    .spawner()
+                    .spawn_local(
+                        async move {
+                            accept(spawner, hardware_sender, battery_reading)
+                                .await
+                                .unwrap();
 
-            local_executor
-                .spawner()
-                .spawn_local(
-                    async move {
-                        accept(spawner, sender).await.unwrap();
+                            Result::<_, anyhow::Error>::Ok(())
+                        }
+                        .map(Result::unwrap),
+                    )
+                    .unwrap();
 
-                        Result::<_, anyhow::Error>::Ok(())
-                    }
-                    .map(Result::unwrap),
-                )
-                .unwrap();
-
-            local_executor.run();
+                local_executor.run();
+            }
         })
         .unwrap();
 
-    let handle = std::thread::Builder::new()
-        .name("i2c_driver".into())
+    let battery_poll_handle = std::thread::Builder::new()
+        .name("battery_poll_handle".to_string())
+        .stack_size(4 * 1000)
+        .spawn({
+            let battery_reading = battery_reading.clone();
+            move || {
+                let adc = AdcDriver::new(peripherals.adc1).unwrap();
+                let mut motor_battery = Battery::new(&adc, peripherals.pins.gpio10).unwrap();
+                let mut mcu_battery = Battery::new(&adc, peripherals.pins.gpio9).unwrap();
+
+                loop {
+                    let motor_battery_reading = motor_battery.read().unwrap();
+                    let mcu_battery_reading = mcu_battery.read().unwrap();
+
+                    {
+                        *battery_reading.lock().unwrap() = motor_battery_reading.voltage;
+                    }
+
+                    // dbg!(motor_battery_reading);
+                    // dbg!(mcu_battery_reading);
+                    let (sender, receiver) = std::sync::mpsc::sync_channel::<
+                        Result<ResponseFromHardware, anyhow::Error>,
+                    >(1);
+
+                    hardware_sender
+                        .send(HardwareMessage {
+                            request: RequestToHardware::NotifyBatteryReadings {
+                                motor_battery: motor_battery_reading.voltage,
+                                mcu_battery: mcu_battery_reading.voltage,
+                            },
+                            response_tx: sender,
+                        })
+                        .unwrap();
+
+                    let receive = match receiver.recv_timeout(Duration::from_secs(2)) {
+                        Ok(Ok(response)) => response,
+                        Ok(Err(e)) => {
+                            log::error!("{e}");
+                            continue;
+                        }
+                        Err(e) => {
+                            log::error!("{e}");
+                            continue;
+                        }
+                    };
+
+                    if !matches!(receive, ResponseFromHardware::Ok) {
+                        log::error!("response other than ok?"); // Received response other than ok
+                    }
+
+                    // TODO: keep track of battery reading for the PC
+
+                    thread::sleep(Duration::from_secs(1));
+                }
+            }
+        })?;
+
+    let spi_handle = std::thread::Builder::new()
+        .name("spi_driver".into())
         .stack_size(15 * 1024)
         .spawn(move || {
             let mut spi = SpiMaster::new(
@@ -203,11 +244,8 @@ pub fn main() -> anyhow::Result<()> {
             )
             .unwrap();
 
-            print_heap();
-            print_stack();
-
             loop {
-                match receiver.recv() {
+                match hardware_receiver.recv() {
                     Ok(message) => {
                         let res: Result<ResponseFromHardware, anyhow::Error> =
                             spi.send_request(&message.request);
@@ -224,10 +262,8 @@ pub fn main() -> anyhow::Result<()> {
 
     info!("init done");
 
-    print_memory_stats();
-    handle.join().unwrap();
-    tcp.join().unwrap();
-
-    // handle.join().unwrap().unwrap();
+    spi_handle.join().unwrap();
+    tcp_handle.join().unwrap();
+    battery_poll_handle.join().unwrap();
     Ok(())
 }

@@ -78,6 +78,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "auto-drive-interfaces"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -88,26 +95,6 @@ name = "bindgen"
 version = "0.71.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f58bf3d7db68cfbac37cfc485a8d711e87e064c3d0fe0435b92f7a407f9d6b3"
-dependencies = [
- "bitflags 2.13.2",
- "cexpr",
- "clang-sys",
- "itertools",
- "log",
- "prettyplease",
- "proc-macro2",
- "quote",
- "regex",
- "rustc-hash",
- "shlex 1.3.0",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "bindgen"
-version = "0.72.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "993776b509cfb49c750f11b8f07a46fa23e0a1386ffc01fb1e7d343efc387895"
 dependencies = [
  "bitflags 2.13.2",
  "cexpr",
@@ -670,7 +657,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c41359cdde377dfd2e8aa34c09f9798a3ff9b6e4a9de81167c32d6b289521ed"
 dependencies = [
  "anyhow",
- "bindgen 0.71.1",
+ "bindgen",
  "bitflags 1.3.2",
  "cmake",
  "filetime",
@@ -1198,15 +1185,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "linked_list_allocator"
-version = "0.10.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b23ac50abb8261cb38c6e2a7192d3302e0836dac1628f6a93b82b4fad185897"
-dependencies = [
- "spinning_top",
-]
-
-[[package]]
 name = "linux-raw-sys"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1623,15 +1601,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spinning_top"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b9eb1a2f4c41445a3a0ff9abc5221c5fcd28e1f13cd7c0397706f9ac938ddb0"
-dependencies = [
- "lock_api",
-]
-
-[[package]]
 name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1736,11 +1705,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "the-beginner-car-spi-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "the-beginner-car-tcp-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "the-beginner-car-wifi-firmware"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-io",
+ "auto-drive-interfaces",
  "common-firmware",
  "crc",
  "dotenvy_macro",
@@ -1750,6 +1734,7 @@ dependencies = [
  "embedded-io-async 0.7.0",
  "embedded-svc",
  "embuild",
+ "esp-idf-hal",
  "esp-idf-svc",
  "esp-idf-sys",
  "flume",
@@ -1761,8 +1746,9 @@ dependencies = [
  "serde",
  "serde_json",
  "static_cell",
+ "the-beginner-car-spi-protocol",
+ "the-beginner-car-tcp-protocol",
  "thiserror 2.0.21",
- "wamr-rust-sdk",
 ]
 
 [[package]]
@@ -1876,26 +1862,6 @@ checksum = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b"
 dependencies = [
  "same-file",
  "winapi-util",
-]
-
-[[package]]
-name = "wamr-rust-sdk"
-version = "1.0.0"
-source = "git+https://github.com/hugosvirak/wamr-rust-sdk/?tag=v0.0.1#3f21e67a00122aa5ade71c9fe5685f9c786dcb82"
-dependencies = [
- "esp-idf-sys",
- "linked_list_allocator",
- "wamr-sys",
-]
-
-[[package]]
-name = "wamr-sys"
-version = "1.0.0"
-source = "git+https://github.com/hugosvirak/wamr-rust-sdk/?tag=v0.0.1#3f21e67a00122aa5ade71c9fe5685f9c786dcb82"
-dependencies = [
- "bindgen 0.72.1",
- "cc",
- "cmake",
 ]
 
 [[package]]

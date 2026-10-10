@@ -9,12 +9,23 @@ path = "src/main.rs"
 harness = false
 
 [dependencies]
+the-beginner-car-tcp-protocol = { path = "api/the-beginner-car-tcp-protocol" }
+the-beginner-car-spi-protocol = { path = "../the-beginner-car-wasm-firmware/api/the-beginner-car-spi-protocol" }
+auto-drive-interfaces = { path = "../../interfaces" }
 common-firmware = { path = "../common-firmware" }
-wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.1", default-features = false, features = ["esp-idf"] }
 anyhow = "1.0.104"
 log = "0.4"
-esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
+esp-idf-svc = { version = "0.52.1", features = [
+    "critical-section",
+    "embassy-time-driver",
+    "embassy-sync",
+    "std",
+    "experimental",
+    "alloc",
+    "default",
+] }
 esp-idf-sys = "0.37.2"
+esp-idf-hal = "0.46.2"
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }
 embedded-svc = "0.29.0"
 embedded-dht-rs = { version = "0.5.0", features = ["dht11"] }
@@ -28,7 +39,7 @@ embassy-sync = { version = "0.8.0" }
 futures = "0.3.34"
 static_cell = "2.1.1"
 flume = "0.12.0"
-postcard = { version = "1.1.3", features = ["alloc"] }
+postcard = { version = "1.1.3", features = ["alloc", "use-std"] }
 crc = "3.4.0"
 thiserror = "2.0.21"
 async-io = "2.6.0"

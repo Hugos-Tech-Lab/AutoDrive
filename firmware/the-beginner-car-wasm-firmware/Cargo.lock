@@ -106,6 +106,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smart-leds-trait",
+ "the-beginner-car-spi-protocol",
  "wamr-rust-sdk",
  "ws2812-spi",
 ]
@@ -1811,6 +1812,13 @@ dependencies = [
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "the-beginner-car-spi-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

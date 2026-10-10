@@ -1,4 +1,5 @@
 use std::sync::mpsc::SyncSender;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub mod auto_script;
@@ -14,44 +15,39 @@ use async_io::Async;
 use esp_idf_svc::http::Method;
 use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use esp_idf_svc::io::Write;
-use futures::AsyncReadExt;
+use futures::{AsyncReadExt, AsyncWriteExt};
 use log::error;
 use log::info;
-use serde::{Deserialize, Serialize};
-use std::io;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use std::{io, thread};
+use the_beginner_car_tcp_protocol::{
+    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+};
 
 use futures::executor::LocalSpawner;
 use futures::task::LocalSpawnExt;
 
 use crate::HardwareMessage;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum TheBeginnerCarIncomingMessages {
-    SetMotorASpeed { speed: i8 },
-    SetMotorBSpeed { speed: i8 },
-    InformPositionFromCamera { x: i32, y: i32 },
-    InstallWasm { bytes: Vec<u8> },
-    RunWasm,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum TheBeginnerCarOutgoingMessages {
-    Logs { logs: Vec<()> },
-    SystemState {},
-    MotorASpeedUpdated { speed: i8 },
-    MotorBSpeedUpdated { speed: i8 },
-    WasmInstalled,
-    WasmRunning,
-}
-
-async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<HardwareMessage>) {
+async fn handle(
+    mut stream: Async<TcpStream>,
+    hardware_sender: SyncSender<HardwareMessage>,
+    battery_reading: Arc<Mutex<f32>>,
+) {
     loop {
         let mut len_bytes = [0u8; 4];
-        stream.read_exact(&mut len_bytes).await.unwrap();
+        match stream.read_exact(&mut len_bytes).await {
+            Ok(_) => {}
+            Err(err) => {
+                info!("Stream closed or failed while reading length: {err}");
+                break;
+            }
+        }
         let len = u32::from_be_bytes(len_bytes) as usize;
         if len > 1024 {
-            panic!("message too large: {len} bytes");
+            error!("message too large: {len} bytes");
+            thread::sleep(Duration::from_secs(1));
+            continue;
         }
 
         let mut bytes = vec![0; len];
@@ -61,11 +57,19 @@ async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<Hardwa
 
                 match message {
                     TheBeginnerCarIncomingMessages::SetMotorASpeed { speed } => {
-                        let _ = set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed).unwrap();
+                        let _ = set_motor_a_speed::set_motor_a_speed_on_hardware(
+                            hardware_sender.clone(),
+                            speed,
+                        )
+                        .unwrap();
                         println!("SetMotorASpeed: {:?}", speed)
                     }
                     TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
-                        let _ = set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed).unwrap();
+                        let _ = set_motor_b_speed::set_motor_b_speed_on_hardware(
+                            hardware_sender.clone(),
+                            speed,
+                        )
+                        .unwrap();
                         println!("SetMotorBSpeed: {:?}", speed)
                     }
                     TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {
@@ -75,16 +79,35 @@ async fn handle(mut stream: Async<TcpStream>, hardware_sender: SyncSender<Hardwa
                         println!("InstallWasm: {:?}", bytes)
                     }
                     TheBeginnerCarIncomingMessages::RunWasm => println!("RunWasm"),
+                    TheBeginnerCarIncomingMessages::GetBatteryReading => {
+                        let battery_reading = { battery_reading.lock().unwrap().clone() };
+
+                        let message = TheBeginnerCarOutgoingMessages::BatteryReading {
+                            voltage: battery_reading,
+                        };
+                        let bytes = postcard::to_stdvec(&message).unwrap();
+                        let len = u32::try_from(bytes.len()).unwrap();
+
+                        // Send [4-byte length][postcard message]
+                        stream.write_all(&len.to_be_bytes()).await.unwrap();
+                        stream.write_all(&bytes).await.unwrap();
+                    }
                 }
             }
             Err(err) => {
-                panic!("{}", err);
+                error!("Received error: {}", err);
+                thread::sleep(Duration::from_secs(1));
+                continue;
             }
         }
     }
 }
 
-pub async fn accept(spawner: LocalSpawner, hardware_sender: SyncSender<HardwareMessage>) -> Result<(), io::Error> {
+pub async fn accept(
+    spawner: LocalSpawner,
+    hardware_sender: SyncSender<HardwareMessage>,
+    battery_reading: Arc<Mutex<f32>>,
+) -> Result<(), io::Error> {
     info!("About to bind a simple echo service to port 8080; do `telnet <ip-from-above>:8080`");
 
     let addr = "0.0.0.0:8080".to_socket_addrs()?.next().unwrap();
@@ -92,11 +115,14 @@ pub async fn accept(spawner: LocalSpawner, hardware_sender: SyncSender<HardwareM
 
     loop {
         let stream = listener.accept().await;
+        let battery_reading = battery_reading.clone();
         match stream {
             Ok((stream, addr)) => {
                 info!("Accepted client {addr}");
 
-                spawner.spawn_local(handle(stream, hardware_sender.clone())).unwrap();
+                spawner
+                    .spawn_local(handle(stream, hardware_sender.clone(), battery_reading))
+                    .unwrap();
             }
             Err(e) => {
                 error!("Error: {e}");

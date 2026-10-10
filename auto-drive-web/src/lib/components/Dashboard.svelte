@@ -15,14 +15,13 @@
     "Algorithms",
   ];
 
-  type BuildOption = "Status" | "Sensors" | "Control" | "Logs" | "Cameras";
+  type BuildOption = "Status" | "Sensors" | "Control" | "Cameras";
   let selectedBuildOption = $state<BuildOption>("Status");
 
   const buildOptions: BuildOption[] = [
     "Status",
     "Sensors",
     "Control",
-    "Logs",
     "Cameras"
   ];
 </script>
@@ -98,6 +97,8 @@
 
 {#if selectedBuild.startsWith("Build") && selectedBuildOption === "Control"}
   <h2 class="text-2xl mb-4 min-w-0 flex-1">Car Control</h2>
+  <!-- <button type="button" class="button block">                      ___</button> -->
+
   <div class="row">
     <button type="button" class="button block">STOP</button>
     <button type="button" class="button block">Run Script</button>

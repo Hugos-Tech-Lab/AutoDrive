@@ -621,9 +621,8 @@ msgstr "Sensors"
 #~ msgid "Past"
 #~ msgstr "Past"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Logs"
-msgstr "Logs"
+#~ msgid "Logs"
+#~ msgstr "Logs"
 
 #: src/lib/components/Dashboard.svelte
 msgid "Algorithms"
@@ -834,3 +833,9 @@ msgstr "Run Script"
 #: src/lib/components/Dashboard.svelte
 msgid "Navigate To Start"
 msgstr "Navigate To Start"
+
+#~ msgid "<0>Car Control</0> Is Hugo authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
+#~ msgstr "<0>Car Control</0> Is Hugo authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
+
+#~ msgid "<0>Car Control</0> Is \"Hugo\" authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
+#~ msgstr "<0>Car Control</0> Is \"Hugo\" authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"

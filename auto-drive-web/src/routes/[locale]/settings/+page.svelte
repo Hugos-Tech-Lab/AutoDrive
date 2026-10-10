@@ -32,7 +32,7 @@
     <Translations locale = {data.locale as Locale} />
 
     {#if !session}
-     <h1>Logged Out</h1>
+     <h1>Sign In / Sign up</h1>
     {:else}
     <Account {session} />
     {/if}

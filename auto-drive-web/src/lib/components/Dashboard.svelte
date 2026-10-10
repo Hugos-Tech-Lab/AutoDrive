@@ -8,7 +8,7 @@
   <button type="button" class="button block">Build B</button>
   <button type="button" class="button block">Build C</button>
   <!-- <button type="button" class="button block">Unit D</button> -->
-  <button type="button" class="button block hugo">Logged Out</button>
+  <button type="button" class="button block hugo">Sign In / Sign up</button>
 </div>
 <!-- <button type="button" class="button block">Calendar</button> -->
 <button type="button" class="button block">Software Development Kit (SDK)</button>

@@ -189,6 +189,9 @@ msgstr "Device"
 msgid "Status: Online / Offline"
 msgstr "Status: Online / Offline"
 
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 #: src/routes/[locale]/location/+page.svelte
 msgid "Overview"
 msgstr "Overview"
@@ -292,6 +295,7 @@ msgstr "Auto Drive"
 #~ msgid "Hugo's Tesch Lab"
 #~ msgstr "Hugo's Tesch Lab"
 
+#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 msgid "Leaderboard"
 msgstr "Leaderboard"
@@ -421,6 +425,7 @@ msgstr "THINK YOU CAN CODE? <0>Prove</0> it"
 #~ msgstr "Car Right Now"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Status"
 msgstr "Status"
 
@@ -478,9 +483,8 @@ msgstr "Build B"
 #~ msgid "Best Algorithms"
 #~ msgstr "Best Algorithms"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Calendar"
-msgstr "Calendar"
+#~ msgid "Calendar"
+#~ msgstr "Calendar"
 
 #~ msgid "ssss"
 #~ msgstr "ssss"
@@ -631,22 +635,17 @@ msgstr "Algorithms"
 #~ msgid "Calender"
 #~ msgstr "Calender"
 
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-msgid "Any"
-msgstr "Any"
+#~ msgid "Any"
+#~ msgstr "Any"
 
 #~ msgid "All"
 #~ msgstr "All"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Upcoming Runs"
-msgstr "Upcoming Runs"
+#~ msgid "Upcoming Runs"
+#~ msgstr "Upcoming Runs"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Past Runs"
-msgstr "Past Runs"
+#~ msgid "Past Runs"
+#~ msgstr "Past Runs"
 
 #~ msgid "Time"
 #~ msgstr "Time"
@@ -657,6 +656,181 @@ msgstr "Past Runs"
 #~ msgid "Test"
 #~ msgstr "Test"
 
+#~ msgid "Experiment"
+#~ msgstr "Experiment"
+
+#~ msgid "Time Trials"
+#~ msgstr "Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> asd"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> asd"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today <4/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today <4/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today <4/> <5/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today <4/> <5/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Yesterday | Today | Tomorrow <4/> <5/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Yesterday | Today | Tomorrow <4/> <5/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Logs</4> Yesterday | Today | Tomorrow <5/> <6/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Logs</4> Yesterday | Today | Tomorrow <5/> <6/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Logs</4> <5>Logs</5> Yesterday | Today | Tomorrow <6/> <7/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Logs</4> <5>Logs</5> Yesterday | Today | Tomorrow <6/> <7/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Logs</0> <1>Logs</1></4> Yesterday | Today | Tomorrow <5/> <6/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Logs</0> <1>Logs</1></4> Yesterday | Today | Tomorrow <5/> <6/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Logs</0> <1>Logs</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Logs</0> <1>Logs</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Logs</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Logs</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> No Scheduled Time Trials"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> <5>8am</5> No Scheduled Time Trials"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> <5>8am</5> No Scheduled Time Trials"
+
+#~ msgid "Yesterday"
+#~ msgstr "Yesterday"
+
+#~ msgid "Today"
+#~ msgstr "Today"
+
+#~ msgid "Tomorrow"
+#~ msgstr "Tomorrow"
+
+#~ msgid "8am"
+#~ msgstr "8am"
+
+#~ msgid "8am - 8:05am"
+#~ msgstr "8am - 8:05am"
+
+#~ msgid "8am - 8:05am: Sem"
+#~ msgstr "8am - 8:05am: Sem"
+
+#~ msgid "8.05am - 8:10am: Sem"
+#~ msgstr "8.05am - 8:10am: Sem"
+
+#~ msgid "8.10am - 8:15am: Sem"
+#~ msgstr "8.10am - 8:15am: Sem"
+
+#~ msgid "Today (10.10.2026)"
+#~ msgstr "Today (10.10.2026)"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Software Development Kit"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Software Development Kit"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Dashboard</4> Software Development Kit"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Dashboard</4> Software Development Kit"
+
+#~ msgid "Software Development Kit"
+#~ msgstr "Software Development Kit"
+
+#~ msgid "Rust"
+#~ msgstr "Rust"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust</5>"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust</5>"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust SDK</5>"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust SDK</5>"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust SDK</6>"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust SDK</6>"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust Library</6>"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust Library</6>"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust Library</6> API Token"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust Library</6> API Token"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>Software Development Kit</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>Software Development Kit</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> <8>Create new one</8> API Token"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> <8>Create new one</8> API Token"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust:<6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust:<6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
+
 #: src/lib/components/Dashboard.svelte
-msgid "Experiment"
-msgstr "Experiment"
+msgid "Car Control"
+msgstr "Car Control"
+
+#~ msgid "s"
+#~ msgstr "s"
+
+#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4/> <5>Software Development Kit</5> <6>The SDK allows you to control the car from a programming language</6> Rust:<7>Rust Example</7> <8>Rust Library</8> API Token <9>Create new one</9>"
+#~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4/> <5>Software Development Kit</5> <6>The SDK allows you to control the car from a programming language</6> Rust:<7>Rust Example</7> <8>Rust Library</8> API Token <9>Create new one</9>"
+
+#~ msgid "Rust Library"
+#~ msgstr "Rust Library"
+
+#~ msgid "Cancel"
+#~ msgstr "Cancel"
+
+#~ msgid "Stop"
+#~ msgstr "Stop"
+
+#~ msgid "Upload Script"
+#~ msgstr "Upload Script"
+
+#~ msgid "Home"
+#~ msgstr "Home"
+
+#~ msgid "Drive To Start"
+#~ msgstr "Drive To Start"
+
+#~ msgid "Go To Start"
+#~ msgstr "Go To Start"
+
+#: src/lib/components/Dashboard.svelte
+msgid "STOP"
+msgstr "STOP"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Build"
+msgstr "Build"
+
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+msgid "Control"
+msgstr "Control"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Cameras"
+msgstr "Cameras"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Run Script"
+msgstr "Run Script"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Navigate To Start"
+msgstr "Navigate To Start"

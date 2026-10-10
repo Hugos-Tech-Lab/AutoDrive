@@ -351,16 +351,14 @@ msgstr ""
 #~ msgid "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "My Algorithms"
-msgstr ""
+#~ msgid "My Algorithms"
+#~ msgstr ""
 
 #~ msgid "Real Time Play"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Live Debug"
-msgstr ""
+#~ msgid "Live Debug"
+#~ msgstr ""
 
 #~ msgid "Try"
 #~ msgstr ""
@@ -422,11 +420,13 @@ msgstr ""
 #~ msgid "Car Right Now"
 #~ msgstr ""
 
-#~ msgid "Status"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "Status"
+msgstr ""
 
-#~ msgid "The Beginner Car"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "The Beginner Car"
+msgstr ""
 
 #~ msgid "The Beginner Car V"
 #~ msgstr ""
@@ -434,9 +434,8 @@ msgstr ""
 #~ msgid "The Beginner Car v"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "The Beginner Car (dropdown)"
-msgstr ""
+#~ msgid "The Beginner Car (dropdown)"
+#~ msgstr ""
 
 #~ msgid "Hugo"
 #~ msgstr ""
@@ -453,11 +452,13 @@ msgstr ""
 #~ msgid "Unit D"
 #~ msgstr ""
 
-#~ msgid "Build A"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "Build A"
+msgstr ""
 
-#~ msgid "Build B"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "Build B"
+msgstr ""
 
 #~ msgid "Build C"
 #~ msgstr ""
@@ -477,8 +478,9 @@ msgstr ""
 #~ msgid "Best Algorithms"
 #~ msgstr ""
 
-#~ msgid "Calendar"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "Calendar"
+msgstr ""
 
 #~ msgid "ssss"
 #~ msgstr ""
@@ -599,16 +601,15 @@ msgstr ""
 #~ msgid "Selected build: Build {0}"
 #~ msgstr ""
 
-#. 0: build
-#: src/lib/components/Dashboard.svelte
-msgid "Build {0}"
-msgstr ""
+#~ msgid "Build {0}"
+#~ msgstr ""
 
 #~ msgid "Build {0} Information"
 #~ msgstr ""
 
-#~ msgid "Sensors"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "Sensors"
+msgstr ""
 
 #~ msgid "Upcoming"
 #~ msgstr ""
@@ -616,5 +617,34 @@ msgstr ""
 #~ msgid "Past"
 #~ msgstr ""
 
-#~ msgid "Logs"
+#: src/lib/components/Dashboard.svelte
+msgid "Logs"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Algorithms"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Play"
+msgstr ""
+
+#~ msgid "Calender"
 #~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+msgid "Any"
+msgstr ""
+
+#~ msgid "All"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Upcoming Runs"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Past Runs"
+msgstr ""

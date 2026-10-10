@@ -7,19 +7,27 @@ pub struct TheBeginnerCarVehicleTelemetry {
     // motor_a_set_speed: Gauge<f64>,
     // motor_b_set_speed: Gauge<f64>,
     pub motor_battery_voltage: Gauge<f64>,
-    // wifi_battery_voltage: Gauge<f64>,
+    pub mcu_battery_voltage: Gauge<f64>,
 }
 
 impl TheBeginnerCarVehicleTelemetry {
     pub fn new() -> Self {
-        let meter = global::meter("the-beginner-cars");
+        let meter = global::meter("auto-drive-edge");
         let motor_battery_voltage: Gauge<f64> = meter
             .f64_gauge("motor_battery_voltage")
             .with_unit("V")
             .with_description("The motor battery voltage")
             .build();
+        let mcu_battery_voltage: Gauge<f64> = meter
+            .f64_gauge("mcu_battery_voltage")
+            .with_unit("V")
+            .with_description("The MCU battery voltage")
+            .build();
+
+
         Self {
             motor_battery_voltage,
+            mcu_battery_voltage
         }
     }
 }

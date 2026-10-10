@@ -15,10 +15,14 @@ msgstr "/"
 
 #. /profile
 #. /sign-in
+#. /dashboard
+#. /dashboard
 #. /profile
 #. /dashboard
 #: src/lib/UserAccount.svelte
 #: src/lib/UserAccount.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/LandingPage.svelte
 #: src/lib/components/UserAccount.svelte
 #: src/lib/components/UserAccount.svelte
 #, url:main
@@ -27,7 +31,6 @@ msgstr "/**"
 
 #: src/lib/Logo.svelte
 #: src/lib/components/Logo.svelte
-#: src/routes/[locale]/+page.svelte
 #: src/routes/[locale]/location/+page.svelte
 msgid "Hugo's Tech Lab"
 msgstr "Hugo's Tech Lab"
@@ -166,7 +169,6 @@ msgstr "Your password"
 msgid "Sign up"
 msgstr "Sign up"
 
-#: src/routes/[locale]/+page.svelte
 #: src/routes/[locale]/location/+page.svelte
 msgid "Location"
 msgstr "Location"
@@ -267,7 +269,7 @@ msgstr "SIGN IN / SIGN UP"
 #~ msgid "Sign out"
 #~ msgstr "Sign out"
 
-#: src/routes/[locale]/+page.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Dashboard"
 msgstr "Dashboard"
 
@@ -322,6 +324,7 @@ msgstr "YouTube video player"
 #~ msgid "Control a real small car remotely"
 #~ msgstr "Control a real small car remotely"
 
+#: src/lib/components/LandingPage.svelte
 #: src/lib/components/UserAccount.svelte
 msgid "DASHBOARD"
 msgstr "DASHBOARD"
@@ -450,17 +453,14 @@ msgstr "The Beginner Car (dropdown)"
 #~ msgid "Unit D"
 #~ msgstr "Unit D"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build A"
-msgstr "Build A"
+#~ msgid "Build A"
+#~ msgstr "Build A"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build B"
-msgstr "Build B"
+#~ msgid "Build B"
+#~ msgstr "Build B"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build C"
-msgstr "Build C"
+#~ msgid "Build C"
+#~ msgstr "Build C"
 
 #~ msgid "SDK"
 #~ msgstr "SDK"
@@ -596,6 +596,31 @@ msgstr "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3
 #~ msgstr "Log In"
 
 #: src/lib/components/Dashboard.svelte
-#: src/routes/[locale]/dashboard/+page.svelte
 msgid "Sign In / Sign up"
 msgstr "Sign In / Sign up"
+
+#~ msgid "Lsocation"
+#~ msgstr "Lsocation"
+
+#~ msgid "Selected build: Build {0}"
+#~ msgstr "Selected build: Build {0}"
+
+#. 0: build
+#: src/lib/components/Dashboard.svelte
+msgid "Build {0}"
+msgstr "Build {0}"
+
+#~ msgid "Build {0} Information"
+#~ msgstr "Build {0} Information"
+
+#~ msgid "Sensors"
+#~ msgstr "Sensors"
+
+#~ msgid "Upcoming"
+#~ msgstr "Upcoming"
+
+#~ msgid "Past"
+#~ msgstr "Past"
+
+#~ msgid "Logs"
+#~ msgstr "Logs"

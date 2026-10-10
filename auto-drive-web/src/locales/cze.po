@@ -15,10 +15,14 @@ msgstr "/"
 
 #. /profile
 #. /sign-in
+#. /dashboard
+#. /dashboard
 #. /profile
 #. /dashboard
 #: src/lib/UserAccount.svelte
 #: src/lib/UserAccount.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/LandingPage.svelte
 #: src/lib/components/UserAccount.svelte
 #: src/lib/components/UserAccount.svelte
 #, url:main
@@ -27,7 +31,6 @@ msgstr "/**"
 
 #: src/lib/Logo.svelte
 #: src/lib/components/Logo.svelte
-#: src/routes/[locale]/+page.svelte
 #: src/routes/[locale]/location/+page.svelte
 msgid "Hugo's Tech Lab"
 msgstr "Hugo's Tech Lab"
@@ -166,7 +169,6 @@ msgstr ""
 msgid "Sign up"
 msgstr ""
 
-#: src/routes/[locale]/+page.svelte
 #: src/routes/[locale]/location/+page.svelte
 msgid "Location"
 msgstr ""
@@ -267,7 +269,7 @@ msgstr ""
 #~ msgid "Sign out"
 #~ msgstr ""
 
-#: src/routes/[locale]/+page.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Dashboard"
 msgstr ""
 
@@ -322,6 +324,7 @@ msgstr ""
 #~ msgid "Control a real small car remotely"
 #~ msgstr ""
 
+#: src/lib/components/LandingPage.svelte
 #: src/lib/components/UserAccount.svelte
 msgid "DASHBOARD"
 msgstr ""
@@ -450,17 +453,14 @@ msgstr ""
 #~ msgid "Unit D"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build A"
-msgstr ""
+#~ msgid "Build A"
+#~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build B"
-msgstr ""
+#~ msgid "Build B"
+#~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build C"
-msgstr ""
+#~ msgid "Build C"
+#~ msgstr ""
 
 #~ msgid "SDK"
 #~ msgstr ""
@@ -596,6 +596,31 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
-#: src/routes/[locale]/dashboard/+page.svelte
 msgid "Sign In / Sign up"
 msgstr ""
+
+#~ msgid "Lsocation"
+#~ msgstr ""
+
+#~ msgid "Selected build: Build {0}"
+#~ msgstr ""
+
+#. 0: build
+#: src/lib/components/Dashboard.svelte
+msgid "Build {0}"
+msgstr ""
+
+#~ msgid "Build {0} Information"
+#~ msgstr ""
+
+#~ msgid "Sensors"
+#~ msgstr ""
+
+#~ msgid "Upcoming"
+#~ msgstr ""
+
+#~ msgid "Past"
+#~ msgstr ""
+
+#~ msgid "Logs"
+#~ msgstr ""

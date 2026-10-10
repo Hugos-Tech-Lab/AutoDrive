@@ -1,10 +1,20 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import InnerHeader from "./InnerHeader.svelte";
 
-  let { username }: { username: string | null } = $props();
+  // let { username }: { username: string | null } = $props();
 </script>
 
-<InnerHeader {username}>THINK YOU CAN CODE? <u>Prove</u> it</InnerHeader>
+<div class="px-4 pt-4 flex items-start gap-8">
+  <h1 class="text-4xl mb-4 min-w-0 flex-1">
+    THINK YOU CAN CODE? <u>Prove</u> it
+  </h1>
+
+  <div class="flex flex-col items-end gap-2 shrink-0">
+    <button onclick={() => goto("/dashboard")}>DASHBOARD</button>
+  </div>
+</div>
+
 <div class="px-4 py-4">
   <h1 class="text-2xl mb-4 min-w-0 flex-1">
     Control a real small machine remotely
@@ -27,17 +37,8 @@
       <div>Hugo</div>
       <div>5.233 seconds</div>
     </div>
-    <!-- <div class="border-2 border-black p-[10px] rounded-sm">
-      <div class="text-2xl font-bold">2</div>
-      <div>Player 2</div>
-      <div>6.120 seconds</div>
-    </div>
-    <div class="border-2 border-black p-[10px] rounded-sm">
-      <div class="text-2xl font-bold">3</div>
-      <div>Player 3</div>
-      <div>7.450 seconds</div>
-    </div> -->
-  </div> <br>
+  </div>
+  <br />
 
   <h1 class="text-2xl mb-4 min-w-0 flex-1">The Machine</h1>
   - Top Speed: 15cm / second (placeholder)<br />

@@ -12,7 +12,7 @@
 
   <div class="flex flex-col items-end gap-2 shrink-0">
     <div class="flex gap-2">
-      <UserAccount username={username} />
+      <!-- <UserAccount username={username} /> -->
     </div>
   </div>
 </div>

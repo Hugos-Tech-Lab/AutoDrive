@@ -50,17 +50,12 @@
 
 <section>
   <div class="section-inner main relative">
-    {#if session}
-      <InnerHeader {username}>Dashboard</InnerHeader>
-      <div class="px-4 py-4">
-        <h2>Location</h2>
-        <button>Hugo's Tech Lab</button>
-      </div>
-    {:else if loading}
-      <LandingPage {username} />
-    {:else if !loading}
-      <LandingPage {username} />
-    {/if}
+    <!-- <InnerHeader {username}>Dashboard</InnerHeader> -->
+    <!-- <div class="px-4 py-4">
+      <h2>Location</h2>
+      <button>Hugo's Tech Lab</button>
+    </div> -->
+    <LandingPage {username} />
   </div>
 </section>
 

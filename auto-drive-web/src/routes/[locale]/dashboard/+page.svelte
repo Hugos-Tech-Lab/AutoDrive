@@ -33,9 +33,8 @@
     <!-- <Translations locale = {data.locale as Locale} /> -->
 
     {#if !session}
-     <h1>Sign In / Sign up</h1>
-
-        <Dashboard />
+     <!-- <h1>Sign In / Sign up</h1> -->
+      <Dashboard />
 
     {:else}
     <Account {session} />

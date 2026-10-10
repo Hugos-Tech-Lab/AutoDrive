@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, atomic::AtomicU32},
     time::Duration,
 };
-use opentelemetry::{KeyValue, global, trace::TracerProvider};
+use opentelemetry::{KeyValue, global, metrics::Gauge, trace::TracerProvider};
 use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{metrics::{SdkMeterProvider, exporter::PushMetricExporter}, trace::SpanExporter as _};
 use tokio::{net::TcpStream, time::timeout};
@@ -17,11 +17,10 @@ pub mod the_beginner_cars;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let contents = include_str!("../device_config.toml");
-    let device_config: DeviceConfig = toml::from_str(&contents)?;
-    let auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
+    unsafe {
+        std::env::set_var("OTEL_METRIC_EXPORT_INTERVAL", "5000");
+    }
 
-    // 1. Build the OTLP gRPC Exporter using the modern builder pattern
     let span_exporter = SpanExporter::builder()
         .with_tonic() // Instructs it to use gRPC via tonic
         .with_endpoint("http://localhost:4317")
@@ -36,8 +35,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let meter_provider = SdkMeterProvider::builder()
         .with_periodic_exporter(metric_exporter)
         .build();
+
     opentelemetry::global::set_meter_provider(meter_provider.clone());
 
+    let contents = include_str!("../device_config.toml");
+    let device_config: DeviceConfig = toml::from_str(&contents)?;
+    let auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
 
     auto_drive_edge_server.run().await;
        

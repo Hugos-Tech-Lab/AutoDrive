@@ -18,7 +18,6 @@ impl TheBeginnerCarVehicleTelemetry {
             .with_unit("V")
             .with_description("The motor battery voltage")
             .build();
-
         Self {
             motor_battery_voltage,
         }

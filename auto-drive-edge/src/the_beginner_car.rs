@@ -8,7 +8,9 @@ use the_beginner_car_tcp_protocol::{
     TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt}, net::{TcpStream, lookup_host}, time::{sleep, timeout},
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpStream, lookup_host},
+    time::{sleep, timeout},
 };
 
 use crate::{
@@ -65,7 +67,7 @@ pub struct TheBeginnerCar {
     connected: bool,
     vehicle_telemetry: TheBeginnerCarVehicleTelemetry, // software_telemetry: SoftwareTelemetry,
                                                        // vehicle_telemetry: VehicleTelemetry,
-    // telemetry_attrobute: []
+                                                       // telemetry_attrobute: []
 }
 
 impl TheBeginnerCar {
@@ -86,33 +88,33 @@ impl TheBeginnerCar {
         loop {
             let m_dns = self.mdns_address.as_str();
 
-            let mut addresses =
-                lookup_host(format!("{m_dns}:8080")).await.unwrap();
+            let host = format!("{m_dns}:8080");
+            let Ok(mut addresses) = lookup_host(&host).await else {
+                println!("Could not find {host}. Trying again in 10 seconds");
+                thread::sleep(Duration::from_secs(10));
+                continue;
+            };
 
             let addr = addresses
                 .next()
                 .ok_or_else(|| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::NotFound,
-                        "No socket addresses found",
-                    )
-                }).unwrap();
+                    std::io::Error::new(std::io::ErrorKind::NotFound, "No socket addresses found")
+                })
+                .unwrap();
 
-
-            let mut stream = match timeout(
-                Duration::from_secs(5),
-                TcpStream::connect(addr.clone()),
-            )
-            .await
+            let mut stream = match timeout(Duration::from_secs(5), TcpStream::connect(addr.clone()))
+                .await
             {
                 Ok(Ok(stream)) => {
-                    println!("Connected!");
+                    println!("Connected to {host}.");
                     stream
                 }
 
                 Ok(Err(error)) => {
                     let addr = addr.clone();
-                    eprintln!("Failed to connect to {addr} error: {error}. Trying again in 10 seconds");
+                    eprintln!(
+                        "Failed to connect to {addr} error: {error}. Trying again in 10 seconds"
+                    );
                     thread::sleep(Duration::from_secs(10));
                     continue;
                 }
@@ -134,7 +136,6 @@ impl TheBeginnerCar {
                 stream.write_all(&len.to_be_bytes()).await.unwrap();
                 stream.write_all(&bytes).await.unwrap();
 
-
                 let mut len_bytes = [0u8; 4];
                 stream.read_exact(&mut len_bytes).await.unwrap();
                 let len = u32::from_be_bytes(len_bytes) as usize;
@@ -146,6 +147,8 @@ impl TheBeginnerCar {
                 let message: TheBeginnerCarOutgoingMessages =
                     postcard::from_bytes(&message_buf).unwrap();
                 self.handle_response(message);
+
+
                 sleep(Duration::from_secs(1)).await;
             }
         }
@@ -154,15 +157,16 @@ impl TheBeginnerCar {
     pub fn handle_response(&self, message: TheBeginnerCarOutgoingMessages) {
         match message {
             TheBeginnerCarOutgoingMessages::Logs { logs } => todo!(),
-            TheBeginnerCarOutgoingMessages::SystemState {  } => todo!(),
+            TheBeginnerCarOutgoingMessages::SystemState {} => todo!(),
             TheBeginnerCarOutgoingMessages::MotorASpeedUpdated { speed } => todo!(),
             TheBeginnerCarOutgoingMessages::MotorBSpeedUpdated { speed } => todo!(),
             TheBeginnerCarOutgoingMessages::WasmInstalled => todo!(),
             TheBeginnerCarOutgoingMessages::WasmRunning => todo!(),
-            TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => { 
-                self.vehicle_telemetry.motor_battery_voltage.record(voltage.into(),  &[KeyValue::new("build", "BuildA")]);
-
-            },
+            TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
+                self.vehicle_telemetry
+                    .motor_battery_voltage
+                    .record(voltage.into(), &[KeyValue::new("model", "TheBeginnerCar"), KeyValue::new("build", "BuildA")]);
+            }
         }
     }
 }

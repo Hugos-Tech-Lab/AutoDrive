@@ -132,7 +132,7 @@ pub fn main() -> anyhow::Result<()> {
     connect_to_wifi(&mut wifi)?;
 
     let mut mdns = EspMdns::take()?;
-    mdns.set_hostname("the-beginner")?;
+    mdns.set_hostname("the_beginner_car_build_a")?;
 
     info!("setting host name");
     let (hardware_sender, hardware_receiver) =

@@ -108,7 +108,7 @@ pub async fn accept(
     hardware_sender: SyncSender<HardwareMessage>,
     battery_reading: Arc<Mutex<f32>>,
 ) -> Result<(), io::Error> {
-    info!("About to bind a simple echo service to port 8080; do `telnet <ip-from-above>:8080`");
+    info!("Binding to port 8080");
 
     let addr = "0.0.0.0:8080".to_socket_addrs()?.next().unwrap();
     let listener = Async::<TcpListener>::bind(addr)?;

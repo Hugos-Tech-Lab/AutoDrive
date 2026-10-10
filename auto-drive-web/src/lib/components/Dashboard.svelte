@@ -42,7 +42,7 @@
     <button type="button" class="button block">Leaderboard</button>
     <button type="button" class="button block">Algorithms</button>
     <button type="button" class="button block">Calendar</button>
-    <button type="button" class="button block">Play</button>
+    <button type="button" class="button block">Experiment</button>
 </div>
 {:else}
 <div class="button-container">

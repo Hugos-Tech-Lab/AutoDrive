@@ -625,9 +625,8 @@ msgstr ""
 msgid "Algorithms"
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Play"
-msgstr ""
+#~ msgid "Play"
+#~ msgstr ""
 
 #~ msgid "Calender"
 #~ msgstr ""
@@ -647,4 +646,17 @@ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 msgid "Past Runs"
+msgstr ""
+
+#~ msgid "Time"
+#~ msgstr ""
+
+#~ msgid "Debug"
+#~ msgstr ""
+
+#~ msgid "Test"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Experiment"
 msgstr ""

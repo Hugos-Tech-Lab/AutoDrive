@@ -471,9 +471,8 @@ msgstr ""
 #~ msgid "Software Development Kit (SDL)"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Software Development Kit (SDK)"
-msgstr ""
+#~ msgid "Software Development Kit (SDK)"
+#~ msgstr ""
 
 #~ msgid "Best Algorithms"
 #~ msgstr ""
@@ -502,17 +501,14 @@ msgstr ""
 #~ msgid "Future (shown in selected Build only)"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Upcoming (shown in selected Build only)"
-msgstr ""
+#~ msgid "Upcoming (shown in selected Build only)"
+#~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Past (shown in selected Build only)"
-msgstr ""
+#~ msgid "Past (shown in selected Build only)"
+#~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Logs (shown in selected Build only)"
-msgstr ""
+#~ msgid "Logs (shown in selected Build only)"
+#~ msgstr ""
 
 #~ msgid "Current Status (shown in selected Build only)"
 #~ msgstr ""
@@ -523,13 +519,11 @@ msgstr ""
 #~ msgid "Status (shown in selected Build only)"
 #~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Sensors (shown in selected Build only)"
-msgstr ""
+#~ msgid "Sensors (shown in selected Build only)"
+#~ msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Status (shown in selected Build only) (shows firmware, last online, etc)"
-msgstr ""
+#~ msgid "Status (shown in selected Build only) (shows firmware, last online, etc)"
+#~ msgstr ""
 
 #~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> <5>The Machine</5> - Top Speed: 15cm / second (placeholder)<6/> - 0 - 100(cm): 5 seconds (placeholder)<7/> - Power: 200 mA (placeholder)<8/> - Weight: 500 grams (placeholder)<9/> - Steering: Skid <10/> - Wheels: 2 powered, 1 non-powered <11/> - Inputs: 4 light sensors (placeholder)<12/> - Outputs: 2 motor speeds (placeholder)<13/><14/> <15>The Track</15>"
 #~ msgstr ""

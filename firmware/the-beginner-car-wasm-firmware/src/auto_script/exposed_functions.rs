@@ -89,6 +89,18 @@ pub extern "C" fn set_motor_a_speed(exec_env: *mut WASMExecEnv, speed: i8) {
     hardware.set_wheel_a_speed(speed, crate::hardware::RequestOrigin::Manual);
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn set_motor_b_speed(exec_env: *mut WASMExecEnv, speed: i8) {
+    let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+    if wasm_data.ct.is_cancelled() {
+        terminate(exec_env);
+    }
+
+    println!("setting motor b speed");
+    let mut hardware = wasm_data.hardware.lock().unwrap();
+    hardware.set_wheel_b_speed(speed, crate::hardware::RequestOrigin::Manual);
+}
+
 fn get_wasm_data<'a>(exec_env: *mut WASMExecEnv) -> &'a mut WasmData {
     //  TODO: disable WAMR_BUILD_LIB_PTHREAD because this is not thread safe
     unsafe {

@@ -97,6 +97,8 @@ impl<'d> SpiSlave<'d> {
     }
 
     pub fn wait_until_master_ready_pin(&mut self, is_high: bool) -> anyhow::Result<()> {
+        let pin_number = self.master_ready.pin();
+
         let fut = async {
             if is_high {
                 self.master_ready.wait_for_high().await
@@ -110,7 +112,7 @@ impl<'d> SpiSlave<'d> {
                 result.map_err(|err| anyhow::anyhow!("Failed to wait until ready pin: '{err:?}'"))
             }
             Err(_) => Err(anyhow::anyhow!(
-                "Timeout waiting for READY pin {}",
+                "Timeout waiting for READY pin ({pin_number}) to be ({})",
                 if is_high { "HIGH" } else { "LOW" }
             )),
         }?;

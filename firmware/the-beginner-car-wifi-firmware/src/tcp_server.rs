@@ -20,6 +20,7 @@ use log::error;
 use log::info;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::{io, thread};
+use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{
     TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
@@ -75,16 +76,28 @@ async fn handle(
                     TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {
                         println!("InformPositionFromCamera: {:?} {:?}", x, y)
                     }
-                    TheBeginnerCarIncomingMessages::InstallWasm { bytes } => {
+                    TheBeginnerCarIncomingMessages::RunAutoScript { data } => {
+                        let (sender, receiver) = std::sync::mpsc::sync_channel::<
+                            Result<ResponseFromHardware, anyhow::Error>,
+                        >(1);
+                        let hw = HardwareMessage {
+                            request: RequestToHardware::RunAutoScript { data },
+                            response_tx: sender,
+                        };
+                        hardware_sender.send(hw).unwrap();
+
+                        let res = receiver.recv_timeout(Duration::from_secs(5));
+                        res.unwrap().unwrap();
+
                         println!("InstallWasm: {:?}", bytes)
                     }
-                    TheBeginnerCarIncomingMessages::RunWasm => println!("RunWasm"),
                     TheBeginnerCarIncomingMessages::GetBatteryReading => {
                         let battery_reading = { battery_reading.lock().unwrap().clone() };
 
                         let message = TheBeginnerCarOutgoingMessages::BatteryReading {
                             voltage: battery_reading,
                         };
+
                         let bytes = postcard::to_stdvec(&message).unwrap();
                         let len = u32::try_from(bytes.len()).unwrap();
 

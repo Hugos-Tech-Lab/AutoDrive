@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub fn logs(
-    mut request: Request<&mut EspHttpConnection<'_>>
+    request: Request<&mut EspHttpConnection<'_>>
 ) -> Result<(), anyhow::Error> {
     let logs = if let Some(buffer) = LOG_BUFFER.get() {
         let buffer = buffer

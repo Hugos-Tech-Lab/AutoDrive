@@ -5,8 +5,7 @@ pub enum TheBeginnerCarIncomingMessages {
     SetMotorASpeed { speed: i8 },
     SetMotorBSpeed { speed: i8 },
     InformPositionFromCamera { x: i32, y: i32 },
-    InstallWasm { bytes: Vec<u8> },
-    RunWasm,
+    RunAutoScript { data: Vec<u8> },
     GetBatteryReading
 }
 

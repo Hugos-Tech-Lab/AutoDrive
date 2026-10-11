@@ -65,6 +65,10 @@ impl WasmThread {
                 "set_onboard_led_color",
                 crate::auto_script::exposed_functions::set_onboard_led_color as *mut c_void,
             )
+            .register_host_function(
+                "set_motor_a_speed",
+                crate::auto_script::exposed_functions::set_motor_a_speed as *mut c_void,
+            )
             .build()?;
 
         Ok(Self {

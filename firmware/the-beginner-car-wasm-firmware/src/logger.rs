@@ -4,11 +4,35 @@ use esp_idf_svc::log::EspIdfLogger;
 use log::{LevelFilter, Log, Metadata, Record};
 use serde::{Deserialize, Serialize};
 
+use std::cell::RefCell;
+
+thread_local! {
+    static TRACE_ID: RefCell<Option<String>> =
+        const { RefCell::new(None) };
+}
+
+pub fn set_trace_id(id: impl Into<String>) {
+    TRACE_ID.with(|trace_id| {
+        *trace_id.borrow_mut() = Some(id.into());
+    });
+}
+
+pub fn clear_trace_id() {
+    TRACE_ID.with(|trace_id| {
+        *trace_id.borrow_mut() = None;
+    });
+}
+
+fn current_trace_id() -> Option<String> {
+    TRACE_ID.with(|trace_id| trace_id.borrow().clone())
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogMessage {
     pub level: u8,
     pub target: String,
     pub message: String,
+    pub trace_id: Option<String>
 }
 
 struct Logger {
@@ -30,9 +54,10 @@ impl Log for Logger {
             level: record.level() as u8,
             target: record.target().to_owned(),
             message: record.args().to_string(),
+            trace_id: current_trace_id(),
         };
 
-        // Don't block the application if the I2C consumer is slow.
+        // Don't block the application if the SPI consumer is slow.
         let _ = self.sender.try_send(message);
 
         // Also keep the normal ESP-IDF serial logging.
@@ -44,12 +69,13 @@ impl Log for Logger {
     }
 }
 
-pub fn init_logging() -> Receiver<LogMessage> {
+pub fn init_logging() ->(SyncSender<LogMessage>, Receiver<LogMessage>) {
     let (sender, receiver) = mpsc::sync_channel(100);
+
 
     let logger = Box::leak(Box::new(Logger {
         inner: EspIdfLogger::new(()),
-        sender,
+        sender: sender.clone(),
     }));
 
     log::set_logger(logger)
@@ -57,5 +83,5 @@ pub fn init_logging() -> Receiver<LogMessage> {
 
     log::set_max_level(LevelFilter::Debug);
 
-    receiver
+    (sender, receiver)
 }

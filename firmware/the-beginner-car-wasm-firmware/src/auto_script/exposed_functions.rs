@@ -6,10 +6,7 @@ use wamr_rust_sdk::sys::{
     wasm_runtime_get_module_inst, wasm_runtime_terminate, wasm_runtime_validate_app_addr,
 };
 
-use crate::{
-    auto_script::{AutoScriptRunProgress, wasm_thread::WasmData},
-    // hardware::motor::OnBoardLed,
-};
+use crate::auto_script::wasm_thread::WasmData;
 
 pub fn terminate(exec_env: *mut WASMExecEnv) {
     if exec_env.is_null() {
@@ -62,9 +59,11 @@ pub extern "C" fn print(exec_env: *mut WASMExecEnv, ptr: u32, len: u32) {
         }
     }
 
-    wasm_data.progress.send(AutoScriptRunProgress::Log {
-        message: value.to_string(),
-    }).unwrap(); // TODO: this shouldn't block maybe?
+    info!("{}", value.to_string());
+
+    // wasm_data.progress.send(AutoScriptRunProgress::Log {
+    //     message: value.to_string(),
+    // }).unwrap(); // TODO: this shouldn't block maybe?
 
     info!("{:?}", value);
 }

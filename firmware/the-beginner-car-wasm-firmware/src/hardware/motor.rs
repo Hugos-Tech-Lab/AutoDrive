@@ -4,23 +4,23 @@ use esp_idf_svc::hal::{
 };
 use esp_idf_svc::hal::units::*;
 
-pub struct Motor<'d> {
-    power_driver: LedcDriver<'d>,
-    directional_pin: PinDriver<'d, Output>,
+pub struct Motor {
+    power_driver: LedcDriver<'static>,
+    directional_pin: PinDriver<'static, Output>,
     max_duty: u32,
 }
 
-impl<'d> Motor<'d> {
+impl Motor {
     pub fn new<C, S, T>(
-        directional_pin: AnyIOPin<'d>,
-        power_pin: AnyIOPin<'d>,
+        directional_pin: AnyIOPin<'static>,
+        power_pin: AnyIOPin<'static>,
         channel: C,
         timer: T,
     ) -> Self
     where
-        C: LedcChannel<SpeedMode = S> + 'd,
+        C: LedcChannel<SpeedMode = S> + 'static,
         S: SpeedMode,
-        T: LedcTimer<SpeedMode = S> + 'd,
+        T: LedcTimer<SpeedMode = S> + 'static,
     {
         let directional_pin = PinDriver::output(directional_pin).unwrap();
 

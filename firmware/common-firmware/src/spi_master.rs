@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use embassy_time::with_timeout;
 use esp_idf_svc::hal::{
     gpio::{AnyIOPin, Input, Output, Pin, PinDriver}, spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config}, task::block_on, units::Hertz,

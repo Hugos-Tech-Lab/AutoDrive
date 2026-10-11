@@ -104,7 +104,6 @@ dependencies = [
  "log",
  "postcard",
  "serde",
- "serde_json",
  "smart-leds-trait",
  "the-beginner-car-spi-protocol",
  "wamr-rust-sdk",

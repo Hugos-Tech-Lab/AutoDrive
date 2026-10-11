@@ -1,14 +1,21 @@
+use opentelemetry::{KeyValue, global, metrics::Gauge, trace::TracerProvider};
+use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
+use opentelemetry_sdk::{
+    metrics::{SdkMeterProvider, exporter::PushMetricExporter},
+    trace::SpanExporter as _,
+};
 use std::{
     error::Error,
     sync::{Arc, atomic::AtomicU32},
     time::Duration,
 };
-use opentelemetry::{KeyValue, global, metrics::Gauge, trace::TracerProvider};
-use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
-use opentelemetry_sdk::{metrics::{SdkMeterProvider, exporter::PushMetricExporter}, trace::SpanExporter as _};
 use tokio::{net::TcpStream, time::timeout};
+use warp::Filter;
 
-use crate::{auto_drive_edge_server::AutoDriveEdgeServer, devices_config::DeviceConfig};
+use crate::{
+    auto_drive_edge_server::{AutoDriveEdgeServer, http_endpoints::autoscript_run},
+    devices_config::DeviceConfig,
+};
 
 pub mod auto_drive_edge_server;
 pub mod devices_config;
@@ -31,7 +38,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_endpoint("http://localhost:4317")
         .build()?;
 
-
     let meter_provider = SdkMeterProvider::builder()
         .with_periodic_exporter(metric_exporter)
         .build();
@@ -42,8 +48,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let device_config: DeviceConfig = toml::from_str(&contents)?;
     let auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
 
+    tokio::spawn(async move {
+        let hi = warp::path!("autoscript" / "run")
+            .and(warp::header::optional::<String>("user-agent"))
+            // .and(warp::body::bytes())
+            .map(|agent: Option<String>| {
+                format!(
+                    "Hello, whose agent is {}",
+                    // param,
+                    agent.unwrap_or_else(|| "unknown".to_string())
+                )
+
+                //
+            });
+
+        warp::serve(hi).run(([127, 0, 0, 1], 3030)).await;
+    });
+
     auto_drive_edge_server.run().await;
-       
 
     // let counter = meter
     //     .u64_counter("battery.connections")
@@ -55,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // 4. Create your tracer and start recording spans
     // let tracer = global::tracer("rust-grpc-service");
-    
+
     // tracer.in_span("main-operation", |cx| {
     //     let span = cx.span();
     //     span.add_event("Doing some heavy work...", vec![]);

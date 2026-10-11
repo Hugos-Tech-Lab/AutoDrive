@@ -18,6 +18,7 @@ dependencies = [
  "gilrs",
  "postcard",
  "serde",
+ "the-beginner-car-tcp-protocol",
  "tokio",
 ]
 
@@ -440,6 +441,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "the-beginner-car-tcp-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

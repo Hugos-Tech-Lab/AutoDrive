@@ -1,5 +1,6 @@
 use gilrs::{Axis, EventType, Gilrs};
 use serde::{Deserialize, Serialize};
+use the_beginner_car_tcp_protocol::TheBeginnerCarIncomingMessages;
 use std::{
     error::Error,
     sync::{
@@ -14,15 +15,6 @@ use tokio::{
     net::TcpStream,
     time::{interval, timeout},
 };
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum TheBeginnerCarIncomingMessages {
-    SetMotorASpeed { speed: i8 },
-    SetMotorBSpeed { speed: i8 },
-    InformPositionFromCamera { x: i32, y: i32 },
-    InstallWasm { bytes: Vec<u8> },
-    RunWasm,
-}
 
 /// Convert joystick value (-1.0..=1.0) to motor speed.
 ///

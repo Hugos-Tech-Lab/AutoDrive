@@ -18,6 +18,6 @@ tokio = { version = "1", features = [
 ] }
 toml = "1.1.8"
 opentelemetry-otlp = { version = "0.33.1", features = ["grpc-tonic", "trace", "metrics"] }
-warp = "0.4.3"
+warp = { version = "0.4.3", features = ["server"] }
 opentelemetry = "0.33.1"
 opentelemetry_sdk = "0.33.1"

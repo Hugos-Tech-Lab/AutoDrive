@@ -6,7 +6,7 @@ set -euo pipefail
 # the-beginner.local
 # 192.168.0.116
 
-BASE_URL="http://192.168.0.116/autoscript"
+BASE_URL="http://0.0.0.0:3030/autoscript"
 
 wasm="$1"
 

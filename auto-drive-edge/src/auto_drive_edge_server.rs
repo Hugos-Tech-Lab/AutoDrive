@@ -6,7 +6,7 @@ use crate::{
 pub mod http_endpoints;
 
 pub struct AutoDriveEdgeServer {
-    the_beginner_cars: TheBeginnerCars,
+    pub the_beginner_cars: TheBeginnerCars,
 }
 
 impl AutoDriveEdgeServer {

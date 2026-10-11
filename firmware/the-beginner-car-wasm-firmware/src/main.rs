@@ -14,7 +14,9 @@ use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 
 use crate::{
-    auto_script::AutoScript, hardware::{RequestOrigin, TheBeginnerCarHardware, motor::Motor}, logger::init_logging,
+    auto_script::AutoScript,
+    hardware::{RequestOrigin, TheBeginnerCarHardware, motor::Motor},
+    logger::init_logging,
 };
 
 use esp_idf_sys::esp_reset_reason;
@@ -104,7 +106,10 @@ pub fn main() -> anyhow::Result<()> {
                         RequestToHardware::NotifyBatteryReadings {
                             motor_battery,
                             mcu_battery,
-                        } => println!("motor battery from mcu"),
+                        } => {
+                            let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                            the_beginner_car.notify_battery_readings(motor_battery, mcu_battery);
+                        }
                         RequestToHardware::RunAutoScript { data } => {
                             auto_script.run(data).unwrap();
                         }

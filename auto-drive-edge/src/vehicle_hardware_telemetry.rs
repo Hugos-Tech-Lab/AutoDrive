@@ -73,10 +73,13 @@ impl VehicleHardwareTelemetry {
         loop {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
-                    TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
+                    TheBeginnerCarOutgoingMessages::BatteryReading { motor_battery_voltage, mcu_battery_voltage } => {
                         gauges
                             .motor_battery_voltage
-                            .record(voltage.into(), attributes);
+                            .record(motor_battery_voltage.into(), attributes);
+                        gauges
+                            .mcu_battery_voltage
+                            .record(mcu_battery_voltage.into(), attributes);
                     }
                     _ => {}
                 },

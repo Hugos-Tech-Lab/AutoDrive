@@ -3,13 +3,9 @@ set -euo pipefail
 
 BASE_URL="http://127.0.0.1:3030/autoscript"
 
-# Cargo passes Windows paths with backslashes, which Bash may consume.
-wasm="${1//\\/\/}"
-
-# If the path was mangled before reaching this script, reconstruct it.
-if [[ ! -f "$wasm" ]]; then
-    wasm="target/wasm32-unknown-unknown/debug/auto-drive.wasm"
-fi
+# On windows we cannot rely on the $1 variable from Cargo because the slashes (i.e. / or \) are completely disappeared."
+# Use this hack to get the most recently changed .wasm file to pass to the AutoDrive servers.
+wasm=$(ls -t target/wasm32-unknown-unknown/{release,debug}/*.wasm 2>/dev/null | head -n 1)
 
 if [[ ! -f "$wasm" ]]; then
     echo "WASM file not found: $wasm" >&2
@@ -40,4 +36,3 @@ curl --fail \
     --request POST \
     --data-binary "@$wasm" \
     "$BASE_URL/run"
-

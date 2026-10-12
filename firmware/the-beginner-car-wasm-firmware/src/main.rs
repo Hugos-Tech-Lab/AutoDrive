@@ -128,7 +128,6 @@ pub fn main() -> anyhow::Result<()> {
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
                     latest_reading = pin.read().unwrap();
-                    dbg!(latest_reading);
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 

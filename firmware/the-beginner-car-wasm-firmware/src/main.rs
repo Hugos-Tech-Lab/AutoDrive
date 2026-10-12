@@ -1,5 +1,8 @@
 use std::{
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU16, Ordering},
+    },
     thread,
     time::Duration,
 };
@@ -9,8 +12,13 @@ use common_firmware::{
     spi_slave::SpiSlave,
 };
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop, hal::{
-        adc::{attenuation::{DB_12}, oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig}}, delay::{FreeRtos, TICK_RATE_HZ},
+    eventloop::EspSystemEventLoop,
+    hal::{
+        adc::{
+            attenuation::DB_12,
+            oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
+        },
+        delay::{FreeRtos, TICK_RATE_HZ},
     },
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
@@ -69,7 +77,9 @@ pub fn main() -> anyhow::Result<()> {
         FreeRtos::delay_ms(1000);
     }
 
-    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(motor_a, motor_b)));
+    let ir_sensor_a = Arc::new(AtomicU16::new(0));
+
+    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(motor_a, motor_b, ir_sensor_a.clone())));
 
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
@@ -116,10 +126,12 @@ pub fn main() -> anyhow::Result<()> {
         .name("sensor_readings".to_string())
         .spawn({
             let events = events.clone();
-
             move || {
                 let adc = AdcDriver::new(peripherals.adc1).unwrap();
-                let config = AdcChannelConfig{attenuation: DB_12, ..Default::default()};
+                let config = AdcChannelConfig {
+                    attenuation: DB_12,
+                    ..Default::default()
+                };
                 let mut pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
 
                 let mut last_flush = std::time::Instant::now();
@@ -128,6 +140,7 @@ pub fn main() -> anyhow::Result<()> {
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
                     latest_reading = pin.read().unwrap();
+                    ir_sensor_a.store(latest_reading, Ordering::Relaxed);
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 

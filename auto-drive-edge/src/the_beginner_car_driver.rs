@@ -55,19 +55,24 @@ impl TheBeginnerCarDriver {
         //
     }
 
-    pub fn go_to_start() {
-        //
-    }
-
-    pub async fn run_auto_script(&self, data: Vec<u8>) ->  broadcast::Receiver<TheBeginnerCarOutgoingMessages> {
-        dbg!("running"); // TODO: this should error if not connected
-        let mut rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages> = self.incoming_rx.subscribe();
+    pub async fn cancel_auto_script(&self) {
         self.outgoing_tx
             .send(TheBeginnerCarIncomingMessages::StopAutoScript)
             .await
             .unwrap();
+    }
 
-        dbg!("waiting for autoscript stopped message");
+    pub async fn run_auto_script(
+        &self,
+        data: Vec<u8>,
+    ) -> broadcast::Receiver<TheBeginnerCarOutgoingMessages> {
+        // TODO: this should error if not connected to hardware
+        let mut rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages> =
+            self.incoming_rx.subscribe();
+        self.outgoing_tx
+            .send(TheBeginnerCarIncomingMessages::StopAutoScript)
+            .await
+            .unwrap();
         let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
 
         loop {
@@ -84,8 +89,6 @@ impl TheBeginnerCarDriver {
                 }
             }
         }
-
-        dbg!("running auto script");
 
         let start_script = TheBeginnerCarIncomingMessages::RunAutoScript { data };
 

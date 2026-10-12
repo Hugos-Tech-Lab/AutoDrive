@@ -9,8 +9,8 @@ pub extern "C" fn main() -> () {
         the_beginner::set_motor_a_speed(0);
         the_beginner::set_motor_b_speed(0);
         the_beginner::delay(1000);
-        the_beginner::set_motor_a_speed(0);
-        the_beginner::set_motor_b_speed(0);
+        the_beginner::set_motor_a_speed(100);
+        the_beginner::set_motor_b_speed(100);
         the_beginner::delay(1000);
         the_beginner::print("hi");
     }

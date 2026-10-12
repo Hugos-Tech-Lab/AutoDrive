@@ -53,11 +53,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         let hi = warp::path!("autoscript" / "run")
             .and(warp::post())
-            .and(warp::header::optional::<String>("user-agent"))
             .and(warp::body::bytes())
-            .and_then(move |agent: Option<String>, body: Bytes| {
+            .and_then({
                 let driver = driver.clone();
-
+                move |body: Bytes| {
+                    let driver = driver.clone();
                 async move {
                     let data = body;
                     let broadcast_rx = driver.run_auto_script(data.to_vec()).await;
@@ -97,9 +97,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         warp::sse::keep_alive().stream(event_stream),
                     ))
                 }
+            }});
+
+        let cancel = warp::path!("autoscript" / "cancel")
+            .and(warp::post())
+            .and(warp::body::bytes())
+            .and_then(move |body: Bytes| {
+                let driver = driver.clone();
+
+                async move {
+                    let data = body;
+
+                    driver.run_auto_script(data.to_vec()).await;
+
+                    Ok::<_, warp::Rejection>(format!("Cancelled"))
+                }
             });
 
-        warp::serve(hi).run(([127, 0, 0, 1], 3030)).await;
+        warp::serve(hi.or(cancel)).run(([127, 0, 0, 1], 3030)).await;
     });
 
     // auto_drive_edge_server.run().await;

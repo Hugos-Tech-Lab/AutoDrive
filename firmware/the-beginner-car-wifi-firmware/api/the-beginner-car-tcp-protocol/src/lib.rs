@@ -1,7 +1,14 @@
-
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct LogMessage {
+    pub level: u8,
+    pub target: String,
+    pub message: String,
+    pub trace_id: Option<String>
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TheBeginnerCarIncomingMessages {
@@ -10,25 +17,34 @@ pub enum TheBeginnerCarIncomingMessages {
     InformPositionFromCamera { x: i32, y: i32 },
     StopAutoScript,
     RunAutoScript { data: Vec<u8> },
-    GetBatteryReading,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TheBeginnerCarOutgoingMessages {
-    Logs { logs: Vec<()> },
+    Log {
+        log: LogMessage
+    },
     SystemState {},
-    MotorASpeedUpdated { speed: i8 },
-    MotorBSpeedUpdated { speed: i8 },
+    MotorASpeedUpdated {
+        speed: i8,
+    },
+    MotorBSpeedUpdated {
+        speed: i8,
+    },
     WasmInstalled,
     AutoScriptRunning,
     AutoScriptStopped,
-    BatteryReading { voltage: f32 },
+    BatteryReading {
+        motor_battery_voltage: f32,
+        mcu_battery_voltage: f32,
+    },
+    IRSensorAReading {
+        value: u16
+    }
 }
 
 /// Serializes a message with a 4-byte big-endian length prefix.
-pub fn to_bytes<T: Serialize>(
-    message: &T,
-) -> Result<Vec<u8>, Box<dyn Error>> {
+pub fn to_bytes<T: Serialize>(message: &T) -> Result<Vec<u8>, Box<dyn Error>> {
     let mut result = vec![0u8; 4];
 
     result = postcard::to_extend(message, result)?;

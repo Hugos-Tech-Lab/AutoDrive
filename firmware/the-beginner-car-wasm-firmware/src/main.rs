@@ -9,8 +9,7 @@ use common_firmware::{
     spi_slave::SpiSlave,
 };
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    hal::adc::oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
+    eventloop::EspSystemEventLoop, hal::{adc::oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig}, delay::{FreeRtos, TICK_RATE_HZ}},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
@@ -65,7 +64,7 @@ pub fn main() -> anyhow::Result<()> {
     // pin.set_color(20, 2, 2);
     if reason == 9 {
         // pin.set_color(9, 0, 200);
-        thread::sleep(Duration::from_secs(1));
+        FreeRtos::delay_ms(1000);
     }
 
     let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(motor_a, motor_b)));
@@ -77,10 +76,6 @@ pub fn main() -> anyhow::Result<()> {
         move || {
             let mut events = events.lock().unwrap();
             events.push(Event::AutoScriptStopped);
-
-            //
-            // asd
-            //
         }
     })?);
 
@@ -125,24 +120,23 @@ pub fn main() -> anyhow::Result<()> {
                 let config = AdcChannelConfig::new();
                 let mut pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
 
-                let mut last_log = std::time::Instant::now();
+                let mut last_flush = std::time::Instant::now();
                 let mut latest_reading = 0;
 
                 loop {
                     latest_reading = pin.read().unwrap();
 
-                    if last_log.elapsed() >= Duration::from_millis(100) {
+                    if last_flush.elapsed() >= Duration::from_millis(1000) {
                         let mut events = events.lock().unwrap();
-
+                        dbg!("pushing");
                         events.push(Event::IRSensorA {
                             value: latest_reading,
                         });
 
-                        last_log = std::time::Instant::now();
+                        last_flush = std::time::Instant::now();
                     }
-
-                    thread::sleep(Duration::from_millis(2));
-                }
+                    FreeRtos::delay_ms(2);
+                } 
             }
         })
         .unwrap();
@@ -175,7 +169,14 @@ pub fn main() -> anyhow::Result<()> {
                         let mut the_beginner_car = the_beginner_car.lock().unwrap();
                         the_beginner_car.set_wheel_b_speed(speed, RequestOrigin::Manual);
                     }
-                    RequestToHardware::DrainEvents => println!("Logs"),
+                    RequestToHardware::DrainEvents => {
+                        let events = {
+                            let mut events = events.lock().unwrap();
+                            std::mem::take(&mut *events)
+                        };
+
+                        return ResponseFromHardware::Events { events };
+                    }
                     RequestToHardware::NotifyPositionFromCamera { x, y } => {
                         println!("pos from camera")
                     }
@@ -189,6 +190,7 @@ pub fn main() -> anyhow::Result<()> {
                     RequestToHardware::RunAutoScript { data } => {
                         auto_script.run(data).unwrap();
                     }
+                    RequestToHardware::StopAutoScript => println!("asd"),
                 }
 
                 // pin.set_color(3, 20, 3);

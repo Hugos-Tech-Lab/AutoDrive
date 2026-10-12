@@ -26,6 +26,7 @@ pub enum RequestToHardware {
     RunAutoScript {
         data: Vec<u8>,
     },
+    StopAutoScript
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,6 +40,6 @@ pub enum Event {
 pub enum ResponseFromHardware {
     Ok,
     Status { light_on: bool, motor_speed: i32 },
-    Events { logs: Vec<LogMessage> },
+    Events { events: Vec<Event> },
     AutoScriptStarted { id: i32 },
 }

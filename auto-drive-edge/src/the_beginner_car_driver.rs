@@ -4,8 +4,7 @@ use the_beginner_car_tcp_protocol::{
     TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
-    sync::{Mutex, broadcast, mpsc},
-    task::JoinHandle,
+    sync::{Mutex, broadcast, mpsc::{self}}, task::JoinHandle,
 };
 
 struct HardwareState {
@@ -14,14 +13,15 @@ struct HardwareState {
 
 pub struct TheBeginnerCarDriver {
     state: Arc<Mutex<HardwareState>>,
-    outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
+    pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
+    pub incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
     connection_handle: JoinHandle<()>,
 }
 
 impl TheBeginnerCarDriver {
     pub fn new(
         outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
-        incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
+        incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
     ) -> Self {
         let state = Arc::new(Mutex::new(HardwareState {
             queued_scripts: vec![],
@@ -32,6 +32,7 @@ impl TheBeginnerCarDriver {
             // let incoming_tx = incoming_tx.clone();
             let state = state.clone();
             let outgoing_tx = outgoing_tx.clone();
+            let incoming_rx = incoming_rx.subscribe();
             async {
                 Self::long_lived_watcher(incoming_rx, outgoing_tx, state).await;
             }
@@ -41,6 +42,7 @@ impl TheBeginnerCarDriver {
             state,
             outgoing_tx,
             connection_handle,
+            incoming_rx
         }
     }
 
@@ -52,8 +54,9 @@ impl TheBeginnerCarDriver {
         //
     }
 
-    pub fn start_auto_script(&self) {
-        //
+    pub async fn run_auto_script(&self, data: Vec<u8>) {
+        dbg!("running"); // TODO: this should error if not connected
+        self.outgoing_tx.send(TheBeginnerCarIncomingMessages::RunAutoScript { data }).await.unwrap();
     }
 
     pub fn queue_auto_script() {

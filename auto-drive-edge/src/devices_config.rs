@@ -14,12 +14,12 @@ pub enum DeviceBuild {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeviceMetadata {
-    pub device_type: DeviceType,
     pub build: DeviceBuild,
     pub mdns_address: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeviceConfig {
-    pub devices: Vec<DeviceMetadata>,
+    // pub devices: Vec<DeviceMetadata>,
+    pub the_beginner_cars: Vec<DeviceMetadata>
 }

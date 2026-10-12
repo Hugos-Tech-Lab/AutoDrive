@@ -7,8 +7,8 @@ use auto_drive_sdk::hardware::the_beginner;
 pub extern "C" fn main() -> () {
   loop {
     the_beginner::delay(500);
-    the_beginner::set_motor_a_speed(127);
-    the_beginner::set_motor_b_speed(127);
+    the_beginner::set_motor_a_speed(0);
+    the_beginner::set_motor_b_speed(0);
     the_beginner::delay(500);
     the_beginner::set_motor_a_speed(0);
     the_beginner::set_motor_b_speed(0);

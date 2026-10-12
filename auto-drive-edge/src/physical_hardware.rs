@@ -1,26 +1,45 @@
 use std::sync::Arc;
 
-use tokio::sync::Mutex;
-
-use crate::{the_beginner_car_comms::TheBeginnerCarComms, the_beginner_car_driver::TheBeginnerCarDriver};
-
-
+use crate::{
+    devices_config::DeviceConfig,
+    the_beginner_car_comms::TheBeginnerCarComms,
+    the_beginner_car_driver::TheBeginnerCarDriver,
+};
 
 pub struct PhysicalHardware {
     the_beginner_cars: Vec<TheBeginnerCarComms>,
-    the_beginner_car_drivers: Vec<Arc<Mutex<TheBeginnerCarDriver>>>,
+    pub the_beginner_car_drivers: Vec<Arc<TheBeginnerCarDriver>>,
 }
 
 impl PhysicalHardware {
-  pub fn new() {
-    //
-  }
+    pub fn new(config: DeviceConfig) -> Self {
+        let the_beginner_cars: Vec<TheBeginnerCarComms> = config
+            .the_beginner_cars
+            .iter()
+            .map(|d| TheBeginnerCarComms::new(d.clone()))
+            .collect();
 
-  pub fn is_connected(id: i32) -> bool {
-    false
-  }
+        let the_beginner_car_drivers = the_beginner_cars
+            .iter()
+            .map(|the_beginner_car_comms| {
+                Arc::new(TheBeginnerCarDriver::new(
+                    the_beginner_car_comms.outgoing_tx.clone(),
+                    the_beginner_car_comms.incoming_tx.clone(),
+                ))
+            })
+            .collect();
 
-  pub fn the_beginner_cars(&self) -> &Vec<TheBeginnerCarComms> {
-    &self.the_beginner_cars
-  }
+        Self {
+            the_beginner_cars,
+            the_beginner_car_drivers,
+        }
+    }
+
+    pub fn is_connected(id: i32) -> bool {
+        false
+    }
+
+    pub fn the_beginner_cars(&self) -> &Vec<TheBeginnerCarComms> {
+        &self.the_beginner_cars
+    }
 }

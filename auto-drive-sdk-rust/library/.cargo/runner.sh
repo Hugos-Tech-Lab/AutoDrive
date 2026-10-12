@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# TODO: maybe make this script cross platform? Rust executable?
-# .local names don't seem to be working in wsl
-# the-beginner.local
-# 192.168.0.116
+BASE_URL="http://127.0.0.1:3030/autoscript"
 
-BASE_URL="http://0.0.0.0:3030/autoscript"
+# Cargo passes Windows paths with backslashes, which Bash may consume.
+wasm="${1//\\/\/}"
 
-wasm="$1"
+# If the path was mangled before reaching this script, reconstruct it.
+if [[ ! -f "$wasm" ]]; then
+    wasm="target/wasm32-unknown-unknown/debug/auto-drive.wasm"
+fi
 
-echo "Uploading: $wasm"
+if [[ ! -f "$wasm" ]]; then
+    echo "WASM file not found: $wasm" >&2
+    exit 1
+fi
 
-curl --fail \
-    --show-error \
-    --data-binary "@$wasm" \
-    "$BASE_URL/upload"
-
-echo
+echo "Running: $wasm"
 echo "Starting autoscript..."
 
 cleanup() {
+    trap - INT TERM
     echo
     echo "Cancelling."
     curl --fail \
@@ -29,8 +29,6 @@ cleanup() {
         "$BASE_URL/cancel" \
         || echo "Warning: cancel request failed"
     echo
-
-    # The curl process is terminated automatically when the script exits.
     exit 130
 }
 
@@ -40,4 +38,6 @@ curl --fail \
     --show-error \
     --no-buffer \
     --request POST \
+    --data-binary "@$wasm" \
     "$BASE_URL/run"
+

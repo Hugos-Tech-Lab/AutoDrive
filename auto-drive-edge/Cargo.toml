@@ -22,3 +22,4 @@ opentelemetry-otlp = { version = "0.33.1", features = ["grpc-tonic", "trace", "m
 warp = { version = "0.4.3", features = ["server"] }
 opentelemetry = "0.33.1"
 opentelemetry_sdk = "0.33.1"
+bytes = "1.12.1"

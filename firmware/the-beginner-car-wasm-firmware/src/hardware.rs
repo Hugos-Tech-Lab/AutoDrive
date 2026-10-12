@@ -13,6 +13,8 @@ pub struct TheBeginnerCarHardware {
     allowed_controller: RequestOrigin,
     wheel_a: Motor,
     wheel_b: Motor,
+    motor_battery : f32,
+    mcu_battery : f32,
 }
 
 impl TheBeginnerCarHardware {
@@ -21,6 +23,8 @@ impl TheBeginnerCarHardware {
             allowed_controller: RequestOrigin::Manual,
             wheel_a,
             wheel_b,
+            motor_battery: 0.0,
+            mcu_battery: 0.0
         }
     }
 
@@ -40,6 +44,12 @@ impl TheBeginnerCarHardware {
 
     pub fn set_allowed_controller(&mut self, controller: RequestOrigin) {
         self.allowed_controller = controller;
+    }
+
+    pub fn notify_battery_readings(&mut self, motor_battery : f32,
+    mcu_battery : f32) {
+        self.motor_battery = motor_battery;
+        self.mcu_battery = mcu_battery;
     }
 
     pub fn stop(&mut self) {

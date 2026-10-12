@@ -88,8 +88,6 @@ async fn handle(
 
                         let res = receiver.recv_timeout(Duration::from_secs(5));
                         res.unwrap().unwrap();
-
-                        println!("InstallWasm: {:?}", bytes)
                     }
                     TheBeginnerCarIncomingMessages::GetBatteryReading => {
                         let battery_reading = { battery_reading.lock().unwrap().clone() };

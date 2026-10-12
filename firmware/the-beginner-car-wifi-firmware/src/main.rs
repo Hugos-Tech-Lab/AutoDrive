@@ -209,6 +209,7 @@ pub fn main() -> anyhow::Result<()> {
                         Ok(Ok(response)) => response,
                         Ok(Err(e)) => {
                             log::error!("{e}");
+                            thread::sleep(Duration::from_secs(1));
                             continue;
                         }
                         Err(e) => {

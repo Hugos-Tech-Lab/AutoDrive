@@ -5,7 +5,12 @@ use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt}, net::{TcpStream, lookup_host}, select, sync::{broadcast, mpsc}, task::JoinHandle, time::timeout,
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpStream, lookup_host},
+    select,
+    sync::{broadcast, mpsc},
+    task::JoinHandle,
+    time::timeout,
 };
 
 use crate::{
@@ -66,7 +71,7 @@ pub struct TheBeginnerCarComms {
     // connected: bool,
     pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
-    connection_handle: JoinHandle<()>
+    connection_handle: JoinHandle<()>,
 }
 
 impl TheBeginnerCarComms {
@@ -91,7 +96,7 @@ impl TheBeginnerCarComms {
             // connected: false,
             outgoing_tx,
             incoming_tx,
-            connection_handle
+            connection_handle,
         }
     }
 
@@ -148,7 +153,6 @@ impl TheBeginnerCarComms {
             let (mut stream_read, mut stream_write) = stream.into_split();
             loop {
                 select! {
-                    // Incoming data from the car
                     result = async {
                         let mut len_bytes = [0u8; 4];
                         stream_read.read_exact(&mut len_bytes).await?;
@@ -162,8 +166,13 @@ impl TheBeginnerCarComms {
                     } => {
                         match result {
                             Ok(message_buf) => {
-                                let message: TheBeginnerCarOutgoingMessages =
-                                    postcard::from_bytes(&message_buf).unwrap();
+                                let message: TheBeginnerCarOutgoingMessages = match postcard::from_bytes(&message_buf) {
+                                    Ok(message) => message,
+                                    Err(err) => {
+                                        eprintln!("Failed to deserialize message: {:?}", err);
+                                        continue;
+                                    }
+                                };
 
                                 // Forward incoming message to broadcast subscribers
                                 let _ = broadcast_sender.send(message);

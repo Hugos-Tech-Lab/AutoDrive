@@ -9,10 +9,8 @@ use common_firmware::{
     spi_slave::SpiSlave,
 };
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    hal::{
-        adc::oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
-        delay::{FreeRtos, TICK_RATE_HZ},
+    eventloop::EspSystemEventLoop, hal::{
+        adc::{attenuation::{DB_12}, oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig}}, delay::{FreeRtos, TICK_RATE_HZ},
     },
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
@@ -121,7 +119,7 @@ pub fn main() -> anyhow::Result<()> {
 
             move || {
                 let adc = AdcDriver::new(peripherals.adc1).unwrap();
-                let config = AdcChannelConfig::new();
+                let config = AdcChannelConfig{attenuation: DB_12, ..Default::default()};
                 let mut pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
 
                 let mut last_flush = std::time::Instant::now();
@@ -130,7 +128,7 @@ pub fn main() -> anyhow::Result<()> {
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
                     latest_reading = pin.read().unwrap();
-
+                    dbg!(latest_reading);
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 

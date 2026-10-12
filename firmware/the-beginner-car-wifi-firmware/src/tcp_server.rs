@@ -22,7 +22,7 @@ use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::{io, thread};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{
-    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+    MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 
 use futures::executor::LocalSpawner;
@@ -96,12 +96,8 @@ async fn handle(
                             voltage: battery_reading,
                         };
 
-                        let bytes = postcard::to_stdvec(&message).unwrap();
-                        let len = u32::try_from(bytes.len()).unwrap();
-
-                        // Send [4-byte length][postcard message]
-                        stream.write_all(&len.to_be_bytes()).await.unwrap();
-                        stream.write_all(&bytes).await.unwrap();
+                        let message = &message.to_bytes().unwrap();
+                        stream.write_all(message).await.unwrap();
                     }
                 }
             }

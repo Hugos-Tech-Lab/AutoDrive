@@ -3,12 +3,5 @@
 version = 4
 
 [[package]]
-name = "auto-drive-interface"
-version = "0.1.0"
-
-[[package]]
 name = "auto-drive-sdk"
 version = "0.1.0"
-dependencies = [
- "auto-drive-interface",
-]

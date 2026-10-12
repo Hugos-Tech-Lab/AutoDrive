@@ -39,3 +39,15 @@ pub fn set_onboard_led_color(r: u8, g: u8, b: u8) {
         ffi::set_onboard_led_color(r, g, b);
     }
 }
+
+pub fn set_motor_a_speed(speed: i8) {
+    unsafe {
+        ffi::set_motor_a_speed(speed);
+    }
+}
+
+pub fn set_motor_b_speed(speed: i8) {
+    unsafe {
+        ffi::set_motor_b_speed(speed);
+    }
+}

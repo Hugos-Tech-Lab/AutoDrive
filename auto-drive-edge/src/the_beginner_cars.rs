@@ -1,6 +1,6 @@
 use opentelemetry::{global, metrics::Gauge};
 
-use crate::{devices_config::DeviceMetadata, the_beginner_car::TheBeginnerCar};
+use crate::{devices_config::{DeviceBuild, DeviceMetadata}, the_beginner_car::TheBeginnerCar};
 
 #[derive(Clone)]
 pub struct TheBeginnerCarVehicleTelemetry {
@@ -12,19 +12,6 @@ pub struct TheBeginnerCarVehicleTelemetry {
 
 impl TheBeginnerCarVehicleTelemetry {
     pub fn new() -> Self {
-        let meter = global::meter("auto-drive-edge");
-        let motor_battery_voltage: Gauge<f64> = meter
-            .f64_gauge("motor_battery_voltage")
-            .with_unit("V")
-            .with_description("The motor battery voltage")
-            .build();
-        let mcu_battery_voltage: Gauge<f64> = meter
-            .f64_gauge("mcu_battery_voltage")
-            .with_unit("V")
-            .with_description("The MCU battery voltage")
-            .build();
-
-
         Self {
             motor_battery_voltage,
             mcu_battery_voltage
@@ -32,9 +19,14 @@ impl TheBeginnerCarVehicleTelemetry {
     }
 }
 
+pub struct AutoScript {
+    pub data: Vec<u8>
+}
+
 pub struct TheBeginnerCars {
     telemetry: TheBeginnerCarVehicleTelemetry,
     builds: Vec<TheBeginnerCar>,
+    queued_auto_scripts: Vec<AutoScript>
 }
 
 impl TheBeginnerCars {
@@ -46,13 +38,13 @@ impl TheBeginnerCars {
             .map(|metadata| TheBeginnerCar::new(metadata.clone(), telemetry.clone()))
             .collect();
 
-        Self { telemetry, builds }
+        Self { telemetry, builds, queued_auto_scripts: vec![] }
     }
 
     pub async fn run(self) {
         let mut tasks = tokio::task::JoinSet::new();
 
-        for build in self.builds {
+        for mut build in self.builds {
             tasks.spawn(async move {
                 build.run().await;
             });
@@ -64,4 +56,13 @@ impl TheBeginnerCars {
             }
         }
     }
-}
+
+    pub fn queue_auto_script(&self) {
+
+    }
+
+    pub fn run_auto_script(&self, data: Vec<u8>) {
+        let car = self.builds.first().unwrap();
+        // car.
+    }
+ }

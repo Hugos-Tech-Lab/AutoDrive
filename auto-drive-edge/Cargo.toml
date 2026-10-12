@@ -15,6 +15,7 @@ tokio = { version = "1", features = [
   "macros",
   "rt-multi-thread",
   "time",
+  "sync"
 ] }
 toml = "1.1.8"
 opentelemetry-otlp = { version = "0.33.1", features = ["grpc-tonic", "trace", "metrics"] }

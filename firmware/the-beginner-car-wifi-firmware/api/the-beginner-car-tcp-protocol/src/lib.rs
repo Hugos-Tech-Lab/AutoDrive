@@ -12,7 +12,7 @@ pub enum TheBeginnerCarIncomingMessages {
     GetBatteryReading,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TheBeginnerCarOutgoingMessages {
     Logs { logs: Vec<()> },
     SystemState {},

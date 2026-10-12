@@ -1,26 +1,20 @@
-use opentelemetry::{KeyValue, global, metrics::Gauge, trace::TracerProvider};
 use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
-use opentelemetry_sdk::{
-    metrics::{SdkMeterProvider, exporter::PushMetricExporter},
-    trace::SpanExporter as _,
-};
-use std::{
-    error::Error,
-    sync::{Arc, atomic::AtomicU32},
-    time::Duration,
-};
-use tokio::{net::TcpStream, time::timeout};
+use opentelemetry_sdk::{metrics::SdkMeterProvider, trace::SpanExporter as _};
+use std::error::Error;
 use warp::Filter;
 
-use crate::{
-    auto_drive_edge_server::{AutoDriveEdgeServer, http_endpoints::autoscript_run},
-    devices_config::DeviceConfig,
-};
+use crate::{auto_drive_edge_server::AutoDriveEdgeServer, devices_config::DeviceConfig};
 
 pub mod auto_drive_edge_server;
 pub mod devices_config;
+pub mod physical_hardware;
+pub mod vehicle_telemetry;
+
 pub mod the_beginner_car;
 pub mod the_beginner_cars;
+
+
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -58,8 +52,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     // param,
                     agent.unwrap_or_else(|| "unknown".to_string())
                 )
-
-                //
             });
 
         warp::serve(hi).run(([127, 0, 0, 1], 3030)).await;

@@ -11,7 +11,7 @@ use common_firmware::{
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
-use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
+use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
 use crate::{
     auto_script::AutoScript,
@@ -71,6 +71,48 @@ pub fn main() -> anyhow::Result<()> {
 
     let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone())?);
 
+    let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
+
+    std::thread::Builder::new()
+        .stack_size(2_000)
+        .spawn(move || {
+            let mut pending_logs = Vec::new();
+            let mut last_flush = std::time::Instant::now();
+
+            loop {
+                match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
+                    Ok(log) => pending_logs.push(log),
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        dbg!();
+                        panic!();
+                    }
+                }
+
+                if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
+                    let mut events = events.lock().unwrap();
+                    events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
+
+                    last_flush = std::time::Instant::now();
+                }
+            }
+        })
+        .unwrap();
+
+    std::thread::Builder::new()
+        .stack_size(2_000)
+        .spawn(move || {
+            loop {
+                // let Ok(log) = log_receiver.recv() else {
+                //     dbg!();
+                //     panic!();
+                // };
+
+                // events.push(Event::Log { message: log });
+            }
+        })
+        .unwrap();
+
     let thread_receive_incoming_messages =
         std::thread::Builder::new()
             .stack_size(12_000)
@@ -99,7 +141,7 @@ pub fn main() -> anyhow::Result<()> {
                             let mut the_beginner_car = the_beginner_car.lock().unwrap();
                             the_beginner_car.set_wheel_b_speed(speed, RequestOrigin::Manual);
                         }
-                        RequestToHardware::Logs => println!("Logs"),
+                        RequestToHardware::DrainEvents => println!("Logs"),
                         RequestToHardware::NotifyPositionFromCamera { x, y } => {
                             println!("pos from camera")
                         }

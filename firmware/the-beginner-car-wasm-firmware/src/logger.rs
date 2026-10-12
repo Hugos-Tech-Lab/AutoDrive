@@ -2,7 +2,7 @@ use std::sync::mpsc::{self, Receiver, SyncSender};
 
 use esp_idf_svc::log::EspIdfLogger;
 use log::{LevelFilter, Log, Metadata, Record};
-use serde::{Deserialize, Serialize};
+use the_beginner_car_spi_protocol::LogMessage;
 
 use std::cell::RefCell;
 
@@ -25,14 +25,6 @@ pub fn clear_trace_id() {
 
 fn current_trace_id() -> Option<String> {
     TRACE_ID.with(|trace_id| trace_id.borrow().clone())
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LogMessage {
-    pub level: u8,
-    pub target: String,
-    pub message: String,
-    pub trace_id: Option<String>
 }
 
 struct Logger {

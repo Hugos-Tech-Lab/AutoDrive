@@ -31,8 +31,8 @@ pub enum RequestToHardware {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     Log { message: LogMessage },
-
-    //
+    IRSensorA { value: u16 },
+    AutoScriptStopped
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,6 +41,4 @@ pub enum ResponseFromHardware {
     Status { light_on: bool, motor_speed: i32 },
     Events { logs: Vec<LogMessage> },
     AutoScriptStarted { id: i32 },
-    // not used yet
-    AutoScriptStopped { id: i32 },
 }

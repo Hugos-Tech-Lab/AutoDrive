@@ -17,8 +17,7 @@ use wamr_rust_sdk::{
 
 pub enum WasmThreadCommand {
     Run {
-        data: Vec<u8>,
-        running: Arc<Mutex<bool>>,
+        data: Vec<u8>
     },
 }
 
@@ -37,12 +36,14 @@ pub struct WasmThread {
     hardware: Arc<Mutex<TheBeginnerCarHardware>>,
     runtime: Rc<Runtime>,
     installed_module: Option<Rc<Module>>,
+    on_stopped_running: Box<dyn Fn() + Send + 'static>,
     ct: CancellationToken,
 }
 
 impl WasmThread {
     pub fn new(
         hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+        on_stopped_running: impl Fn() + Send + 'static,
         ct: CancellationToken,
     ) -> Result<Self> {
         let runtime_pool = vec![0u8; 32 * 1024].into_boxed_slice();
@@ -80,6 +81,7 @@ impl WasmThread {
             runtime: Rc::new(runtime),
             installed_module: None,
             ct,
+            on_stopped_running: Box::new(on_stopped_running),
         })
     }
 
@@ -91,8 +93,8 @@ impl WasmThread {
         loop {
             match receiver.recv() {
                 Ok((command, sender)) => match command {
-                    WasmThreadCommand::Run { data, running } => {
-                        let ret = self.run(data, sender, running, self.ct.clone());
+                    WasmThreadCommand::Run { data } => {
+                        let ret = self.run(data, sender, self.ct.clone());
                         ret.unwrap();
                     }
                 },
@@ -107,10 +109,9 @@ impl WasmThread {
         &mut self,
         data: Vec<u8>,
         sender: SyncSender<Result<()>>,
-        running: Arc<Mutex<bool>>,
         ct: CancellationToken,
     ) -> Result<()> {
-        let _stop_running_on_drop = StopRunningOnDrop { running };
+        let _guard = OnDrop(|| (self.on_stopped_running)());
 
         let module = Module::from_vec(self.runtime.clone(), data, "env")
             .map_err(|e| anyhow::anyhow!("failed to create module: {e:?}"))?;
@@ -154,12 +155,10 @@ impl WasmThread {
     }
 }
 
-struct StopRunningOnDrop {
-    pub running: Arc<Mutex<bool>>,
-}
+struct OnDrop<F: Fn()>(F);
 
-impl Drop for StopRunningOnDrop {
+impl<F: Fn()> Drop for OnDrop<F> {
     fn drop(&mut self) {
-        *self.running.lock().unwrap() = false;
+        (self.0)();
     }
 }

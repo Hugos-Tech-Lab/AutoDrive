@@ -9,7 +9,11 @@ use common_firmware::{
     spi_slave::SpiSlave,
 };
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop, hal::{adc::oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig}, delay::{FreeRtos, TICK_RATE_HZ}},
+    eventloop::EspSystemEventLoop,
+    hal::{
+        adc::oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
+        delay::{FreeRtos, TICK_RATE_HZ},
+    },
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
@@ -124,11 +128,12 @@ pub fn main() -> anyhow::Result<()> {
                 let mut latest_reading = 0;
 
                 loop {
+                    // TODO: this polling could be based on the speed of the wheels
                     latest_reading = pin.read().unwrap();
 
-                    if last_flush.elapsed() >= Duration::from_millis(1000) {
+                    if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
-                        dbg!("pushing");
+
                         events.push(Event::IRSensorA {
                             value: latest_reading,
                         });
@@ -136,7 +141,7 @@ pub fn main() -> anyhow::Result<()> {
                         last_flush = std::time::Instant::now();
                     }
                     FreeRtos::delay_ms(2);
-                } 
+                }
             }
         })
         .unwrap();
@@ -190,7 +195,15 @@ pub fn main() -> anyhow::Result<()> {
                     RequestToHardware::RunAutoScript { data } => {
                         auto_script.run(data).unwrap();
                     }
-                    RequestToHardware::StopAutoScript => println!("asd"),
+                    RequestToHardware::StopAutoScript => {
+                        if auto_script.is_running() {
+                            dbg!("was running and cancelled");
+                            auto_script.cancel()
+                        } else {
+                            let mut events = events.lock().unwrap();
+                            events.push(Event::AutoScriptStopped);
+                        }
+                    } // TODO: RENAME TO CANCEL AutoScript
                 }
 
                 // pin.set_color(3, 20, 3);

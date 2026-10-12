@@ -109,4 +109,9 @@ impl AutoScript {
     pub fn cancel(&self) {
         self.ct.cancel();
     }
+
+    pub fn is_running(&self) -> bool {
+        let running_guard = self.running.lock().unwrap();
+        *running_guard
+    }
 }

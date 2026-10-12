@@ -62,7 +62,7 @@ where
 
         let len = u32::from_be_bytes(len_bytes) as usize;
 
-        if len > 1024 {
+        if len > 4 * 1024 {
             bail!("Incoming message too large: {len} bytes");
         }
 
@@ -108,7 +108,13 @@ where
                     })
                     .context("sending RunAutoScript to hardware")?;
 
-                wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
+                let response = wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
+                match response {
+                    ResponseFromHardware::AutoScriptStarted { id } => {
+                        dbg!(id);
+                    },
+                    _ => {}
+                }
             }
 
             TheBeginnerCarIncomingMessages::StopAutoScript => {
@@ -121,7 +127,13 @@ where
                     })
                     .context("sending StopAutoScript to hardware")?;
 
-                wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
+                let response = wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
+                match response {
+                    ResponseFromHardware::Ok => {
+                        dbg!("ok");
+                    },
+                    _ => {}
+                }
             }
         }
     }
@@ -161,12 +173,12 @@ where
 async fn wait_for_hardware_response(
     receiver: mpsc::Receiver<Result<ResponseFromHardware, anyhow::Error>>,
     timeout: Duration,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<ResponseFromHardware> {
     let deadline = Instant::now() + timeout;
 
     loop {
         match receiver.try_recv() {
-            Ok(Ok(_response)) => return Ok(()),
+            Ok(Ok(response)) => return Ok(response),
             Ok(Err(err)) => return Err(err).context("hardware request failed"),
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 bail!("hardware response channel disconnected");

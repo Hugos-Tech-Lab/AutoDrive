@@ -197,11 +197,11 @@ pub fn main() -> anyhow::Result<()> {
                     }
                     RequestToHardware::StopAutoScript => {
                         if auto_script.is_running() {
+                            dbg!("was running and cancelled");
                             auto_script.cancel()
                         } else {
-                            return ResponseFromHardware::Events {
-                                events: vec![Event::AutoScriptStopped],
-                            };
+                            let mut events = events.lock().unwrap();
+                            events.push(Event::AutoScriptStopped);
                         }
                     } // TODO: RENAME TO CANCEL AutoScript
                 }

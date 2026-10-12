@@ -62,7 +62,7 @@ where
 
         let len = u32::from_be_bytes(len_bytes) as usize;
 
-        if len > 1024 {
+        if len > 4 * 1024 {
             bail!("Incoming message too large: {len} bytes");
         }
 

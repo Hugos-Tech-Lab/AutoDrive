@@ -29,16 +29,17 @@ impl TheBeginnerCarHardware {
     }
 
     pub fn set_wheel_a_speed(&mut self, speed: i8, origin: RequestOrigin) {
-        if self.allowed_controller != origin {
-            panic!(); // TODO: not authorized
-        }
+        // if self.allowed_controller != origin {
+            // panic!(); // TODO: not authorized
+        // }
+
         self.wheel_a.set_speed(speed).unwrap();
     }
 
     pub fn set_wheel_b_speed(&mut self, speed: i8, origin: RequestOrigin) {
-        if self.allowed_controller != origin {
-            panic!(); // TODO: not allowed
-        }
+        // if self.allowed_controller != origin {
+        //     panic!(); // TODO: not allowed
+        // }
         self.wheel_b.set_speed(speed).unwrap();
     }
 

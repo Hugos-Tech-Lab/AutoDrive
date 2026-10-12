@@ -41,5 +41,5 @@ pub enum ResponseFromHardware {
     Ok,
     Status { light_on: bool, motor_speed: i32 },
     Events { events: Vec<Event> },
-    AutoScriptStarted { id: i32 },
+    AutoScriptStarted { id: i32 }
 }

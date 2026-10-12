@@ -39,6 +39,7 @@ name = "auto-drive-edge"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "futures-util",
  "gilrs",
  "metrics",
  "opentelemetry",
@@ -48,6 +49,7 @@ dependencies = [
  "serde",
  "the-beginner-car-tcp-protocol",
  "tokio",
+ "tokio-stream",
  "toml",
  "warp",
 ]
@@ -1351,6 +1353,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

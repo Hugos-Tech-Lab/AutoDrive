@@ -1,10 +1,11 @@
+use crate::{auto_drive_edge_server::AutoDriveEdgeServer, devices_config::DeviceConfig};
 use bytes::Bytes;
+use futures_util::StreamExt;
 use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{metrics::SdkMeterProvider, trace::SpanExporter as _};
-use std::error::Error;
+use std::{convert::Infallible, error::Error, future};
+use tokio_stream::wrappers::BroadcastStream;
 use warp::Filter;
-
-use crate::{auto_drive_edge_server::AutoDriveEdgeServer, devices_config::DeviceConfig};
 
 pub mod auto_drive_edge_server;
 pub mod devices_config;
@@ -59,12 +60,41 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                 async move {
                     let data = body;
+                    let broadcast_rx = driver.run_auto_script(data.to_vec()).await;
+                    let rx_stream = BroadcastStream::new(broadcast_rx);
+                    let event_stream = rx_stream.filter_map(|result| {
+                        let output = match result {
+                            Ok(msg) => {
+                                match msg {
+                                        the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Log { log } => {
+                                            // Send this message
+                                            Some(Ok::<_, Infallible>(
+                                                warp::sse::Event::default().data(log.message)
+                                            ))
+                                        }
+                                        _ => {
+                                            // Skip this message
+                                            None
+                                        }
+                                    }
+                            }
+                            Err(e) => {
+                                // Forward stream errors
+                                Some(Ok::<_, Infallible>(
+                                    warp::sse::Event::default()
+                                        .event("error")
+                                        .data(e.to_string()),
+                                ))
+                            }
+                        };
 
-                    driver.run_auto_script(data.to_vec()).await;
+                        // Wrap the Option into a Future to satisfy filter_map's trait bounds
+                        future::ready(output)
+                    });
 
-                    Ok::<_, warp::Rejection>(format!(
-                        "Hello, whose agent is {}",
-                        agent.unwrap_or_else(|| "unknown".to_string())
+                    // 3. Reply with the SSE stream. (Optional: add keep_alive pings)
+                    Ok::<_, warp::Rejection>(warp::sse::reply(
+                        warp::sse::keep_alive().stream(event_stream),
                     ))
                 }
             });

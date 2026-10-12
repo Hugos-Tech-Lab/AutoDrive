@@ -59,9 +59,9 @@ impl TheBeginnerCarDriver {
         //
     }
 
-    pub async fn run_auto_script(&self, data: Vec<u8>) {
+    pub async fn run_auto_script(&self, data: Vec<u8>) ->  broadcast::Receiver<TheBeginnerCarOutgoingMessages> {
         dbg!("running"); // TODO: this should error if not connected
-        let mut rx = self.incoming_rx.subscribe();
+        let mut rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages> = self.incoming_rx.subscribe();
         self.outgoing_tx
             .send(TheBeginnerCarIncomingMessages::StopAutoScript)
             .await
@@ -90,6 +90,7 @@ impl TheBeginnerCarDriver {
         let start_script = TheBeginnerCarIncomingMessages::RunAutoScript { data };
 
         self.outgoing_tx.send(start_script).await.unwrap();
+        rx
     }
 
     pub fn queue_auto_script() {

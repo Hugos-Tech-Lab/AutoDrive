@@ -8,8 +8,8 @@ use crate::{auto_drive_edge_server::AutoDriveEdgeServer, devices_config::DeviceC
 pub mod auto_drive_edge_server;
 pub mod devices_config;
 pub mod physical_hardware;
-pub mod vehicle_telemetry;
-pub mod the_beginner_car;
+pub mod vehicle_hardware_telemetry;
+pub mod the_beginner_car_comms;
 pub mod the_beginner_car_driver;
 
 

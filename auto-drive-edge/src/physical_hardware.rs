@@ -1,7 +1,14 @@
-use crate::the_beginner_car::TheBeginnerCar;
+use std::sync::Arc;
+
+use tokio::sync::Mutex;
+
+use crate::{the_beginner_car_comms::TheBeginnerCarComms, the_beginner_car_driver::TheBeginnerCarDriver};
+
+
 
 pub struct PhysicalHardware {
-    the_beginner_cars: Vec<TheBeginnerCar>,
+    the_beginner_cars: Vec<TheBeginnerCarComms>,
+    the_beginner_car_drivers: Vec<Arc<Mutex<TheBeginnerCarDriver>>>,
 }
 
 impl PhysicalHardware {
@@ -13,7 +20,7 @@ impl PhysicalHardware {
     false
   }
 
-  pub fn the_beginner_cars(&self) -> &Vec<TheBeginnerCar> {
+  pub fn the_beginner_cars(&self) -> &Vec<TheBeginnerCarComms> {
     &self.the_beginner_cars
   }
 }

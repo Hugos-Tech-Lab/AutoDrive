@@ -19,7 +19,8 @@ pub enum TheBeginnerCarOutgoingMessages {
     MotorASpeedUpdated { speed: i8 },
     MotorBSpeedUpdated { speed: i8 },
     WasmInstalled,
-    WasmRunning,
+    AutoScriptRunning,
+    AutoScriptStopped,
     BatteryReading { voltage: f32 },
 }
 

@@ -10,18 +10,18 @@ use tokio::{
 
 use crate::{
     devices_config::{DeviceBuild, DeviceMetadata},
-    // the_beginner_cars::TheBeginnerCarVehicleTelemetry,
+    // the_beginner_cars::TheBeginnerCarVehicleHardwareTelemetry,
 };
 
 //
-// pub struct VehicleTelemetry {
+// pub struct VehicleHardwareTelemetry {
 //     // motor_a_set_speed: Gauge<f64>,
 //     // motor_b_set_speed: Gauge<f64>,
 //     motor_battery_voltage: Gauge<f64>,
 //     // wifi_battery_voltage: Gauge<f64>,
 // }
 
-// impl VehicleTelemetry {
+// impl VehicleHardwareTelemetry {
 //     pub fn new(meter: Meter, identifier: [KeyValue; 1]) -> Self {
 
 //         motor_battery_voltage.record(2.0, &identifier);
@@ -60,7 +60,7 @@ use crate::{
 //     //
 // }
 
-pub struct TheBeginnerCar {
+pub struct TheBeginnerCarComms {
     pub build: DeviceBuild,
     mdns_address: String,
     // connected: bool,
@@ -69,10 +69,10 @@ pub struct TheBeginnerCar {
     connection_handle: JoinHandle<()>
 }
 
-impl TheBeginnerCar {
+impl TheBeginnerCarComms {
     pub fn new(
         device_metadata: DeviceMetadata,
-        // vehicle_telemetry: TheBeginnerCarVehicleTelemetry,
+        // vehicle_telemetry: TheBeginnerCarVehicleHardwareTelemetry,
     ) -> Self {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
         let (incoming_tx, _) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    devices_config::{DeviceConfig, DeviceMetadata, DeviceType}, physical_hardware::PhysicalHardware, vehicle_telemetry::Telemetry, the_beginner_cars::TheBeginnerCars,
+    devices_config::{DeviceConfig, DeviceMetadata, DeviceType}, physical_hardware::PhysicalHardware, vehicle_hardware_telemetry::Telemetry, the_beginner_cars::TheBeginnerCars,
 };
 
 pub mod http_endpoints;

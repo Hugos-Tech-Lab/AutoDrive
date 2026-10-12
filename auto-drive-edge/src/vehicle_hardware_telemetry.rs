@@ -7,12 +7,12 @@ use tokio::{sync::broadcast, task::JoinSet};
 use crate::{devices_config::DeviceBuild, physical_hardware::PhysicalHardware};
 
 #[derive(Debug, Clone)]
-struct VehicleTelemetryGauges {
+struct VehicleHardwareTelemetryGauges {
     motor_battery_voltage: Gauge<f64>,
     mcu_battery_voltage: Gauge<f64>,
 }
 
-impl VehicleTelemetryGauges {
+impl VehicleHardwareTelemetryGauges {
     pub fn new() -> Self {
         let meter = global::meter("auto-drive-edge");
 
@@ -34,13 +34,13 @@ impl VehicleTelemetryGauges {
     }
 }
 
-pub struct VehicleTelemetry {
+pub struct VehicleHardwareTelemetry {
     the_beginner_car_watcher_handles: JoinSet<()>,
 }
 
-impl VehicleTelemetry {
+impl VehicleHardwareTelemetry {
     pub fn new(hardware: Arc<PhysicalHardware>) -> Self {
-        let gauges = VehicleTelemetryGauges::new();
+        let gauges = VehicleHardwareTelemetryGauges::new();
 
         let mut the_beginner_car_watcher_handles = tokio::task::JoinSet::new();
         for the_beginner_car in hardware.the_beginner_cars() {
@@ -63,7 +63,7 @@ impl VehicleTelemetry {
     async fn the_beginner_car_long_lived_watcher(
         build: DeviceBuild, // 
         mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
-        gauges: VehicleTelemetryGauges,
+        gauges: VehicleHardwareTelemetryGauges,
     ) {
         let attributes = &[
             KeyValue::new("model", "TheBeginnerCar"),

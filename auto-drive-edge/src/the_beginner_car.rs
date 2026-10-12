@@ -10,7 +10,7 @@ use tokio::{
 
 use crate::{
     devices_config::{DeviceBuild, DeviceMetadata},
-    the_beginner_cars::TheBeginnerCarVehicleTelemetry,
+    // the_beginner_cars::TheBeginnerCarVehicleTelemetry,
 };
 
 //
@@ -56,9 +56,9 @@ use crate::{
 //     }
 // }
 
-pub struct TheBeginnerCarHardwareState {
-    //
-}
+// pub struct TheBeginnerCarHardwareState {
+//     //
+// }
 
 pub struct TheBeginnerCar {
     pub build: DeviceBuild,

@@ -9,11 +9,8 @@ pub mod auto_drive_edge_server;
 pub mod devices_config;
 pub mod physical_hardware;
 pub mod vehicle_telemetry;
-
 pub mod the_beginner_car;
-pub mod the_beginner_cars;
-
-
+pub mod the_beginner_car_driver;
 
 
 #[tokio::main]

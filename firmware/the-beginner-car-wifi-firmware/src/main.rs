@@ -1,8 +1,4 @@
-use std::{
-    sync::{Arc, Mutex, mpsc::SyncSender},
-    thread,
-    time::Duration,
-};
+use std::{sync::mpsc::SyncSender, thread, time::Duration};
 pub mod battery_monitor;
 
 use common_firmware::spi_master::SpiMaster;
@@ -17,6 +13,7 @@ use esp_idf_svc::{
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
+use the_beginner_car_tcp_protocol::{LogMessage, TheBeginnerCarOutgoingMessages};
 
 use crate::{
     battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
@@ -79,9 +76,6 @@ pub fn print_memory_stats() {
             (internal_free + psram_free) / 1024
         );
 
-        println!("  DMA is a capability of internal RAM,");
-        println!("  not additional memory.");
-        println!("=============================");
         println!();
     }
 }
@@ -141,14 +135,15 @@ pub fn main() -> anyhow::Result<()> {
     let ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
     let master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
 
-    let battery_reading = Arc::new(Mutex::new(0.0f32));
+    let (sender_tx, receiver_tx) = flume::bounded(1000);
+
+    // sender_tx.clo
 
     let tcp_handle = std::thread::Builder::new()
         .name("tcp_handle".to_string())
         .stack_size(40 * 1000)
         .spawn({
             let hardware_sender = hardware_sender.clone();
-            let battery_reading = battery_reading.clone();
             || {
                 let mut local_executor = LocalPool::new();
                 let spawner = local_executor.spawner();
@@ -156,9 +151,7 @@ pub fn main() -> anyhow::Result<()> {
                     .spawner()
                     .spawn_local(
                         async move {
-                            accept(spawner, hardware_sender, battery_reading)
-                                .await
-                                .unwrap();
+                            accept(spawner, hardware_sender, receiver_tx).await.unwrap();
 
                             Result::<_, anyhow::Error>::Ok(())
                         }
@@ -171,11 +164,85 @@ pub fn main() -> anyhow::Result<()> {
         })
         .unwrap();
 
+    let drain_events_handle = std::thread::Builder::new()
+        .name("drain_events_handle".to_string())
+        .stack_size(4 * 1000)
+        .spawn({
+            let hardware_sender = hardware_sender.clone();
+            let sender_tx = sender_tx.clone();
+            move || {
+                loop {
+                    let (sender, receiver) = std::sync::mpsc::sync_channel::<
+                        Result<ResponseFromHardware, anyhow::Error>,
+                    >(1);
+
+                    hardware_sender
+                        .send(HardwareMessage {
+                            request: RequestToHardware::DrainEvents,
+                            response_tx: sender,
+                        })
+                        .unwrap();
+
+                    let receive = match receiver.recv_timeout(Duration::from_secs(2)) {
+                        Ok(Ok(response)) => response,
+                        Ok(Err(e)) => {
+                            log::error!("{e}");
+                            thread::sleep(Duration::from_secs(1));
+                            continue;
+                        }
+                        Err(e) => {
+                            log::error!("{e}");
+                            continue;
+                        }
+                    };
+
+                    match receive {
+                        ResponseFromHardware::Events { events } => {
+                            for event in events {
+                                match event {
+                                    the_beginner_car_spi_protocol::Event::Log { message } => {
+                                        sender_tx
+                                            .send(TheBeginnerCarOutgoingMessages::Log {
+                                                log: LogMessage {
+                                                    level: message.level,
+                                                    target: message.target,
+                                                    message: message.message,
+                                                    trace_id: message.trace_id,
+                                                },
+                                            })
+                                            .unwrap()
+                                    } // TODO: this should send vec
+                                    the_beginner_car_spi_protocol::Event::IRSensorA { value } => {
+                                        // dbg!(value);
+                                        sender_tx
+                                            .send(TheBeginnerCarOutgoingMessages::IRSensorAReading { value })
+                                            .unwrap()
+                                    }
+                                    the_beginner_car_spi_protocol::Event::AutoScriptStopped => {
+                                        sender_tx
+                                            .send(TheBeginnerCarOutgoingMessages::AutoScriptStopped)
+                                            .unwrap()
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            print!("unexpected response")
+                        }
+                    }
+
+                    thread::sleep(Duration::from_secs(1));
+                }
+            }
+        })
+        .unwrap();
+
     let battery_poll_handle = std::thread::Builder::new()
         .name("battery_poll_handle".to_string())
         .stack_size(4 * 1000)
         .spawn({
-            let battery_reading = battery_reading.clone();
+            let hardware_sender = hardware_sender.clone();
+            let sender_tx = sender_tx.clone();
             move || {
                 let adc = AdcDriver::new(peripherals.adc1).unwrap();
                 let mut motor_battery = Battery::new(&adc, peripherals.pins.gpio10).unwrap();
@@ -186,7 +253,12 @@ pub fn main() -> anyhow::Result<()> {
                     let mcu_battery_reading = mcu_battery.read().unwrap();
 
                     {
-                        *battery_reading.lock().unwrap() = motor_battery_reading.voltage;
+                        sender_tx
+                            .send(TheBeginnerCarOutgoingMessages::BatteryReading {
+                                motor_battery_voltage: motor_battery_reading.voltage,
+                                mcu_battery_voltage: mcu_battery_reading.voltage,
+                            })
+                            .unwrap();
                     }
 
                     // dbg!(motor_battery_reading);
@@ -266,5 +338,6 @@ pub fn main() -> anyhow::Result<()> {
     spi_handle.join().unwrap();
     tcp_handle.join().unwrap();
     battery_poll_handle.join().unwrap();
+    drain_events_handle.join().unwrap();
     Ok(())
 }

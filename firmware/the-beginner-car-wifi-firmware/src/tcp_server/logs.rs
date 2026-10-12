@@ -1,37 +1,37 @@
 use esp_idf_svc::io::Write;
 use esp_idf_svc::http::server::{EspHttpConnection, Request};
-use crate::tcp_server::CORS_HEADERS;
+// use crate::tcp_server::CORS_HEADERS;
 
 use crate::{
     logger::LOG_BUFFER,
 };
 
-pub fn logs(
-    request: Request<&mut EspHttpConnection<'_>>
-) -> Result<(), anyhow::Error> {
-    let logs = if let Some(buffer) = LOG_BUFFER.get() {
-        let buffer = buffer
-            .lock()
-            // Convert the Mutex lock error into a standard anyhow error
-            .map_err(|_| anyhow::anyhow!("Log buffer mutex poisoned"))?;
+// pub fn logs(
+//     request: Request<&mut EspHttpConnection<'_>>
+// ) -> Result<(), anyhow::Error> {
+//     let logs = if let Some(buffer) = LOG_BUFFER.get() {
+//         let buffer = buffer
+//             .lock()
+//             // Convert the Mutex lock error into a standard anyhow error
+//             .map_err(|_| anyhow::anyhow!("Log buffer mutex poisoned"))?;
 
-        buffer.iter().cloned().collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
+//         buffer.iter().cloned().collect::<Vec<_>>()
+//     } else {
+//         Vec::new()
+//     };
 
-    let body = serde_json::to_vec(&logs)?;
+//     let body = serde_json::to_vec(&logs)?;
 
-    let mut res_headers = CORS_HEADERS.to_vec();
-    res_headers.push(("Content-Type", "application/json"));
+//     // let mut res_headers = CORS_HEADERS.to_vec();
+//     // res_headers.push(("Content-Type", "application/json"));
 
 
-    let mut response = request.into_response(200, Some("OK"), &res_headers)?;
+//     let mut response = request.into_response(200, Some("OK"), &res_headers)?;
 
-    response.write_all(&body)?;
+//     response.write_all(&body)?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 // const CHUNK_SIZE: usize = 1024;
 

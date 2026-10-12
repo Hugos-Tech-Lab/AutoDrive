@@ -37,18 +37,34 @@ pub struct AutoScript {
 }
 
 impl AutoScript {
-    pub fn new(the_beginner_car: Arc<Mutex<TheBeginnerCarHardware>>) -> Result<Self> {
+    pub fn new(
+        the_beginner_car: Arc<Mutex<TheBeginnerCarHardware>>,
+        on_stopped_running: impl Fn() + Send + 'static,
+    ) -> Result<Self> {
         let (sender, receiver) = mpsc::sync_channel(1);
         let ct = CancellationToken::new();
-
+        let running = Arc::new(Mutex::new(false));
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
             .stack_size(8 * 1024)
             .spawn({
                 let ct = ct.clone();
+                let running = running.clone();
+
                 move || {
-                    let mut auto_script_wasm =
-                        WasmThread::new(the_beginner_car, ct).expect("Failed to init WasmThread");
+                    let mut auto_script_wasm = WasmThread::new(
+                        the_beginner_car,
+                        move || {
+                            {
+                                let mut running_guard = running.lock().unwrap();
+                                *running_guard = false;
+                            }
+
+                            on_stopped_running();
+                        },
+                        ct,
+                    )
+                    .expect("Failed to init WasmThread");
 
                     loop {
                         match auto_script_wasm.listen(&receiver) {
@@ -66,7 +82,7 @@ impl AutoScript {
         Ok(Self {
             sender,
             _wasm_thread: wasm_thread,
-            running: Arc::new(Mutex::new(false)),
+            running,
             ct,
         })
     }
@@ -81,7 +97,7 @@ impl AutoScript {
 
         let (sender, receiver) = mpsc::sync_channel(1);
         self.sender
-            .send((WasmThreadCommand::Run { data, running: self.running.clone() }, sender))
+            .send((WasmThreadCommand::Run { data }, sender))
             .unwrap(); // TODO: wait for response
         receiver.recv_timeout(Duration::from_secs(5))??;
 

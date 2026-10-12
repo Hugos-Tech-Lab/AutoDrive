@@ -8,10 +8,12 @@ use common_firmware::{
     get_mac_address::{format_mac_address, get_mac_address},
     spi_slave::SpiSlave,
 };
-use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::{
+    eventloop::EspSystemEventLoop, hal::{adc::oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig}, delay::{FreeRtos, TICK_RATE_HZ}},
+};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
-use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
+use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
 use crate::{
     auto_script::AutoScript,
@@ -62,63 +64,139 @@ pub fn main() -> anyhow::Result<()> {
     // pin.set_color(20, 2, 2);
     if reason == 9 {
         // pin.set_color(9, 0, 200);
-        thread::sleep(Duration::from_secs(1));
+        FreeRtos::delay_ms(1000);
     }
-
-    // let mut pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config)?;
 
     let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(motor_a, motor_b)));
 
-    let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone())?);
+    let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
-    let thread_receive_incoming_messages =
-        std::thread::Builder::new()
-            .stack_size(12_000)
-            .spawn(move || {
-                let mut spi = SpiSlave::new(
-                    peripherals.spi2,
-                    peripherals.pins.gpio4,
-                    peripherals.pins.gpio5,
-                    peripherals.pins.gpio6,
-                    peripherals.pins.gpio7,
-                    peripherals.pins.gpio0,
-                    peripherals.pins.gpio1,
-                )
-                .unwrap();
+    let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
+        let events = events.clone();
+        move || {
+            let mut events = events.lock().unwrap();
+            events.push(Event::AutoScriptStopped);
+        }
+    })?);
 
-                // pin.set_color(3, 20, 3);
-                spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                    match request {
-                        RequestToHardware::LightOn => println!("LightOn"),
-                        RequestToHardware::LightOff => println!("LightOff"),
-                        RequestToHardware::SetMotorASpeed(speed) => {
-                            let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                            the_beginner_car.set_wheel_a_speed(speed, RequestOrigin::Manual);
-                        }
-                        RequestToHardware::SetMotorBSpeed(speed) => {
-                            let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                            the_beginner_car.set_wheel_b_speed(speed, RequestOrigin::Manual);
-                        }
-                        RequestToHardware::Logs => println!("Logs"),
-                        RequestToHardware::NotifyPositionFromCamera { x, y } => {
-                            println!("pos from camera")
-                        }
-                        RequestToHardware::NotifyBatteryReadings {
-                            motor_battery,
-                            mcu_battery,
-                        } => {
-                            let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                            the_beginner_car.notify_battery_readings(motor_battery, mcu_battery);
-                        }
-                        RequestToHardware::RunAutoScript { data } => {
-                            auto_script.run(data).unwrap();
+    std::thread::Builder::new()
+        .stack_size(2_000)
+        .name("flush_logs".to_string())
+        .spawn({
+            let events = events.clone();
+            move || {
+                let mut pending_logs = Vec::new();
+                let mut last_flush = std::time::Instant::now();
+
+                loop {
+                    match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
+                        Ok(log) => pending_logs.push(log),
+                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                            dbg!();
+                            panic!();
                         }
                     }
 
-                    // pin.set_color(3, 20, 3);
-                    ResponseFromHardware::Ok
-                });
-            })?;
+                    if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
+                        let mut events = events.lock().unwrap();
+                        events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
+
+                        last_flush = std::time::Instant::now();
+                    }
+                }
+            }
+        })
+        .unwrap();
+
+    std::thread::Builder::new()
+        .stack_size(2_000)
+        .name("sensor_readings".to_string())
+        .spawn({
+            let events = events.clone();
+
+            move || {
+                let adc = AdcDriver::new(peripherals.adc1).unwrap();
+                let config = AdcChannelConfig::new();
+                let mut pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
+
+                let mut last_flush = std::time::Instant::now();
+                let mut latest_reading = 0;
+
+                loop {
+                    latest_reading = pin.read().unwrap();
+
+                    if last_flush.elapsed() >= Duration::from_millis(1000) {
+                        let mut events = events.lock().unwrap();
+                        dbg!("pushing");
+                        events.push(Event::IRSensorA {
+                            value: latest_reading,
+                        });
+
+                        last_flush = std::time::Instant::now();
+                    }
+                    FreeRtos::delay_ms(2);
+                } 
+            }
+        })
+        .unwrap();
+
+    let thread_receive_incoming_messages = std::thread::Builder::new()
+        .stack_size(12_000)
+        .name("read_incoming_messages".to_string())
+        .spawn(move || {
+            let mut spi = SpiSlave::new(
+                peripherals.spi2,
+                peripherals.pins.gpio4,
+                peripherals.pins.gpio5,
+                peripherals.pins.gpio6,
+                peripherals.pins.gpio7,
+                peripherals.pins.gpio0,
+                peripherals.pins.gpio1,
+            )
+            .unwrap();
+
+            // pin.set_color(3, 20, 3);
+            spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
+                match request {
+                    RequestToHardware::LightOn => println!("LightOn"),
+                    RequestToHardware::LightOff => println!("LightOff"),
+                    RequestToHardware::SetMotorASpeed(speed) => {
+                        let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                        the_beginner_car.set_wheel_a_speed(speed, RequestOrigin::Manual);
+                    }
+                    RequestToHardware::SetMotorBSpeed(speed) => {
+                        let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                        the_beginner_car.set_wheel_b_speed(speed, RequestOrigin::Manual);
+                    }
+                    RequestToHardware::DrainEvents => {
+                        let events = {
+                            let mut events = events.lock().unwrap();
+                            std::mem::take(&mut *events)
+                        };
+
+                        return ResponseFromHardware::Events { events };
+                    }
+                    RequestToHardware::NotifyPositionFromCamera { x, y } => {
+                        println!("pos from camera")
+                    }
+                    RequestToHardware::NotifyBatteryReadings {
+                        motor_battery,
+                        mcu_battery,
+                    } => {
+                        let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                        the_beginner_car.notify_battery_readings(motor_battery, mcu_battery);
+                    }
+                    RequestToHardware::RunAutoScript { data } => {
+                        auto_script.run(data).unwrap();
+                    }
+                    RequestToHardware::StopAutoScript => println!("asd"),
+                }
+
+                // pin.set_color(3, 20, 3);
+                ResponseFromHardware::Ok
+            });
+        })?;
 
     thread_receive_incoming_messages.join().unwrap();
 

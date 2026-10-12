@@ -1,5 +1,6 @@
 use std::{thread, time::Duration};
 
+use esp_idf_svc::hal::delay::FreeRtos;
 use log::info;
 use wamr_rust_sdk::sys::{
     WASMExecEnv, wasm_runtime_addr_app_to_native, wasm_runtime_get_custom_data,
@@ -23,7 +24,7 @@ pub extern "C" fn delay(exec_env: *mut WASMExecEnv, milliseconds: u8) {
         terminate(exec_env);
     }
 
-    thread::sleep(Duration::from_millis(milliseconds as u64));
+    FreeRtos::delay_ms(milliseconds as u32);
 }
 
 #[unsafe(no_mangle)]

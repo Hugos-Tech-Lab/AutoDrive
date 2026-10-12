@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogMessage {
     pub level: u8,
+    pub target: String,
     pub message: String,
+    pub trace_id: Option<String>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,7 +14,7 @@ pub enum RequestToHardware {
     LightOff,
     SetMotorASpeed(i8),
     SetMotorBSpeed(i8),
-    Logs,
+    DrainEvents,
     NotifyPositionFromCamera {
         x: i32,
         y: i32,
@@ -24,14 +26,20 @@ pub enum RequestToHardware {
     RunAutoScript {
         data: Vec<u8>,
     },
+    StopAutoScript
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Event {
+    Log { message: LogMessage },
+    IRSensorA { value: u16 },
+    AutoScriptStopped
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ResponseFromHardware {
     Ok,
     Status { light_on: bool, motor_speed: i32 },
-    Logs { logs: Vec<LogMessage> },
+    Events { events: Vec<Event> },
     AutoScriptStarted { id: i32 },
-    // not used yet
-    AutoScriptStopped { id: i32 }
 }

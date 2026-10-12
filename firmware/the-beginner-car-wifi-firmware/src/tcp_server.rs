@@ -1,6 +1,6 @@
-use std::sync::mpsc::SyncSender;
+use std::sync::mpsc::{self, SyncSender};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub mod auto_script;
 pub mod error;
@@ -11,18 +11,19 @@ pub mod set_motor_b_speed;
 pub mod update;
 pub mod verify_and_set_valid;
 
-use async_io::Async;
+use anyhow::{Context, bail};
+use async_io::{Async, Timer};
 use esp_idf_svc::http::Method;
 use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
-use esp_idf_svc::io::Write;
-use futures::{AsyncReadExt, AsyncWriteExt};
+use flume::Receiver;
+use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, try_join};
 use log::error;
 use log::info;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use std::{io, thread};
+use std::io;
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{
-    MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 
 use futures::executor::LocalSpawner;
@@ -31,89 +32,160 @@ use futures::task::LocalSpawnExt;
 use crate::HardwareMessage;
 
 async fn handle(
-    mut stream: Async<TcpStream>,
+    stream: Async<TcpStream>,
     hardware_sender: SyncSender<HardwareMessage>,
-    battery_reading: Arc<Mutex<f32>>,
+    receiver_tx: Receiver<TheBeginnerCarOutgoingMessages>,
 ) {
+    let (reader, writer) = stream.split();
+
+    if let Err(err) = try_join!(
+        handle_incoming(reader, hardware_sender),
+        handle_outgoing(writer, receiver_tx),
+    ) {
+        info!("TCP connection ended: {err:#}");
+    }
+}
+
+async fn handle_incoming<R>(
+    mut reader: R,
+    hardware_sender: SyncSender<HardwareMessage>,
+) -> anyhow::Result<()>
+where
+    R: AsyncRead + Unpin,
+{
     loop {
         let mut len_bytes = [0u8; 4];
-        match stream.read_exact(&mut len_bytes).await {
-            Ok(_) => {}
-            Err(err) => {
-                info!("Stream closed or failed while reading length: {err}");
-                break;
-            }
-        }
+        reader
+            .read_exact(&mut len_bytes)
+            .await
+            .context("reading incoming frame length")?;
+
         let len = u32::from_be_bytes(len_bytes) as usize;
+
         if len > 1024 {
-            error!("message too large: {len} bytes");
-            thread::sleep(Duration::from_secs(1));
-            continue;
+            bail!("Incoming message too large: {len} bytes");
         }
 
         let mut bytes = vec![0; len];
-        match stream.read_exact(&mut bytes).await {
-            Ok(_) => {
-                let message: TheBeginnerCarIncomingMessages = postcard::from_bytes(&bytes).unwrap();
+        reader
+            .read_exact(&mut bytes)
+            .await
+            .context("reading incoming frame payload")?;
 
-                match message {
-                    TheBeginnerCarIncomingMessages::SetMotorASpeed { speed } => {
-                        let _ = set_motor_a_speed::set_motor_a_speed_on_hardware(
-                            hardware_sender.clone(),
-                            speed,
-                        )
-                        .unwrap();
-                        println!("SetMotorASpeed: {:?}", speed)
-                    }
-                    TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
-                        let _ = set_motor_b_speed::set_motor_b_speed_on_hardware(
-                            hardware_sender.clone(),
-                            speed,
-                        )
-                        .unwrap();
-                        println!("SetMotorBSpeed: {:?}", speed)
-                    }
-                    TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {
-                        println!("InformPositionFromCamera: {:?} {:?}", x, y)
-                    }
-                    TheBeginnerCarIncomingMessages::RunAutoScript { data } => {
-                        let (sender, receiver) = std::sync::mpsc::sync_channel::<
-                            Result<ResponseFromHardware, anyhow::Error>,
-                        >(1);
-                        let hw = HardwareMessage {
-                            request: RequestToHardware::RunAutoScript { data },
-                            response_tx: sender,
-                        };
-                        hardware_sender.send(hw).unwrap();
+        let message: TheBeginnerCarIncomingMessages =
+            postcard::from_bytes(&bytes).context("decoding incoming message")?;
 
-                        let res = receiver.recv_timeout(Duration::from_secs(5));
-                        res.unwrap().unwrap();
-                    }
-                    TheBeginnerCarIncomingMessages::GetBatteryReading => {
-                        let battery_reading = { battery_reading.lock().unwrap().clone() };
-
-                        let message = TheBeginnerCarOutgoingMessages::BatteryReading {
-                            voltage: battery_reading,
-                        };
-
-                        let message = &message.to_bytes().unwrap();
-                        stream.write_all(message).await.unwrap();
-                    }
-                }
+        match message {
+            TheBeginnerCarIncomingMessages::SetMotorASpeed { speed } => {
+                set_motor_a_speed::set_motor_a_speed_on_hardware(
+                    hardware_sender.clone(),
+                    speed,
+                )
+                .map_err(|err| anyhow::anyhow!("{err:?}"))?;
+                println!("SetMotorASpeed: {:?}", speed);
             }
-            Err(err) => {
-                error!("Received error: {}", err);
-                thread::sleep(Duration::from_secs(1));
-                continue;
+
+            TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
+                set_motor_b_speed::set_motor_b_speed_on_hardware(
+                    hardware_sender.clone(),
+                    speed,
+                )
+                .map_err(|err| anyhow::anyhow!("{err:?}"))?;
+                println!("SetMotorBSpeed: {:?}", speed);
+            }
+
+            TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {
+                println!("InformPositionFromCamera: {:?} {:?}", x, y);
+            }
+
+            TheBeginnerCarIncomingMessages::RunAutoScript { data } => {
+                let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+
+                hardware_sender
+                    .send(HardwareMessage {
+                        request: RequestToHardware::RunAutoScript { data },
+                        response_tx: sender,
+                    })
+                    .context("sending RunAutoScript to hardware")?;
+
+                wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
+            }
+
+            TheBeginnerCarIncomingMessages::StopAutoScript => {
+                let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+
+                hardware_sender
+                    .send(HardwareMessage {
+                        request: RequestToHardware::StopAutoScript,
+                        response_tx: sender,
+                    })
+                    .context("sending StopAutoScript to hardware")?;
+
+                wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
             }
         }
+    }
+}
+
+async fn handle_outgoing<W>(
+    mut writer: W,
+    receiver: Receiver<TheBeginnerCarOutgoingMessages>,
+) -> anyhow::Result<()>
+where
+    W: AsyncWrite + Unpin,
+{
+    loop {
+        let message = receiver
+            .recv_async()
+            .await
+            .map_err(|_| anyhow::anyhow!("outgoing message channel closed"))?;
+
+        let bytes = postcard::to_allocvec(&message)
+            .context("encoding outgoing message")?;
+
+        let len = u32::try_from(bytes.len())
+            .context("outgoing message exceeds u32 frame length")?;
+
+        writer
+            .write_all(&len.to_be_bytes())
+            .await
+            .context("writing outgoing frame length")?;
+
+        writer
+            .write_all(&bytes)
+            .await
+            .context("writing outgoing frame payload")?;
+    }
+}
+
+async fn wait_for_hardware_response(
+    receiver: mpsc::Receiver<Result<ResponseFromHardware, anyhow::Error>>,
+    timeout: Duration,
+) -> anyhow::Result<()> {
+    let deadline = Instant::now() + timeout;
+
+    loop {
+        match receiver.try_recv() {
+            Ok(Ok(_response)) => return Ok(()),
+            Ok(Err(err)) => return Err(err).context("hardware request failed"),
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                bail!("hardware response channel disconnected");
+            }
+            Err(std::sync::mpsc::TryRecvError::Empty) => {}
+        }
+
+        if Instant::now() >= deadline {
+            bail!("timed out waiting for hardware response");
+        }
+
+        Timer::after(Duration::from_millis(10)).await;
     }
 }
 
 pub async fn accept(
     spawner: LocalSpawner,
     hardware_sender: SyncSender<HardwareMessage>,
-    battery_reading: Arc<Mutex<f32>>,
+    receiver_tx: Receiver<TheBeginnerCarOutgoingMessages>
 ) -> Result<(), io::Error> {
     info!("Binding to port 8080");
 
@@ -122,13 +194,13 @@ pub async fn accept(
 
     loop {
         let stream = listener.accept().await;
-        let battery_reading = battery_reading.clone();
+        let receiver_tx = receiver_tx.clone();
         match stream {
             Ok((stream, addr)) => {
                 info!("Accepted client {addr}");
 
                 spawner
-                    .spawn_local(handle(stream, hardware_sender.clone(), battery_reading))
+                    .spawn_local(handle(stream, hardware_sender.clone(), receiver_tx))
                     .unwrap();
             }
             Err(e) => {
@@ -138,159 +210,159 @@ pub async fn accept(
     }
 }
 
-static CORS_HEADERS: [(&str, &str); 3] = [
-    ("Access-Control-Allow-Origin", "*"),
-    ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
-    ("Access-Control-Allow-Headers", "Content-Type"),
-];
+// static CORS_HEADERS: [(&str, &str); 3] = [
+//     ("Access-Control-Allow-Origin", "*"),
+//     ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
+//     ("Access-Control-Allow-Headers", "Content-Type"),
+// ];
 
-/// Starts the HTTP server and routes the endpoints.
-/// Note: You MUST store the returned `EspHttpServer` in your `main()` function
-/// so it doesn't drop out of scope. If it drops, the server stops.
-pub fn run(
-    hardware_sender: SyncSender<HardwareMessage>,
-) -> Result<EspHttpServer<'static>, anyhow::Error> {
-    // We boost the stack size to 10k to safely handle JSON parsing and larger strings
-    let config = Configuration {
-        stack_size: 10240,
-        max_sessions: 4,
-        ..Default::default()
-    };
+// /// Starts the HTTP server and routes the endpoints.
+// /// Note: You MUST store the returned `EspHttpServer` in your `main()` function
+// /// so it doesn't drop out of scope. If it drops, the server stops.
+// pub fn run(
+//     hardware_sender: SyncSender<HardwareMessage>,
+// ) -> Result<EspHttpServer<'static>, anyhow::Error> {
+//     // We boost the stack size to 10k to safely handle JSON parsing and larger strings
+//     let config = Configuration {
+//         stack_size: 10240,
+//         max_sessions: 4,
+//         ..Default::default()
+//     };
 
-    let mut server = EspHttpServer::new(&config)?;
-    log::info!("Running native ESP HTTP server on port 80");
+//     let mut server = EspHttpServer::new(&config)?;
+//     log::info!("Running native ESP HTTP server on port 80");
 
-    // --- OPTIONS / CORS Preflight Routes ---
-    // In esp-idf-svc, we can reuse this handler for all OPTIONS routes
-    let options_handler = |req: Request<&mut esp_idf_svc::http::server::EspHttpConnection>| -> Result<(), anyhow::Error> {
-        req.into_response(204, None, &CORS_HEADERS)?;
-        Ok(())
-    };
+//     // --- OPTIONS / CORS Preflight Routes ---
+//     // In esp-idf-svc, we can reuse this handler for all OPTIONS routes
+//     let options_handler = |req: Request<&mut esp_idf_svc::http::server::EspHttpConnection>| -> Result<(), anyhow::Error> {
+//         req.into_response(204, None, &CORS_HEADERS)?;
+//         Ok(())
+//     };
 
-    server.fn_handler("/autoscript/upload", Method::Options, options_handler)?;
-    server.fn_handler("/autoscript/run", Method::Options, options_handler)?;
-    server.fn_handler(
-        "/hardware/set_motor_a_speed",
-        Method::Options,
-        options_handler,
-    )?;
-    server.fn_handler(
-        "/hardware/set_motor_b_speed",
-        Method::Options,
-        options_handler,
-    )?;
-    server.fn_handler("/logs", Method::Options, options_handler)?;
-    server.fn_handler("/hardware/set_motor_a_speed", Method::Post, {
-        let hardware_sender = hardware_sender.clone();
-        move |mut req| -> Result<(), anyhow::Error> {
-            let speed = set_motor_a_speed::get_speed(&mut req);
-            let speed = match speed {
-                Ok(speed) => speed,
-                Err(err) => return handle_http_error(req, err),
-            };
+//     server.fn_handler("/autoscript/upload", Method::Options, options_handler)?;
+//     server.fn_handler("/autoscript/run", Method::Options, options_handler)?;
+//     server.fn_handler(
+//         "/hardware/set_motor_a_speed",
+//         Method::Options,
+//         options_handler,
+//     )?;
+//     server.fn_handler(
+//         "/hardware/set_motor_b_speed",
+//         Method::Options,
+//         options_handler,
+//     )?;
+//     server.fn_handler("/logs", Method::Options, options_handler)?;
+//     server.fn_handler("/hardware/set_motor_a_speed", Method::Post, {
+//         let hardware_sender = hardware_sender.clone();
+//         move |mut req| -> Result<(), anyhow::Error> {
+//             let speed = set_motor_a_speed::get_speed(&mut req);
+//             let speed = match speed {
+//                 Ok(speed) => speed,
+//                 Err(err) => return handle_http_error(req, err),
+//             };
 
-            let speed =
-                set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed);
-            let res = match speed {
-                Ok(speed) => speed,
-                Err(err) => return handle_http_error(req, err),
-            };
+//             let speed =
+//                 set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed);
+//             let res = match speed {
+//                 Ok(speed) => speed,
+//                 Err(err) => return handle_http_error(req, err),
+//             };
 
-            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
-            response.write_all(&res)?;
+//             let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
+//             response.write_all(&res)?;
 
-            Ok(())
-        }
-    })?;
+//             Ok(())
+//         }
+//     })?;
 
-    server.fn_handler("/hardware/set_motor_b_speed", Method::Post, {
-        let hardware_sender = hardware_sender.clone();
-        move |mut req| -> Result<(), anyhow::Error> {
-            let speed = set_motor_b_speed::get_speed(&mut req);
-            let speed = match speed {
-                Ok(speed) => speed,
-                Err(err) => return handle_http_error(req, err),
-            };
+//     server.fn_handler("/hardware/set_motor_b_speed", Method::Post, {
+//         let hardware_sender = hardware_sender.clone();
+//         move |mut req| -> Result<(), anyhow::Error> {
+//             let speed = set_motor_b_speed::get_speed(&mut req);
+//             let speed = match speed {
+//                 Ok(speed) => speed,
+//                 Err(err) => return handle_http_error(req, err),
+//             };
 
-            let speed =
-                set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed);
-            let res = match speed {
-                Ok(speed) => speed,
-                Err(err) => return handle_http_error(req, err),
-            };
+//             let speed =
+//                 set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed);
+//             let res = match speed {
+//                 Ok(speed) => speed,
+//                 Err(err) => return handle_http_error(req, err),
+//             };
 
-            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
-            response.write_all(&res)?;
+//             let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
+//             response.write_all(&res)?;
 
-            Ok(())
-        }
-    })?;
+//             Ok(())
+//         }
+//     })?;
 
-    // GET /logs
-    server.fn_handler(
-        "/logs",
-        Method::Get,
-        move |mut req| -> Result<(), anyhow::Error> {
-            logs::logs(req)?;
-            Ok(())
-        },
-    )?;
+//     // GET /logs
+//     server.fn_handler(
+//         "/logs",
+//         Method::Get,
+//         move |mut req| -> Result<(), anyhow::Error> {
+//             logs::logs(req)?;
+//             Ok(())
+//         },
+//     )?;
 
-    // GET /coredump
-    server.fn_handler(
-        "/coredump",
-        Method::Get,
-        move |mut req| -> Result<(), anyhow::Error> {
-            // You will need to update `logs::coredump` to accept `Request<&mut EspHttpConnection>`
-            // logs::coredump(req)?;
+//     // GET /coredump
+//     server.fn_handler(
+//         "/coredump",
+//         Method::Get,
+//         move |mut req| -> Result<(), anyhow::Error> {
+//             // You will need to update `logs::coredump` to accept `Request<&mut EspHttpConnection>`
+//             // logs::coredump(req)?;
 
-            let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
-            response.write_all(b"Coredump output")?;
-            Ok(())
-        },
-    )?;
+//             let mut response = req.into_response(200, Some("OK"), &CORS_HEADERS)?;
+//             response.write_all(b"Coredump output")?;
+//             Ok(())
+//         },
+//     )?;
 
-    // --- Method Not Allowed / 405 Handling ---
-    // Note: EspHttpServer handles 404 (Not Found) automatically for unregistered paths.
-    // If you explicitly want 405s for specific paths with wrong methods, you map them like this:
-    let method_not_allowed = |req: Request<&mut esp_idf_svc::http::server::EspHttpConnection>| -> Result<(), anyhow::Error> {
-        req.into_response(405, Some("Method Not Allowed"), &CORS_HEADERS)?;
-        Ok(())
-    };
+//     // --- Method Not Allowed / 405 Handling ---
+//     // Note: EspHttpServer handles 404 (Not Found) automatically for unregistered paths.
+//     // If you explicitly want 405s for specific paths with wrong methods, you map them like this:
+//     let method_not_allowed = |req: Request<&mut esp_idf_svc::http::server::EspHttpConnection>| -> Result<(), anyhow::Error> {
+//         req.into_response(405, Some("Method Not Allowed"), &CORS_HEADERS)?;
+//         Ok(())
+//     };
 
-    server.fn_handler("/autoscript/upload", Method::Get, method_not_allowed)?;
-    server.fn_handler("/autoscript/upload", Method::Post, method_not_allowed)?;
-    server.fn_handler("/autoscript/run", Method::Get, method_not_allowed)?;
-    server.fn_handler("/autoscript/cancel", Method::Get, method_not_allowed)?;
+//     server.fn_handler("/autoscript/upload", Method::Get, method_not_allowed)?;
+//     server.fn_handler("/autoscript/upload", Method::Post, method_not_allowed)?;
+//     server.fn_handler("/autoscript/run", Method::Get, method_not_allowed)?;
+//     server.fn_handler("/autoscript/cancel", Method::Get, method_not_allowed)?;
 
-    Ok(server)
-}
+//     Ok(server)
+// }
 
-fn handle_http_error(
-    req: Request<&mut EspHttpConnection<'_>>,
-    err: error::HttpServerError,
-) -> Result<(), anyhow::Error> {
-    let (status, reason) = match &err {
-        error::HttpServerError::UserError(_) => (400, "Bad Request"),
-        error::HttpServerError::InternalProgrammerError(_) => (500, "Internal Server Error"),
-    };
+// fn handle_http_error(
+//     req: Request<&mut EspHttpConnection<'_>>,
+//     err: error::HttpServerError,
+// ) -> Result<(), anyhow::Error> {
+//     let (status, reason) = match &err {
+//         error::HttpServerError::UserError(_) => (400, "Bad Request"),
+//         error::HttpServerError::InternalProgrammerError(_) => (500, "Internal Server Error"),
+//     };
 
-    if let error::HttpServerError::InternalProgrammerError(err) = &err {
-        log::error!("Internal server error: {err:?}");
-    }
+//     if let error::HttpServerError::InternalProgrammerError(err) = &err {
+//         log::error!("Internal server error: {err:?}");
+//     }
 
-    let body = match err {
-        error::HttpServerError::UserError(err) => {
-            format!("User error: {:?}", err)
-        }
-        error::HttpServerError::InternalProgrammerError(err) => {
-            format!("Internal programmer error: {:?}", err)
-        }
-    };
+//     let body = match err {
+//         error::HttpServerError::UserError(err) => {
+//             format!("User error: {:?}", err)
+//         }
+//         error::HttpServerError::InternalProgrammerError(err) => {
+//             format!("Internal programmer error: {:?}", err)
+//         }
+//     };
 
-    let mut response = req.into_response(status, Some(reason), &CORS_HEADERS)?;
+//     let mut response = req.into_response(status, Some(reason), &CORS_HEADERS)?;
 
-    response.write_all(body.as_bytes())?;
+//     response.write_all(body.as_bytes())?;
 
-    Ok(())
-}
+//     Ok(())
+// }

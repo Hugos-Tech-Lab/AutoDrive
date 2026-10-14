@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::time::Duration;
 
 use bytes::Bytes;
-use futures_util::StreamExt;
+use futures_util::{StreamExt, stream};
 use tokio_stream::wrappers::BroadcastStream;
 use warp::{http::StatusCode, Filter, Reply};
 
@@ -21,7 +21,6 @@ pub fn run(
         .and_then(move |body: Bytes| {
             let logs = logs.clone();
             let sender = sender.clone();
-            println!("auto script run ");
             async move {
                 let receiver = logs.subscribe();
 
@@ -39,7 +38,17 @@ pub fn run(
                     );
                 }
 
-                let event_stream =
+                
+                let event_stream = stream::once(async {
+                    Ok::<_, Infallible>(
+                        warp::sse::Event::default()
+                            .event("log")
+                            .data("[INFO] [AUTO_DRIVE_CLOUD] Got the run WASM request and sent to the edge"),
+                    )
+                });
+
+
+                let event_stream = event_stream.chain(
                     BroadcastStream::new(receiver).filter_map(|result| async move {
                         match result {
                             Ok(Event::Log(log_event)) => {
@@ -78,7 +87,9 @@ pub fn run(
                                 ))
                             }
                         }
-                    });
+                    }));
+
+
 
                 Ok(warp::sse::reply(
                     warp::sse::keep_alive()

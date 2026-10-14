@@ -13,7 +13,7 @@ if [[ ! -f "$wasm" ]]; then
 fi
 
 echo "Running: $wasm"
-echo "Sending run wasm request to server..."
+echo "Sending run wasm request to the cloud..."
 
 cleanup() {
     trap - INT TERM

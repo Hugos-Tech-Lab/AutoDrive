@@ -21,7 +21,7 @@ pub fn run(
         .and_then(move |body: Bytes| {
             let logs = logs.clone();
             let sender = sender.clone();
-
+            println!("auto script run ");
             async move {
                 let receiver = logs.subscribe();
 

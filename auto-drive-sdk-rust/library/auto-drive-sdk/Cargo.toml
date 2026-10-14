@@ -1,0 +1,19 @@
+[package]
+name = "auto-drive-sdk"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+auto-drive-sdk-macros = { path = "../auto-drive-sdk-macros" }
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "auto-drive"
+path = "src/main.rs"
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+crate-type = ["cdylib"]

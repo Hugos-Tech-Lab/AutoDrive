@@ -1,22 +1,6 @@
-[package]
-name = "auto-drive-sdk"
-version = "0.1.0"
-edition = "2024"
-
-[build-dependencies]
-# auto-drive-interface = { path = "../../auto-drive-interface" }
-
-[[bin]]
-name = "auto-drive"
-path = "src/main.rs"
-
-[lib]
-# "cdylib" forces Rust to generate the actual .wasm binary file
-# crate-type = ["cdylib"] 
-
-[[example]]
-name = "basic"
-crate-type = ["cdylib"]
+[workspace]
+members = ["auto-drive-sdk", "auto-drive-sdk-macros"]
+resolver = "2"
 
 [profile.dev]
 opt-level = "z"      # Optimize strictly for size

@@ -9,6 +9,7 @@ pub enum ToDeviceMessage {
   StartAutoScript { data: Vec<u8> }
 }
 
+#[derive(Debug, Clone)]
 pub struct Hardware {
   pub logs: Sender<Event>,
   pub sender: mpsc::Sender<ToDeviceMessage>

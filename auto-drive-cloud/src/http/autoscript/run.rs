@@ -53,9 +53,14 @@ pub fn run(
                                     crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
                                     crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
                                 };
-                                
-                                let formatted_log = format!("[{}] {}", level, log.message);
 
+                                let system_origin = match log.system_origin() {
+                                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmUnspecified => "UNSPECIFIED",
+                                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmMcu => "WASM_MCU",
+                                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
+                                };
+                                
+                                let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
                                 Some(Ok::<_, Infallible>(
                                     warp::sse::Event::default()
                                         .event("log")

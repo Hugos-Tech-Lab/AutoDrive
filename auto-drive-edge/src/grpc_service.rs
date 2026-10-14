@@ -8,9 +8,9 @@ use tonic::{Request, Response, Status};
 use crate::{
     auto_drive_edge_service::v1::{
         AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent,
-        InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage, MotorSpeedUpdatedEvent,
-        RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent, WasmInstalledEvent,
-        WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse,
+        InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage, LogSystemOrigin,
+        MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent,
+        WasmInstalledEvent, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse,
         auto_drive_edge_service_server::AutoDriveEdgeService,
         watch_the_beginner_car_events_response::Event,
     },
@@ -82,11 +82,17 @@ fn convert_message(message: TheBeginnerCarOutgoingMessages) -> WatchTheBeginnerC
                 the_beginner_car_tcp_protocol::LogLevel::Trace => LogLevel::Trace,
             };
 
+            let system_origin = match log.system_origin {
+                the_beginner_car_tcp_protocol::LogSystemOrigin::WasmMcu => LogSystemOrigin::WasmMcu,
+                the_beginner_car_tcp_protocol::LogSystemOrigin::WifiMcu => LogSystemOrigin::WifiMcu,
+            };
+
             WatchTheBeginnerCarEventsResponse {
                 event: Some(Event::Log(LogEvent {
                     log: Some(LogMessage {
                         message: log.message,
                         level: log_level as i32,
+                        system_origin: system_origin as i32,
                     }),
                 })),
             }

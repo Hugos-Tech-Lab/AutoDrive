@@ -13,7 +13,7 @@ if [[ ! -f "$wasm" ]]; then
 fi
 
 echo "Running: $wasm"
-echo "Starting autoscript..."
+echo "Sending run wasm request to server..."
 
 cleanup() {
     trap - INT TERM

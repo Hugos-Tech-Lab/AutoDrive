@@ -74,7 +74,14 @@ enum LogLevel {
   LOG_LEVEL_TRACE = 5;
 }
 
+enum LogSystemOrigin {
+  LOG_SYSTEM_ORIGIN_WASM_UNSPECIFIED = 0;
+  LOG_SYSTEM_ORIGIN_WASM_MCU = 1;
+  LOG_SYSTEM_ORIGIN_WIFI_MCU = 2;
+}
+
 message LogMessage {
-  string message = 1;
+  LogSystemOrigin system_origin = 1;
   LogLevel level = 2;
+  string message = 3;
 }

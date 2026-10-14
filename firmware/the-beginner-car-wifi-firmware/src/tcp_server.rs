@@ -62,7 +62,7 @@ where
 
         let len = u32::from_be_bytes(len_bytes) as usize;
 
-        if len > 4 * 1024 {
+        if len > 8 * 1024 {
             bail!("Incoming message too large: {len} bytes");
         }
 
@@ -99,6 +99,8 @@ where
             }
 
             TheBeginnerCarIncomingMessages::RunAutoScript { data } => {
+                info!("run auto script");
+
                 let (sender, receiver) = std::sync::mpsc::sync_channel(1);
 
                 hardware_sender

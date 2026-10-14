@@ -164,9 +164,8 @@ pub fn main() -> anyhow::Result<()> {
                         last_flush = std::time::Instant::now();
                     }
 
-                    dbg!(utmost_front_utmost_left_latest_reading);
                     // dbg!(led_a_latest_reading);
-                    FreeRtos::delay_ms(200);
+                    FreeRtos::delay_ms(10);
                 }
             }
         })
@@ -219,6 +218,7 @@ pub fn main() -> anyhow::Result<()> {
                         the_beginner_car.notify_battery_readings(motor_battery, mcu_battery);
                     }
                     RequestToHardware::RunAutoScript { data } => {
+                        info!("run auto script");
                         auto_script.run(data).unwrap();
                     }
                     RequestToHardware::StopAutoScript => {

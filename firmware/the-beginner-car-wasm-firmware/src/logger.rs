@@ -2,7 +2,7 @@ use std::sync::mpsc::{self, Receiver, SyncSender};
 
 use esp_idf_svc::log::EspIdfLogger;
 use log::{LevelFilter, Log, Metadata, Record};
-use the_beginner_car_spi_protocol::LogMessage;
+use the_beginner_car_spi_protocol::{LogLevel, LogMessage};
 
 use std::cell::RefCell;
 
@@ -42,8 +42,16 @@ impl Log for Logger {
             return;
         }
 
+        let level = match record.level() {
+            log::Level::Error => LogLevel::Error,
+            log::Level::Warn => LogLevel::Warn,
+            log::Level::Info => LogLevel::Info,
+            log::Level::Debug => LogLevel::Debug,
+            log::Level::Trace => LogLevel::Trace,
+        };
+
         let message = LogMessage {
-            level: record.level() as u8,
+            level,
             target: record.target().to_owned(),
             message: record.args().to_string(),
             trace_id: current_trace_id(),
@@ -61,7 +69,7 @@ impl Log for Logger {
     }
 }
 
-pub fn init_logging() ->(SyncSender<LogMessage>, Receiver<LogMessage>) {
+pub fn init_logging() -> Receiver<LogMessage> {
     let (sender, receiver) = mpsc::sync_channel(100);
 
 
@@ -75,5 +83,5 @@ pub fn init_logging() ->(SyncSender<LogMessage>, Receiver<LogMessage>) {
 
     log::set_max_level(LevelFilter::Debug);
 
-    (sender, receiver)
+    receiver
 }

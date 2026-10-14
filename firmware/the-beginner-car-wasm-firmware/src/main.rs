@@ -52,7 +52,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let addr = format_mac_address(&get_mac_address()?);
 
-    let (log_sender, log_receiver) = init_logging();
+    let log_receiver = init_logging();
 
     info!("starting");
     let peripherals = Peripherals::take()?;

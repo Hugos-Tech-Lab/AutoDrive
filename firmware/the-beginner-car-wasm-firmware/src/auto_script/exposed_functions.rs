@@ -61,12 +61,6 @@ pub extern "C" fn print(exec_env: *mut WASMExecEnv, ptr: u32, len: u32) {
     }
 
     info!("{}", value.to_string());
-
-    // wasm_data.progress.send(AutoScriptRunProgress::Log {
-    //     message: value.to_string(),
-    // }).unwrap(); // TODO: this shouldn't block maybe?
-
-    info!("{:?}", value);
 }
 
 #[unsafe(no_mangle)]

@@ -78,8 +78,9 @@ pub fn main() -> anyhow::Result<()> {
     }
 
     let ir_sensor_a = Arc::new(AtomicU16::new(0));
+    let ir_sensor_b = Arc::new(AtomicU16::new(0));
 
-    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(motor_a, motor_b, ir_sensor_a.clone())));
+    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(motor_a, motor_b, ir_sensor_a.clone(), ir_sensor_b.clone())));
 
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
@@ -121,7 +122,7 @@ pub fn main() -> anyhow::Result<()> {
         })
         .unwrap();
 
-    std::thread::Builder::new()
+    let reading = std::thread::Builder::new()
         .stack_size(2_000)
         .name("sensor_readings".to_string())
         .spawn({
@@ -132,24 +133,30 @@ pub fn main() -> anyhow::Result<()> {
                     attenuation: DB_12,
                     ..Default::default()
                 };
-                let mut pin = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
+                let mut pin_3 = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
+                let mut pin_2 = AdcChannelDriver::new(&adc, peripherals.pins.gpio2, &config).unwrap();
 
                 let mut last_flush = std::time::Instant::now();
-                let mut latest_reading = 0;
+                let mut led_a_latest_reading = 0;
+                let mut led_b_latest_reading = 0;
 
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
-                    latest_reading = pin.read().unwrap();
-                    ir_sensor_a.store(latest_reading, Ordering::Relaxed);
+                    led_a_latest_reading = pin_3.read().unwrap();
+                    led_b_latest_reading = pin_2.read().unwrap();
+                    // dbg!(led_b_latest_reading);
+                    ir_sensor_a.store(led_a_latest_reading, Ordering::Relaxed);
+                    ir_sensor_b.store(led_b_latest_reading, Ordering::Relaxed);
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 
                         events.push(Event::IRSensorA {
-                            value: latest_reading,
+                            value: led_a_latest_reading,
                         });
 
                         last_flush = std::time::Instant::now();
                     }
+                    // dbg!(led_a_latest_reading);
                     FreeRtos::delay_ms(2);
                 }
             }
@@ -222,6 +229,6 @@ pub fn main() -> anyhow::Result<()> {
         })?;
 
     thread_receive_incoming_messages.join().unwrap();
-
+    reading.join().unwrap();
     Ok(())
 }

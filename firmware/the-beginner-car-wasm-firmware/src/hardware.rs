@@ -18,10 +18,11 @@ pub struct TheBeginnerCarHardware {
     motor_battery: f32,
     mcu_battery: f32,
     ir_sensor_a: Arc<AtomicU16>,
+    ir_sensor_b: Arc<AtomicU16>,
 }
 
 impl TheBeginnerCarHardware {
-    pub fn new(wheel_a: Motor, wheel_b: Motor, ir_sensor_a: Arc<AtomicU16>) -> Self {
+    pub fn new(wheel_a: Motor, wheel_b: Motor, ir_sensor_a: Arc<AtomicU16>, ir_sensor_b: Arc<AtomicU16>) -> Self {
         Self {
             allowed_controller: RequestOrigin::Manual,
             wheel_a,
@@ -29,6 +30,7 @@ impl TheBeginnerCarHardware {
             motor_battery: 0.0,
             mcu_battery: 0.0,
             ir_sensor_a,
+            ir_sensor_b
         }
     }
 
@@ -58,6 +60,10 @@ impl TheBeginnerCarHardware {
 
     pub fn get_ir_sensor_a_value(&self) -> u16 {
         self.ir_sensor_a.load(Ordering::Relaxed)
+    }
+
+    pub fn get_ir_sensor_b_value(&self) -> u16 {
+        self.ir_sensor_b.load(Ordering::Relaxed)
     }
 
     pub fn stop(&mut self) {

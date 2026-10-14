@@ -78,6 +78,10 @@ impl WasmThread {
                 "get_ir_sensor_a_value",
                 crate::auto_script::exposed_functions::get_ir_sensor_a_value as *mut c_void,
             )
+            .register_host_function(
+                "get_ir_sensor_b_value",
+                crate::auto_script::exposed_functions::get_ir_sensor_b_value as *mut c_void,
+            )
             .build()?;
 
         Ok(Self {

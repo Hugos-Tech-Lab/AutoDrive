@@ -64,6 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async move {
         let address = "127.0.0.1:50051".parse().unwrap();
 
+        println!("serving gRPC to {address}");
         tonic::transport::Server::builder()
             .add_service(AutoDriveEdgeServiceServer::new(grpc_service))
             .serve(address)

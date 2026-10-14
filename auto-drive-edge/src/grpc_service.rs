@@ -8,7 +8,7 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        LogEvent, LogMessage, RunAutoScriptRequest, RunAutoScriptResponse, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService, watch_the_beginner_car_events_response::Event,
+        AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent, IrSensorAReadingEvent, LogEvent, LogMessage, MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService, watch_the_beginner_car_events_response::Event,
     }, the_beginner_car_driver::TheBeginnerCarDriver,
 };
 
@@ -68,25 +68,78 @@ impl AutoDriveEdgeService for GrpcService {
     }
 }
 
-fn convert_message(message: TheBeginnerCarOutgoingMessages) -> WatchTheBeginnerCarEventsResponse {
+fn convert_message(
+    message: TheBeginnerCarOutgoingMessages,
+) -> WatchTheBeginnerCarEventsResponse {
     match message {
-        TheBeginnerCarOutgoingMessages::Log { log } => WatchTheBeginnerCarEventsResponse {
-            event: Some(Event::Log(LogEvent {
-                log: Some(LogMessage {
-                    message: log.message
-                }),
-            })),
-        },
-        TheBeginnerCarOutgoingMessages::SystemState {} => todo!(),
-        TheBeginnerCarOutgoingMessages::MotorASpeedUpdated { speed } => todo!(),
-        TheBeginnerCarOutgoingMessages::MotorBSpeedUpdated { speed } => todo!(),
-        TheBeginnerCarOutgoingMessages::WasmInstalled => todo!(),
-        TheBeginnerCarOutgoingMessages::AutoScriptRunning => todo!(),
-        TheBeginnerCarOutgoingMessages::AutoScriptStopped => todo!(),
+        TheBeginnerCarOutgoingMessages::Log { log } => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::Log(LogEvent {
+                    log: Some(LogMessage {
+                        message: log.message,
+                    }),
+                })),
+            }
+        }
+
+        TheBeginnerCarOutgoingMessages::SystemState {} => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::SystemState(SystemStateEvent {})),
+            }
+        }
+
+        TheBeginnerCarOutgoingMessages::MotorASpeedUpdated { speed } => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::MotorASpeedUpdated(MotorSpeedUpdatedEvent {
+                    speed: speed as i32,
+                })),
+            }
+        }
+
+        TheBeginnerCarOutgoingMessages::MotorBSpeedUpdated { speed } => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::MotorBSpeedUpdated(MotorSpeedUpdatedEvent {
+                    speed: speed as i32,
+                })),
+            }
+        }
+
+        TheBeginnerCarOutgoingMessages::WasmInstalled => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::WasmInstalled(WasmInstalledEvent {})),
+            }
+        }
+
+        TheBeginnerCarOutgoingMessages::AutoScriptRunning => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
+            }
+        }
+
+        TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
+            }
+        }
+
         TheBeginnerCarOutgoingMessages::BatteryReading {
             motor_battery_voltage,
             mcu_battery_voltage,
-        } => todo!(),
-        TheBeginnerCarOutgoingMessages::IRSensorAReading { value } => todo!(),
+        } => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::BatteryReading(BatteryReadingEvent {
+                    motor_battery_voltage,
+                    mcu_battery_voltage,
+                })),
+            }
+        }
+
+        TheBeginnerCarOutgoingMessages::IRSensorAReading { value } => {
+            WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::IrSensorAReading(IrSensorAReadingEvent {
+                    value: value as u32,
+                })),
+            }
+        }
     }
 }

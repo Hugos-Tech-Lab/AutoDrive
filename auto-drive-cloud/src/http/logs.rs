@@ -8,7 +8,7 @@ use warp::Filter;
 
 use crate::auto_drive_edge_service::v1::watch_the_beginner_car_events_response::Event;
 
-pub fn watch_logs_path(
+pub fn logs(
     sender: Sender<Event>,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path!("logs").and(warp::get()).and_then(move || {

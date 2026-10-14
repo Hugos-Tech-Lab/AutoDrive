@@ -31,8 +31,10 @@ cleanup() {
 trap cleanup INT TERM
 
 curl --fail \
+    --silent \
     --show-error \
     --no-buffer \
     --request POST \
     --data-binary "@$wasm" \
-    "$BASE_URL/run"
+    "$BASE_URL/run" |
+    sed '/^[[:space:]]*$/d'

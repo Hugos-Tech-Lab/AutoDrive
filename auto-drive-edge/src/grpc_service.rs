@@ -2,7 +2,6 @@ use std::{pin::Pin, sync::Arc};
 
 use futures_util::{Stream, StreamExt};
 use the_beginner_car_tcp_protocol::{TheBeginnerCarOutgoingMessages};
-use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use tonic::{Request, Response, Status};
 
@@ -28,13 +27,10 @@ impl AutoDriveEdgeService for GrpcService {
         &self,
         request: Request<RunAutoScriptRequest>,
     ) -> Result<Response<RunAutoScriptResponse>, Status> {
-        // let request = request.into_inner();
 
-        // Adapt the payload to your actual script format.
-        // let _script = request.name.into_bytes();
+        self.build_a.run_auto_script(request.into_inner().data).await;
 
-        unimplemented!();
-        // Ok(Response::new(RunAutoScriptResponse {}))
+        Ok(RunAutoScriptResponse{}.into())
     }
 
     type WatchTheBeginnerCarEventsStream = Pin<

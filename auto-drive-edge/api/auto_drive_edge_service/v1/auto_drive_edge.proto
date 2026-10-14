@@ -10,6 +10,7 @@ service AutoDriveEdgeService {
 
 message RunAutoScriptRequest {
   TheBeginnerCarBuild build = 1;
+  bytes data = 2;
 }
 
 message RunAutoScriptResponse {}

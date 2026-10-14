@@ -1,4 +1,8 @@
-use crate::{auto_drive_edge_server::AutoDriveEdgeServer, devices_config::DeviceConfig};
+use crate::{
+    auto_drive_edge_server::AutoDriveEdgeServer,
+    auto_drive_edge_service::v1::auto_drive_edge_service_server::AutoDriveEdgeServiceServer,
+    devices_config::DeviceConfig, grpc_service::GrpcService,
+};
 use bytes::Bytes;
 use futures_util::StreamExt;
 use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
@@ -9,12 +13,12 @@ use warp::Filter;
 
 pub mod auto_drive_edge_server;
 pub mod devices_config;
+pub mod grpc_service;
 pub mod local_http;
 pub mod physical_hardware;
 pub mod the_beginner_car_comms;
 pub mod the_beginner_car_driver;
 pub mod vehicle_hardware_telemetry;
-pub mod grpc_service;
 
 pub mod auto_drive_edge_service {
     pub mod v1 {
@@ -55,94 +59,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap()
         .clone();
 
-    let server = tokio::spawn(async move {
-        let driver = driver; // assuming driver is available
+    let grpc_service = GrpcService::new(driver.clone());
 
-        let hi = warp::path!("autoscript" / "run")
-            .and(warp::post())
-            .and(warp::body::bytes())
-            .and_then({
-                let driver = driver.clone();
-                move |body: Bytes| {
-                    let driver = driver.clone();
-                async move {
-                    let data = body;
-                    let broadcast_rx = driver.run_auto_script(data.to_vec()).await;
-                    let rx_stream = BroadcastStream::new(broadcast_rx);
-                    let event_stream = rx_stream.filter_map(|result| {
-                        let output = match result {
-                            Ok(msg) => {
-                                match msg {
-                                        the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Log { log } => {
-                                            // Send this message
-                                            Some(Ok::<_, Infallible>(
-                                                warp::sse::Event::default().data(log.message)
-                                            ))
-                                        }
-                                        _ => {
-                                            // Skip this message
-                                            None
-                                        }
-                                    }
-                            }
-                            Err(e) => {
-                                // Forward stream errors
-                                Some(Ok::<_, Infallible>(
-                                    warp::sse::Event::default()
-                                        .event("error")
-                                        .data(e.to_string()),
-                                ))
-                            }
-                        };
+    tokio::spawn(async move {
+        let address = "127.0.0.1:50051".parse().unwrap();
 
-                        // Wrap the Option into a Future to satisfy filter_map's trait bounds
-                        future::ready(output)
-                    });
-
-                    // 3. Reply with the SSE stream. (Optional: add keep_alive pings)
-                    Ok::<_, warp::Rejection>(warp::sse::reply(
-                        warp::sse::keep_alive().stream(event_stream),
-                    ))
-                }
-            }});
-
-        let cancel = warp::path!("autoscript" / "cancel")
-            .and(warp::post())
-            .and(warp::body::bytes())
-            .and_then(move |body: Bytes| {
-                let driver = driver.clone();
-
-                async move {
-                    let data = body;
-
-                    driver.run_auto_script(data.to_vec()).await;
-
-                    Ok::<_, warp::Rejection>(format!("Cancelled"))
-                }
-            });
-
-        warp::serve(hi.or(cancel)).run(([127, 0, 0, 1], 3030)).await;
-    });
-
-    // auto_drive_edge_server.run().await;
-
-    // let counter = meter
-    //     .u64_counter("battery.connections")
-    //     .build();
-
-    // let attrs: [KeyValue; 1] = [KeyValue::new("build", "build_a")];
-
-    // counter.add(1, &[]);
-
-    // 4. Create your tracer and start recording spans
-    // let tracer = global::tracer("rust-grpc-service");
-
-    // tracer.in_span("main-operation", |cx| {
-    //     let span = cx.span();
-    //     span.add_event("Doing some heavy work...", vec![]);
-    // });
-
-    server.await.unwrap();
+        tonic::transport::Server::builder()
+            .add_service(AutoDriveEdgeServiceServer::new(grpc_service))
+            .serve(address)
+            .await
+            .expect("gRPC server failed");
+    })
+    .await
+    .unwrap();
 
     // 5. Explicitly flush and shutdown before application exit
     span_exporter.shutdown().unwrap();

@@ -1,4 +1,4 @@
-use std::pin::Pin;
+use std::{pin::Pin, sync::Arc};
 
 use futures_util::{Stream, StreamExt};
 use the_beginner_car_tcp_protocol::{TheBeginnerCarOutgoingMessages};
@@ -13,11 +13,11 @@ use crate::{
 };
 
 pub struct GrpcService {
-    build_a: TheBeginnerCarDriver,
+    build_a: Arc<TheBeginnerCarDriver>,
 }
 
 impl GrpcService {
-    pub fn new(build_a: TheBeginnerCarDriver) -> Self {
+    pub fn new(build_a: Arc<TheBeginnerCarDriver>) -> Self {
         Self { build_a }
     }
 }

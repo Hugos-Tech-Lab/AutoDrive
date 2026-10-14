@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package auto_drive_edge_service.v1;
+
+service AutoDriveEdgeService {
+  rpc RunAutoScript(RunAutoScriptRequest) returns (RunAutoScriptResponse);
+
+  rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
+}
+
+message RunAutoScriptRequest {
+  string name = 1;
+  string description = 2;
+}
+
+message RunAutoScriptResponse {}
+
+message WatchTheBeginnerCarEventsRequest {}
+
+message WatchTheBeginnerCarEventsResponse {
+  oneof event {
+    LogEvent log = 1;
+    SystemStateEvent system_state = 2;
+    MotorSpeedUpdatedEvent motor_a_speed_updated = 3;
+    MotorSpeedUpdatedEvent motor_b_speed_updated = 4;
+    WasmInstalledEvent wasm_installed = 5;
+    AutoScriptRunningEvent auto_script_running = 6;
+    AutoScriptStoppedEvent auto_script_stopped = 7;
+    BatteryReadingEvent battery_reading = 8;
+    IRSensorAReadingEvent ir_sensor_a_reading = 9;
+  }
+}
+
+message LogEvent {
+  LogMessage log = 1;
+}
+
+message SystemStateEvent {}
+
+message MotorSpeedUpdatedEvent {
+  // Rust i8 is represented as int32 in protobuf.
+  // Validate the range -128..127 in your application.
+  int32 speed = 1;
+}
+
+message WasmInstalledEvent {}
+
+message AutoScriptRunningEvent {}
+
+message AutoScriptStoppedEvent {}
+
+message BatteryReadingEvent {
+  float motor_battery_voltage = 1;
+  float mcu_battery_voltage = 2;
+}
+
+message IRSensorAReadingEvent {
+  uint32 value = 1;
+}
+
+// Replace with your actual LogMessage definition if it already exists.
+message LogMessage {}

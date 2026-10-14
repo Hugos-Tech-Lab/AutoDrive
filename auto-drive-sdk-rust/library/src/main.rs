@@ -5,32 +5,40 @@ use auto_drive_sdk::hardware::the_beginner::{self, get_ir_sensor_a_value, get_ir
 
 #[unsafe(no_mangle)]
 pub extern "C" fn main() -> () {
-    let mut last_direction = 1;
+let threshold_off: i32 = 1000;
 
-    loop {
-        let sensor_a = get_ir_sensor_a_value(); // Left sensor
-        let sensor_b = get_ir_sensor_b_value(); // Right sensor
+let base_speed: i8 = 70;
+let turn_speed: i8 = 30;
 
-        if sensor_a > 1400 && sensor_b > 1400 {
-            // Both sensors detect the line: drive straight
-            the_beginner::set_motor_a_speed(80);
-            the_beginner::set_motor_b_speed(80);
-        } else if sensor_a > 1400 {
-            // Line is on the left: turn left
-            the_beginner::set_motor_a_speed(30);
-            the_beginner::set_motor_b_speed(80);
-        } else if sensor_b > 1400 {
-            // Line is on the right: turn right
-            the_beginner::set_motor_a_speed(80);
-            the_beginner::set_motor_b_speed(30);
-        } else {
-            // Neither sensor detects the line: search for it
-            the_beginner::set_motor_a_speed(50);
-            the_beginner::set_motor_b_speed(-50);
-        }
+loop {
+    let sensor_a = get_ir_sensor_a_value() as i32;
+    let sensor_b = get_ir_sensor_b_value() as i32;
 
-        the_beginner::delay(10);
+    let a_on_line = sensor_a > threshold_off;
+    let b_on_line = sensor_b > threshold_off;
+
+    if !a_on_line && !b_on_line {
+        // Both sensors see white: move forward.
+        the_beginner::set_motor_a_speed(base_speed);
+        the_beginner::set_motor_b_speed(base_speed);
+
+    } else if a_on_line && !b_on_line {
+        // Left sensor sees black: steer left.
+        the_beginner::set_motor_a_speed(turn_speed);
+        the_beginner::set_motor_b_speed(base_speed);
+
+    } else if !a_on_line && b_on_line {
+        // Right sensor sees black: steer right.
+        the_beginner::set_motor_a_speed(base_speed);
+        the_beginner::set_motor_b_speed(turn_speed);
+    } else {
+        the_beginner::set_motor_a_speed(0);
+        the_beginner::set_motor_b_speed(0);
     }
+
+    the_beginner::delay(10);
+}
+
 }
 
 #[cfg(not(test))]

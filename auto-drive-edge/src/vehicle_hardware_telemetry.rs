@@ -80,7 +80,10 @@ impl VehicleHardwareTelemetry {
                         gauges
                             .mcu_battery_voltage
                             .record(mcu_battery_voltage.into(), attributes);
-                    }
+                    },
+                    // TheBeginnerCarOutgoingMessages::IRSensorAReading { value } => {
+                    //     dbg!(value);
+                    // }
                     _ => {}
                 },
                 Err(broadcast::error::RecvError::Lagged(skipped)) => {

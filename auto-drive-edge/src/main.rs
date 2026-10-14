@@ -15,6 +15,12 @@ pub mod the_beginner_car_comms;
 pub mod the_beginner_car_driver;
 pub mod vehicle_hardware_telemetry;
 
+pub mod auto_drive_edge_service {
+    pub mod v1 {
+        tonic::include_proto!("auto_drive_edge_service.v1");
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     unsafe {

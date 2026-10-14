@@ -91,31 +91,30 @@ pub extern "C" fn set_motor_b_speed(exec_env: *mut WASMExecEnv, speed: i8) {
         terminate(exec_env);
     }
 
-    println!("setting motor b speed");
     let mut hardware = wasm_data.hardware.lock().unwrap();
     hardware.set_wheel_b_speed(speed, crate::hardware::RequestOrigin::Manual);
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn get_ir_sensor_a_value(exec_env: *mut WASMExecEnv) -> u16 {
+pub extern "C" fn get_ir_utmost_front_utmost_left_value(exec_env: *mut WASMExecEnv) -> u16 {
     let wasm_data: &mut WasmData = get_wasm_data(exec_env);
     if wasm_data.ct.is_cancelled() {
         terminate(exec_env);
     }
 
     let hardware = wasm_data.hardware.lock().unwrap();
-    hardware.get_ir_sensor_a_value()
+    hardware.get_ir_utmost_front_utmost_left_value()
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn get_ir_sensor_b_value(exec_env: *mut WASMExecEnv) -> u16 {
+pub extern "C" fn get_ir_utmost_front_utmost_right_value(exec_env: *mut WASMExecEnv) -> u16 {
     let wasm_data: &mut WasmData = get_wasm_data(exec_env);
     if wasm_data.ct.is_cancelled() {
         terminate(exec_env);
     }
 
     let hardware = wasm_data.hardware.lock().unwrap();
-    hardware.get_ir_sensor_b_value()
+    hardware.get_ir_utmost_front_utmost_right_value()
 }
 
 

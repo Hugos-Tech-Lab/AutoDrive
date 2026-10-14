@@ -77,10 +77,15 @@ pub fn main() -> anyhow::Result<()> {
         FreeRtos::delay_ms(1000);
     }
 
-    let ir_sensor_a = Arc::new(AtomicU16::new(0));
-    let ir_sensor_b = Arc::new(AtomicU16::new(0));
+    let ir_utmost_front_utmost_left_latest_reading = Arc::new(AtomicU16::new(0));
+    let ir_utmost_front_utmost_right_latest_reading = Arc::new(AtomicU16::new(0));
 
-    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(motor_a, motor_b, ir_sensor_a.clone(), ir_sensor_b.clone())));
+    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
+        motor_a,
+        motor_b,
+        ir_utmost_front_utmost_left_latest_reading.clone(),
+        ir_utmost_front_utmost_right_latest_reading.clone(),
+    )));
 
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
@@ -133,31 +138,35 @@ pub fn main() -> anyhow::Result<()> {
                     attenuation: DB_12,
                     ..Default::default()
                 };
-                let mut pin_3 = AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
-                let mut pin_2 = AdcChannelDriver::new(&adc, peripherals.pins.gpio2, &config).unwrap();
+                let mut pin_3 =
+                    AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
+                let mut pin_2 =
+                    AdcChannelDriver::new(&adc, peripherals.pins.gpio2, &config).unwrap();
 
                 let mut last_flush = std::time::Instant::now();
-                let mut led_a_latest_reading = 0;
-                let mut led_b_latest_reading = 0;
 
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
-                    led_a_latest_reading = pin_3.read().unwrap();
-                    led_b_latest_reading = pin_2.read().unwrap();
+                    let utmost_front_utmost_left_latest_reading = ((pin_3.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
+                    let utmost_front_utmost_right_latest_reading = ((pin_2.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
+
                     // dbg!(led_b_latest_reading);
-                    ir_sensor_a.store(led_a_latest_reading, Ordering::Relaxed);
-                    ir_sensor_b.store(led_b_latest_reading, Ordering::Relaxed);
+                    ir_utmost_front_utmost_left_latest_reading.store(utmost_front_utmost_left_latest_reading, Ordering::Relaxed);
+                    ir_utmost_front_utmost_right_latest_reading.store(utmost_front_utmost_right_latest_reading, Ordering::Relaxed);
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 
-                        events.push(Event::IRSensorA {
-                            value: led_a_latest_reading,
+                        events.push(Event::InfraredLedReadings {
+                            utmost_front_utmost_left: utmost_front_utmost_left_latest_reading,
+                            utmost_front_utmost_right: utmost_front_utmost_right_latest_reading,
                         });
 
                         last_flush = std::time::Instant::now();
                     }
+
+                    dbg!(utmost_front_utmost_left_latest_reading);
                     // dbg!(led_a_latest_reading);
-                    FreeRtos::delay_ms(2);
+                    FreeRtos::delay_ms(200);
                 }
             }
         })

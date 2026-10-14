@@ -41,7 +41,10 @@ pub enum RequestToHardware {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     Log { message: LogMessage },
-    IRSensorA { value: u16 },
+    InfraredLedReadings {
+        utmost_front_utmost_left: u16,
+        utmost_front_utmost_right: u16
+    },
     AutoScriptStopped
 }
 

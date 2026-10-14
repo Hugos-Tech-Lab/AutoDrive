@@ -47,8 +47,9 @@ pub enum TheBeginnerCarOutgoingMessages {
         motor_battery_voltage: f32,
         mcu_battery_voltage: f32,
     },
-    IRSensorAReading {
-        value: u16
+    InfraredLedReadings {
+        utmost_front_utmost_left: u16,
+        utmost_front_utmost_right: u16
     }
 }
 

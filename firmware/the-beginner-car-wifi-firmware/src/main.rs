@@ -218,10 +218,10 @@ pub fn main() -> anyhow::Result<()> {
                                             })
                                             .unwrap()
                                     } // TODO: this should send vec
-                                    the_beginner_car_spi_protocol::Event::IRSensorA { value } => {
+                                    the_beginner_car_spi_protocol::Event::InfraredLedReadings { utmost_front_utmost_left, utmost_front_utmost_right } => {
                                         // dbg!(value);
                                         sender_tx
-                                            .send(TheBeginnerCarOutgoingMessages::IRSensorAReading { value })
+                                            .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { utmost_front_utmost_left, utmost_front_utmost_right })
                                             .unwrap()
                                     }
                                     the_beginner_car_spi_protocol::Event::AutoScriptStopped => {

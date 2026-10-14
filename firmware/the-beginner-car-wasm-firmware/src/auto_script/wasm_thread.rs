@@ -75,12 +75,12 @@ impl WasmThread {
                 crate::auto_script::exposed_functions::set_motor_b_speed as *mut c_void,
             )
             .register_host_function(
-                "get_ir_sensor_a_value",
-                crate::auto_script::exposed_functions::get_ir_sensor_a_value as *mut c_void,
+                "get_ir_utmost_front_utmost_left_value",
+                crate::auto_script::exposed_functions::get_ir_utmost_front_utmost_left_value as *mut c_void,
             )
             .register_host_function(
-                "get_ir_sensor_b_value",
-                crate::auto_script::exposed_functions::get_ir_sensor_b_value as *mut c_void,
+                "get_ir_utmost_front_utmost_right_value",
+                crate::auto_script::exposed_functions::get_ir_utmost_front_utmost_right_value as *mut c_void,
             )
             .build()?;
 

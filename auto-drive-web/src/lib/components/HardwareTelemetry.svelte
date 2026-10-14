@@ -3,14 +3,12 @@
   import { onMount } from "svelte";
   import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
 
-  // type HardwareTelemetry = {
-  //   IrSensorReading?: {
-  //     value: number;
-  //   };
-  // };
+  type InfraredLedReadings = {
+    utmost_front_utmost_left: number;
+    utmost_front_utmost_right: number;
+  };
 
-  // let telemetry: HardwareTelemetry = {};
-  let irSensorValue = $state<number | undefined>(undefined);
+  let irSensorReadings = $state<InfraredLedReadings | null>(null);
   let connectionStatus = $state("Connecting...");
   let lastUpdate = $state<Date | null>(null);
   let telemetryError = $state("");
@@ -25,27 +23,37 @@
       telemetryError = "";
     };
 
-    source.addEventListener("ir_sensor_a_reading", (event: MessageEvent) => {
-      irSensorValue = event.data;
+    source.addEventListener(
+      "infrared_led_reading",
+      (event: MessageEvent<string>) => {
+        try {
+          const parsed: unknown = JSON.parse(event.data);
 
-      try {
-        // const data: HardwareTelemetry = JSON.parse(event.data);
+          if (typeof parsed !== "object" || parsed === null) {
+            throw new Error("Invalid telemetry payload");
+          }
 
-        // telemetry = data;
+          const data = parsed as Record<string, unknown>;
+          const left = data["utmost_front_utmost_left"];
+          const right = data["utmost_front_utmost_right"];
 
-        // if (data.IrSensorReading) {
-        //   irSensorValue = data.IrSensorReading.value;
-        // }
+          if (typeof left !== "number" || typeof right !== "number") {
+            throw new Error("Missing or invalid sensor readings");
+          }
 
-        lastUpdate = new Date();
-        telemetryError = "";
+          irSensorReadings = {
+            utmost_front_utmost_left: left,
+            utmost_front_utmost_right: right,
+          };
 
-        // console.log("[Telemetry]", data);
-      } catch (error) {
-        telemetryError = "Failed to parse telemetry data";
-        console.error("[Telemetry] Invalid event:", error);
+          lastUpdate = new Date();
+          telemetryError = "";
+        } catch (error) {
+          telemetryError = "Failed to parse telemetry data";
+          console.error("[Telemetry] Invalid event:", error);
+        }
       }
-    });
+    );
 
     source.onerror = () => {
       connectionStatus =
@@ -78,7 +86,10 @@
 
 <h2 class="text-2xl mb-4">Telemetry</h2>
 
-<TheBeginnerCar IRAValue={irSensorValue} />
+<TheBeginnerCar
+  IRUtmostFrontUtmostLeft={irSensorReadings?.utmost_front_utmost_left}
+  IRUtmostFrontUtmostRight={irSensorReadings?.utmost_front_utmost_right}
+/>
 
 <div class="flex flex-col items-center gap-4 mb-6">
   <div class="flex gap-4 text-sm">
@@ -97,12 +108,22 @@
     Connection: {connectionStatus}
   </p>
 
-  <div class="rounded border p-4 text-center">
-    <p class="text-sm text-gray-500">IR Sensor A</p>
-    <p class="text-2xl font-bold">
-      {irSensorValue ?? "Waiting for data..."}
-    </p>
-    <p class="text-xs text-gray-500">Raw sensor value</p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+    <div class="rounded border p-4 text-center">
+      <p class="text-sm text-gray-500">Front Left IR</p>
+      <p class="text-2xl font-bold">
+        {irSensorReadings?.utmost_front_utmost_left ?? "Waiting for data..."}
+      </p>
+      <p class="text-xs text-gray-500">Raw sensor value</p>
+    </div>
+
+    <div class="rounded border p-4 text-center">
+      <p class="text-sm text-gray-500">Front Right IR</p>
+      <p class="text-2xl font-bold">
+        {irSensorReadings?.utmost_front_utmost_right ?? "Waiting for data..."}
+      </p>
+      <p class="text-xs text-gray-500">Raw sensor value</p>
+    </div>
   </div>
 
   {#if lastUpdate}

@@ -898,13 +898,14 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "Waiting for data..."
 msgstr ""
 
-#: src/lib/components/HardwareTelemetry.svelte
-msgid "IR Sensor A"
-msgstr ""
+#~ msgid "IR Sensor A"
+#~ msgstr ""
 
+#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/HardwareTelemetry.svelte
 msgid "Raw sensor value"
 msgstr ""
@@ -914,15 +915,25 @@ msgstr ""
 msgid "Connection: {0}"
 msgstr ""
 
-#. 0: IRAValue
-#: src/lib/components/TheBeginnerCarDrawing.svelte
-msgid "IR Sensor A: {0}"
-msgstr ""
-
-#~ msgid "{0}% darkness"
+#~ msgid "IR Sensor A: {0}"
 #~ msgstr ""
 
-#. 0: IRAValue; 1: Math.round(normalizedValue * 100)
+#. 0: leftDarkness
+#. 0: rightDarkness
 #: src/lib/components/TheBeginnerCarDrawing.svelte
-msgid "{0} {1}% darkness"
+#: src/lib/components/TheBeginnerCarDrawing.svelte
+msgid "{0}% darkness"
+msgstr ""
+
+#~ msgid "{0} {1}% darkness"
+#~ msgstr ""
+
+#: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/TheBeginnerCarDrawing.svelte
+msgid "Front Left IR"
+msgstr ""
+
+#: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/TheBeginnerCarDrawing.svelte
+msgid "Front Right IR"
 msgstr ""

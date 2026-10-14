@@ -33,7 +33,7 @@ message WatchTheBeginnerCarEventsResponse {
     AutoScriptRunningEvent auto_script_running = 6;
     AutoScriptStoppedEvent auto_script_stopped = 7;
     BatteryReadingEvent battery_reading = 8;
-    IRSensorAReadingEvent ir_sensor_a_reading = 9;
+    InfraredLedReadingsEvent infrared_led_reading = 9;
   }
 }
 
@@ -55,13 +55,14 @@ message AutoScriptRunningEvent {}
 
 message AutoScriptStoppedEvent {}
 
+message InfraredLedReadingsEvent {
+  uint32 utmost_front_utmost_left = 1;
+  uint32 utmost_front_utmost_right = 2;
+}
+
 message BatteryReadingEvent {
   float motor_battery_voltage = 1;
   float mcu_battery_voltage = 2;
-}
-
-message IRSensorAReadingEvent {
-  uint32 value = 1;
 }
 
 enum LogLevel {

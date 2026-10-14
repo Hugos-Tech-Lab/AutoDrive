@@ -7,7 +7,7 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent, IrSensorAReadingEvent, LogEvent, LogMessage, MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService, watch_the_beginner_car_events_response::Event,
+        AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent, IrSensorAReadingEvent, LogEvent, LogLevel, LogMessage, MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService, watch_the_beginner_car_events_response::Event,
     }, the_beginner_car_driver::TheBeginnerCarDriver,
 };
 
@@ -69,10 +69,19 @@ fn convert_message(
 ) -> WatchTheBeginnerCarEventsResponse {
     match message {
         TheBeginnerCarOutgoingMessages::Log { log } => {
+            let log_level = match log.level {
+                the_beginner_car_tcp_protocol::LogLevel::Error => LogLevel::Error,
+                the_beginner_car_tcp_protocol::LogLevel::Warn => LogLevel::Warn,
+                the_beginner_car_tcp_protocol::LogLevel::Info => LogLevel::Info,
+                the_beginner_car_tcp_protocol::LogLevel::Debug => LogLevel::Debug,
+                the_beginner_car_tcp_protocol::LogLevel::Trace => LogLevel::Trace,
+            };
+
             WatchTheBeginnerCarEventsResponse {
                 event: Some(Event::Log(LogEvent {
                     log: Some(LogMessage {
                         message: log.message,
+                        level: log_level as i32
                     }),
                 })),
             }

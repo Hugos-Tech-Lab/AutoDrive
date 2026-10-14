@@ -44,11 +44,22 @@ pub fn run(
                         match result {
                             Ok(Event::Log(log_event)) => {
                                 let log = log_event.log?;
+                                let level = log.level();
+                                let level = match level {
+                                    crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED", // TODO: cause actual error instead
+                                    crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
+                                    crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
+                                    crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
+                                    crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
+                                    crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
+                                };
+                                
+                                let formatted_log = format!("[{}] {}", level, log.message);
 
                                 Some(Ok::<_, Infallible>(
                                     warp::sse::Event::default()
                                         .event("log")
-                                        .data(log.message),
+                                        .data(formatted_log),
                                 ))
                             }
                             Ok(_) => None,

@@ -37,4 +37,38 @@ curl --fail \
     --request POST \
     --data-binary "@$wasm" \
     "$BASE_URL/run" |
-    sed '/^[[:space:]]*$/d'
+    awk '
+        /^data:/ {
+            sub(/^data:[[:space:]]?/, "")
+            line = $0
+
+            reset = "\033[0m"
+            red = "\033[31m"
+            yellow = "\033[33m"
+            green = "\033[32m"
+            blue = "\033[34m"
+            gray = "\033[90m"
+
+            if (line ~ /^\[ERROR\]/) {
+                color = red
+            } else if (line ~ /^\[WARN\]/) {
+                color = yellow
+            } else if (line ~ /^\[INFO\]/) {
+                color = green
+            } else if (line ~ /^\[DEBUG\]/) {
+                color = gray
+            } else {
+                color = reset
+            }
+
+            if (match(line, /^\[[A-Z]+\]/)) {
+                type = substr(line, 1, RLENGTH)
+                rest = substr(line, RLENGTH + 1)
+                print color type reset rest
+            } else {
+                print line
+            }
+
+            fflush()
+        }
+    '

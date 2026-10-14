@@ -1,7 +1,7 @@
 #![no_main]
 #![no_std]
 
-use auto_drive_sdk::hardware::the_beginner::{self, get_ir_sensor_a_value, get_ir_sensor_b_value};
+use auto_drive_sdk::hardware::the_beginner::{self, get_ir_sensor_a_value, get_ir_sensor_b_value, print};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn main() -> () {
@@ -39,7 +39,9 @@ loop {
     //     the_beginner::set_motor_b_speed(0);
     // }
 
-    the_beginner::delay(10);
+        // print("hello");
+
+    the_beginner::delay(1000);
 }
 
 }

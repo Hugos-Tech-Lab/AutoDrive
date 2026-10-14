@@ -10,6 +10,8 @@ mod ffi {
         pub fn set_onboard_led_color(r: u8, g: u8, b: u8);
         pub fn set_motor_a_speed(speed: i8);
         pub fn set_motor_b_speed(speed: i8);
+        pub fn get_ir_sensor_a_value() -> u16;
+        pub fn get_ir_sensor_b_value() -> u16;
     }
 }
 
@@ -27,6 +29,7 @@ pub fn delay(milliseconds: u64) {
         }
     }
 }
+
 
 pub fn print(text: &str) {
     unsafe {
@@ -51,3 +54,16 @@ pub fn set_motor_b_speed(speed: i8) {
         ffi::set_motor_b_speed(speed);
     }
 }
+
+pub fn get_ir_sensor_a_value() -> u16 {
+    unsafe {
+        ffi::get_ir_sensor_a_value()
+    }
+}
+
+pub fn get_ir_sensor_b_value() -> u16 {
+    unsafe {
+        ffi::get_ir_sensor_b_value()
+    }
+}
+

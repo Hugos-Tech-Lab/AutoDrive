@@ -14,6 +14,7 @@ pub mod physical_hardware;
 pub mod the_beginner_car_comms;
 pub mod the_beginner_car_driver;
 pub mod vehicle_hardware_telemetry;
+pub mod grpc_service;
 
 pub mod auto_drive_edge_service {
     pub mod v1 {

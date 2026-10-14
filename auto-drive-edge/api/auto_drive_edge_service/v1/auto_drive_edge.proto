@@ -9,13 +9,18 @@ service AutoDriveEdgeService {
 }
 
 message RunAutoScriptRequest {
-  string name = 1;
-  string description = 2;
+  TheBeginnerCarBuild build = 1;
 }
 
 message RunAutoScriptResponse {}
 
 message WatchTheBeginnerCarEventsRequest {}
+
+enum TheBeginnerCarBuild {
+  THE_BEGINNER_CAR_BUILD_UNSPECIFIED = 0;
+  THE_BEGINNER_CAR_BUILD_A = 1;
+  THE_BEGINNER_CAR_BUILD_B = 2;
+}
 
 message WatchTheBeginnerCarEventsResponse {
   oneof event {
@@ -58,5 +63,6 @@ message IRSensorAReadingEvent {
   uint32 value = 1;
 }
 
-// Replace with your actual LogMessage definition if it already exists.
-message LogMessage {}
+message LogMessage {
+  string message = 1;
+}

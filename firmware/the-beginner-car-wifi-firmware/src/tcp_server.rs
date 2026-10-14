@@ -5,7 +5,6 @@ use std::time::{Duration, Instant};
 pub mod auto_script;
 pub mod error;
 pub mod info;
-pub mod logs;
 pub mod set_motor_a_speed;
 pub mod set_motor_b_speed;
 pub mod update;
@@ -42,7 +41,7 @@ async fn handle(
         handle_incoming(reader, hardware_sender),
         handle_outgoing(writer, receiver_tx),
     ) {
-        info!("TCP connection ended: {err:#}");
+        error!("TCP connection ended: {err:#}");
     }
 }
 
@@ -82,7 +81,6 @@ where
                     speed,
                 )
                 .map_err(|err| anyhow::anyhow!("{err:?}"))?;
-                println!("SetMotorASpeed: {:?}", speed);
             }
 
             TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
@@ -91,7 +89,6 @@ where
                     speed,
                 )
                 .map_err(|err| anyhow::anyhow!("{err:?}"))?;
-                println!("SetMotorBSpeed: {:?}", speed);
             }
 
             TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {

@@ -12,7 +12,14 @@ pub enum LogLevel {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum LogSystemOrigin {
+    WasmMcu,
+    WifiMcu
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LogMessage {
+    pub system_origin: LogSystemOrigin,
     pub level: LogLevel,
     pub target: String,
     pub message: String,

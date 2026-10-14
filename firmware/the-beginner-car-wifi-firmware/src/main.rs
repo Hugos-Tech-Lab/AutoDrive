@@ -13,7 +13,7 @@ use esp_idf_svc::{
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
-use the_beginner_car_tcp_protocol::{LogLevel, LogMessage, TheBeginnerCarOutgoingMessages};
+use the_beginner_car_tcp_protocol::{LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarOutgoingMessages};
 
 use crate::{
     battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
@@ -105,7 +105,7 @@ pub fn main() -> anyhow::Result<()> {
     println!("Last reset reason: {:?}", reason);
 
     print_memory_stats();
-    init_logging();
+    let log_receiver = init_logging();
     info!("starting");
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
@@ -164,6 +164,36 @@ pub fn main() -> anyhow::Result<()> {
         })
         .unwrap();
 
+    std::thread::Builder::new()
+        .stack_size(2_000)
+        .name("flush_logs".to_string())
+        .spawn({
+            let sender_tx = sender_tx.clone();
+            move || {
+                let mut pending_logs = Vec::new();
+                let mut last_flush = std::time::Instant::now();
+
+                loop {
+                    match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
+                        Ok(log) => pending_logs.push(log),
+                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                            dbg!();
+                            panic!();
+                        }
+                    }
+
+                    if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
+                        for log in pending_logs.drain(..) {
+                            sender_tx.send(TheBeginnerCarOutgoingMessages::Log { log }).unwrap();
+                        }
+                        last_flush = std::time::Instant::now();
+                    }
+                }
+            }
+        })
+        .unwrap();
+
     let drain_events_handle = std::thread::Builder::new()
         .name("drain_events_handle".to_string())
         .stack_size(4 * 1000)
@@ -214,6 +244,7 @@ pub fn main() -> anyhow::Result<()> {
                                                     target: message.target,
                                                     message: message.message,
                                                     trace_id: message.trace_id,
+                                                    system_origin: LogSystemOrigin::WifiMcu,
                                                 },
                                             })
                                             .unwrap()

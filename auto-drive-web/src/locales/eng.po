@@ -809,6 +809,7 @@ msgstr "Car Control"
 #~ msgstr "Go To Start"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "STOP"
 msgstr "STOP"
 
@@ -826,10 +827,12 @@ msgstr "Control"
 #~ msgstr "Cameras"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "Run Script"
 msgstr "Run Script"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "Navigate To Start"
 msgstr "Navigate To Start"
 
@@ -867,8 +870,9 @@ msgstr "Connecting..."
 msgid "Connected"
 msgstr "Connected"
 
-#~ msgid "Failed to parse telemetry data"
-#~ msgstr "Failed to parse telemetry data"
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Failed to parse telemetry data"
+msgstr "Failed to parse telemetry data"
 
 #: src/lib/components/HardwareTelemetry.svelte
 msgid "Disconnected"
@@ -882,13 +886,43 @@ msgstr "Reconnecting..."
 msgid "Hardware Telemetry"
 msgstr "Hardware Telemetry"
 
-#~ msgid "Last update: {0}"
-#~ msgstr "Last update: {0}"
+#. 0: lastUpdate.toLocaleTimeString()
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Last update: {0}"
+msgstr "Last update: {0}"
+
+#~ msgid "Raw telemetry"
+#~ msgstr "Raw telemetry"
+
+#~ msgid "Connection: <0/>"
+#~ msgstr "Connection: <0/>"
 
 #: src/lib/components/HardwareTelemetry.svelte
-msgid "Raw telemetry"
-msgstr "Raw telemetry"
+msgid "Waiting for data..."
+msgstr "Waiting for data..."
 
 #: src/lib/components/HardwareTelemetry.svelte
-msgid "Connection: <0/>"
-msgstr "Connection: <0/>"
+msgid "IR Sensor A"
+msgstr "IR Sensor A"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Raw sensor value"
+msgstr "Raw sensor value"
+
+#. 0: connectionStatus
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Connection: {0}"
+msgstr "Connection: {0}"
+
+#. 0: IRAValue
+#: src/lib/components/TheBeginnerCarDrawing.svelte
+msgid "IR Sensor A: {0}"
+msgstr "IR Sensor A: {0}"
+
+#~ msgid "{0}% darkness"
+#~ msgstr "{0}% darkness"
+
+#. 0: IRAValue; 1: Math.round(normalizedValue * 100)
+#: src/lib/components/TheBeginnerCarDrawing.svelte
+msgid "{0} {1}% darkness"
+msgstr "{0} {1}% darkness"

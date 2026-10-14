@@ -24,10 +24,11 @@ pub fn hardware_telemetry(
             let event_stream = BroadcastStream::new(receiver).filter_map(|result| async move {
                 match result {
                     Ok(Event::IrSensorAReading(reading)) => {
-                        let event = VisualizeEvent::IrSensorReading { value: reading.value };
+                        // let event = VisualizeEvent::IrSensorReading { value: reading.value };
 
                         Some(Ok::<_, Infallible>(
-                            warp::sse::Event::default().event("log").data(serde_json::to_string(&event).unwrap()),
+                            warp::sse::Event::default().event("ir_sensor_a_reading").data(format!("{}", reading.value)),
+                            // warp::sse::Event::default().event("log").data(serde_json::to_string(&event).unwrap()),
                         ))
                     }
                     Ok(_) => None,

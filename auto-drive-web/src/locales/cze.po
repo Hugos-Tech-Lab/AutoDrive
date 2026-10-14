@@ -809,6 +809,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "STOP"
 msgstr ""
 
@@ -826,10 +827,12 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "Run Script"
 msgstr ""
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "Navigate To Start"
 msgstr ""
 
@@ -867,8 +870,9 @@ msgstr ""
 msgid "Connected"
 msgstr ""
 
-#~ msgid "Failed to parse telemetry data"
-#~ msgstr ""
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Failed to parse telemetry data"
+msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 msgid "Disconnected"
@@ -882,13 +886,43 @@ msgstr ""
 msgid "Hardware Telemetry"
 msgstr ""
 
-#~ msgid "Last update: {0}"
+#. 0: lastUpdate.toLocaleTimeString()
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Last update: {0}"
+msgstr ""
+
+#~ msgid "Raw telemetry"
+#~ msgstr ""
+
+#~ msgid "Connection: <0/>"
 #~ msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
-msgid "Raw telemetry"
+msgid "Waiting for data..."
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
-msgid "Connection: <0/>"
+msgid "IR Sensor A"
+msgstr ""
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Raw sensor value"
+msgstr ""
+
+#. 0: connectionStatus
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Connection: {0}"
+msgstr ""
+
+#. 0: IRAValue
+#: src/lib/components/TheBeginnerCarDrawing.svelte
+msgid "IR Sensor A: {0}"
+msgstr ""
+
+#~ msgid "{0}% darkness"
+#~ msgstr ""
+
+#. 0: IRAValue; 1: Math.round(normalizedValue * 100)
+#: src/lib/components/TheBeginnerCarDrawing.svelte
+msgid "{0} {1}% darkness"
 msgstr ""

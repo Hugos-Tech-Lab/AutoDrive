@@ -1,14 +1,19 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import TheBeginnerCarDrawing from "./TheBeginnerCarDrawing.svelte";
+  import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
 
-  type HardwareTelemetry = Record<string, unknown>;
+  // type HardwareTelemetry = {
+  //   IrSensorReading?: {
+  //     value: number;
+  //   };
+  // };
 
-  let telemetry: HardwareTelemetry = {};
-  let connectionStatus = "Connecting...";
-  let lastUpdate: Date | null = null;
-  let telemetryError = "";
+  // let telemetry: HardwareTelemetry = {};
+  let irSensorValue = $state<number | undefined>(undefined);
+  let connectionStatus = $state("Connecting...");
+  let lastUpdate = $state<Date | null>(null);
+  let telemetryError = $state("");
 
   onMount(() => {
     const source = new EventSource(
@@ -20,25 +25,33 @@
       telemetryError = "";
     };
 
-    source.onmessage = (event: MessageEvent<string>) => {
-      console.log(event);
+    source.addEventListener("ir_sensor_a_reading", (event: MessageEvent) => {
+      irSensorValue = event.data;
 
-      // try {
-      //   const data: HardwareTelemetry = JSON.parse(event.data);
+      try {
+        // const data: HardwareTelemetry = JSON.parse(event.data);
 
-      //   telemetry = data;
-      //   lastUpdate = new Date();
-      //   telemetryError = "";
-      // } catch (error) {
-      //   telemetryError = "Failed to parse telemetry data";
-      //   console.error("Invalid telemetry event:", error);
-      // }
-    };
+        // telemetry = data;
+
+        // if (data.IrSensorReading) {
+        //   irSensorValue = data.IrSensorReading.value;
+        // }
+
+        lastUpdate = new Date();
+        telemetryError = "";
+
+        // console.log("[Telemetry]", data);
+      } catch (error) {
+        telemetryError = "Failed to parse telemetry data";
+        console.error("[Telemetry] Invalid event:", error);
+      }
+    });
 
     source.onerror = () => {
-      connectionStatus = source.readyState === EventSource.CLOSED
-        ? "Disconnected"
-        : "Reconnecting...";
+      connectionStatus =
+        source.readyState === EventSource.CLOSED
+          ? "Disconnected"
+          : "Reconnecting...";
     };
 
     return () => {
@@ -65,7 +78,7 @@
 
 <h2 class="text-2xl mb-4">Telemetry</h2>
 
-<!-- <TheBeginnerCarDrawing {telemetry} /> -->
+<TheBeginnerCar IRAValue={irSensorValue} />
 
 <div class="flex flex-col items-center gap-4 mb-6">
   <div class="flex gap-4 text-sm">
@@ -80,35 +93,43 @@
     </span>
   </div>
 
-  <div class="text-sm">
-    Connection:
-    <span
-      class:text-green-600={connectionStatus === "Connected"}
-      class:text-yellow-600={connectionStatus === "Reconnecting..."}
-      class:text-red-600={connectionStatus === "Disconnected"}
-    >
-      {connectionStatus}
-    </span>
+  <p class="text-sm">
+    Connection: {connectionStatus}
+  </p>
+
+  <div class="rounded border p-4 text-center">
+    <p class="text-sm text-gray-500">IR Sensor A</p>
+    <p class="text-2xl font-bold">
+      {irSensorValue ?? "Waiting for data..."}
+    </p>
+    <p class="text-xs text-gray-500">Raw sensor value</p>
   </div>
 
   {#if lastUpdate}
     <p class="text-xs text-gray-500">
-      <!-- Last update: {lastUpdate.toLocaleTimeString()} -->
+      Last update: {lastUpdate.toLocaleTimeString()}
     </p>
   {/if}
 
   {#if telemetryError}
     <p class="text-sm text-red-500">{telemetryError}</p>
   {/if}
-
-  <details class="w-full">
-    <summary class="cursor-pointer text-sm">
-      Raw telemetry
-    </summary>
-    <pre class="mt-2 overflow-auto rounded bg-gray-100 p-3 text-xs text-gray-800">{JSON.stringify(telemetry, null, 2)}</pre>
-  </details>
 </div>
 
 <div class="row">
+  <button type="button" class="button block" onclick={stopTelemetry}>
+    STOP
+  </button>
 
+  <button type="button" class="button block" onclick={runScript}>
+    Run Script
+  </button>
+
+  <button
+    type="button"
+    class="button block"
+    onclick={navigateToStart}
+  >
+    Navigate To Start
+  </button>
 </div>

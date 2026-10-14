@@ -13,7 +13,7 @@ use esp_idf_svc::{
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
-use the_beginner_car_tcp_protocol::{LogMessage, TheBeginnerCarOutgoingMessages};
+use the_beginner_car_tcp_protocol::{LogLevel, LogMessage, TheBeginnerCarOutgoingMessages};
 
 use crate::{
     battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
@@ -204,7 +204,13 @@ pub fn main() -> anyhow::Result<()> {
                                         sender_tx
                                             .send(TheBeginnerCarOutgoingMessages::Log {
                                                 log: LogMessage {
-                                                    level: message.level,
+                                                    level: match message.level {
+                                                        the_beginner_car_spi_protocol::LogLevel::Error => LogLevel::Error,
+                                                        the_beginner_car_spi_protocol::LogLevel::Warn => LogLevel::Warn,
+                                                        the_beginner_car_spi_protocol::LogLevel::Info => LogLevel::Info,
+                                                        the_beginner_car_spi_protocol::LogLevel::Debug => LogLevel::Debug,
+                                                        the_beginner_car_spi_protocol::LogLevel::Trace => LogLevel::Trace,
+                                                    },
                                                     target: message.target,
                                                     message: message.message,
                                                     trace_id: message.trace_id,

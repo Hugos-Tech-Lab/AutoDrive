@@ -1,8 +1,17 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+pub enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LogMessage {
-    pub level: u8,
+    pub level: LogLevel,
     pub target: String,
     pub message: String,
     pub trace_id: Option<String>

@@ -3,8 +3,17 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LogMessage {
-    pub level: u8,
+    pub level: LogLevel,
     pub target: String,
     pub message: String,
     pub trace_id: Option<String>

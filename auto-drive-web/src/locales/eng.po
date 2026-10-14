@@ -813,6 +813,7 @@ msgid "STOP"
 msgstr "STOP"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Build"
 msgstr "Build"
 
@@ -842,5 +843,52 @@ msgstr "Navigate To Start"
 #~ msgstr "Vehicle Telemetry"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/HardwareTelemetry.svelte
 msgid "Telemetry"
 msgstr "Telemetry"
+
+#~ msgid "Top-down car telemetry diagram"
+#~ msgstr "Top-down car telemetry diagram"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "<0/> GPS"
+msgstr "<0/> GPS"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "<0/> Sensors"
+msgstr "<0/> Sensors"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Connecting..."
+msgstr "Connecting..."
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Connected"
+msgstr "Connected"
+
+#~ msgid "Failed to parse telemetry data"
+#~ msgstr "Failed to parse telemetry data"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Disconnected"
+msgstr "Disconnected"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Reconnecting..."
+msgstr "Reconnecting..."
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Hardware Telemetry"
+msgstr "Hardware Telemetry"
+
+#~ msgid "Last update: {0}"
+#~ msgstr "Last update: {0}"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Raw telemetry"
+msgstr "Raw telemetry"
+
+#: src/lib/components/HardwareTelemetry.svelte
+msgid "Connection: <0/>"
+msgstr "Connection: <0/>"

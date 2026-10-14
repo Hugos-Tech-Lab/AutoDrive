@@ -1,5 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import HardwareTelemetry from "./HardwareTelemetry.svelte";
+  import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
 
   let {} = $props();
   type Build = "Overview" | "Build A" | "Build B";
@@ -103,6 +105,10 @@
     <button type="button" class="button block">Run Script</button>
     <button type="button" class="button block">Navigate To Start</button>
   </div>
+{/if}
+
+{#if selectedBuild.startsWith("Build") && selectedBuildOption === "Telemetry"}
+  <HardwareTelemetry />
 {/if}
 
 <!-- <h2 class="text-2xl mb-4 min-w-0 flex-1">Software Development Kit</h2>

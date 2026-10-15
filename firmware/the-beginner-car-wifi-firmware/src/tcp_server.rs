@@ -95,14 +95,14 @@ where
                 println!("InformPositionFromCamera: {:?} {:?}", x, y);
             }
 
-            TheBeginnerCarIncomingMessages::RunAutoScript { data } => {
+            TheBeginnerCarIncomingMessages::RunAutoScript { script } => {
                 info!("run auto script");
 
                 let (sender, receiver) = std::sync::mpsc::sync_channel(1);
 
                 hardware_sender
                     .send(HardwareMessage {
-                        request: RequestToHardware::RunAutoScript { data },
+                        request: RequestToHardware::RunAutoScript { data: script.script },
                         response_tx: sender,
                     })
                     .context("sending RunAutoScript to hardware")?;
@@ -116,7 +116,7 @@ where
                 }
             }
 
-            TheBeginnerCarIncomingMessages::StopAutoScript => {
+            TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid } => {
                 let (sender, receiver) = std::sync::mpsc::sync_channel(1);
 
                 hardware_sender

@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use common_firmware::spi_slave::SpiSlave;
+use common_firmware::spi_slave::{SpiSlave, SpiSlaveHardware};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::{
@@ -14,7 +14,7 @@ use esp_idf_svc::hal::{
         attenuation::DB_12,
         oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
     },
-    delay::{FreeRtos},
+    delay::FreeRtos,
 };
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
@@ -22,6 +22,7 @@ use crate::{
     auto_script::AutoScript,
     hardware::{RequestOrigin, TheBeginnerCarHardware, motor::Motor},
     logger::init_logging,
+    server_spi::ServerSpi,
 };
 
 use esp_idf_sys::esp_reset_reason;
@@ -29,7 +30,7 @@ use log::info;
 pub mod auto_script;
 pub mod hardware;
 pub mod logger;
-pub mod client_spi;
+pub mod server_spi;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -164,73 +165,19 @@ pub fn main() -> anyhow::Result<()> {
         })
         .unwrap();
 
-    let thread_receive_incoming_messages = std::thread::Builder::new()
-        .stack_size(12_000)
-        .name("read_incoming_messages".to_string())
-        .spawn(move || {
-            let mut spi = SpiSlave::new(
-                peripherals.spi2,
-                peripherals.pins.gpio4,
-                peripherals.pins.gpio5,
-                peripherals.pins.gpio6,
-                peripherals.pins.gpio7,
-                peripherals.pins.gpio0,
-                peripherals.pins.gpio1,
-            )
-            .unwrap();
+    let spi_hardware = SpiSlaveHardware {
+        spi_2: peripherals.spi2,
+        a_sclk: peripherals.pins.gpio4,
+        b_sdi: peripherals.pins.gpio5,
+        c_sdo: peripherals.pins.gpio6,
+        d_slave_ready_pin: peripherals.pins.gpio7,
+        e_cs: peripherals.pins.gpio0,
+        f_master_ready_pin: peripherals.pins.gpio1,
+    };
 
-            // pin.set_color(3, 20, 3);
-            spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                match request {
-                    RequestToHardware::LightOn => println!("LightOn"),
-                    RequestToHardware::LightOff => println!("LightOff"),
-                    RequestToHardware::SetMotorASpeed(speed) => {
-                        let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                        the_beginner_car.set_wheel_a_speed(speed, RequestOrigin::Manual);
-                    }
-                    RequestToHardware::SetMotorBSpeed(speed) => {
-                        let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                        the_beginner_car.set_wheel_b_speed(speed, RequestOrigin::Manual);
-                    }
-                    RequestToHardware::DrainEvents => {
-                        let events = {
-                            let mut events = events.lock().unwrap();
-                            std::mem::take(&mut *events)
-                        };
+    let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;
 
-                        return ResponseFromHardware::Events { events };
-                    }
-                    RequestToHardware::NotifyPositionFromCamera { x, y } => {
-                        println!("pos from camera")
-                    }
-                    RequestToHardware::NotifyBatteryReadings {
-                        motor_battery,
-                        mcu_battery,
-                    } => {
-                        let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                        the_beginner_car.notify_battery_readings(motor_battery, mcu_battery);
-                    }
-                    RequestToHardware::RunAutoScript { data } => {
-                        info!("run auto script");
-                        auto_script.run(data).unwrap();
-                    }
-                    RequestToHardware::StopAutoScript => {
-                        if auto_script.is_running() {
-                            dbg!("was running and cancelled");
-                            auto_script.cancel()
-                        } else {
-                            let mut events = events.lock().unwrap();
-                            events.push(Event::AutoScriptStopped);
-                        }
-                    } // TODO: RENAME TO CANCEL AutoScript
-                }
-
-                // pin.set_color(3, 20, 3);
-                ResponseFromHardware::Ok
-            });
-        })?;
-
-    thread_receive_incoming_messages.join().unwrap();
+    server_spi.handle.join().unwrap();
     reading.join().unwrap();
     Ok(())
 }

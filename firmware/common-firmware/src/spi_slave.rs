@@ -12,40 +12,58 @@ use std::{ffi::c_void, marker::PhantomData, ptr, thread, time::Duration};
 
 use crate::spi_packet::{PACKET_SIZE, SpiPacket, SpiPackets};
 
-pub struct SpiSlave<'d> {
-    host: spi_host_device_t,
-    _not_send_sync: PhantomData<*mut ()>,
-    slave_wants_data: PinDriver<'d, Output>,
-    master_ready: PinDriver<'d, Input>,
+pub struct SpiSlaveHardware<
+    SCLK: InputPin + 'static,
+    SDI: InputPin + 'static,
+    SDO: OutputPin + 'static,
+    SRDY: OutputPin + 'static,
+    CS: InputPin + 'static,
+    MRDY: InputPin + 'static,
+> {
+    pub spi_2: SPI2<'static>,
+    pub a_sclk: SCLK,
+    pub b_sdi: SDI,
+    pub c_sdo: SDO,
+    pub d_slave_ready_pin: SRDY,
+    pub e_cs: CS,
+    pub f_master_ready_pin: MRDY,
 }
 
-impl<'d> SpiSlave<'d> {
-    pub fn new(
-        _spi_2: SPI2,
-        a_sclk: impl InputPin + 'd,
-        b_sdi: impl InputPin + 'd,
-        c_sdo: impl OutputPin + 'd,
-        d_slave_ready_pin: impl OutputPin + 'd,
-        e_cs: impl InputPin + 'd,
-        f_master_ready_pin: impl InputPin + 'd,
+pub struct SpiSlave {
+    host: spi_host_device_t,
+    _not_send_sync: PhantomData<*mut ()>,
+    slave_wants_data: PinDriver<'static, Output>,
+    master_ready: PinDriver<'static, Input>,
+}
+
+impl SpiSlave {
+    pub fn new<
+        SCLK: InputPin + 'static,
+        SDI: InputPin + 'static,
+        SDO: OutputPin + 'static,
+        SRDY: OutputPin + 'static,
+        CS: InputPin + 'static,
+        MRDY: InputPin + 'static,
+    >(
+        hardware: SpiSlaveHardware<SCLK, SDI, SDO, SRDY, CS, MRDY>,
     ) -> Result<Self, EspError> {
-        let slave_wants_data = PinDriver::output(d_slave_ready_pin)?;
-        let master_ready = PinDriver::input(f_master_ready_pin, Pull::Down)?;
+        let slave_wants_data = PinDriver::output(hardware.d_slave_ready_pin)?;
+        let master_ready = PinDriver::input(hardware.f_master_ready_pin, Pull::Down)?;
 
         let bus_config = spi_bus_config_t {
             __bindgen_anon_1: spi_bus_config_t__bindgen_ty_1 {
-                data0_io_num: b_sdi.pin() as _, // SDI (slave) - MOSI (master)
+                data0_io_num: hardware.b_sdi.pin() as _, // SDI (slave) - MOSI (master)
             },
             __bindgen_anon_2: spi_bus_config_t__bindgen_ty_2 {
-                data1_io_num: c_sdo.pin() as _,
+                data1_io_num: hardware.c_sdo.pin() as _,
             },
-            sclk_io_num: a_sclk.pin() as _,
+            sclk_io_num: hardware.a_sclk.pin() as _,
             max_transfer_sz: 256,
             ..Default::default()
         };
 
         let slave_config = spi_slave_interface_config_t {
-            spics_io_num: e_cs.pin() as _,
+            spics_io_num: hardware.e_cs.pin() as _,
             queue_size: 1,
             mode: 0,
             flags: 0,
@@ -54,6 +72,8 @@ impl<'d> SpiSlave<'d> {
             ..Default::default()
         };
 
+        // SPI_2 is deliberately unused by Rust but we need ownership of it because it's used here in unsafe code
+        let _spi_2 = hardware.spi_2;
         let host = spi_host_device_t_SPI2_HOST;
         let err = unsafe {
             spi_slave_initialize(
@@ -189,8 +209,8 @@ impl<'d> SpiSlave<'d> {
         TRes: Serialize,
         F: Fn(TReq) -> TRes,
     {
-        let mut connection_maybe_lost = false; 
-     
+        let mut connection_maybe_lost = false;
+
         'requests: loop {
             let mut request = Vec::<SpiPacket>::new();
             loop {
@@ -221,7 +241,7 @@ impl<'d> SpiSlave<'d> {
                 log::info!("Success. Recovered after a potential lost connection.");
                 connection_maybe_lost = false;
             }
-            
+
             let request = SpiPackets::from_vec(request);
             let request: TReq = match postcard::from_bytes(&request.payload()) {
                 Ok(packet) => packet,
@@ -259,7 +279,7 @@ impl<'d> SpiSlave<'d> {
     }
 }
 
-impl<'d> Drop for SpiSlave<'d> {
+impl Drop for SpiSlave {
     fn drop(&mut self) {
         unsafe {
             spi_slave_free(self.host);

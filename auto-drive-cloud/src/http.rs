@@ -1,7 +1,7 @@
 use tokio::sync::broadcast::Sender;
 use warp::Filter;
 
-use crate::{auto_drive_edge_service::v1::watch_the_beginner_car_events_response::Event, edge_client::Hardware, http::{autoscript::run::run, logs::logs}};
+use crate::{auto_drive_edge_service::v1::watch_the_beginner_car_events_response::Event, edge_client::Hardware, http::{autoscript::{cancel::cancel, run::run}, logs::logs}};
 use crate::http::hardware_telemetry::hardware_telemetry;
 pub mod logs;
 pub mod autoscript;
@@ -11,6 +11,7 @@ pub async fn http_server(receiver: Hardware) {
     let server = tokio::spawn(async move {
         let watch_logs = logs(receiver.logs.clone());
         let run = run(receiver.clone());
+        let cancel = cancel(receiver.clone());
         let hardware_telemetry = hardware_telemetry(receiver.logs);
 
         let cors = warp::cors()
@@ -21,6 +22,7 @@ pub async fn http_server(receiver: Hardware) {
         let routes = watch_logs
             .or(run)
             .or(hardware_telemetry)
+            .or(cancel)
             .with(cors);
 
         let address = ([127, 0, 0, 1], 3030);

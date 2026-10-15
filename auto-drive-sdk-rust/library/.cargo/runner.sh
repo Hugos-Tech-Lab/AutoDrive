@@ -57,7 +57,7 @@ curl --fail-with-body \
     --no-buffer \
     --request POST \
     --data-binary "@$wasm" \
-    "$BASE_URL/enqueue" |
+    "$BASE_URL/run" |
     awk -v uuid_file="$UUID_FILE" '
         # Ignore the SSE "event:" framing lines
         /^event:/ {

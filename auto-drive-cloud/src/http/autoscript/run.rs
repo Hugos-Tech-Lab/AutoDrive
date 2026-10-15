@@ -9,6 +9,7 @@ use warp::{http::StatusCode, Filter, Reply, Rejection}; // Added Rejection
 
 use crate::auto_drive_edge_service::v1::watch_the_beginner_car_events_response::Event;
 use crate::edge_client::{Hardware, ToDeviceMessage};
+use crate::auto_drive_edge_service::v1::run_auto_script_response;
 
 pub fn run(
     hardware: Hardware,
@@ -18,7 +19,7 @@ pub fn run(
 
     const MAX_BODY_SIZE: u64 = 16 * 1024;
 
-    warp::path!("autoscript" / "enqueue")
+    warp::path!("autoscript" / "run")
         .and(warp::post())
         .and(warp::body::content_length_limit(MAX_BODY_SIZE))
         .and(warp::body::bytes())
@@ -31,7 +32,7 @@ pub fn run(
                 let (sender_start, receiver_start) = oneshot::channel();
                 let message = ToDeviceMessage::StartAutoScript {
                     data: body.to_vec(),
-                    sender: sender_start,
+                    response_tx: sender_start,
                 };
 
                 if sender.send(message).await.is_err() {
@@ -44,7 +45,7 @@ pub fn run(
                     );
                 }
 
-                let run_uuid = receiver_start.await.unwrap();
+                let streamed_response = receiver_start.await.unwrap().unwrap();
 
                 let event_stream = stream::once(async {
                     Ok::<_, Infallible>(
@@ -54,20 +55,30 @@ pub fn run(
                     )
                 });
 
-                let event_stream = event_stream.chain(stream::once(async move {
-                    Ok::<_, Infallible>(
-                        warp::sse::Event::default()
-                            .event("log")
-                            .data(serde_json::json!({ "run_uuid": run_uuid }).to_string())
-                    )
-                }));
 
+                // let event_stream = event_stream.chain(stream::once(async move {
+                //     Ok::<_, Infallible>(
+                //         warp::sse::Event::default()
+                //             .event("log")
+                //             .data(serde_json::json!({ "run_uuid": run_uuid }).to_string())
+                //     )
+                // }));
 
                 let event_stream = event_stream.chain(
-                    BroadcastStream::new(receiver).filter_map(|result| async move {
-                        match result {
-                            Ok(Event::Log(log_event)) => {
-                                let log = log_event.log?;
+                    streamed_response.filter_map(|result| async move {
+                        let result = result.unwrap();
+
+                        match result.event {
+                            Some(run_auto_script_response::Event::RunUuid(run_uuid)) => {
+                                let run_uuid = serde_json::json!({ "run_uuid": run_uuid }).to_string();
+                                Some(Ok::<_, Infallible>(
+                                    warp::sse::Event::default()
+                                        .event("log")
+                                        .data(run_uuid),
+                                ))
+                            }
+                            Some(run_auto_script_response::Event::Log(log)) => {
+                                let log = log.log?;
                                 let level = log.level();
                                 let level = match level {
                                     crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED", // TODO: cause actual error instead
@@ -84,21 +95,22 @@ pub fn run(
                                     crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
                                 };
                                 
+
+                                
                                 let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
                                 Some(Ok::<_, Infallible>(
                                     warp::sse::Event::default()
                                         .event("log")
                                         .data(formatted_log),
                                 ))
-                            }
-                            Ok(_) => None,
-                            Err(error) => {
-                                eprintln!("Log broadcast receiver error: {error}");
+                            },
+                            None => {
+                                // eprintln!("Log broadcast receiver error");
 
                                 Some(Ok(
                                     warp::sse::Event::default()
                                         .event("error")
-                                        .data(error.to_string()),
+                                        .data("error.to_string()"),
                                 ))
                             }
                         }

@@ -2,11 +2,13 @@ use std::error::Error;
 
 use tokio::sync::{broadcast::{self, Sender}, mpsc, oneshot};
 use tokio_stream::StreamExt;
+use tonic::Streaming;
 
-use crate::auto_drive_edge_service::v1::{QueueAutoScriptRequest, WatchTheBeginnerCarEventsRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient, watch_the_beginner_car_events_response::Event};
+use crate::auto_drive_edge_service::v1::{CancelAutoScriptRequest, RunAutoScriptRequest, RunAutoScriptResponse, WatchTheBeginnerCarEventsRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient, watch_the_beginner_car_events_response::Event};
 
 pub enum ToDeviceMessage {
-  StartAutoScript { data: Vec<u8>, sender: oneshot::Sender<String> }
+  StartAutoScript { data: Vec<u8>, response_tx: oneshot::Sender<Result<Streaming<RunAutoScriptResponse>, tonic::Status>>, },
+  CancelAutoScript { run_uuid: String }
 }
 
 #[derive(Debug, Clone)]
@@ -52,11 +54,14 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     tokio::spawn(async move {
       while let Some(value) = receiver.recv().await {
         match value {
-            ToDeviceMessage::StartAutoScript { data, sender } =>  {
-                let response = client.queue_auto_script(QueueAutoScriptRequest{ build: 1, data }).await.unwrap();
+            ToDeviceMessage::StartAutoScript { data, response_tx } =>  {
+                let response = client.run_auto_script(RunAutoScriptRequest{ build: 1, data }).await.unwrap();
                 let response = response.into_inner();
-                sender.send(response.run_uuid).unwrap()
+                response_tx.send(Ok(response)).unwrap();
             }
+            ToDeviceMessage::CancelAutoScript { run_uuid } => {
+                client.cancel_auto_script(CancelAutoScriptRequest{ run_uuid }).await.unwrap();
+            },
         };
       }
     });

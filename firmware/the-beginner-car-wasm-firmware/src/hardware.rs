@@ -1,4 +1,7 @@
-use std::sync::{Arc, atomic::{AtomicU16, Ordering}};
+use std::sync::{
+    Arc,
+    atomic::{AtomicU16, Ordering},
+};
 
 use crate::hardware::motor::Motor;
 
@@ -22,7 +25,12 @@ pub struct TheBeginnerCarHardware {
 }
 
 impl TheBeginnerCarHardware {
-    pub fn new(wheel_a: Motor, wheel_b: Motor, ir_utmost_front_utmost_left_latest_reading: Arc<AtomicU16>, ir_utmost_front_utmost_right_latest_reading: Arc<AtomicU16>) -> Self {
+    pub fn new(
+        wheel_a: Motor,
+        wheel_b: Motor,
+        ir_utmost_front_utmost_left_latest_reading: Arc<AtomicU16>,
+        ir_utmost_front_utmost_right_latest_reading: Arc<AtomicU16>,
+    ) -> Self {
         Self {
             allowed_controller: RequestOrigin::Manual,
             wheel_a,
@@ -30,7 +38,7 @@ impl TheBeginnerCarHardware {
             motor_battery: 0.0,
             mcu_battery: 0.0,
             ir_utmost_front_utmost_left_latest_reading,
-            ir_utmost_front_utmost_right_latest_reading
+            ir_utmost_front_utmost_right_latest_reading,
         }
     }
 
@@ -59,11 +67,13 @@ impl TheBeginnerCarHardware {
     }
 
     pub fn get_ir_utmost_front_utmost_left_value(&self) -> u16 {
-        self.ir_utmost_front_utmost_left_latest_reading.load(Ordering::Relaxed)
+        self.ir_utmost_front_utmost_left_latest_reading
+            .load(Ordering::Relaxed)
     }
 
     pub fn get_ir_utmost_front_utmost_right_value(&self) -> u16 {
-        self.ir_utmost_front_utmost_right_latest_reading.load(Ordering::Relaxed)
+        self.ir_utmost_front_utmost_right_latest_reading
+            .load(Ordering::Relaxed)
     }
 
     pub fn stop(&mut self) {

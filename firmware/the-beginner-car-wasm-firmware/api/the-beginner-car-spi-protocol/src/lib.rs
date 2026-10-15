@@ -14,7 +14,7 @@ pub struct LogMessage {
     pub level: LogLevel,
     pub target: String,
     pub message: String,
-    pub trace_id: Option<String>
+    pub trace_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -35,17 +35,19 @@ pub enum RequestToHardware {
     RunAutoScript {
         data: Vec<u8>,
     },
-    StopAutoScript
+    StopAutoScript,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
-    Log { message: LogMessage },
+    Log {
+        message: LogMessage,
+    },
     InfraredLedReadings {
         utmost_front_utmost_left: u16,
-        utmost_front_utmost_right: u16
+        utmost_front_utmost_right: u16,
     },
-    AutoScriptStopped
+    AutoScriptStopped,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,5 +55,5 @@ pub enum ResponseFromHardware {
     Ok,
     Status { light_on: bool, motor_speed: i32 },
     Events { events: Vec<Event> },
-    AutoScriptStarted { id: i32 }
+    AutoScriptStarted { id: i32 },
 }

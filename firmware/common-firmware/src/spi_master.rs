@@ -46,7 +46,10 @@ impl<'d> SpiMaster<'d> {
         })
     }
 
-    pub fn wait_until_ready_pin(slave_ready: &mut PinDriver<'_, Input>, is_high: bool) -> anyhow::Result<()> {
+    pub fn wait_until_ready_pin(
+        slave_ready: &mut PinDriver<'_, Input>,
+        is_high: bool,
+    ) -> anyhow::Result<()> {
         let pin_number = slave_ready.pin();
 
         let fut = async {
@@ -72,11 +75,15 @@ impl<'d> SpiMaster<'d> {
         Ok(())
     }
 
-    pub fn wait_until_slave_doesnt_want_data(slave_ready: &mut PinDriver<'_, Input>) -> anyhow::Result<()> {
+    pub fn wait_until_slave_doesnt_want_data(
+        slave_ready: &mut PinDriver<'_, Input>,
+    ) -> anyhow::Result<()> {
         Self::wait_until_ready_pin(slave_ready, false)
     }
 
-    pub fn wait_until_slave_wants_data(slave_ready: &mut PinDriver<'_, Input>) -> anyhow::Result<()> {
+    pub fn wait_until_slave_wants_data(
+        slave_ready: &mut PinDriver<'_, Input>,
+    ) -> anyhow::Result<()> {
         Self::wait_until_ready_pin(slave_ready, true)
     }
 
@@ -127,9 +134,7 @@ struct MasterTransaction<'a, 'd> {
 }
 
 impl<'a, 'd> MasterTransaction<'a, 'd> {
-    pub fn new(
-        master_has_transaction: &'a mut PinDriver<'d, Output>,
-    ) -> Self {
+    pub fn new(master_has_transaction: &'a mut PinDriver<'d, Output>) -> Self {
         master_has_transaction.set_high().unwrap();
 
         Self {

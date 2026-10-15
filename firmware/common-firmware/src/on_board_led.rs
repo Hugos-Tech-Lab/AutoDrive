@@ -1,9 +1,7 @@
-use std::{
-    borrow::{Borrow, BorrowMut},
-};
+use std::borrow::{Borrow, BorrowMut};
 
 use esp_idf_svc::hal::{
-    gpio::{AnyIOPin},
+    gpio::AnyIOPin,
     spi::{self, Dma, SpiBusDriver, SpiConfig, SpiDriver, SpiDriverConfig},
     units::Hertz,
 };
@@ -36,7 +34,7 @@ pub struct HardwareState {
 unsafe impl Send for HardwareState {}
 
 pub struct OnBoardLED {
-    hardware: HardwareState
+    hardware: HardwareState,
 }
 
 impl OnBoardLED {
@@ -59,9 +57,7 @@ impl OnBoardLED {
         // Construct the state payload
         let hardware = HardwareState { led };
 
-        Self {
-            hardware
-        }
+        Self { hardware }
     }
 
     // fn convert(value: i8, max: u32) -> (u32, bool) {
@@ -75,11 +71,13 @@ impl OnBoardLED {
     // }
 
     pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
-        self.hardware.led.write([RGB8{ r, g, b }]).unwrap();
+        self.hardware.led.write([RGB8 { r, g, b }]).unwrap();
     }
 
     pub fn off(&mut self) {
-        self.hardware.led.write([RGB8 { r: 0, g: 0, b: 0 }]).unwrap();
+        self.hardware
+            .led
+            .write([RGB8 { r: 0, g: 0, b: 0 }])
+            .unwrap();
     }
 }
-

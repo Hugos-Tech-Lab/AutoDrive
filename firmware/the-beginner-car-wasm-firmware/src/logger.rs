@@ -74,14 +74,12 @@ impl Log for Logger {
 pub fn init_logging() -> Receiver<LogMessage> {
     let (sender, receiver) = mpsc::sync_channel(100);
 
-
     let logger = Box::leak(Box::new(Logger {
         inner: EspIdfLogger::new(()),
         sender: sender.clone(),
     }));
 
-    log::set_logger(logger)
-        .expect("failed to initialize logger");
+    log::set_logger(logger).expect("failed to initialize logger");
 
     log::set_max_level(LevelFilter::Debug);
 

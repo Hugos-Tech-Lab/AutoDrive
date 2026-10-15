@@ -55,6 +55,15 @@ pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
             #helper_name(the_beginner_car);
         }
+
+
+        #[cfg(not(test))]
+        #[panic_handler]
+        fn panic(_info: &core::panic::PanicInfo) -> ! {
+            // TODO add info about the panic
+            print("Oh no.. the WASM script panicked.");
+            loop {}
+        }
     }
     .into()
 }

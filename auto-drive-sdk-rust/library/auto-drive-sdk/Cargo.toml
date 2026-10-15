@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 auto-drive-sdk-macros = { path = "../auto-drive-sdk-macros" }
+the-beginner-car-wasm-sdk = { path = "../../../firmware/the-beginner-car-wasm-firmware/api/the-beginner-car-wasm-sdk" }
 
 [lib]
 path = "src/lib.rs"
@@ -13,7 +14,7 @@ path = "src/lib.rs"
 name = "auto-drive"
 path = "src/main.rs"
 
-[[example]]
-name = "basic"
-path = "examples/basic.rs"
-crate-type = ["cdylib"]
+# [[example]]
+# name = "basic"
+# path = "examples/basic.rs"
+# crate-type = ["cdylib"]

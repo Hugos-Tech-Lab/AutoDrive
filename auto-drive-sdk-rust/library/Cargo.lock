@@ -7,6 +7,7 @@ name = "auto-drive-sdk"
 version = "0.1.0"
 dependencies = [
  "auto-drive-sdk-macros",
+ "the-beginner-car-wasm-sdk",
 ]
 
 [[package]]
@@ -45,6 +46,10 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "the-beginner-car-wasm-sdk"
+version = "0.1.0"
 
 [[package]]
 name = "unicode-ident"

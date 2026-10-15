@@ -1,29 +1,23 @@
-mod ffi {
-    #[link(wasm_import_module = "host")]
-    unsafe extern "C" {
-        /// takes u8 so we don't wait too long (i. 255ms max) between cancellation checks
-        pub fn delay(milliseconds: u8);
-        pub fn print(ptr: u32, len: u32);
-    }
-}
+use the_beginner_car_wasm_sdk::guest;
+
 
 pub fn delay(milliseconds: u64) {
     let mut milliseconds = milliseconds;
     // convert from u64 -> u8
     unsafe {
         while milliseconds > u8::MAX as u64 {
-            ffi::delay(u8::MAX);
+            guest::delay(u8::MAX);
             milliseconds -= u8::MAX as u64;
         }
 
         if milliseconds > 0 {
-            ffi::delay(milliseconds as u8);
+            guest::delay(milliseconds as u8);
         }
     }
 }
 
 pub fn print(text: &str) {
     unsafe {
-        ffi::print(text.as_ptr() as u32, text.len() as u32);
+        guest::print(text.as_ptr() as u32, text.len() as u32);
     }
 }

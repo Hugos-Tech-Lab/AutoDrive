@@ -9,7 +9,7 @@ use crate::{
     auto_drive_edge_service::v1::{
         AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent,
         InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage, LogSystemOrigin,
-        MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent,
+        MotorSpeedUpdatedEvent, QueueAutoScriptRequest, QueueAutoScriptResponse, SystemStateEvent,
         WasmInstalledEvent, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse,
         auto_drive_edge_service_server::AutoDriveEdgeService,
         watch_the_beginner_car_events_response::Event,
@@ -29,15 +29,15 @@ impl GrpcService {
 
 #[tonic::async_trait]
 impl AutoDriveEdgeService for GrpcService {
-    async fn run_auto_script(
+    async fn queue_auto_script(
         &self,
-        request: Request<RunAutoScriptRequest>,
-    ) -> Result<Response<RunAutoScriptResponse>, Status> {
+        request: Request<QueueAutoScriptRequest>,
+    ) -> Result<Response<QueueAutoScriptResponse>, Status> {
         self.build_a
-            .run_auto_script(request.into_inner().data)
+            .queue_auto_script(request.into_inner().data)
             .await;
 
-        Ok(RunAutoScriptResponse {}.into())
+        Ok(QueueAutoScriptResponse {}.into())
     }
 
     type WatchTheBeginnerCarEventsStream = Pin<

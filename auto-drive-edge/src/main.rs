@@ -10,7 +10,6 @@ use std::error::Error;
 pub mod auto_drive_edge_server;
 pub mod devices_config;
 pub mod grpc_service;
-pub mod local_http;
 pub mod physical_hardware;
 pub mod the_beginner_car_comms;
 pub mod the_beginner_car_auto_script;

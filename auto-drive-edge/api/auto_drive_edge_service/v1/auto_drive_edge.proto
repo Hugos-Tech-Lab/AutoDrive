@@ -3,17 +3,17 @@ syntax = "proto3";
 package auto_drive_edge_service.v1;
 
 service AutoDriveEdgeService {
-  rpc RunAutoScript(RunAutoScriptRequest) returns (RunAutoScriptResponse);
+  rpc QueueAutoScript(QueueAutoScriptRequest) returns (QueueAutoScriptResponse);
 
   rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
 }
 
-message RunAutoScriptRequest {
+message QueueAutoScriptRequest {
   TheBeginnerCarBuild build = 1;
   bytes data = 2;
 }
 
-message RunAutoScriptResponse {}
+message QueueAutoScriptResponse {}
 
 message WatchTheBeginnerCarEventsRequest {}
 

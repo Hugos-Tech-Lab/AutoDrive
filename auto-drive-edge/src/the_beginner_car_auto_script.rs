@@ -1,7 +1,8 @@
-use std::{sync::Arc, time::Duration};
+use std::{collections::VecDeque, sync::{Arc, atomic::{AtomicU32, Ordering}}, time::Duration};
 
+use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::{
-    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+    AutoScript, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
     sync::{
@@ -11,13 +12,17 @@ use tokio::{
     task::JoinHandle,
     time::timeout_at,
 };
+use uuid::Uuid;
 
-pub struct HardwareState {
-    queued_scripts: Vec<Vec<u8>>,
+static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
+
+pub struct AutoScriptState {
+    queued_scripts: VecDeque<AutoScript>,
+    running_script: Option<AutoScript>
 }
 
 pub struct TheBeginnerCarAutoScript {
-    state: Arc<Mutex<HardwareState>>,
+    state: Arc<Mutex<AutoScriptState>>,
     pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
     _connection_handle: JoinHandle<()>,
@@ -28,8 +33,9 @@ impl TheBeginnerCarAutoScript {
         outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
         incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
     ) -> Self {
-        let state = Arc::new(Mutex::new(HardwareState {
-            queued_scripts: vec![],
+        let state = Arc::new(Mutex::new(AutoScriptState {
+            queued_scripts: VecDeque::new(),
+            running_script: None,
         }));
 
         let connection_handle = tokio::spawn({
@@ -55,52 +61,69 @@ impl TheBeginnerCarAutoScript {
         //
     }
 
-    pub async fn cancel_auto_script(&self) {
+    pub async fn cancel_auto_script(&self, run_uuid: String) {
         self.outgoing_tx
-            .send(TheBeginnerCarIncomingMessages::StopAutoScript)
+            .send(TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid })
             .await
             .unwrap();
     }
 
-    pub async fn run_auto_script(
+    pub async fn queue_auto_script(
         &self,
         data: Vec<u8>,
-    ) -> broadcast::Receiver<TheBeginnerCarOutgoingMessages> {
+    ) {
+        let digest = Sha256::digest(&data);
+        let digest = hex::encode(Sha256::digest(digest));
+        let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
 
+        let auto_script = AutoScript {
+            run_uuid: Uuid::new_v4().to_string(),
+            preprocessed_file_hash: digest,
+            run_number,
+            script: data,
+        };
 
-
-        // TODO: this should error if not connected to hardware
-        let mut rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages> =
-            self.incoming_rx.subscribe();
-        self.outgoing_tx
-            .send(TheBeginnerCarIncomingMessages::StopAutoScript)
-            .await
-            .unwrap();
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
-
-        loop {
-            match timeout_at(deadline, rx.recv()).await {
-                Ok(Ok(TheBeginnerCarOutgoingMessages::AutoScriptStopped)) => {
-                    dbg!("got autoscript stopped message");
-                    break;
-                }
-                Ok(Ok(_)) => {}
-                Ok(Err(_)) => break,
-                Err(_) => {
-                    dbg!("timed out waiting for autoscript stopped message");
-                    break;
-                }
-            }
+        {
+            let mut state = self.state.lock().await;
+            state.queued_scripts.push_back(auto_script);
         }
 
-        let start_script = TheBeginnerCarIncomingMessages::RunAutoScript { data };
-        self.outgoing_tx.send(start_script).await.unwrap();
-        rx
+        // // TODO: this should error if not connected to hardware
+        // let mut rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages> =
+        //     self.incoming_rx.subscribe();
+        // self.outgoing_tx
+        //     .send(TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid: () })
+        //     .await
+        //     .unwrap();
+        // let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+
+        // loop {
+        //     match timeout_at(deadline, rx.recv()).await {
+        //         Ok(Ok(TheBeginnerCarOutgoingMessages::AutoScriptStopped)) => {
+        //             dbg!("got autoscript stopped message");
+        //             break;
+        //         }
+        //         Ok(Ok(_)) => {}
+        //         Ok(Err(_)) => break,
+        //         Err(_) => {
+        //             dbg!("timed out waiting for autoscript stopped message");
+        //             break;
+        //         }
+        //     }
+        // }
+
+        // let start_script = TheBeginnerCarIncomingMessages::RunAutoScript { data };
+        // self.outgoing_tx.send(start_script).await.unwrap();
+        // rx
     }
 
-    pub fn queue_auto_script() {
+    pub fn start_next_auto_script() {
         //
     }
+
+    // pub fn queue_auto_script() {
+    //     //
+    // }
 
     pub fn list_queued_auto_scripts() {
         //
@@ -111,7 +134,7 @@ impl TheBeginnerCarAutoScript {
     async fn long_lived_watcher(
         mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
         outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
-        state: Arc<Mutex<HardwareState>>,
+        state: Arc<Mutex<AutoScriptState>>,
     ) {
         loop {
             match incoming_rx.recv().await {
@@ -132,16 +155,19 @@ impl TheBeginnerCarAutoScript {
     }
 
     pub async fn on_auto_script_stopped(
-        state: Arc<Mutex<HardwareState>>,
+        state: Arc<Mutex<AutoScriptState>>,
         outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     ) {
         return; // TODO remove this
-        let mut state = state.lock().await;
-        let script = state.queued_scripts.pop().unwrap(); // TODO: this should be taking the next in the queue.......
-        outgoing_tx
-            .send(TheBeginnerCarIncomingMessages::RunAutoScript { data: script })
-            .await
-            .unwrap();
+        {
+            let mut state = state.lock().await;
+            let script = state.queued_scripts.pop_front().unwrap(); // TODO: this should be taking the next in the queue.......
+        }
+
+        // outgoing_tx
+        //     .send(TheBeginnerCarIncomingMessages::RunAutoScript { data: script })
+        //     .await
+        //     .unwrap();
         //
     }
 

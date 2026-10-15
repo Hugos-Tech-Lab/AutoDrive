@@ -26,13 +26,21 @@ pub struct LogMessage {
     pub trace_id: Option<String>
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AutoScript {
+    pub run_uuid: String,
+    pub preprocessed_file_hash: String,
+    pub run_number: u32,
+    pub script: Vec<u8>
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TheBeginnerCarIncomingMessages {
     SetMotorASpeed { speed: i8 },
     SetMotorBSpeed { speed: i8 },
     InformPositionFromCamera { x: i32, y: i32 },
-    StopAutoScript,
-    RunAutoScript { data: Vec<u8> },
+    CancelAutoScript { run_uuid : String },
+    RunAutoScript { script: AutoScript },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

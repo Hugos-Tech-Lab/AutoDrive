@@ -2,7 +2,7 @@ use std::ffi::c_void;
 
 use esp_idf_svc::hal::delay::FreeRtos;
 use log::info;
-use the_beginner_car_wasm_sdk::host::WasmUtils;
+use the_beginner_car_wasm_sdk::host::WasmExports;
 use wamr_rust_sdk::sys::{
     WASMExecEnv, wasm_runtime_addr_app_to_native, wasm_runtime_get_custom_data,
     wasm_runtime_get_module_inst, wasm_runtime_terminate, wasm_runtime_validate_app_addr,
@@ -10,39 +10,27 @@ use wamr_rust_sdk::sys::{
 
 use crate::auto_script::wasm_thread::WasmData;
 
-pub struct FunctionDefinition {
-    pub f_name: &'static str,
-    pub f_pointer: *mut c_void,
-}
+pub struct TheBeginnerCarExports;
 
-unsafe impl Sync for FunctionDefinition {}
+impl WasmExports for TheBeginnerCarExports {
+    /// # Safety
+    ///
+    /// Must be called from within a WASM runtime with a valid exec_env.
+    #[unsafe(no_mangle)]
+    unsafe extern "C" fn delay(exec_env: *mut c_void, milliseconds: u8) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
 
-pub static NATIVE_SYMBOLS: &[FunctionDefinition] = &[
-    FunctionDefinition {
-        f_name: "set_onboard_led_color",
-        f_pointer: set_onboard_led_color as *const () as *mut c_void,
-    },
-    FunctionDefinition {
-        f_name: "set_motor_a_speed",
-        f_pointer: set_motor_a_speed as *const () as *mut c_void,
-    },
-    FunctionDefinition {
-        f_name: "set_motor_b_speed",
-        f_pointer: set_motor_b_speed as *const () as *mut c_void,
-    },
-    FunctionDefinition {
-        f_name: "get_ir_utmost_front_utmost_left_value",
-        f_pointer: get_ir_utmost_front_utmost_left_value as *const () as *mut c_void,
-    },
-    FunctionDefinition {
-        f_name: "get_ir_utmost_front_utmost_right_value",
-        f_pointer: get_ir_utmost_front_utmost_right_value as *const () as *mut c_void,
-    },
-];
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
 
-pub struct TheBeginnerCarUtils;
+        FreeRtos::delay_ms(milliseconds as u32);
+    }
 
-impl WasmUtils for TheBeginnerCarUtils {
     /// # Safety
     ///
     /// Must be called from within a WASM runtime with a valid exec_env.
@@ -89,18 +77,90 @@ impl WasmUtils for TheBeginnerCarUtils {
     ///
     /// Must be called from within a WASM runtime with a valid exec_env.
     #[unsafe(no_mangle)]
-    unsafe extern "C" fn delay(exec_env: *mut c_void, milliseconds: u8) {
+    unsafe extern "C" fn set_onboard_led_color(exec_env: *mut c_void, _r: u8, _g: u8, _b: u8) {
         if exec_env.is_null() {
             return;
         }
         let exec_env = exec_env.cast::<WASMExecEnv>();
-
         let wasm_data: &mut WasmData = get_wasm_data(exec_env);
         if wasm_data.ct.is_cancelled() {
             unsafe { terminate(exec_env) };
         }
 
-        FreeRtos::delay_ms(milliseconds as u32);
+        unimplemented!();
+    }
+
+    /// # Safety
+    ///
+    /// Must be called from within a WASM runtime with a valid exec_env.
+    #[unsafe(no_mangle)]
+    unsafe extern "C" fn set_motor_a_speed(exec_env: *mut c_void, speed: i8) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        hardware.set_wheel_a_speed(speed, crate::hardware::RequestOrigin::Manual);
+    }
+
+    /// # Safety
+    ///
+    /// Must be called from within a WASM runtime with a valid exec_env.
+    #[unsafe(no_mangle)]
+    unsafe extern "C" fn set_motor_b_speed(exec_env: *mut c_void, speed: i8) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        hardware.set_wheel_b_speed(speed, crate::hardware::RequestOrigin::Manual);
+    }
+
+    /// # Safety
+    ///
+    /// Must be called from within a WASM runtime with a valid exec_env.
+    #[unsafe(no_mangle)]
+    unsafe extern "C" fn get_ir_utmost_front_utmost_left_value(exec_env: *mut c_void) -> u16 {
+        if exec_env.is_null() {
+            return 0;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let hardware = wasm_data.hardware.lock().unwrap();
+        hardware.get_ir_utmost_front_utmost_left_value()
+    }
+
+    /// # Safety
+    ///
+    /// Must be called from within a WASM runtime with a valid exec_env.
+    #[unsafe(no_mangle)]
+    unsafe extern "C" fn get_ir_utmost_front_utmost_right_value(exec_env: *mut c_void) -> u16 {
+        if exec_env.is_null() {
+            return 0;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let hardware = wasm_data.hardware.lock().unwrap();
+        hardware.get_ir_utmost_front_utmost_right_value()
     }
 }
 
@@ -110,90 +170,6 @@ unsafe fn terminate(exec_env: *mut WASMExecEnv) {
     }
     let instance = unsafe { wasm_runtime_get_module_inst(exec_env) };
     unsafe { wasm_runtime_terminate(instance) };
-}
-
-/// # Safety
-///
-/// Must be called from within a WASM runtime with a valid exec_env.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn set_onboard_led_color(exec_env: *mut WASMExecEnv, _r: u8, _g: u8, _b: u8) {
-    if exec_env.is_null() {
-        return;
-    }
-    let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-    if wasm_data.ct.is_cancelled() {
-        unsafe { terminate(exec_env) };
-    }
-
-    unimplemented!();
-}
-
-/// # Safety
-///
-/// Must be called from within a WASM runtime with a valid exec_env.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn set_motor_a_speed(exec_env: *mut WASMExecEnv, speed: i8) {
-    if exec_env.is_null() {
-        return;
-    }
-    let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-    if wasm_data.ct.is_cancelled() {
-        unsafe { terminate(exec_env) };
-    }
-
-    let mut hardware = wasm_data.hardware.lock().unwrap();
-    hardware.set_wheel_a_speed(speed, crate::hardware::RequestOrigin::Manual);
-}
-
-/// # Safety
-///
-/// Must be called from within a WASM runtime with a valid exec_env.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn set_motor_b_speed(exec_env: *mut WASMExecEnv, speed: i8) {
-    if exec_env.is_null() {
-        return;
-    }
-    let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-    if wasm_data.ct.is_cancelled() {
-        unsafe { terminate(exec_env) };
-    }
-
-    let mut hardware = wasm_data.hardware.lock().unwrap();
-    hardware.set_wheel_b_speed(speed, crate::hardware::RequestOrigin::Manual);
-}
-
-/// # Safety
-///
-/// Must be called from within a WASM runtime with a valid exec_env.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn get_ir_utmost_front_utmost_left_value(exec_env: *mut WASMExecEnv) -> u16 {
-    if exec_env.is_null() {
-        return 0;
-    }
-    let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-    if wasm_data.ct.is_cancelled() {
-        unsafe { terminate(exec_env) };
-    }
-
-    let hardware = wasm_data.hardware.lock().unwrap();
-    hardware.get_ir_utmost_front_utmost_left_value()
-}
-
-/// # Safety
-///
-/// Must be called from within a WASM runtime with a valid exec_env.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn get_ir_utmost_front_utmost_right_value(exec_env: *mut WASMExecEnv) -> u16 {
-    if exec_env.is_null() {
-        return 0;
-    }
-    let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-    if wasm_data.ct.is_cancelled() {
-        unsafe { terminate(exec_env) };
-    }
-
-    let hardware = wasm_data.hardware.lock().unwrap();
-    hardware.get_ir_utmost_front_utmost_right_value()
 }
 
 fn get_wasm_data<'a>(exec_env: *mut WASMExecEnv) -> &'a mut WasmData {

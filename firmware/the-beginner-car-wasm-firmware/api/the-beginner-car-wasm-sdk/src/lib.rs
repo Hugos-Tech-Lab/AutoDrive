@@ -1,44 +1,27 @@
-#![cfg_attr(target_arch = "wasm32", no_std)]
+#![no_std]
 
-/// For WASM guests!
-///
-/// Adds the imports
-#[cfg(target_arch = "wasm32")]
-pub mod guest {
-    #[link(wasm_import_module = "host")]
-    unsafe extern "C" {
-        /// takes u8 so we don't wait too long (i. 255ms max) between cancellation checks
-        pub fn delay(milliseconds: u8);
-        pub fn print(ptr: u32, len: u32);
-    }
-}
+pub mod macros;
 
-/// For the host to implement
-#[cfg(not(target_arch = "wasm32"))]
-pub mod host {
-    use std::ffi::c_void;
+// Invoke the macro to generate the guest module and host trait
+define_wasm_api! {
+    /// takes u8 so we don't wait too long (i.e. 255ms max) between cancellation checks
+    fn delay(milliseconds: u8);
+    
+    /// prints from memory
+    fn print(ptr: u32, len: u32);
 
-    /// For the runtime to use
-    pub struct FunctionDefinition {
-        pub f_name: &'static str,
-        pub f_pointer: *mut c_void,
-    }
+    /// Sets the onboard LED color
+    fn set_onboard_led_color(r: u8, g: u8, b: u8);
 
-    pub fn host_functions<T: WasmUtils>() -> [FunctionDefinition; 2] {
-        [
-            FunctionDefinition {
-                f_name: "delay",
-                f_pointer: T::delay as *const () as *mut c_void,
-            },
-            FunctionDefinition {
-                f_name: "print",
-                f_pointer: T::print as *const () as *mut c_void,
-            },
-        ]
-    }
+    /// Sets motor A speed
+    fn set_motor_a_speed(speed: i8);
 
-    pub trait WasmUtils {
-        unsafe extern "C" fn delay(exec_env: *mut c_void, milliseconds: u8);
-        unsafe extern "C" fn print(exec_env: *mut c_void, ptr: u32, len: u32);
-    }
+    /// Sets motor B speed
+    fn set_motor_b_speed(speed: i8);
+
+    /// Gets utmost front left IR value
+    fn get_ir_utmost_front_utmost_left_value() -> u16;
+
+    /// Gets utmost front right IR value
+    fn get_ir_utmost_front_utmost_right_value() -> u16;
 }

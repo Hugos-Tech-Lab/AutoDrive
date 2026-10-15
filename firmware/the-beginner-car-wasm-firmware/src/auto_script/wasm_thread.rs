@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    auto_script::{cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarUtils}, hardware::TheBeginnerCarHardware,
+    auto_script::{cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarExports}, hardware::TheBeginnerCarHardware,
 };
 use anyhow::{Result, anyhow};
 use log::info;
@@ -55,7 +55,7 @@ impl WasmThread {
         let mut runtime = Runtime::builder().use_memory_pool(runtime_pool, linear_pool);
 
 
-        for native_sybol in host_functions::<TheBeginnerCarUtils>() {
+        for native_sybol in host_functions::<TheBeginnerCarExports>() {
             runtime = runtime
                 .register_host_function(native_sybol.f_name, native_sybol.f_pointer)
         }

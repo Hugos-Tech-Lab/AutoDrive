@@ -1,6 +1,9 @@
+#![cfg_attr(target_arch = "wasm32", no_std)]
+
 /// For WASM guests!
 ///
 /// Adds the imports
+#[cfg(target_arch = "wasm32")]
 pub mod guest {
     #[link(wasm_import_module = "host")]
     unsafe extern "C" {
@@ -11,6 +14,7 @@ pub mod guest {
 }
 
 /// For the host to implement
+#[cfg(not(target_arch = "wasm32"))]
 pub mod host {
     use std::ffi::c_void;
 

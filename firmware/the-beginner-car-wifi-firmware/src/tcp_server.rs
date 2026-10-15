@@ -12,8 +12,6 @@ pub mod verify_and_set_valid;
 
 use anyhow::{Context, bail};
 use async_io::{Async, Timer};
-use esp_idf_svc::http::Method;
-use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use flume::Receiver;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, try_join};
 use log::error;

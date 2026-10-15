@@ -66,3 +66,11 @@ impl Motor {
         (output, negative)
     }
 }
+
+impl Drop for Motor {
+    fn drop(&mut self) {
+        if let Err(err) = self.stop() {
+            log::error!("Could not stop motor on drop: '{err}'");
+        }
+    }
+}

@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use common_firmware::spi_slave::{SpiSlave, SpiSlaveHardware};
+use common_firmware::spi_slave::SpiSlaveHardware;
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::{
@@ -16,11 +16,11 @@ use esp_idf_svc::hal::{
     },
     delay::FreeRtos,
 };
-use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
+use the_beginner_car_spi_protocol::Event;
 
 use crate::{
     auto_script::AutoScript,
-    hardware::{RequestOrigin, TheBeginnerCarHardware, motor::Motor},
+    hardware::{TheBeginnerCarHardware, motor::Motor},
     logger::init_logging,
     server_spi::ServerSpi,
 };

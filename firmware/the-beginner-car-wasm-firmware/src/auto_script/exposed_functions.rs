@@ -1,5 +1,3 @@
-use std::{thread, time::Duration};
-
 use esp_idf_svc::hal::delay::FreeRtos;
 use log::info;
 use wamr_rust_sdk::sys::{
@@ -71,8 +69,6 @@ pub extern "C" fn set_onboard_led_color(exec_env: *mut WASMExecEnv, r: u8, g: u8
     }
 
     unimplemented!();
-
-    // OnBoardLed::set_color(RGB8 { r, g, b })
 }
 
 #[unsafe(no_mangle)]
@@ -118,7 +114,6 @@ pub extern "C" fn get_ir_utmost_front_utmost_right_value(exec_env: *mut WASMExec
     let hardware = wasm_data.hardware.lock().unwrap();
     hardware.get_ir_utmost_front_utmost_right_value()
 }
-
 
 fn get_wasm_data<'a>(exec_env: *mut WASMExecEnv) -> &'a mut WasmData {
     //  TODO: disable WAMR_BUILD_LIB_PTHREAD because this is not thread safe

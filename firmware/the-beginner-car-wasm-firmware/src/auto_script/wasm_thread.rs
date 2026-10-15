@@ -35,7 +35,6 @@ impl Drop for WasmData {
 pub struct WasmThread {
     hardware: Arc<Mutex<TheBeginnerCarHardware>>,
     runtime: Rc<Runtime>,
-    installed_module: Option<Rc<Module>>,
     on_stopped_running: Box<dyn Fn() + Send + 'static>,
     ct: CancellationToken,
 }
@@ -87,7 +86,6 @@ impl WasmThread {
         Ok(Self {
             hardware,
             runtime: Rc::new(runtime),
-            installed_module: None,
             ct,
             on_stopped_running: Box::new(on_stopped_running),
         })

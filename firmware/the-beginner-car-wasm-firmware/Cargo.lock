@@ -91,7 +91,6 @@ dependencies = [
  "edge-nal-std",
  "embassy-sync",
  "embassy-time",
- "embedded-dht-rs",
  "embedded-io-async",
  "embedded-svc",
  "embuild",
@@ -632,15 +631,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9d2e857f87ac832df68fa498d18ddc679175cf3d2e4aa893988e5601baf9438"
 dependencies = [
  "nb 1.1.0",
-]
-
-[[package]]
-name = "embedded-dht-rs"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d29effeefb22e6d214e9ab294123ff3fe3578159679cde5591c82c272c8ae53f"
-dependencies = [
- "embedded-hal 1.0.0",
 ]
 
 [[package]]

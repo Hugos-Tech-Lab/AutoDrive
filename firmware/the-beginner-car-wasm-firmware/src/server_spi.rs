@@ -81,7 +81,10 @@ impl ServerSpi {
             }
             RequestToHardware::RunAutoScript { data } => {
                 info!("run auto script");
-                auto_script.run(data).unwrap();
+                match auto_script.run(data) {
+                    Ok(ok) => {},
+                    Err(err) => log::error!("{}", err),
+                }
             }
             RequestToHardware::StopAutoScript => {
                 if auto_script.is_running() {

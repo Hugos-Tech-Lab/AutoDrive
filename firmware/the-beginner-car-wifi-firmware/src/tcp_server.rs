@@ -12,8 +12,6 @@ pub mod verify_and_set_valid;
 
 use anyhow::{Context, bail};
 use async_io::{Async, Timer};
-use esp_idf_svc::http::Method;
-use esp_idf_svc::http::server::{Configuration, EspHttpConnection, EspHttpServer, Request};
 use flume::Receiver;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, try_join};
 use log::error;
@@ -95,14 +93,14 @@ where
                 println!("InformPositionFromCamera: {:?} {:?}", x, y);
             }
 
-            TheBeginnerCarIncomingMessages::RunAutoScript { data } => {
+            TheBeginnerCarIncomingMessages::RunAutoScript { script } => {
                 info!("run auto script");
 
                 let (sender, receiver) = std::sync::mpsc::sync_channel(1);
 
                 hardware_sender
                     .send(HardwareMessage {
-                        request: RequestToHardware::RunAutoScript { data },
+                        request: RequestToHardware::RunAutoScript { data: script.script },
                         response_tx: sender,
                     })
                     .context("sending RunAutoScript to hardware")?;
@@ -116,7 +114,7 @@ where
                 }
             }
 
-            TheBeginnerCarIncomingMessages::StopAutoScript => {
+            TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid } => {
                 let (sender, receiver) = std::sync::mpsc::sync_channel(1);
 
                 hardware_sender

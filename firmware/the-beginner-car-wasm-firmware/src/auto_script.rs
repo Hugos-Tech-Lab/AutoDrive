@@ -89,7 +89,7 @@ impl AutoScript {
 
     pub fn run(&self, data: Vec<u8>) -> Result<()> {
         let mut running_guard = self.running.lock().unwrap();
-        if *running_guard == true {
+        if *running_guard {
             panic!("already running");
         }
 

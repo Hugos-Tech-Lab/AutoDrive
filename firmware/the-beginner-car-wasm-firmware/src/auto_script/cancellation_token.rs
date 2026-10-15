@@ -1,4 +1,7 @@
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 #[derive(Clone)]
 pub struct CancellationToken {
@@ -22,5 +25,11 @@ impl CancellationToken {
 
     pub fn reset(&self) {
         self.raw.store(false, Ordering::Relaxed);
+    }
+}
+
+impl Default for CancellationToken {
+    fn default() -> Self {
+        Self::new()
     }
 }

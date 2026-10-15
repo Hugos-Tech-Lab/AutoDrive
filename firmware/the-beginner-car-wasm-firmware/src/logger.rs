@@ -7,6 +7,8 @@ use the_beginner_car_spi_protocol::{LogLevel, LogMessage};
 use std::cell::RefCell;
 
 thread_local! {
+    // Clippy false positive I guess? Open issue: https://github.com/rust-lang/rust-clippy/issues/13422
+    #[allow(clippy::missing_const_for_thread_local)]
     static TRACE_ID: RefCell<Option<String>> =
         const { RefCell::new(None) };
 }

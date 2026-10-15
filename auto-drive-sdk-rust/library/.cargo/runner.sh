@@ -13,7 +13,7 @@ if [[ ! -f "$wasm" ]]; then
 fi
 
 echo "Running: $wasm"
-echo "Sending run wasm request to the cloud..."
+echo "Sending run wasm request to the..."
 
 cleanup() {
     trap - INT TERM
@@ -30,7 +30,7 @@ cleanup() {
 
 trap cleanup INT TERM
 
-curl --fail \
+curl --fail-with-body \
     --silent \
     --show-error \
     --no-buffer \
@@ -38,6 +38,11 @@ curl --fail \
     --data-binary "@$wasm" \
     "$BASE_URL/run" |
     awk '
+        # Ignore the SSE "event:" framing lines
+        /^event:/ {
+            next
+        }
+
         /^data:/ {
             sub(/^data:[[:space:]]?/, "")
             line = $0
@@ -69,6 +74,14 @@ curl --fail \
                 print line
             }
 
+            fflush()
+            next
+        }
+        
+        # Catch non-SSE plain text responses (like your 413 error message)
+        # We already skipped "event:" and "data:". Skip comments (":") and empty lines.
+        !/^:/ && NF > 0 {
+            print "\033[31m[SERVER ERROR]\033[0m " $0
             fflush()
         }
     '

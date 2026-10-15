@@ -3,7 +3,7 @@ use std::error::Error;
 use tokio::sync::broadcast;
 use tokio_stream::StreamExt;
 
-use crate::{auto_drive_edge_service::v1::{WatchTheBeginnerCarEventsRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient, watch_the_beginner_car_events_response::Event}, http::http_server};
+use crate::http::http_server;
 
 pub mod hardware;
 pub mod http;

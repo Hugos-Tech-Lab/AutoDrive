@@ -2,14 +2,14 @@
 members = ["auto-drive-sdk", "auto-drive-sdk-macros"]
 resolver = "2"
 
-# [profile.dev]
-# opt-level = "z"      # Optimize strictly for size
-# lto = true           # Enable Link-Time Optimization across all crates
-# codegen-units = 1    # Reduce parallel compilation blocks to maximize LTO stripping
-# panic = "abort"      # Remove heavy stack unwinding tracking structures
+[profile.dev]
+opt-level = "z"      # Optimize strictly for size
+lto = true           # Enable Link-Time Optimization across all crates
+codegen-units = 1    # Reduce parallel compilation blocks to maximize LTO stripping
+panic = "abort"      # Remove heavy stack unwinding tracking structures
 
-# [profile.release]
-# opt-level = "z"      # Optimize strictly for size
-# lto = true           # Enable Link-Time Optimization across all crates
-# codegen-units = 1    # Reduce parallel compilation blocks to maximize LTO stripping
-# panic = "abort"      # Remove heavy stack unwinding tracking structures
+[profile.release]
+opt-level = "z"      # Optimize strictly for size
+lto = true           # Enable Link-Time Optimization across all crates
+codegen-units = 1    # Reduce parallel compilation blocks to maximize LTO stripping
+panic = "abort"      # Remove heavy stack unwinding tracking structures

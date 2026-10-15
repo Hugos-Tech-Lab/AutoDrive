@@ -4,7 +4,7 @@ use std::time::Duration;
 use bytes::Bytes;
 use futures_util::{StreamExt, stream};
 use tokio_stream::wrappers::BroadcastStream;
-use warp::{http::StatusCode, Filter, Reply};
+use warp::{http::StatusCode, Filter, Reply, Rejection}; // Added Rejection
 
 use crate::auto_drive_edge_service::v1::watch_the_beginner_car_events_response::Event;
 use crate::edge_client::{Hardware, ToDeviceMessage};
@@ -15,8 +15,11 @@ pub fn run(
     let logs = hardware.logs.clone();
     let sender = hardware.sender.clone();
 
+    const MAX_BODY_SIZE: u64 = 16 * 1024;
+
     warp::path!("autoscript" / "run")
         .and(warp::post())
+        .and(warp::body::content_length_limit(MAX_BODY_SIZE))
         .and(warp::body::bytes())
         .and_then(move |body: Bytes| {
             let logs = logs.clone();
@@ -38,7 +41,6 @@ pub fn run(
                     );
                 }
 
-                
                 let event_stream = stream::once(async {
                     Ok::<_, Infallible>(
                         warp::sse::Event::default()
@@ -87,9 +89,8 @@ pub fn run(
                                 ))
                             }
                         }
-                    }));
-
-
+                    })
+                );
 
                 Ok(warp::sse::reply(
                     warp::sse::keep_alive()
@@ -98,6 +99,16 @@ pub fn run(
                         .stream(event_stream),
                 )
                 .into_response())
+            }
+        })
+        .recover(move |err: Rejection| async move {
+            if err.find::<warp::reject::PayloadTooLarge>().is_some() {
+                const MAX_BODY_KB: u64 = MAX_BODY_SIZE / 1024; // Calculate KB for the error message
+                let error_msg = format!("Payload too large. The maximum allowed size is {} KB.", MAX_BODY_KB);
+                Ok(warp::reply::with_status(error_msg, StatusCode::PAYLOAD_TOO_LARGE).into_response())
+            } else {
+                // If it's a different error, pass it along
+                Err(err)
             }
         })
 }

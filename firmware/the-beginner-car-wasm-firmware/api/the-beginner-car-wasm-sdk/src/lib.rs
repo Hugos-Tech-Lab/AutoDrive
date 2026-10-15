@@ -6,7 +6,7 @@ pub mod macros;
 define_wasm_api! {
     /// takes u8 so we don't wait too long (i.e. 255ms max) between cancellation checks
     fn delay(milliseconds: u8);
-    
+
     /// prints from memory
     fn print(ptr: u32, len: u32);
 

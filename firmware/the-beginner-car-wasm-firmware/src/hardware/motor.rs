@@ -1,8 +1,8 @@
+use esp_idf_svc::hal::units::*;
 use esp_idf_svc::hal::{
     gpio::{AnyIOPin, Output, PinDriver},
     ledc::{LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, SpeedMode, config::TimerConfig},
 };
-use esp_idf_svc::hal::units::*;
 
 pub struct Motor {
     power_driver: LedcDriver<'static>,

@@ -140,9 +140,7 @@ pub struct SpiPackets {
 
 impl SpiPackets {
     pub fn from_vec(packets: Vec<SpiPacket>) -> Self {
-        Self {
-            packets,
-        }
+        Self { packets }
     }
 
     pub fn push(&mut self, packet: SpiPacket) {
@@ -205,24 +203,22 @@ impl SpiPackets {
 mod tests {
     use super::*;
 
-#[test]
-fn test_packet_serialization_round_trip() {
-    let payload: Vec<u8> = (0..1000)
-        .map(|i| (i % 256) as u8)
-        .collect();
+    #[test]
+    fn test_packet_serialization_round_trip() {
+        let payload: Vec<u8> = (0..1000).map(|i| (i % 256) as u8).collect();
 
-    let packets = SpiPackets::from_payload(&payload).unwrap();
-    let bytes = packets.payload();
+        let packets = SpiPackets::from_payload(&payload).unwrap();
+        let bytes = packets.payload();
 
-    let decoded_packets = bytes
-        .chunks_exact(PACKET_SIZE)
-        .map(SpiPacket::from_bytes)
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
+        let decoded_packets = bytes
+            .chunks_exact(PACKET_SIZE)
+            .map(SpiPacket::from_bytes)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
 
-    let decoded = SpiPackets::from_vec(decoded_packets);
+        let decoded = SpiPackets::from_vec(decoded_packets);
 
-    assert_eq!(decoded.payload(), payload);
-    assert_eq!(decoded.packets(), packets.packets());
-}
+        assert_eq!(decoded.payload(), payload);
+        assert_eq!(decoded.packets(), packets.packets());
+    }
 }

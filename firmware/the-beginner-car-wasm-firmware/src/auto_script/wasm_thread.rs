@@ -7,18 +7,19 @@ use std::{
     },
 };
 
-use crate::{auto_script::cancellation_token::CancellationToken, hardware::TheBeginnerCarHardware};
+use crate::{
+    auto_script::{cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarUtils}, hardware::TheBeginnerCarHardware,
+};
 use anyhow::{Result, anyhow};
 use log::info;
+use the_beginner_car_wasm_sdk::host::host_functions;
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime,
     sys::wasm_runtime_set_custom_data,
 };
 
 pub enum WasmThreadCommand {
-    Run {
-        data: Vec<u8>
-    },
+    Run { data: Vec<u8> },
 }
 
 pub struct WasmData {
@@ -51,37 +52,14 @@ impl WasmThread {
         // ~1kb for allocator header
         let linear_pool = vec![0u8; 66 * 1024].into_boxed_slice();
 
-        let runtime = Runtime::builder()
-            .use_memory_pool(runtime_pool, linear_pool)
-            .register_host_function(
-                "delay",
-                crate::auto_script::exposed_functions::delay as *mut c_void,
-            )
-            .register_host_function(
-                "print",
-                crate::auto_script::exposed_functions::print as *mut c_void,
-            )
-            .register_host_function(
-                "set_onboard_led_color",
-                crate::auto_script::exposed_functions::set_onboard_led_color as *mut c_void,
-            )
-            .register_host_function(
-                "set_motor_a_speed",
-                crate::auto_script::exposed_functions::set_motor_a_speed as *mut c_void,
-            )
-            .register_host_function(
-                "set_motor_b_speed",
-                crate::auto_script::exposed_functions::set_motor_b_speed as *mut c_void,
-            )
-            .register_host_function(
-                "get_ir_utmost_front_utmost_left_value",
-                crate::auto_script::exposed_functions::get_ir_utmost_front_utmost_left_value as *mut c_void,
-            )
-            .register_host_function(
-                "get_ir_utmost_front_utmost_right_value",
-                crate::auto_script::exposed_functions::get_ir_utmost_front_utmost_right_value as *mut c_void,
-            )
-            .build()?;
+        let mut runtime = Runtime::builder().use_memory_pool(runtime_pool, linear_pool);
+
+
+        for native_sybol in host_functions::<TheBeginnerCarUtils>() {
+            runtime = runtime
+                .register_host_function(native_sybol.f_name, native_sybol.f_pointer)
+        }
+        let runtime = runtime.build()?;
 
         Ok(Self {
             hardware,

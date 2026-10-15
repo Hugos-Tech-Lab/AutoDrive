@@ -71,6 +71,7 @@ dependencies = [
  "esp-idf-sys",
  "log",
  "the-beginner-car-spi-protocol",
+ "the-beginner-car-wasm-sdk",
  "wamr-rust-sdk",
 ]
 
@@ -1614,6 +1615,10 @@ version = "0.1.0"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "the-beginner-car-wasm-sdk"
+version = "0.1.0"
 
 [[package]]
 name = "thiserror"

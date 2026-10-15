@@ -1,6 +1,6 @@
 use embassy_time::with_timeout;
 use esp_idf_svc::hal::{
-    gpio::{AnyIOPin, Input, Output, Pin, PinDriver},
+    gpio::{AnyIOPin, Input, Output, PinDriver},
     spi::{SpiAnyPins, SpiDeviceDriver, SpiDriver, SpiDriverConfig, config},
     task::block_on,
     units::Hertz,
@@ -13,7 +13,6 @@ pub struct SpiMaster<'d> {
     device_driver: SpiDeviceDriver<'d, SpiDriver<'d>>,
     slave_ready: PinDriver<'d, Input>,
     master_has_transaction: PinDriver<'d, Output>,
-    used_pins: Box<[u8]>,
 }
 
 impl<'d> SpiMaster<'d> {
@@ -33,15 +32,6 @@ impl<'d> SpiMaster<'d> {
         mut f_master_has_transaction_pin: PinDriver<'d, Output>,
         baudrate: u32,
     ) -> anyhow::Result<Self> {
-        let mut used_pins = [
-            a_sclk.pin(),
-            b_mosi.pin(),
-            c_miso.pin(),
-            d_slave_ready_pin.pin(),
-            e_cs.pin(),
-            f_master_has_transaction_pin.pin(),
-        ];
-        used_pins.sort();
         let driver_config = SpiDriverConfig::new();
         let driver = SpiDriver::new(spi, a_sclk, b_mosi, Some(c_miso), &driver_config)?;
         let device_config = config::Config::new().baudrate(Hertz(baudrate));
@@ -53,7 +43,6 @@ impl<'d> SpiMaster<'d> {
             device_driver,
             slave_ready: d_slave_ready_pin,
             master_has_transaction: f_master_has_transaction_pin,
-            used_pins: Box::new(used_pins),
         })
     }
 
@@ -70,12 +59,9 @@ impl<'d> SpiMaster<'d> {
 
         match block_on(with_timeout(embassy_time::Duration::from_secs(1), fut)) {
             Ok(result) => {
-                // let used_pins = format!("{:?}", self.used_pins);
-                result.map_err(|err| anyhow::anyhow!("Failed to wait until ready pin: '{err:?}'. Check physical pin connection number"))
+                result.map_err(|err| anyhow::anyhow!("Failed to wait until ready pin ({pin_number}): '{err:?}'. Check physical pin connection number"))
             }
             Err(_) => {
-                // let used_pins = format!("{:?}", self.used_pins);
-
                 Err(anyhow::anyhow!(
                     "Timeout waiting for READY pin ({pin_number}) to be ({}). Check physical pin connection number",
                     if is_high { "HIGH" } else { "LOW" }

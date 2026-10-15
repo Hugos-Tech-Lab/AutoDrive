@@ -62,7 +62,7 @@ pub extern "C" fn print(exec_env: *mut WASMExecEnv, ptr: u32, len: u32) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn set_onboard_led_color(exec_env: *mut WASMExecEnv, r: u8, g: u8, b: u8) {
+pub extern "C" fn set_onboard_led_color(exec_env: *mut WASMExecEnv, _r: u8, _g: u8, _b: u8) {
     let wasm_data: &mut WasmData = get_wasm_data(exec_env);
     if wasm_data.ct.is_cancelled() {
         terminate(exec_env);

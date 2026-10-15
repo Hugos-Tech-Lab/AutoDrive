@@ -3,26 +3,19 @@ use std::{
         Arc, Mutex,
         atomic::{AtomicU16, Ordering},
     },
-    thread,
     time::Duration,
 };
 
-use common_firmware::{
-    get_mac_address::{format_mac_address, get_mac_address},
-    spi_slave::SpiSlave,
-};
-use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    hal::{
-        adc::{
-            attenuation::DB_12,
-            oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
-        },
-        delay::{FreeRtos, TICK_RATE_HZ},
-    },
-};
+use common_firmware::spi_slave::SpiSlave;
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
-use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
+use esp_idf_svc::hal::peripherals::Peripherals;
+use esp_idf_svc::hal::{
+    adc::{
+        attenuation::DB_12,
+        oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
+    },
+    delay::{FreeRtos},
+};
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
 use crate::{
@@ -34,10 +27,9 @@ use crate::{
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod auto_script;
-pub mod esp_app_desc_2;
 pub mod hardware;
-pub mod inter_thread;
 pub mod logger;
+pub mod client_spi;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -50,14 +42,11 @@ pub fn main() -> anyhow::Result<()> {
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
-    let addr = format_mac_address(&get_mac_address()?);
-
     let log_receiver = init_logging();
 
     info!("starting");
     let peripherals = Peripherals::take()?;
-    let sys_loop = EspSystemEventLoop::take()?;
-    let nvs = EspDefaultNvsPartition::take()?;
+
     let motor_a = Motor::new(
         peripherals.pins.gpio15.into(),
         peripherals.pins.gpio23.into(),
@@ -147,12 +136,16 @@ pub fn main() -> anyhow::Result<()> {
 
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
-                    let utmost_front_utmost_left_latest_reading = ((pin_3.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
-                    let utmost_front_utmost_right_latest_reading = ((pin_2.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
+                    let utmost_front_utmost_left_latest_reading =
+                        ((pin_3.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
+                    let utmost_front_utmost_right_latest_reading =
+                        ((pin_2.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
 
                     // dbg!(led_b_latest_reading);
-                    ir_utmost_front_utmost_left_latest_reading.store(utmost_front_utmost_left_latest_reading, Ordering::Relaxed);
-                    ir_utmost_front_utmost_right_latest_reading.store(utmost_front_utmost_right_latest_reading, Ordering::Relaxed);
+                    ir_utmost_front_utmost_left_latest_reading
+                        .store(utmost_front_utmost_left_latest_reading, Ordering::Relaxed);
+                    ir_utmost_front_utmost_right_latest_reading
+                        .store(utmost_front_utmost_right_latest_reading, Ordering::Relaxed);
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 

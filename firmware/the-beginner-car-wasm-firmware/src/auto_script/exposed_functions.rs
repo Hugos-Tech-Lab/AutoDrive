@@ -70,6 +70,8 @@ pub extern "C" fn set_onboard_led_color(exec_env: *mut WASMExecEnv, r: u8, g: u8
         terminate(exec_env);
     }
 
+    unimplemented!();
+
     // OnBoardLed::set_color(RGB8 { r, g, b })
 }
 

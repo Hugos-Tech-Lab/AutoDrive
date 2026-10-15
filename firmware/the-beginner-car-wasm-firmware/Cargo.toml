@@ -11,11 +11,11 @@ harness = false
 [dependencies]
 common-firmware = { path = "../common-firmware" }
 the-beginner-car-spi-protocol = { path = "api/the-beginner-car-spi-protocol" }
-wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.1", default-features = false, features = ["esp-idf"] }
+wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.2", default-features = false, features = ["esp-idf"] }
 anyhow = "1.0.104"
 log = "0.4"
-esp-idf-svc = { version = "0.52.1", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
-esp-idf-sys = "0.37.2"
+esp-idf-svc = { version = "0.53.0", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
+esp-idf-sys = "0.38.1"
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }
 embedded-svc = "0.29.0"
 embedded-dht-rs = { version = "0.5.0", features = ["dht11"] }
@@ -35,10 +35,6 @@ futures = "0.3.34"
 flume = "0.12.0"
 postcard = { version = "1.1.3", features = ["alloc"] }
 crc = "3.4.0"
-
-# GPIO offsets bug....
-[patch.crates-io]
-esp-idf-hal = { path = "esp-idf-hal" }
 
 [build-dependencies]
 embuild = "0.33"

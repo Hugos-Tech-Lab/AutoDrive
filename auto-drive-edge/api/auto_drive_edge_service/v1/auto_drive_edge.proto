@@ -13,7 +13,9 @@ message QueueAutoScriptRequest {
   bytes data = 2;
 }
 
-message QueueAutoScriptResponse {}
+message QueueAutoScriptResponse {
+  string run_uuid = 1;
+}
 
 message WatchTheBeginnerCarEventsRequest {}
 

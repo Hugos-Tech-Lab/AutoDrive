@@ -33,11 +33,12 @@ impl AutoDriveEdgeService for GrpcService {
         &self,
         request: Request<QueueAutoScriptRequest>,
     ) -> Result<Response<QueueAutoScriptResponse>, Status> {
-        self.build_a
-            .queue_auto_script(request.into_inner().data)
+        let run_uuid = self
+            .build_a
+            .enqueue_auto_script(request.into_inner().data)
             .await;
 
-        Ok(QueueAutoScriptResponse {}.into())
+        Ok(QueueAutoScriptResponse { run_uuid }.into())
     }
 
     type WatchTheBeginnerCarEventsStream = Pin<

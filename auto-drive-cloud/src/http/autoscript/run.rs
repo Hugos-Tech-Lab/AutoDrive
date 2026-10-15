@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use bytes::Bytes;
 use futures_util::{StreamExt, stream};
+use tokio::sync::oneshot;
 use tokio_stream::wrappers::BroadcastStream;
 use warp::{http::StatusCode, Filter, Reply, Rejection}; // Added Rejection
 
@@ -17,7 +18,7 @@ pub fn run(
 
     const MAX_BODY_SIZE: u64 = 16 * 1024;
 
-    warp::path!("autoscript" / "run")
+    warp::path!("autoscript" / "enqueue")
         .and(warp::post())
         .and(warp::body::content_length_limit(MAX_BODY_SIZE))
         .and(warp::body::bytes())
@@ -27,8 +28,10 @@ pub fn run(
             async move {
                 let receiver = logs.subscribe();
 
+                let (sender_start, receiver_start) = oneshot::channel();
                 let message = ToDeviceMessage::StartAutoScript {
                     data: body.to_vec(),
+                    sender: sender_start,
                 };
 
                 if sender.send(message).await.is_err() {
@@ -41,6 +44,8 @@ pub fn run(
                     );
                 }
 
+                let run_uuid = receiver_start.await.unwrap();
+
                 let event_stream = stream::once(async {
                     Ok::<_, Infallible>(
                         warp::sse::Event::default()
@@ -48,6 +53,14 @@ pub fn run(
                             .data("[INFO] [AUTO_DRIVE_CLOUD] Got the run WASM request and sent to the edge"),
                     )
                 });
+
+                let event_stream = event_stream.chain(stream::once(async move {
+                    Ok::<_, Infallible>(
+                        warp::sse::Event::default()
+                            .event("log")
+                            .data(serde_json::json!({ "run_uuid": run_uuid }).to_string())
+                    )
+                }));
 
 
                 let event_stream = event_stream.chain(

@@ -14,11 +14,11 @@ impl TheBeginnerCar {
     }
 
     /// Sets the motor speed
-    pub fn set_motor_a_speed(&self, speed: i8) {
+    pub fn set_motor_left_speed(&self, speed: i8) {
         unsafe { guest::set_motor_a_speed(speed) }
     }
 
-    pub fn set_motor_b_speed(&self, speed: i8) {
+    pub fn set_motor_right_speed(&self, speed: i8) {
         unsafe { guest::set_motor_b_speed(speed) }
     }
 

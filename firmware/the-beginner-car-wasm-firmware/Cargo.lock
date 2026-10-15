@@ -65,23 +65,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "common-firmware",
- "crc",
- "embassy-sync",
  "embassy-time",
- "embedded-io-async",
- "embedded-svc",
  "embuild",
  "esp-idf-svc",
  "esp-idf-sys",
- "futures",
- "heapless 0.9.3",
  "log",
- "postcard",
- "serde",
- "smart-leds-trait",
  "the-beginner-car-spi-protocol",
  "wamr-rust-sdk",
- "ws2812-spi",
 ]
 
 [[package]]
@@ -610,11 +600,9 @@ dependencies = [
  "embedded-io-async",
  "enumset",
  "heapless 0.9.3",
- "log",
  "num_enum",
  "serde",
  "strum 0.27.2",
- "strum_macros 0.27.2",
 ]
 
 [[package]]
@@ -649,7 +637,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ccc5801fd11762e24d1e420d01d2ac518f2a2ca4329d4fbb6639f2412b6204e0"
 dependencies = [
  "enumset_derive",
- "serde",
 ]
 
 [[package]]
@@ -972,7 +959,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25ba4bd83f9415b58b4ed8dc5714c76e626a105be4646c02630ad730ad3b5aa4"
 dependencies = [
  "hash32 0.3.1",
- "serde_core",
  "stable_deref_trait",
 ]
 

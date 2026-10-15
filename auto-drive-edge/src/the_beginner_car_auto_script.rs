@@ -9,21 +9,21 @@ use tokio::{
         mpsc::{self},
     },
     task::JoinHandle,
-    time::{timeout, timeout_at},
+    time::timeout_at,
 };
 
 pub struct HardwareState {
     queued_scripts: Vec<Vec<u8>>,
 }
 
-pub struct TheBeginnerCarDriver {
+pub struct TheBeginnerCarAutoScript {
     state: Arc<Mutex<HardwareState>>,
     pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
-    connection_handle: JoinHandle<()>,
+    _connection_handle: JoinHandle<()>,
 }
 
-impl TheBeginnerCarDriver {
+impl TheBeginnerCarAutoScript {
     pub fn new(
         outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
         incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
@@ -46,7 +46,7 @@ impl TheBeginnerCarDriver {
         Self {
             state,
             outgoing_tx,
-            connection_handle,
+            _connection_handle: connection_handle,
             incoming_rx,
         }
     }
@@ -66,6 +66,9 @@ impl TheBeginnerCarDriver {
         &self,
         data: Vec<u8>,
     ) -> broadcast::Receiver<TheBeginnerCarOutgoingMessages> {
+
+
+
         // TODO: this should error if not connected to hardware
         let mut rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages> =
             self.incoming_rx.subscribe();
@@ -91,7 +94,6 @@ impl TheBeginnerCarDriver {
         }
 
         let start_script = TheBeginnerCarIncomingMessages::RunAutoScript { data };
-
         self.outgoing_tx.send(start_script).await.unwrap();
         rx
     }

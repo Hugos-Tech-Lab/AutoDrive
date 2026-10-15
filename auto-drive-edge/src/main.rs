@@ -3,13 +3,9 @@ use crate::{
     auto_drive_edge_service::v1::auto_drive_edge_service_server::AutoDriveEdgeServiceServer,
     devices_config::DeviceConfig, grpc_service::GrpcService,
 };
-use bytes::Bytes;
-use futures_util::StreamExt;
 use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{metrics::SdkMeterProvider, trace::SpanExporter as _};
-use std::{convert::Infallible, error::Error, future};
-use tokio_stream::wrappers::BroadcastStream;
-use warp::Filter;
+use std::error::Error;
 
 pub mod auto_drive_edge_server;
 pub mod devices_config;
@@ -17,7 +13,7 @@ pub mod grpc_service;
 pub mod local_http;
 pub mod physical_hardware;
 pub mod the_beginner_car_comms;
-pub mod the_beginner_car_driver;
+pub mod the_beginner_car_auto_script;
 pub mod vehicle_hardware_telemetry;
 
 pub mod auto_drive_edge_service {

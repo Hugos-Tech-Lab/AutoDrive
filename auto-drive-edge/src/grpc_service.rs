@@ -14,15 +14,15 @@ use crate::{
         auto_drive_edge_service_server::AutoDriveEdgeService,
         watch_the_beginner_car_events_response::Event,
     },
-    the_beginner_car_driver::TheBeginnerCarDriver,
+    the_beginner_car_auto_script::TheBeginnerCarAutoScript,
 };
 
 pub struct GrpcService {
-    build_a: Arc<TheBeginnerCarDriver>,
+    build_a: Arc<TheBeginnerCarAutoScript>,
 }
 
 impl GrpcService {
-    pub fn new(build_a: Arc<TheBeginnerCarDriver>) -> Self {
+    pub fn new(build_a: Arc<TheBeginnerCarAutoScript>) -> Self {
         Self { build_a }
     }
 }

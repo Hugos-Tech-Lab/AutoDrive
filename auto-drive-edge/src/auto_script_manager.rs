@@ -26,14 +26,14 @@ pub struct AutoScriptState {
     running_script: Option<AutoScript>,
 }
 
-pub struct TheBeginnerCarAutoScript {
+pub struct AutoScriptManager {
     state: Arc<Mutex<AutoScriptState>>,
     pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
     _connection_handle: JoinHandle<()>,
 }
 
-impl TheBeginnerCarAutoScript {
+impl AutoScriptManager {
     pub fn new(
         outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
         incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,

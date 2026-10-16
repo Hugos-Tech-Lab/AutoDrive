@@ -8,15 +8,15 @@ use tonic::{Request, Response, Status};
 use crate::{
     auto_drive_edge_service::v1::{
         AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent, CancelAutoScriptRequest, CancelAutoScriptResponse, InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage, LogSystemOrigin, MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent, WasmInstalledEvent, WatchAutoScriptEventsRequest, WatchAutoScriptEventsResponse, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService, run_auto_script_response, watch_the_beginner_car_events_response::Event,
-    }, the_beginner_car_auto_script::TheBeginnerCarAutoScript,
+    }, auto_script_manager::AutoScriptManager,
 };
 
 pub struct GrpcService {
-    build_a: Arc<TheBeginnerCarAutoScript>,
+    build_a: Arc<AutoScriptManager>,
 }
 
 impl GrpcService {
-    pub fn new(build_a: Arc<TheBeginnerCarAutoScript>) -> Self {
+    pub fn new(build_a: Arc<AutoScriptManager>) -> Self {
         Self { build_a }
     }
 }

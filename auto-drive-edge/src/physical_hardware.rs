@@ -3,12 +3,12 @@ use std::sync::Arc;
 use crate::{
     devices_config::DeviceConfig,
     the_beginner_car_comms::TheBeginnerCarComms,
-    the_beginner_car_auto_script::TheBeginnerCarAutoScript,
+    auto_script_manager::AutoScriptManager,
 };
 
 pub struct PhysicalHardware {
     the_beginner_cars: Vec<TheBeginnerCarComms>,
-    pub the_beginner_car_drivers: Vec<Arc<TheBeginnerCarAutoScript>>,
+    pub the_beginner_car_drivers: Vec<Arc<AutoScriptManager>>,
 }
 
 impl PhysicalHardware {
@@ -22,7 +22,7 @@ impl PhysicalHardware {
         let the_beginner_car_drivers = the_beginner_cars
             .iter()
             .map(|the_beginner_car_comms| {
-                Arc::new(TheBeginnerCarAutoScript::new(
+                Arc::new(AutoScriptManager::new(
                     the_beginner_car_comms.outgoing_tx.clone(),
                     the_beginner_car_comms.incoming_tx.clone(),
                 ))

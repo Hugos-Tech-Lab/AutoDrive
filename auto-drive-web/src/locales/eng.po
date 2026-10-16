@@ -1122,3 +1122,7 @@ msgstr "No cars currently driving."
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Queue is currently empty."
 msgstr "Queue is currently empty."
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Upload Comment"
+msgstr "Upload Comment"

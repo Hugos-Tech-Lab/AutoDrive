@@ -1122,3 +1122,7 @@ msgstr ""
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Queue is currently empty."
 msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Upload Comment"
+msgstr ""

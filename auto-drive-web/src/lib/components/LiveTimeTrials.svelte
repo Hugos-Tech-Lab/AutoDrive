@@ -41,7 +41,7 @@
     }, 1000);
 
     // 2. Setup the SSE connection
-    const source = new EventSource("http://localhost:3030/live_time_trials");
+    const source = new EventSource("http://localhost:3030/autoscript/watch");
 
     source.onopen = () => {
       connectionStatus = "Connected";
@@ -108,14 +108,6 @@
 
 <div class="flex items-center justify-between mb-4">
   <h2 class="text-2xl">Live Time Trials - On Now</h2>
-  <div class="text-sm">
-    <span class={connectionStatus === 'Connected' ? 'text-green-600' : 'text-amber-600'}>
-      {connectionStatus}
-    </span>
-    {#if telemetryError}
-      <span class="text-red-500 ml-2">({telemetryError})</span>
-    {/if}
-  </div>
 </div>
 
 <div class="w-full flex flex-col gap-8">
@@ -133,9 +125,10 @@
           <tr>
             <th class="py-3 px-4">Name</th>
             <th class="py-3 px-4">Run Time</th>
-            <th class="py-3 px-4">Upload Hash</th>
             <th class="py-3 px-4">Run #</th>
             <th class="py-3 px-4">Run UUID</th>
+            <th class="py-3 px-4">Upload Hash</th>
+            <th class="py-3 px-4">Upload Comment</th>
             <th class="py-3 px-4 text-center">Actions</th>
           </tr>
         </thead>
@@ -145,9 +138,10 @@
               <tr class="hover:bg-gray-50 transition-colors">
                 <td class="py-3 px-4 font-semibold text-gray-900">{entry.name}</td>
                 <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.run_time, localTickOffset)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
                 <td class="py-3 px-4 font-mono">#{entry.run_number}</td>
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.run_uuid.substring(0, 13)}...</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.uploader_comment.substring(0, 10)}</td>
                 <td class="py-3 px-4">
                   <div class="flex items-center justify-center gap-2">
                     <button 
@@ -227,4 +221,13 @@
     </div>
   </div>
 
+</div>
+
+<div class="text-sm">
+  <span class={connectionStatus === 'Connected' ? 'text-green-600' : 'text-amber-600'}>
+    {connectionStatus}
+  </span>
+  {#if telemetryError}
+    <span class="text-red-500 ml-2">({telemetryError})</span>
+  {/if}
 </div>

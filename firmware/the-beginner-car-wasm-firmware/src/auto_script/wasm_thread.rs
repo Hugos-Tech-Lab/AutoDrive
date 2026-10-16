@@ -136,8 +136,7 @@ impl WasmThread {
 
         {
             let mut hardware = wasm_data.hardware.lock().unwrap();
-            hardware.set_wheel_a_speed(0, RequestOrigin::Manual);
-            hardware.set_wheel_b_speed(0, RequestOrigin::Manual);
+            hardware.stop_all();
         }
         
 

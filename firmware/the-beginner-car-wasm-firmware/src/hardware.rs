@@ -91,8 +91,11 @@ impl TheBeginnerCarHardware {
             .load(Ordering::Relaxed)
     }
 
-    pub fn stop(&mut self) {
-        //
+    pub fn stop_all(&mut self) {
+        self.wheel_a.stop().unwrap();
+        self.wheel_b.stop().unwrap();
+        self.led_left.stop().unwrap();
+        self.led_right.stop().unwrap();
     }
 
     // pub fn switch_

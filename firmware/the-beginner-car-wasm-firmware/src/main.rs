@@ -57,7 +57,7 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
     );
-    let led_left = Led::new(peripherals.pins.gpio12.into());
+    let led_left = Led::new(peripherals.pins.gpio18.into());
     let led_right = Led::new(peripherals.pins.gpio10.into());
 
     // pin.set_color(20, 2, 2);

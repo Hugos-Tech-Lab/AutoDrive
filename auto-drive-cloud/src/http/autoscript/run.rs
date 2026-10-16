@@ -81,7 +81,7 @@ pub fn run(
                 // Add `args` to your StartAutoScript struct/enum variant
                 let message = ToDeviceMessage::StartAutoScript {
                     data: wasm_bytes,
-                    user_custom_note: args_string,
+                    uploader_comment: args_string,
                     response_tx: sender_start,
                 };
 

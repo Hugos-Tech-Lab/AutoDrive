@@ -7,7 +7,7 @@ use tonic::Streaming;
 use crate::auto_drive_edge_service::v1::{CancelAutoScriptRequest, RunAutoScriptRequest, RunAutoScriptResponse, WatchTheBeginnerCarEventsRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient, watch_the_beginner_car_events_response::Event};
 
 pub enum ToDeviceMessage {
-  StartAutoScript { data: Vec<u8>, user_custom_note: String, response_tx: oneshot::Sender<Result<Streaming<RunAutoScriptResponse>, tonic::Status>>, },
+  StartAutoScript { data: Vec<u8>, uploader_comment: String, response_tx: oneshot::Sender<Result<Streaming<RunAutoScriptResponse>, tonic::Status>>, },
   CancelAutoScript { run_uuid: String }
 }
 
@@ -54,8 +54,8 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     tokio::spawn(async move {
       while let Some(value) = receiver.recv().await {
         match value {
-            ToDeviceMessage::StartAutoScript { data, user_custom_note, response_tx } =>  {
-                dbg!(user_custom_note);
+            ToDeviceMessage::StartAutoScript { data, uploader_comment, response_tx } =>  {
+                dbg!(uploader_comment);
                 let response = client.run_auto_script(RunAutoScriptRequest{ build: 1, data }).await.unwrap();
                 let response = response.into_inner();
                 response_tx.send(Ok(response)).unwrap();

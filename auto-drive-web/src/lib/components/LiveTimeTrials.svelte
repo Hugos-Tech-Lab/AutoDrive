@@ -1,18 +1,46 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
 
-  type InfraredLedReadings = {
-    utmost_front_utmost_left: number;
-    utmost_front_utmost_right: number;
+  type TimeTrialDrivingEntry = {
+    name: string;
+    run_time: string;
+    upload_hash: string;
+    run_number: number;
+    run_uuid: string;
+    uploader_comment: string;
   };
 
-  let irSensorReadings = $state<InfraredLedReadings | null>(null);
+  type TimeTrialQueueEntry = {
+    name: string;
+    waiting_time: string;
+    upload_hash: string;
+    run_number: number;
+    run_uuid: string;
+    uploader_comment: string;
+  };
+
+  type TimeTrialData = {
+    driving_now: Array<TimeTrialDrivingEntry>;
+    queue: Array<TimeTrialQueueEntry>;
+  };
+
+  let timeTrialsData = $state<TimeTrialData | null>(null);
   let connectionStatus = $state("Connecting...");
-  let lastUpdate = $state<Date | null>(null);
   let telemetryError = $state("");
 
+  // Variables for the client-side time offset ticker
+  let lastUpdateMs = $state(Date.now());
+  let localTickOffset = $state(0);
+
   onMount(() => {
+    // 1. Setup the interval to tick the seconds up locally between server updates
+    const ticker = setInterval(() => {
+      if (timeTrialsData) {
+        localTickOffset = Math.floor((Date.now() - lastUpdateMs) / 1000);
+      }
+    }, 1000);
+
+    // 2. Setup the SSE connection
     const source = new EventSource("http://localhost:3030/live_time_trials");
 
     source.onopen = () => {
@@ -20,37 +48,24 @@
       telemetryError = "";
     };
 
-    source.addEventListener(
-      "update",
-      (event: MessageEvent<string>) => {
-        try {
-          const parsed: unknown = JSON.parse(event.data);
+    source.addEventListener("update", (event: MessageEvent<string>) => {
+      try {
+        const parsed = JSON.parse(event.data) as TimeTrialData;
 
-          if (typeof parsed !== "object" || parsed === null) {
-            throw new Error("Invalid telemetry payload");
-          }
-
-          const data = parsed as Record<string, unknown>;
-          const left = data["utmost_front_utmost_left"];
-          const right = data["utmost_front_utmost_right"];
-
-          if (typeof left !== "number" || typeof right !== "number") {
-            throw new Error("Missing or invalid sensor readings");
-          }
-
-          irSensorReadings = {
-            utmost_front_utmost_left: left,
-            utmost_front_utmost_right: right,
-          };
-
-          lastUpdate = new Date();
-          telemetryError = "";
-        } catch (error) {
-          telemetryError = "Failed to parse telemetry data";
-          console.error("[Telemetry] Invalid event:", error);
+        if (!parsed || typeof parsed !== "object") {
+          throw new Error("Invalid telemetry payload");
         }
-      },
-    );
+
+        // Store data and reset the local ticker
+        timeTrialsData = parsed;
+        lastUpdateMs = Date.now();
+        localTickOffset = 0;
+        telemetryError = "";
+      } catch (error) {
+        telemetryError = "Failed to parse telemetry data";
+        console.error("[Telemetry] Invalid event:", error);
+      }
+    });
 
     source.onerror = () => {
       connectionStatus =
@@ -60,20 +75,30 @@
     };
 
     return () => {
+      clearInterval(ticker);
       source.close();
     };
   });
 
-  function stopTelemetry() {
+  // Helper to parse the server's time string (e.g. "5s" or "5") and add the local offset
+  function displayTime(serverTimeStr: string, offset: number): string {
+    const baseTime = parseInt(serverTimeStr.replace(/\D/g, ""), 10) || 0;
+    return `${baseTime + offset}s`;
+  }
+
+  function skipTheQueue(run_uuid: string) {
+    console.log("Skipping queue for", run_uuid);
     // TODO: Call your hardware stop endpoint.
   }
 
-  function runScript() {
-    // TODO: Call your script execution endpoint.
+  function restart(run_uuid: string) {
+    console.log("Restarting", run_uuid);
+    // TODO: HTTP request to restart.
   }
 
-  function navigateToStart() {
-    // TODO: Call your navigation endpoint.
+  function cancel(run_uuid: string) {
+    console.log("Canceling", run_uuid);
+    // TODO: HTTP request to cancel.
   }
 </script>
 
@@ -81,7 +106,17 @@
   <title>Hardware Telemetry</title>
 </svelte:head>
 
-<h2 class="text-2xl mb-4">Live Time Trials - On Now</h2>
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-2xl">Live Time Trials - On Now</h2>
+  <div class="text-sm">
+    <span class={connectionStatus === 'Connected' ? 'text-green-600' : 'text-amber-600'}>
+      {connectionStatus}
+    </span>
+    {#if telemetryError}
+      <span class="text-red-500 ml-2">({telemetryError})</span>
+    {/if}
+  </div>
+</div>
 
 <div class="w-full flex flex-col gap-8">
 
@@ -105,31 +140,39 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="py-3 px-4 font-semibold text-gray-900">Magnus</td>
-            <td class="py-3 px-4 font-mono text-gray-600">5s</td>
-            <td class="py-3 px-4 font-mono text-xs text-gray-500">a1b2c3d4e5</td>
-            <td class="py-3 px-4 font-mono">#42</td>
-            <td class="py-3 px-4 font-mono text-xs text-gray-500">8f3a9b12-4c...</td>
-            <td class="py-3 px-4">
-              <div class="flex items-center justify-center gap-2">
-                <button 
-                  type="button" 
-                  class="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition"
-                  onclick={restartRun}
-                >
-                  Restart
-                </button>
-                <button 
-                  type="button" 
-                  class="px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 transition"
-                  onclick={stopTelemetry}
-                >
-                  Cancel
-                </button>
-              </div>
-            </td>
-          </tr>
+          {#if timeTrialsData?.driving_now && timeTrialsData.driving_now.length > 0}
+            {#each timeTrialsData.driving_now as entry (entry.run_uuid)}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="py-3 px-4 font-semibold text-gray-900">{entry.name}</td>
+                <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.run_time, localTickOffset)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono">#{entry.run_number}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.run_uuid.substring(0, 13)}...</td>
+                <td class="py-3 px-4">
+                  <div class="flex items-center justify-center gap-2">
+                    <button 
+                      type="button" 
+                      class="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition rounded"
+                      onclick={() => restart(entry.run_uuid)}
+                    >
+                      Restart
+                    </button>
+                    <button 
+                      type="button" 
+                      class="px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 transition rounded"
+                      onclick={() => cancel(entry.run_uuid)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {/each}
+          {:else}
+            <tr>
+              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic">No cars currently driving.</td>
+            </tr>
+          {/if}
         </tbody>
       </table>
     </div>
@@ -155,22 +198,30 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="py-3 px-4 font-semibold text-gray-900">Joe</td>
-            <td class="py-3 px-4 font-mono text-gray-600">2s</td>
-            <td class="py-3 px-4 font-mono text-xs text-gray-500">f9e8d7c6b5</td>
-            <td class="py-3 px-4 font-mono">#43</td>
-            <td class="py-3 px-4 font-mono text-xs text-gray-500">3d2e1f0a-9b...</td>
-            <td class="py-3 px-4 text-center">
-              <button 
-                type="button" 
-                class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-300 rounded transition"
-                onclick={skipQueue}
-              >
-                Skip The Queue
-              </button>
-            </td>
-          </tr>
+          {#if timeTrialsData?.queue && timeTrialsData.queue.length > 0}
+            {#each timeTrialsData.queue as entry (entry.run_uuid)}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="py-3 px-4 font-semibold text-gray-900">{entry.name}</td>
+                <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.waiting_time, localTickOffset)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono">#{entry.run_number}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.run_uuid.substring(0, 13)}...</td>
+                <td class="py-3 px-4 text-center">
+                  <button 
+                    type="button" 
+                    class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-300 rounded transition"
+                    onclick={() => skipTheQueue(entry.run_uuid)}
+                  >
+                    Skip The Queue
+                  </button>
+                </td>
+              </tr>
+            {/each}
+          {:else}
+            <tr>
+              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic">Queue is currently empty.</td>
+            </tr>
+          {/if}
         </tbody>
       </table>
     </div>

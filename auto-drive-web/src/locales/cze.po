@@ -872,6 +872,7 @@ msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Connected"
 msgstr ""
 
@@ -1001,9 +1002,8 @@ msgstr ""
 #~ msgid "Currently In Progress <0>Magnus</0> <1>5 Seconds</1> In The Queue <2>Run Script</2> <3>Navigate To Start</3>"
 #~ msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "Magnus"
-msgstr ""
+#~ msgid "Magnus"
+#~ msgstr ""
 
 #~ msgid "5 Seconds"
 #~ msgstr ""
@@ -1068,17 +1068,14 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "5s"
-msgstr ""
+#~ msgid "5s"
+#~ msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "a1b2c3d4e5"
-msgstr ""
+#~ msgid "a1b2c3d4e5"
+#~ msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "8f3a9b12-4c..."
-msgstr ""
+#~ msgid "8f3a9b12-4c..."
+#~ msgstr ""
 
 #~ msgid "<0/> Currently In Progress"
 #~ msgstr ""
@@ -1095,21 +1092,17 @@ msgstr ""
 msgid "Skip The Queue"
 msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "Joe"
-msgstr ""
+#~ msgid "Joe"
+#~ msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "2s"
-msgstr ""
+#~ msgid "2s"
+#~ msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "f9e8d7c6b5"
-msgstr ""
+#~ msgid "f9e8d7c6b5"
+#~ msgstr ""
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "3d2e1f0a-9b..."
-msgstr ""
+#~ msgid "3d2e1f0a-9b..."
+#~ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> In The Queue"
@@ -1120,4 +1113,12 @@ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> Driving"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "No cars currently driving."
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Queue is currently empty."
 msgstr ""

@@ -19,13 +19,13 @@ define_wasm_api! {
     /// Sets motor B speed
     fn set_motor_b_speed(speed: i8);
 
-    fn set_pin_left_on();
+    fn set_led_left_on();
 
-    fn set_pin_left_off();
+    fn set_led_left_off();
 
-    fn set_pin_right_on();
+    fn set_led_right_on();
 
-    fn set_pin_right_off();
+    fn set_led_right_off();
 
     /// Gets utmost front left IR value
     fn get_ir_utmost_front_utmost_left_value() -> u16;

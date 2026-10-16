@@ -54,7 +54,7 @@ impl TheBeginnerCarHardware {
     }
 
     pub fn led_right(&mut self) -> &mut Led {
-        &mut self.led_left
+        &mut self.led_right
     }
 
     pub fn set_wheel_a_speed(&mut self, speed: i8, _origin: RequestOrigin) {

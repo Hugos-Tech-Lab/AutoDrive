@@ -163,7 +163,7 @@ impl WasmExports for TheBeginnerCarExports {
         hardware.get_ir_utmost_front_utmost_right_value()
     }
     
-    unsafe extern "C" fn set_pin_left_on(exec_env: *mut c_void) {
+    unsafe extern "C" fn set_led_left_on(exec_env: *mut c_void) {
         if exec_env.is_null() {
             return;
         }
@@ -178,7 +178,7 @@ impl WasmExports for TheBeginnerCarExports {
         hardware.led_left().on().unwrap();
     }
     
-    unsafe extern "C" fn set_pin_left_off(exec_env: *mut c_void) {
+    unsafe extern "C" fn set_led_left_off(exec_env: *mut c_void) {
         if exec_env.is_null() {
             return;
         }
@@ -192,7 +192,7 @@ impl WasmExports for TheBeginnerCarExports {
         hardware.led_left().on().unwrap();
     }
     
-    unsafe extern "C" fn set_pin_right_on(exec_env: *mut c_void) {
+    unsafe extern "C" fn set_led_right_on(exec_env: *mut c_void) {
         if exec_env.is_null() {
             return;
         }
@@ -206,7 +206,7 @@ impl WasmExports for TheBeginnerCarExports {
         hardware.led_right().on().unwrap();
     }
     
-    unsafe extern "C" fn set_pin_right_off(exec_env: *mut c_void) {
+    unsafe extern "C" fn set_led_right_off(exec_env: *mut c_void) {
         if exec_env.is_null() {
             return;
         }

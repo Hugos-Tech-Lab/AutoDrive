@@ -22,6 +22,22 @@ impl TheBeginnerCar {
         unsafe { guest::set_motor_b_speed(speed) }
     }
 
+    pub fn set_led_left_on(&self) {
+        unsafe { guest::set_led_left_on() }
+    }
+
+    pub fn set_led_left_off(&self) {
+        unsafe { guest::set_led_left_off() }
+    }
+
+    pub fn set_led_right_on(&self) {
+        unsafe { guest::set_led_right_on() }
+    }
+
+    pub fn set_led_right_off(&self) {
+        unsafe { guest::set_led_right_off() }
+    }
+
     pub fn get_ir_utmost_front_utmost_left_value(&self) -> u16 {
         unsafe { guest::get_ir_utmost_front_utmost_left_value() }
     }

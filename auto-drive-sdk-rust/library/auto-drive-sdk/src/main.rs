@@ -5,13 +5,10 @@ use auto_drive_sdk::{hardware::the_beginner_car::TheBeginnerCar, utils::{delay, 
 
 #[auto_drive_sdk::main]
 fn main(the_beginner_car: TheBeginnerCar) {
-    the_beginner_car.set_motor_a_speed(127);
-    the_beginner_car.set_motor_b_speed(127);
-    delay(1000);
-    the_beginner_car.set_motor_a_speed(0);
-    the_beginner_car.set_motor_b_speed(0);
     loop {
+        the_beginner_car.set_led_left_off();
         delay(1000);
-        print("hi");
+        the_beginner_car.set_led_left_on();
+        delay(1000);
     }
 }

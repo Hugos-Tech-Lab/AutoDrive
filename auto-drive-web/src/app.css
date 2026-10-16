@@ -12,6 +12,7 @@ button {
   width: fit-content;
   background: none;
   border: 2px solid rgb(0, 0, 0);
+  background-color: aliceblue;
   padding: 10px;
   border-radius: 2px;
   font: inherit;

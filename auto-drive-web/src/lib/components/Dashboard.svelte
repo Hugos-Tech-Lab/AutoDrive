@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import HardwareTelemetry from "./HardwareTelemetry.svelte";
+  import LiveTimeTrials from "./LiveTimeTrials.svelte";
   import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
 
   let {} = $props();
@@ -110,6 +111,10 @@
 
 {#if selectedBuild.startsWith("Build") && selectedBuildOption === "Telemetry"}
   <HardwareTelemetry />
+{/if}
+
+{#if selectedBuild.startsWith("Time Trials") && selectedPlayOption === "Live"}
+  <LiveTimeTrials />
 {/if}
 
 <!-- <h2 class="text-2xl mb-4 min-w-0 flex-1">Software Development Kit</h2>

@@ -3,20 +3,36 @@ set -euo pipefail
 
 BASE_URL="http://127.0.0.1:3030/autoscript"
 
+# Cargo passes the executable path as $1. Shift it out so $@ contains only user arguments.
+if [[ $# -gt 0 ]]; then
+    wasm_arg="$1"
+    shift
+fi
+
+# Capture all remaining arguments into a single string (preserving spaces)
+ARGS_STRING="$*"
+
 # Temporary file to share the run_uuid between AWK and cleanup()
 UUID_FILE=$(mktemp)
 trap 'rm -f "$UUID_FILE"' EXIT
 
-# On windows we cannot rely on the $1 variable from Cargo because the slashes (i.e. / or \) are completely disappeared.
-# Use this hack to get the most recently changed .wasm file to pass to the AutoDrive servers.
-wasm=$(ls -t target/wasm32-unknown-unknown/{release,debug}/*.wasm 2>/dev/null | head -n 1)
+# Normalize backslashes to forward slashes if passed from Cargo ($1), otherwise find latest .wasm file
+if [[ -n "${wasm_arg:-}" ]] && [[ -f "${wasm_arg//\\//}" ]]; then
+    wasm="${wasm_arg//\\//}"
+else
+    # Find most recently modified .wasm file without relying on bash brace expansion
+    wasm=$(find target/wasm32-unknown-unknown/release target/wasm32-unknown-unknown/debug -name "*.wasm" -type f -printf "%T@ %p\n" 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2-)
+fi
 
-if [[ ! -f "$wasm" ]]; then
-    echo "WASM file not found: $wasm" >&2
+if [[ -z "$wasm" || ! -f "$wasm" ]]; then
+    echo "WASM file not found: ${wasm:-none}" >&2
     exit 1
 fi
 
 echo "Running: $wasm"
+if [[ -n "$ARGS_STRING" ]]; then
+    echo "Arguments passed: $ARGS_STRING"
+fi
 echo "Sending run wasm request to the cloud..."
 
 cleanup() {
@@ -51,12 +67,14 @@ cleanup() {
 
 trap cleanup INT TERM
 
+# Using multipart form-data to send both binary wasm file and string args
 curl --fail-with-body \
     --silent \
     --show-error \
     --no-buffer \
     --request POST \
-    --data-binary "@$wasm" \
+    -F "file=@$wasm;type=application/wasm" \
+    -F "args=$ARGS_STRING" \
     "$BASE_URL/run" |
     awk -v uuid_file="$UUID_FILE" '
         # Ignore the SSE "event:" framing lines

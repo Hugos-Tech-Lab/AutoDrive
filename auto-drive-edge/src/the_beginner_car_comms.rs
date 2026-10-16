@@ -1,6 +1,5 @@
 use std::{thread, time::Duration};
 
-use opentelemetry::KeyValue;
 use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };

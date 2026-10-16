@@ -133,6 +133,8 @@ msgstr ""
 
 #: src/lib/Account.svelte
 #: src/lib/components/Account.svelte
+#: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Name"
 msgstr ""
 
@@ -656,6 +658,7 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Time Trials"
 msgstr ""
 
@@ -789,8 +792,9 @@ msgstr ""
 #~ msgid "Rust Library"
 #~ msgstr ""
 
-#~ msgid "Cancel"
-#~ msgstr ""
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Cancel"
+msgstr ""
 
 #~ msgid "Stop"
 #~ msgstr ""
@@ -862,26 +866,32 @@ msgid "<0/> Sensors"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Connecting..."
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Connected"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Failed to parse telemetry data"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Disconnected"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Reconnecting..."
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Hardware Telemetry"
 msgstr ""
 
@@ -941,5 +951,173 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Live"
+msgstr ""
+
+#~ msgid "Live Time Trials"
+#~ msgstr ""
+
+#~ msgid "Live Time Trials - Active"
+#~ msgstr ""
+
+#~ msgid "Live Time Trials - Active Now!"
+#~ msgstr ""
+
+#~ msgid "Live Time Trials - Active Now."
+#~ msgstr ""
+
+#~ msgid "Live Time Trials - Active Now"
+#~ msgstr ""
+
+#~ msgid "<0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
+#~ msgstr ""
+
+#~ msgid "asd <0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
+#~ msgstr ""
+
+#~ msgid "Driving The Car <0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
+#~ msgstr ""
+
+#~ msgid "Currently In Progress <0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
+#~ msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Live Time Trials - On Now"
+msgstr ""
+
+#~ msgid "Live Time Trials - On Air Now"
+#~ msgstr ""
+
+#~ msgid "Currently In Progress <0>STOP</0> In The Queue <1>Run Script</1> <2>Navigate To Start</2>"
+#~ msgstr ""
+
+#~ msgid "Currently In Progress <0>Magnus</0> In The Queue <1>Run Script</1> <2>Navigate To Start</2>"
+#~ msgstr ""
+
+#~ msgid "Currently In Progress <0>Magnus</0> <1>Magnus</1> In The Queue <2>Run Script</2> <3>Navigate To Start</3>"
+#~ msgstr ""
+
+#~ msgid "Currently In Progress <0>Magnus</0> <1>5 Seconds</1> In The Queue <2>Run Script</2> <3>Navigate To Start</3>"
+#~ msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Magnus"
+msgstr ""
+
+#~ msgid "5 Seconds"
+#~ msgstr ""
+
+#~ msgid "Currently In Progress"
+#~ msgstr ""
+
+#~ msgid "In The Queue"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | run_id | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Run Script</0> <1>Navigate To Start</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>Navigate To Start</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secon</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
+#~ msgstr ""
+
+#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | restart | cancel | |________ __________ | name | queued_time_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
+#~ msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Run Time"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Upload Hash"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Run #"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Run UUID"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Actions"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Restart"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "5s"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "a1b2c3d4e5"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "8f3a9b12-4c..."
+msgstr ""
+
+#~ msgid "<0/> Currently In Progress"
+#~ msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Queued Time"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Action"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Skip The Queue"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Joe"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "2s"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "f9e8d7c6b5"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "3d2e1f0a-9b..."
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "<0/> In The Queue"
+msgstr ""
+
+#~ msgid "<0/> In Progress"
+#~ msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "<0/> Driving"
 msgstr ""

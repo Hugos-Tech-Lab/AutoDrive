@@ -5,8 +5,6 @@ use crate::{
     vehicle_hardware_telemetry::VehicleHardwareTelemetry,
 };
 
-pub mod http_endpoints;
-
 pub struct AutoDriveEdgeServer {
     pub hardware: Arc<PhysicalHardware>,
     pub telemetry: VehicleHardwareTelemetry,

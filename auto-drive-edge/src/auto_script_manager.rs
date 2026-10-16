@@ -23,19 +23,31 @@ use crate::{devices_config::DeviceId, the_beginner_car_comms::TheBeginnerCarComm
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
+enum AutoScriptResponseFromHardware {
+    HeardNothing,
+    Received,
+    CallingMain,
+    Error,
+}
+
 pub struct AutoScript {
     pub run_uuid: String,
     pub preprocessed_file_hash: String,
     pub run_number: u32,
     pub script: Vec<u8>,
     pub device: TheBeginnerCarComms,
+    pub hardware_response: AutoScriptResponseFromHardware,
 }
 
 pub struct AutoScriptTheBeginnerCars {
     the_beginner_cars: Vec<TheBeginnerCarComms>,
     queued_scripts: VecDeque<AutoScript>,
     running_scripts: Vec<AutoScript>,
+    stopped_scripts: Vec<AutoScript>,
 }
+
+
+
 
 pub struct AutoScriptManager {
     the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>,
@@ -45,9 +57,10 @@ pub struct AutoScriptManager {
 impl AutoScriptManager {
     pub fn new(the_beginner_cars: Vec<TheBeginnerCarComms>) -> Self {
         let the_beginner_car_scripts = Arc::new(Mutex::new(AutoScriptTheBeginnerCars {
+            the_beginner_cars: the_beginner_cars.clone(),
             queued_scripts: VecDeque::new(),
             running_scripts: Vec::new(),
-            the_beginner_cars: the_beginner_cars.clone(),
+            stopped_scripts: Vec::new(),
         }));
 
         let connection_handles = the_beginner_cars
@@ -98,9 +111,11 @@ impl AutoScriptManager {
 
         {
             let mut state = self.the_beginner_car_scripts.lock().await;
-            let the_beginner_car = state.the_beginner_cars.iter().find(|the_beginner_car|
-                the_beginner_car.device_id == DeviceId::TcA
-            ).unwrap();
+            let the_beginner_car = state
+                .the_beginner_cars
+                .iter()
+                .find(|the_beginner_car| the_beginner_car.device_id == DeviceId::TcA)
+                .unwrap();
 
             let auto_script = AutoScript {
                 run_uuid: run_uuid.clone(),
@@ -108,23 +123,60 @@ impl AutoScriptManager {
                 run_number,
                 script: data,
                 device: the_beginner_car.clone(),
+                hardware_response: AutoScriptResponseFromHardware::HeardNothing,
             };
 
             state.queued_scripts.push_back(auto_script);
-
-            
-
-            if let Some(next) = state.queued_scripts.pop_front() {
-                state.running_script = Some(next.clone());
-                self.outgoing_tx
-                    .send(TheBeginnerCarIncomingMessages::RunAutoScript { script: next })
-                    .await
-                    .unwrap();
-            }
         }
 
         // Self::start_next_auto_script_if_not_running(self.state.clone(), self.outgoing_tx.clone());
         run_uuid
+    }
+
+    pub async fn try_start_next_auto_script(the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>) {
+        let target_device_id = DeviceId::TcA; // In the future, find available device.
+
+        let target_device_outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>;
+        let script_to_start_content;
+        {
+            let mut the_beginner_car_scripts_mutex_guard =
+                the_beginner_car_scripts.lock().await;
+            let device_being_used = the_beginner_car_scripts_mutex_guard
+                .running_scripts
+                .iter()
+                .any(|auto_script| auto_script.device.device_id == target_device_id);
+            if device_being_used {
+                panic!(); // TODO: proper error
+            }
+
+            let script_to_start = the_beginner_car_scripts_mutex_guard
+                .queued_scripts
+                .pop_front();
+
+            if let Some(script) = script_to_start {
+                target_device_outgoing_tx = script.device.outgoing_tx.clone();
+                script_to_start_content = the_beginner_car_tcp_protocol::AutoScript {
+                    run_uuid: script.run_uuid.clone(),
+                    preprocessed_file_hash: script.preprocessed_file_hash.clone(),
+                    run_number: script.run_number,
+                    device_id: "script.device.device_id".to_string(),
+                    script: script.script.clone(),
+                };
+
+                the_beginner_car_scripts_mutex_guard
+                    .running_scripts
+                    .push_mut(script);
+            } else {
+                panic!();
+            }
+        }
+
+        target_device_outgoing_tx
+            .send(TheBeginnerCarIncomingMessages::RunAutoScript {
+                script: script_to_start_content,
+            })
+            .await
+            .unwrap();
     }
 
     pub fn list_queued_auto_scripts() {
@@ -141,9 +193,9 @@ impl AutoScriptManager {
             match the_beginner_car.incoming_tx.subscribe().recv().await {
                 Ok(message) => match message {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
-                        Self::on_auto_script_stopped(
+                        Self::on_hardware_response_auto_script_stopped(
                             state.clone(),
-                            the_beginner_car.outgoing_tx.clone(),
+                            the_beginner_car.device_id.clone(),
                         )
                         .await;
                     }
@@ -159,26 +211,30 @@ impl AutoScriptManager {
         }
     }
 
-    pub async fn on_auto_script_stopped(
+    pub async fn on_hardware_response_auto_script_stopped(
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
-        outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
+        device_id: DeviceId,
     ) {
         {
-            let mut state = state.lock().await;
-            if let Some(next) = state.queued_scripts.pop_front() {
-                state.running_script = Some(next.clone());
-                outgoing_tx
-                    .send(TheBeginnerCarIncomingMessages::RunAutoScript { script: next })
-                    .await
-                    .unwrap();
+            let mut state_mutex_guard = state.lock().await;
+            let stopped_scripts: Vec<AutoScript> = state_mutex_guard
+                .running_scripts
+                .extract_if(.., |auto_script| auto_script.device.device_id == device_id)
+                .collect();
+            if stopped_scripts.len() != 1 {
+                // should only be one.. but ah well maybe we got here somehow..
+                println!(
+                    "warn: unexpected number of scripts removed: ({})",
+                    stopped_scripts.len()
+                );
+            }
+
+            for removed_script in stopped_scripts {
+                state_mutex_guard.stopped_scripts.push(removed_script);
             }
         }
 
-        // outgoing_tx
-        //     .send(TheBeginnerCarIncomingMessages::RunAutoScript { data: script })
-        //     .await
-        //     .unwrap();
-        //
+        Self::try_start_next_auto_script(state);
     }
 
     // mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,

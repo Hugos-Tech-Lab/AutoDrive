@@ -14,6 +14,13 @@ use tokio::{
 
 use crate::devices_config::{DeviceId, HardwareMetadata};
 
+#[repr(u8)]
+enum HardwareState {
+    Disconnected,
+    Ready,
+    AutoScriptRunning,
+}
+
 #[derive(Clone)]
 pub struct TheBeginnerCarComms {
     pub device_id: DeviceId,

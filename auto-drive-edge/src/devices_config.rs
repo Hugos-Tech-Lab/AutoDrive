@@ -1,25 +1,25 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
-pub enum DeviceType {
+pub enum DeviceCategory {
     TheBeginnerCar,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum DeviceBuild {
-  BuildA,
-  BuildB,
-  BuildC
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub enum DeviceId {
+  TcA,
+  TcB
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DeviceMetadata {
-    pub build: DeviceBuild,
+pub struct HardwareMetadata {
+    pub device_category: DeviceCategory,
+    pub device_id: DeviceId,
     pub mdns_address: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeviceConfig {
-    // pub devices: Vec<DeviceMetadata>,
-    pub the_beginner_cars: Vec<DeviceMetadata>
+    // pub devices: Vec<HardwareMetadata>,
+    pub the_beginner_cars: Vec<HardwareMetadata>
 }

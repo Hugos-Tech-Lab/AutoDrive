@@ -8,7 +8,7 @@ use std::{
 
 use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::{
-    AutoScript, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
     sync::{
@@ -19,46 +19,52 @@ use tokio::{
 };
 use uuid::Uuid;
 
+use crate::{devices_config::DeviceId, the_beginner_car_comms::TheBeginnerCarComms};
+
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
-pub struct AutoScriptState {
+pub struct AutoScript {
+    pub run_uuid: String,
+    pub preprocessed_file_hash: String,
+    pub run_number: u32,
+    pub script: Vec<u8>,
+    pub device: TheBeginnerCarComms,
+}
+
+pub struct AutoScriptTheBeginnerCars {
+    the_beginner_cars: Vec<TheBeginnerCarComms>,
     queued_scripts: VecDeque<AutoScript>,
-    running_script: Option<AutoScript>,
+    running_scripts: Vec<AutoScript>,
 }
 
 pub struct AutoScriptManager {
-    state: Arc<Mutex<AutoScriptState>>,
-    pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
-    pub incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
-    _connection_handle: JoinHandle<()>,
+    the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>,
+    connection_handles: Vec<JoinHandle<()>>,
 }
 
 impl AutoScriptManager {
-    pub fn new(
-        outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
-        incoming_rx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
-    ) -> Self {
-        let state = Arc::new(Mutex::new(AutoScriptState {
+    pub fn new(the_beginner_cars: Vec<TheBeginnerCarComms>) -> Self {
+        let the_beginner_car_scripts = Arc::new(Mutex::new(AutoScriptTheBeginnerCars {
             queued_scripts: VecDeque::new(),
-            running_script: None,
+            running_scripts: Vec::new(),
+            the_beginner_cars: the_beginner_cars.clone(),
         }));
 
-        let connection_handle = tokio::spawn({
-            // let mdns_address = device_metadata.mdns_address.clone();
-            // let incoming_tx = incoming_tx.clone();
-            let state = state.clone();
-            let outgoing_tx = outgoing_tx.clone();
-            let incoming_rx = incoming_rx.subscribe();
-            async {
-                Self::long_lived_watcher(incoming_rx, outgoing_tx, state).await;
-            }
-        });
+        let connection_handles = the_beginner_cars
+            .into_iter()
+            .map(|the_beginner_car| {
+                tokio::spawn({
+                    let the_beginner_car_scripts = the_beginner_car_scripts.clone();
+                    async {
+                        Self::long_lived_watcher(the_beginner_car, the_beginner_car_scripts).await;
+                    }
+                })
+            })
+            .collect();
 
         Self {
-            state,
-            outgoing_tx,
-            _connection_handle: connection_handle,
-            incoming_rx,
+            the_beginner_car_scripts,
+            connection_handles,
         }
     }
 
@@ -67,7 +73,18 @@ impl AutoScriptManager {
     }
 
     pub async fn cancel_auto_script(&self, run_uuid: String) {
-        self.outgoing_tx
+        let the_beginner_car_scripts = self.the_beginner_car_scripts.lock().await;
+        let Some(running_script) = the_beginner_car_scripts
+            .running_scripts
+            .iter()
+            .find(|script| script.run_uuid == run_uuid)
+        else {
+            panic!(); // TODO: error no running script with that id
+        };
+
+        running_script
+            .device
+            .outgoing_tx
             .send(TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid })
             .await
             .unwrap();
@@ -79,16 +96,23 @@ impl AutoScriptManager {
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
         let run_uuid = Uuid::new_v4().to_string();
 
-        let auto_script = AutoScript {
-            run_uuid: run_uuid.clone(),
-            preprocessed_file_hash: digest,
-            run_number,
-            script: data,
-        };
-
         {
-            let mut state = self.state.lock().await;
+            let mut state = self.the_beginner_car_scripts.lock().await;
+            let the_beginner_car = state.the_beginner_cars.iter().find(|the_beginner_car|
+                the_beginner_car.device_id == DeviceId::TcA
+            ).unwrap();
+
+            let auto_script = AutoScript {
+                run_uuid: run_uuid.clone(),
+                preprocessed_file_hash: digest,
+                run_number,
+                script: data,
+                device: the_beginner_car.clone(),
+            };
+
             state.queued_scripts.push_back(auto_script);
+
+            
 
             if let Some(next) = state.queued_scripts.pop_front() {
                 state.running_script = Some(next.clone());
@@ -103,13 +127,6 @@ impl AutoScriptManager {
         run_uuid
     }
 
-    // pub fn start_next_auto_script_if_not_running(
-    //     state: Arc<Mutex<AutoScriptState>>,
-    //     outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
-    // ) {
-    //     //
-    // }
-
     pub fn list_queued_auto_scripts() {
         //
     }
@@ -117,15 +134,18 @@ impl AutoScriptManager {
     // pub fn
 
     async fn long_lived_watcher(
-        mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
-        outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
-        state: Arc<Mutex<AutoScriptState>>,
+        the_beginner_car: TheBeginnerCarComms,
+        state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
     ) {
         loop {
-            match incoming_rx.recv().await {
+            match the_beginner_car.incoming_tx.subscribe().recv().await {
                 Ok(message) => match message {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
-                        Self::on_auto_script_stopped(state.clone(), outgoing_tx.clone()).await;
+                        Self::on_auto_script_stopped(
+                            state.clone(),
+                            the_beginner_car.outgoing_tx.clone(),
+                        )
+                        .await;
                     }
                     _ => {}
                 },
@@ -140,7 +160,7 @@ impl AutoScriptManager {
     }
 
     pub async fn on_auto_script_stopped(
-        state: Arc<Mutex<AutoScriptState>>,
+        state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
         outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     ) {
         {

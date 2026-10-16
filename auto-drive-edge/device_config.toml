@@ -1,3 +1,3 @@
 [[the_beginner_cars]]
-build = "BuildA"
+device_id = "BuildA"
 mdns_address = "the_beginner_car_build_a"

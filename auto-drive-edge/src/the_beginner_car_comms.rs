@@ -12,72 +12,22 @@ use tokio::{
     time::timeout,
 };
 
-use crate::{
-    devices_config::{DeviceBuild, DeviceMetadata},
-    // the_beginner_cars::TheBeginnerCarVehicleHardwareTelemetry,
-};
+use crate::devices_config::{DeviceId, HardwareMetadata};
 
-//
-// pub struct VehicleHardwareTelemetry {
-//     // motor_a_set_speed: Gauge<f64>,
-//     // motor_b_set_speed: Gauge<f64>,
-//     motor_battery_voltage: Gauge<f64>,
-//     // wifi_battery_voltage: Gauge<f64>,
-// }
-
-// impl VehicleHardwareTelemetry {
-//     pub fn new(meter: Meter, identifier: [KeyValue; 1]) -> Self {
-
-//         motor_battery_voltage.record(2.0, &identifier);
-
-//         Self {
-//             motor_battery_voltage,
-//         }
-//     }
-// }
-
-// Answers questions like:
-// Is CPU usage too high?
-// What's the average over 5 minutes?
-// Hows the Memory?
-// pub struct SoftwareTelemetry {
-//     cpu_percentage: Gauge,
-// }
-
-// impl Default for SoftwareTelemetry {
-//     fn default() -> Self {
-//         Self {
-//             cpu_percentage: gauge!("cpu_percentage"),
-//         }
-//     }
-// }
-
-// impl SoftwareTelemetry {
-//     pub fn new() -> Self {
-//         Self {
-//             cpu_percentage: gauge!("cpu_percentage"),
-//         }
-//     }
-// }
-
-// pub struct TheBeginnerCarHardwareState {
-//     //
-// }
-
+#[derive(Clone)]
 pub struct TheBeginnerCarComms {
-    pub build: DeviceBuild,
-    mdns_address: String,
-    // connected: bool,
+    pub device_id: DeviceId,
+    pub mdns_address: String,
+    // connected: bool, // TODO: make this work
     pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
-    connection_handle: JoinHandle<()>,
 }
 
 impl TheBeginnerCarComms {
     pub fn new(
-        device_metadata: DeviceMetadata,
+        device_metadata: HardwareMetadata,
         // vehicle_telemetry: TheBeginnerCarVehicleHardwareTelemetry,
-    ) -> Self {
+    ) -> (Self, JoinHandle<()>) {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
         let (incoming_tx, _) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);
 
@@ -89,14 +39,16 @@ impl TheBeginnerCarComms {
             }
         });
 
-        Self {
-            build: device_metadata.build,
-            mdns_address: device_metadata.mdns_address,
-            // connected: false,
-            outgoing_tx,
-            incoming_tx,
+        (
+            Self {
+                device_id: device_metadata.device_id,
+                mdns_address: device_metadata.mdns_address,
+                // connected: false,
+                outgoing_tx,
+                incoming_tx,
+            },
             connection_handle,
-        }
+        )
     }
 
     pub fn connected() -> bool {

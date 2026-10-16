@@ -31,6 +31,7 @@ pub struct AutoScript {
     pub run_uuid: String,
     pub preprocessed_file_hash: String,
     pub run_number: u32,
+    pub device_id: String,
     pub script: Vec<u8>
 }
 

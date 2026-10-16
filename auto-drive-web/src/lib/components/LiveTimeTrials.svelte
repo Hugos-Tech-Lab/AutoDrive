@@ -8,7 +8,7 @@
     run_number: number;
     run_uuid: string;
     upload_comment: string;
-    vehicle_id: string;
+    hardware_id: string;
   };
 
   type TimeTrialQueueEntry = {
@@ -18,7 +18,7 @@
     run_number: number;
     run_uuid: string;
     upload_comment: string;
-    vehicle_id: string | undefined;
+    hardware_id: string | undefined;
   };
 
   type TimeTrialData = {
@@ -149,7 +149,7 @@
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.run_uuid.substring(0, 13)}...</td>
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_comment.substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.vehicle_id.substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.hardware_id.substring(0, 10)}</td>
                 <td class="py-3 px-4">
                   <div class="flex items-center justify-center gap-2">
                     <button 

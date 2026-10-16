@@ -4,7 +4,7 @@ use opentelemetry::{KeyValue, global, metrics::Gauge};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 use tokio::{sync::broadcast, task::JoinSet};
 
-use crate::{devices_config::DeviceBuild, physical_hardware::PhysicalHardware};
+use crate::{devices_config::DeviceId, physical_hardware::PhysicalHardware};
 
 #[derive(Debug, Clone)]
 struct VehicleHardwareTelemetryGauges {
@@ -61,7 +61,7 @@ impl VehicleHardwareTelemetry {
     }
 
     async fn the_beginner_car_long_lived_watcher(
-        build: DeviceBuild, // 
+        id: DeviceId, // 
         mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
         gauges: VehicleHardwareTelemetryGauges,
     ) {

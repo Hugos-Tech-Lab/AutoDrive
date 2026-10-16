@@ -10,8 +10,7 @@ use std::{
 use crate::{
     auto_script::{
         cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarExports,
-    },
-    hardware::TheBeginnerCarHardware,
+    }, hardware::{RequestOrigin, TheBeginnerCarHardware},
 };
 use anyhow::{Result, anyhow};
 use log::info;
@@ -134,6 +133,13 @@ impl WasmThread {
         if wasm_data.ct.is_cancelled() {
             log::info!("cancelled");
         }
+
+        {
+            let mut hardware = wasm_data.hardware.lock().unwrap();
+            hardware.set_wheel_a_speed(0, RequestOrigin::Manual);
+            hardware.set_wheel_b_speed(0, RequestOrigin::Manual);
+        }
+        
 
         log::info!("done");
         Ok(())

@@ -19,10 +19,7 @@ use esp_idf_svc::hal::{
 use the_beginner_car_spi_protocol::Event;
 
 use crate::{
-    auto_script::AutoScript,
-    hardware::{TheBeginnerCarHardware, motor::Motor},
-    logger::init_logging,
-    server_spi::ServerSpi,
+    auto_script::AutoScript, hardware::{TheBeginnerCarHardware, led::Led, motor::Motor}, logger::init_logging, server_spi::ServerSpi,
 };
 
 use esp_idf_sys::esp_reset_reason;
@@ -60,6 +57,8 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
     );
+    let led_left = Led::new(peripherals.pins.gpio12.into());
+    let led_right = Led::new(peripherals.pins.gpio10.into());
 
     // pin.set_color(20, 2, 2);
     if reason == 9 {
@@ -73,6 +72,8 @@ pub fn main() -> anyhow::Result<()> {
     let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
         motor_a,
         motor_b,
+        led_left,
+        led_right,
         ir_utmost_front_utmost_left_latest_reading.clone(),
         ir_utmost_front_utmost_right_latest_reading.clone(),
     )));
@@ -147,6 +148,7 @@ pub fn main() -> anyhow::Result<()> {
                         .store(utmost_front_utmost_left_latest_reading, Ordering::Relaxed);
                     ir_utmost_front_utmost_right_latest_reading
                         .store(utmost_front_utmost_right_latest_reading, Ordering::Relaxed);
+
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 
@@ -159,7 +161,7 @@ pub fn main() -> anyhow::Result<()> {
                     }
 
                     // dbg!(led_a_latest_reading);
-                    FreeRtos::delay_ms(10);
+                    FreeRtos::delay_ms(1);
                 }
             }
         })

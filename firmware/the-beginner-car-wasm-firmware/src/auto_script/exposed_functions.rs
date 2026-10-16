@@ -162,6 +162,63 @@ impl WasmExports for TheBeginnerCarExports {
         let hardware = wasm_data.hardware.lock().unwrap();
         hardware.get_ir_utmost_front_utmost_right_value()
     }
+    
+    unsafe extern "C" fn set_pin_left_on(exec_env: *mut c_void) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        hardware.led_left().on().unwrap();
+    }
+    
+    unsafe extern "C" fn set_pin_left_off(exec_env: *mut c_void) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        hardware.led_left().on().unwrap();
+    }
+    
+    unsafe extern "C" fn set_pin_right_on(exec_env: *mut c_void) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        hardware.led_right().on().unwrap();
+    }
+    
+    unsafe extern "C" fn set_pin_right_off(exec_env: *mut c_void) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        hardware.led_right().off().unwrap();
+    }
 }
 
 unsafe fn terminate(exec_env: *mut WASMExecEnv) {

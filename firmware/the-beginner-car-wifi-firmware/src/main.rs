@@ -16,8 +16,7 @@ use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarOutgoingMessages};
 
 use crate::{
-    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
-    logger::init_logging, tcp_server::accept,
+    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, logger::init_logging, tcp_server::accept, utils::stack,
 };
 
 use esp_idf_sys::esp_reset_reason;

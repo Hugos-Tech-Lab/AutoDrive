@@ -1135,3 +1135,10 @@ msgstr "Never"
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Last Refresh: {0}"
 msgstr "Last Refresh: {0}"
+
+#~ msgid "Car Build"
+#~ msgstr "Car Build"
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Vehicle ID"
+msgstr "Vehicle ID"

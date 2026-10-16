@@ -35,7 +35,7 @@ impl VehicleHardwareTelemetryGauges {
 }
 
 pub struct VehicleHardwareTelemetry {
-    the_beginner_car_watcher_handles: JoinSet<()>,
+    _the_beginner_car_watcher_handles: JoinSet<()>,
 }
 
 impl VehicleHardwareTelemetry {
@@ -56,7 +56,7 @@ impl VehicleHardwareTelemetry {
         }
 
         Self {
-            the_beginner_car_watcher_handles,
+            _the_beginner_car_watcher_handles: the_beginner_car_watcher_handles,
         }
     }
 

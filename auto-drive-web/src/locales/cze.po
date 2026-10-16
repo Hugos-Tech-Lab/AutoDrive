@@ -1135,3 +1135,10 @@ msgstr ""
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Last Refresh: {0}"
 msgstr ""
+
+#~ msgid "Car Build"
+#~ msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Vehicle ID"
+msgstr ""

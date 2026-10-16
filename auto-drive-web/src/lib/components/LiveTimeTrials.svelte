@@ -7,7 +7,8 @@
     upload_hash: string;
     run_number: number;
     run_uuid: string;
-    uploader_comment: string;
+    upload_comment: string;
+    vehicle_id: string;
   };
 
   type TimeTrialQueueEntry = {
@@ -16,7 +17,8 @@
     upload_hash: string;
     run_number: number;
     run_uuid: string;
-    uploader_comment: string;
+    upload_comment: string;
+    vehicle_id: string | undefined;
   };
 
   type TimeTrialData = {
@@ -133,6 +135,7 @@
             <th class="py-3 px-4">Run UUID</th>
             <th class="py-3 px-4">Upload Hash</th>
             <th class="py-3 px-4">Upload Comment</th>
+            <th class="py-3 px-4">Vehicle ID</th>
             <th class="py-3 px-4 text-center">Actions</th>
           </tr>
         </thead>
@@ -145,7 +148,8 @@
                 <td class="py-3 px-4 font-mono">#{entry.run_number}</td>
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.run_uuid.substring(0, 13)}...</td>
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.uploader_comment.substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_comment.substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.vehicle_id.substring(0, 10)}</td>
                 <td class="py-3 px-4">
                   <div class="flex items-center justify-center gap-2">
                     <button 

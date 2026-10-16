@@ -32,6 +32,11 @@
   let lastUpdateMs = $state(Date.now());
   let localTickOffset = $state(0);
 
+  // Derive a nicely formatted string for the last refresh time
+  let lastRefreshTime = $derived(
+    timeTrialsData ? new Date(lastUpdateMs).toLocaleTimeString() : "Never"
+  );
+
   onMount(() => {
     // 1. Setup the interval to tick the seconds up locally between server updates
     const ticker = setInterval(() => {
@@ -111,7 +116,6 @@
 </div>
 
 <div class="w-full flex flex-col gap-8">
-
   <!-- CURRENTLY IN PROGRESS SECTION -->
   <div class="w-full flex flex-col gap-3">
     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -164,7 +168,7 @@
             {/each}
           {:else}
             <tr>
-              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic">No cars currently driving.</td>
+              <td colspan="7" class="py-6 px-4 text-center text-gray-500 italic">No cars currently driving.</td>
             </tr>
           {/if}
         </tbody>
@@ -220,14 +224,19 @@
       </table>
     </div>
   </div>
-
 </div>
 
-<div class="text-sm">
-  <span class={connectionStatus === 'Connected' ? 'text-green-600' : 'text-amber-600'}>
-    {connectionStatus}
+<!-- BOTTOM STATUS BAR -->
+<div class="mt-6 text-sm flex items-center justify-end gap-4 w-full">
+  <span class="text-gray-500">
+    Last Refresh: {lastRefreshTime}
   </span>
-  {#if telemetryError}
-    <span class="text-red-500 ml-2">({telemetryError})</span>
-  {/if}
+  <div>
+    <span class="font-medium {connectionStatus === 'Connected' ? 'text-green-600' : 'text-amber-600'}">
+      {connectionStatus}
+    </span>
+    {#if telemetryError}
+      <span class="text-red-500 ml-1">({telemetryError})</span>
+    {/if}
+  </div>
 </div>

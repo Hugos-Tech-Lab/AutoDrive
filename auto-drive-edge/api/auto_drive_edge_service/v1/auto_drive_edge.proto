@@ -5,16 +5,13 @@ package auto_drive_edge_service.v1;
 service AutoDriveEdgeService {
   rpc RunAutoScript(RunAutoScriptRequest) returns (stream RunAutoScriptResponse);
   rpc CancelAutoScript(CancelAutoScriptRequest) returns (CancelAutoScriptResponse);
-  rpc GetAutoScriptStatus(GetAutoScriptStatusRequest) returns (GetAutoScriptStatusResponse);
-
+  rpc WatchAutoScriptEvents(WatchAutoScriptEventsRequest) returns (WatchAutoScriptEventsResponse);
   rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
 }
 
-message GetAutoScriptStatusRequest {}
+message WatchAutoScriptEventsRequest {}
 
-message GetAutoScriptStatusResponse {
-  //
-}
+message WatchAutoScriptEventsResponse {}
 
 message RunAutoScriptRequest {
   TheBeginnerCarBuild build = 1;

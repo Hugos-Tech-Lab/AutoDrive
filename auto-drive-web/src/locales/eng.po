@@ -1126,3 +1126,12 @@ msgstr "Queue is currently empty."
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Upload Comment"
 msgstr "Upload Comment"
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Never"
+msgstr "Never"
+
+#. 0: lastRefreshTime
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Last Refresh: {0}"
+msgstr "Last Refresh: {0}"

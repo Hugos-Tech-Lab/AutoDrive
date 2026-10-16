@@ -7,15 +7,8 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent,
-        CancelAutoScriptRequest, CancelAutoScriptResponse, GetAutoScriptStatusRequest,
-        GetAutoScriptStatusResponse, InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage,
-        LogSystemOrigin, MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse,
-        SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsRequest,
-        WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
-        run_auto_script_response, watch_the_beginner_car_events_response::Event,
-    },
-    the_beginner_car_auto_script::TheBeginnerCarAutoScript,
+        AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent, CancelAutoScriptRequest, CancelAutoScriptResponse, InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage, LogSystemOrigin, MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse, SystemStateEvent, WasmInstalledEvent, WatchAutoScriptEventsRequest, WatchAutoScriptEventsResponse, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService, run_auto_script_response, watch_the_beginner_car_events_response::Event,
+    }, the_beginner_car_auto_script::TheBeginnerCarAutoScript,
 };
 
 pub struct GrpcService {
@@ -121,14 +114,14 @@ impl AutoDriveEdgeService for GrpcService {
         Ok(Response::new(CancelAutoScriptResponse {}))
     }
 
-    async fn get_auto_script_status(
+    async fn watch_auto_script_events(
         &self,
-        request: Request<GetAutoScriptStatusRequest>,
-    ) -> Result<Response<GetAutoScriptStatusResponse>, Status> {
+        request: Request<WatchAutoScriptEventsRequest>,
+    ) -> Result<Response<WatchAutoScriptEventsResponse>, Status> {
         //
         //
         //
-        Ok(Response::new(GetAutoScriptStatusResponse {}))
+        Ok(Response::new(WatchAutoScriptEventsResponse {}))
     }
 
     type WatchTheBeginnerCarEventsStream = Pin<

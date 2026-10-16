@@ -189,7 +189,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.led_left().on().unwrap();
+        hardware.led_left().off().unwrap();
     }
     
     unsafe extern "C" fn set_led_right_on(exec_env: *mut c_void) {

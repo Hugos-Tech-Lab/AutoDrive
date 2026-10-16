@@ -29,7 +29,7 @@
     ></iframe>
   </div>
   <br />
-  <h1 class="text-2xl mb-4 min-w-0 flex-1">Leaderboard</h1>
+  <!-- <h1 class="text-2xl mb-4 min-w-0 flex-1">Leaderboard</h1>
 
   <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
     <div class="border-2 border-black p-[10px] rounded-sm">
@@ -49,7 +49,7 @@
   - Wheels: 2 powered, 1 non-powered <br />
   - Inputs: 4 light sensors (placeholder)<br />
   - Outputs: 2 motor speeds (placeholder)<br /><br />
-  <h1 class="text-2xl mb-4 min-w-0 flex-1">The Track</h1>
+  <h1 class="text-2xl mb-4 min-w-0 flex-1">The Track</h1> -->
   <!-- <h2 class="mb-6">
     Manage software on real physical hardware devices in the lab.
   </h2>

@@ -367,8 +367,9 @@ msgstr ""
 #~ msgid "Cars"
 #~ msgstr ""
 
-#~ msgid "Control a real small machine remotely"
-#~ msgstr ""
+#: src/lib/components/LandingPage.svelte
+msgid "Control a real small machine remotely"
+msgstr ""
 
 #~ msgid "Machines"
 #~ msgstr ""
@@ -584,9 +585,8 @@ msgstr ""
 #~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0><0/> <1>Hugo</1> <2>5.233 seconds</2></0> <1><0/> <1>Player 2</1> <2>6.120 seconds</2></1> <2><0/> <1>Player 3</1> <2>7.450 seconds</2></2></4> <5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
 #~ msgstr ""
 
-#: src/lib/components/LandingPage.svelte
-msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0/> <1>Hugo</1> <2>5.233 seconds</2></4> <5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-msgstr ""
+#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0/> <1>Hugo</1> <2>5.233 seconds</2></4> <5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
+#~ msgstr ""
 
 #~ msgid "Log In"
 #~ msgstr ""

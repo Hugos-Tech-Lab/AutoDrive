@@ -4,17 +4,18 @@
   import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
 
   let {} = $props();
-  type Build = "Overview" | "Build A" | "Build B";
-  let selectedBuild = $state<Build>("Overview");
+  type Build = "Time Trials" | "Build A"; // Build B...
+  let selectedBuild = $state<Build>("Time Trials");
 
-  const builds: Build[] = ["Overview", "Build A", "Build B"];
+  const builds: Build[] = ["Time Trials", "Build A"];
 
-  type PlayOption = "Leaderboard" | "Algorithms";
+  type PlayOption = "Leaderboard" | "Algorithms" | "Live";
   let selectedPlayOption = $state<PlayOption>("Leaderboard");
 
   const playOptions: PlayOption[] = [
     "Leaderboard",
     "Algorithms",
+    "Live"
   ];
 
   type BuildOption = "Status" | "Telemetry" | "Control";
@@ -55,7 +56,7 @@
   >Software Development Kit (SDK)</button
 > -->
 
-{#if selectedBuild === "Overview"}
+{#if selectedBuild === "Time Trials"}
   <div class="button-container">
     {#each playOptions as playOption}
       <button

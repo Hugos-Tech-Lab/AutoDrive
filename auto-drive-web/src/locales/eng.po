@@ -189,9 +189,6 @@ msgstr "Device"
 msgid "Status: Online / Offline"
 msgstr "Status: Online / Offline"
 
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/routes/[locale]/location/+page.svelte
 msgid "Overview"
 msgstr "Overview"
@@ -461,9 +458,8 @@ msgstr "The Beginner Car"
 msgid "Build A"
 msgstr "Build A"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build B"
-msgstr "Build B"
+#~ msgid "Build B"
+#~ msgstr "Build B"
 
 #~ msgid "Build C"
 #~ msgstr "Build C"
@@ -657,8 +653,11 @@ msgstr "Algorithms"
 #~ msgid "Experiment"
 #~ msgstr "Experiment"
 
-#~ msgid "Time Trials"
-#~ msgstr "Time Trials"
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+msgid "Time Trials"
+msgstr "Time Trials"
 
 #~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> asd"
 #~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> asd"
@@ -937,3 +936,10 @@ msgstr "Front Left IR"
 #: src/lib/components/TheBeginnerCarDrawing.svelte
 msgid "Front Right IR"
 msgstr "Front Right IR"
+
+#~ msgid "Now"
+#~ msgstr "Now"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Live"
+msgstr "Live"

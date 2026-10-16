@@ -1,9 +1,10 @@
 {
-  "name": "firmware.hugostechlab.com",
+  "name": "autodrive.hugostechlab.com",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "dev": "vite --host",
     "start": "vite --host",
     "build": "vite build",
     "preview": "serve dist",

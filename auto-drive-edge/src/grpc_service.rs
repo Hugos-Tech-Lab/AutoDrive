@@ -1,4 +1,4 @@
-use std::{convert::Infallible, pin::Pin, sync::Arc};
+use std::{pin::Pin, sync::Arc};
 
 use futures_util::{Stream, StreamExt, stream};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
@@ -8,12 +8,12 @@ use tonic::{Request, Response, Status};
 use crate::{
     auto_drive_edge_service::v1::{
         AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent,
-        CancelAutoScriptRequest, CancelAutoScriptResponse, InfraredLedReadingsEvent, LogEvent,
-        LogLevel, LogMessage, LogSystemOrigin, MotorSpeedUpdatedEvent, RunAutoScriptRequest,
-        RunAutoScriptResponse, SystemStateEvent, WasmInstalledEvent,
-        WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse,
-        auto_drive_edge_service_server::AutoDriveEdgeService, run_auto_script_response,
-        watch_the_beginner_car_events_response::Event,
+        CancelAutoScriptRequest, CancelAutoScriptResponse, GetAutoScriptStatusRequest,
+        GetAutoScriptStatusResponse, InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage,
+        LogSystemOrigin, MotorSpeedUpdatedEvent, RunAutoScriptRequest, RunAutoScriptResponse,
+        SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsRequest,
+        WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
+        run_auto_script_response, watch_the_beginner_car_events_response::Event,
     },
     the_beginner_car_auto_script::TheBeginnerCarAutoScript,
 };
@@ -119,6 +119,16 @@ impl AutoDriveEdgeService for GrpcService {
             .await;
 
         Ok(Response::new(CancelAutoScriptResponse {}))
+    }
+
+    async fn get_auto_script_status(
+        &self,
+        request: Request<GetAutoScriptStatusRequest>,
+    ) -> Result<Response<GetAutoScriptStatusResponse>, Status> {
+        //
+        //
+        //
+        Ok(Response::new(GetAutoScriptStatusResponse {}))
     }
 
     type WatchTheBeginnerCarEventsStream = Pin<

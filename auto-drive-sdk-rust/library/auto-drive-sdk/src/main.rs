@@ -1,7 +1,7 @@
 #![no_main]
 #![no_std]
 
-use auto_drive_sdk::{hardware::the_beginner_car::TheBeginnerCar, utils::{delay, print}};
+use auto_drive_sdk::{hardware::the_beginner_car::TheBeginnerCar, utils::{delay}};
 
 #[auto_drive_sdk::main]
 fn main(the_beginner_car: TheBeginnerCar) {

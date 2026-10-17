@@ -61,7 +61,7 @@ pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[panic_handler]
         fn panic(_info: &core::panic::PanicInfo) -> ! {
             // TODO add info about the panic
-            print("Oh no.. the WASM script panicked.");
+            ::auto_drive_sdk::utils::print("Oh no.. the WASM script panicked.");
             loop {}
         }
     }

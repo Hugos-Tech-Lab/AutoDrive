@@ -1,12 +1,12 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
+use crate::edge_client::{Hardware, ToEdgeMessage};
+use bytes::Buf;
 use futures_util::{StreamExt, stream};
 use tokio::sync::oneshot;
-use warp::{http::StatusCode, Filter, Reply, Rejection};
-use bytes::Buf;
-use crate::edge_client::{Hardware, ToDeviceMessage};
-use crate::auto_drive_edge_service::v1::run_auto_script_response;
+use tokio_stream::wrappers::BroadcastStream;
+use warp::{Filter, Rejection, Reply, http::StatusCode};
 
 pub fn run(
     hardware: Hardware,
@@ -77,11 +77,31 @@ pub fn run(
 
                 let receiver = logs.subscribe();
                 let (sender_start, receiver_start) = oneshot::channel();
-                
+
                 // Add `args` to your StartAutoScript struct/enum variant
-                let message = ToDeviceMessage::StartAutoScript {
+                let message = ToEdgeMessage::StartAutoScript {
                     data: wasm_bytes,
                     uploader_comment: args_string,
+                    response_tx: sender_start,
+                    owner: "hugo".to_string(),
+                };
+
+                if sender.send(message).await.is_err() {
+                    return Ok::<_, Infallible>(
+                        warp::reply::with_status(
+                            "Device channel is closed",
+                            StatusCode::SERVICE_UNAVAILABLE,
+                        )
+                        .into_response(),
+                    );
+                }
+
+                let run_uuid = receiver_start.await.unwrap();
+
+                let (sender_start, receiver_start) = oneshot::channel();
+
+                let message = ToEdgeMessage::WatchAutoScript {
+                    run_uuid: run_uuid.clone(),
                     response_tx: sender_start,
                 };
 
@@ -95,63 +115,45 @@ pub fn run(
                     );
                 }
 
-                let streamed_response = receiver_start.await.unwrap().unwrap();
+                let log_stream = receiver_start.await;
+                let streamed_response = BroadcastStream::new(log_stream.unwrap());
 
-                let event_stream = stream::once(async {
-                    Ok::<_, Infallible>(
-                        warp::sse::Event::default()
-                            .event("log")
-                            .data("[INFO] [AUTO_DRIVE_CLOUD] Got the run WASM request and sent to the edge"),
-                    )
+                let confirmation = stream::once(async {
+                    Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(
+                        "[INFO] [AUTO_DRIVE_CLOUD] Got the run WASM request and sent to the edge",
+                    ))
                 });
 
-                let event_stream = event_stream.chain(
-                    streamed_response.filter_map(|result| async move {
-                        let result = result.unwrap();
+                let run_uuid = confirmation.chain(stream::once(async move {
+                    let run_uuid = serde_json::json!({ "run_uuid": run_uuid }).to_string();
+                    Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(run_uuid))
+                }));
 
-                        match result.event {
-                            Some(run_auto_script_response::Event::RunUuid(run_uuid)) => {
-                                let run_uuid = serde_json::json!({ "run_uuid": run_uuid }).to_string();
-                                Some(Ok::<_, Infallible>(
-                                    warp::sse::Event::default()
-                                        .event("log")
-                                        .data(run_uuid),
-                                ))
-                            }
-                            Some(run_auto_script_response::Event::Log(log)) => {
-                                let log = log.log?;
-                                let level = match log.level() {
-                                    crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED",
-                                    crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
-                                    crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
-                                    crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
-                                    crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
-                                    crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
-                                };
+                let event_stream = run_uuid
+                    .chain(streamed_response.filter_map(|result| async move {
+                    let log = result.unwrap();
+                    let level = match log.level() {
+                        crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED",
+                        crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
+                        crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
+                        crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
+                        crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
+                        crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
+                    };
 
-                                let system_origin = match log.system_origin() {
-                                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmUnspecified => "UNSPECIFIED",
-                                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmMcu => "WASM_MCU",
-                                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
-                                };
-                                
-                                let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
-                                Some(Ok::<_, Infallible>(
-                                    warp::sse::Event::default()
-                                        .event("log")
-                                        .data(formatted_log),
-                                ))
-                            },
-                            None => {
-                                Some(Ok(
-                                    warp::sse::Event::default()
-                                        .event("error")
-                                        .data("error.to_string()"),
-                                ))
-                            }
+                    let system_origin = match log.system_origin() {
+                        crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmUnspecified => {
+                            "UNSPECIFIED"
                         }
-                    })
-                );
+                        crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmMcu => "WASM_MCU",
+                        crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
+                    };
+
+                    let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
+                    Some(Ok::<_, Infallible>(
+                        warp::sse::Event::default().event("log").data(formatted_log),
+                    ))
+                }));
 
                 Ok(warp::sse::reply(
                     warp::sse::keep_alive()
@@ -166,8 +168,14 @@ pub fn run(
             // Note: warp::multipart::form().max_length() payload errors will likely manifest as a warp::reject::PayloadTooLarge
             if err.find::<warp::reject::PayloadTooLarge>().is_some() {
                 const MAX_BODY_KB: u64 = MAX_BODY_SIZE / 1024;
-                let error_msg = format!("Payload too large. The maximum allowed size is {} KB.", MAX_BODY_KB);
-                Ok(warp::reply::with_status(error_msg, StatusCode::PAYLOAD_TOO_LARGE).into_response())
+                let error_msg = format!(
+                    "Payload too large. The maximum allowed size is {} KB.",
+                    MAX_BODY_KB
+                );
+                Ok(
+                    warp::reply::with_status(error_msg, StatusCode::PAYLOAD_TOO_LARGE)
+                        .into_response(),
+                )
             } else {
                 Err(err)
             }

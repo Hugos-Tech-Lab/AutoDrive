@@ -3,7 +3,7 @@ use serde::Deserialize;
 use bytes::Bytes;
 use warp::{http::StatusCode, Filter, Reply, Rejection};
 
-use crate::edge_client::{Hardware, ToDeviceMessage};
+use crate::edge_client::{Hardware, ToEdgeMessage};
 
 #[derive(Debug, Deserialize)]
 pub struct CancelRequest {
@@ -29,7 +29,7 @@ pub fn cancel(
                     serde_json::from_slice(&bytes).unwrap_or(CancelRequest { run_uuid: None })
                 };
 
-                let message = ToDeviceMessage::CancelAutoScript {
+                let message = ToEdgeMessage::CancelAutoScript {
                     run_uuid: cancel_req.run_uuid.unwrap(),
                 };
 

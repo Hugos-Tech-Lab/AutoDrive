@@ -30,7 +30,9 @@ message WatchAutoScriptRequest {
   string run_uuid = 1;
 }
 
-message WatchAutoScriptResponse {}
+message WatchAutoScriptResponse {
+  LogMessage log_message = 1;
+}
 
 message RunAutoScriptRequest {
   TheBeginnerCarBuild build = 1;

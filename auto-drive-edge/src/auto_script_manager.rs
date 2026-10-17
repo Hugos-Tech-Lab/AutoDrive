@@ -34,8 +34,8 @@ pub enum AutoScriptResponseFromHardware {
 }
 
 #[derive(Clone, Debug)]
-pub enum AutoScriptEvents {
-    Log { log_message: LogMessage },
+pub struct AutoScriptEvents {
+    pub log_message: LogMessage,
 }
 
 // #[derive(Debug, Clone)]
@@ -180,7 +180,7 @@ impl AutoScriptManager {
                             Ok(message) => match message {
                                 TheBeginnerCarOutgoingMessages::Log { log } => {
                                     if log.trace_id.as_deref() == Some(&run_uuid) {
-                                        let event = AutoScriptEvents::Log {
+                                        let event = AutoScriptEvents {
                                             log_message: log.clone(),
                                         };
 

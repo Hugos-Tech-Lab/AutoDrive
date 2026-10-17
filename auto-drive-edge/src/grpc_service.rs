@@ -12,6 +12,7 @@ use crate::{
         WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
     },
     auto_script_manager::{AutoScriptManager, AutoScriptQueueSnapshot},
+    grpc_service::types::to_grpc_log_message,
     the_beginner_car_comms::TheBeginnerCarComms,
 };
 
@@ -79,17 +80,17 @@ impl AutoDriveEdgeService for GrpcService {
             .ok_or_else(|| Status::not_found("Script run not found or already stopped"))?;
 
         let history_stream = tokio_stream::iter(past_events).map(|event| {
-            // TODO: Convert your internal `AutoScriptEvents` to `WatchAutoScriptResponse`
-            // For example:
-            // Ok(WatchAutoScriptResponse { log: event.into() })
-            Ok(WatchAutoScriptResponse {})
+            Ok(WatchAutoScriptResponse {
+                log_message: Some(to_grpc_log_message(event.log_message.clone())),
+            })
         });
 
         let live_stream = BroadcastStream::new(live_rx).filter_map(|result| async move {
             match result {
                 Ok(event) => {
-                    // TODO: Convert your internal `AutoScriptEvents` to `WatchAutoScriptResponse`
-                    Some(Ok(WatchAutoScriptResponse {}))
+                    Some(Ok(WatchAutoScriptResponse {
+                        log_message: Some(to_grpc_log_message(event.log_message)),
+                    }))
                 }
                 Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(skipped)) => {
                     eprintln!("Watch stream lagged; skipped {skipped} messages");

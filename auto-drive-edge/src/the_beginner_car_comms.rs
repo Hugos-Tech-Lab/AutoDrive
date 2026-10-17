@@ -1,4 +1,11 @@
-use std::{thread, time::Duration};
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    thread,
+    time::Duration,
+};
 
 use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
@@ -14,18 +21,11 @@ use tokio::{
 
 use crate::devices_config::{DeviceId, HardwareMetadata};
 
-#[repr(u8)]
-enum HardwareState {
-    Disconnected,
-    Ready,
-    AutoScriptRunning,
-}
-
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
     pub device_id: DeviceId,
     pub mdns_address: String,
-    // connected: bool, // TODO: make this work
+    pub is_connected: Arc<AtomicBool>, // TODO: make this work
     pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
 }
@@ -38,11 +38,14 @@ impl TheBeginnerCarComms {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
         let (incoming_tx, _) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);
 
+        let is_connected = Arc::new(AtomicBool::new(false));
+
         let connection_handle = tokio::spawn({
             let mdns_address = device_metadata.mdns_address.clone();
             let incoming_tx = incoming_tx.clone();
+            let is_connected = is_connected.clone();
             async {
-                Self::long_lived_connection(mdns_address, internal_receiver, incoming_tx).await;
+                Self::long_lived_connection(mdns_address, internal_receiver, incoming_tx, is_connected).await;
             }
         });
 
@@ -50,7 +53,7 @@ impl TheBeginnerCarComms {
             Self {
                 device_id: device_metadata.device_id,
                 mdns_address: device_metadata.mdns_address,
-                // connected: false,
+                is_connected,
                 outgoing_tx,
                 incoming_tx,
             },
@@ -58,14 +61,15 @@ impl TheBeginnerCarComms {
         )
     }
 
-    pub fn connected() -> bool {
-        true // TODO this should be a atomic
+    pub fn is_connected(&self) -> bool {
+        self.is_connected.load(Ordering::Relaxed)
     }
 
     async fn long_lived_connection(
         mdns_address: String,
         mut receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
+        is_connected: Arc<AtomicBool>
     ) {
         loop {
             let m_dns = mdns_address.clone();
@@ -88,11 +92,13 @@ impl TheBeginnerCarComms {
                 .await
             {
                 Ok(Ok(stream)) => {
+                    is_connected.store(true, Ordering::Relaxed);
                     println!("Connected to {host}.");
                     stream
                 }
 
                 Ok(Err(error)) => {
+                    is_connected.store(false, Ordering::Relaxed);
                     let addr = addr.clone();
                     eprintln!(
                         "Failed to connect to {addr} error: {error}. Trying again in 10 seconds"
@@ -111,19 +117,28 @@ impl TheBeginnerCarComms {
             let (mut stream_read, mut stream_write) = stream.into_split();
             loop {
                 select! {
-                    result = async {
+                    // we assume the car sends a message at least once every 10 seconds...
+                    result = timeout(Duration::from_secs(10), async {
                         let mut len_bytes = [0u8; 4];
                         stream_read.read_exact(&mut len_bytes).await?;
 
                         let len = u32::from_be_bytes(len_bytes) as usize;
-                        let mut message_buf = vec![0u8; len];
 
+                        if len > 16 * 1024 {
+                            return Err(std::io::Error::new(
+                                std::io::ErrorKind::InvalidData,
+                                format!("Payload length {} exceeds sanity limit. Framing error?", len)
+                            ));
+                        }
+
+                        let mut message_buf = vec![0u8; len];
                         stream_read.read_exact(&mut message_buf).await?;
 
                         Ok::<Vec<u8>, std::io::Error>(message_buf)
-                    } => {
+                    }) => {
                         match result {
-                            Ok(message_buf) => {
+                            // Read succeeded
+                            Ok(Ok(message_buf)) => {
                                 let message: TheBeginnerCarOutgoingMessages = match postcard::from_bytes(&message_buf) {
                                     Ok(message) => message,
                                     Err(err) => {
@@ -136,8 +151,14 @@ impl TheBeginnerCarComms {
                                     println!("Did not send broadcast message, assuming all receivers dropped, that's strange?")
                                 };
                             }
-                            Err(e) => {
+                            Ok(Err(e)) => {
                                 eprintln!("Error reading from car: {e}");
+                                is_connected.store(false, Ordering::Relaxed);
+                                break;
+                            }
+                            Err(_) => {
+                                eprintln!("Read timeout: Car silently disconnected or lost power.");
+                                is_connected.store(false, Ordering::Relaxed);
                                 break;
                             }
                         }
@@ -151,11 +172,12 @@ impl TheBeginnerCarComms {
 
                                 if let Err(e) = stream_write.write_all(&bytes).await {
                                     eprintln!("Error writing to car: {e}");
+                                    is_connected.store(false, Ordering::Relaxed);
                                     break;
                                 }
                             }
                             None => {
-                                // All senders dropped
+                                is_connected.store(false, Ordering::Relaxed); 
                                 break;
                             }
                         }

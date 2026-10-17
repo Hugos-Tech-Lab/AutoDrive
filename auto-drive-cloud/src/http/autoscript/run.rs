@@ -11,7 +11,7 @@ use warp::{Filter, Rejection, Reply, http::StatusCode};
 pub fn run(
     hardware: Hardware,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
-    let logs = hardware.logs.clone();
+    // let logs = hardware.logs.clone();
     let sender = hardware.sender.clone();
 
     const MAX_BODY_SIZE: u64 = 16 * 1024;
@@ -21,7 +21,7 @@ pub fn run(
         // Parse multipart form data instead of raw bytes, applying the size limit here
         .and(warp::multipart::form().max_length(MAX_BODY_SIZE))
         .and_then(move |mut form: warp::multipart::FormData| {
-            let logs = logs.clone();
+            // let logs = logs.clone();
             let sender = sender.clone();
             async move {
                 let mut wasm_data = None;
@@ -75,7 +75,7 @@ pub fn run(
                     );
                 }
 
-                let receiver = logs.subscribe();
+                // let receiver = logs.subscribe();
                 let (sender_start, receiver_start) = oneshot::channel();
 
                 // Add `args` to your StartAutoScript struct/enum variant
@@ -83,7 +83,7 @@ pub fn run(
                     data: wasm_bytes,
                     uploader_comment: args_string,
                     response_tx: sender_start,
-                    owner: "hugo".to_string(),
+                    owner: "hugoooo".to_string(),
                 };
 
                 if sender.send(message).await.is_err() {

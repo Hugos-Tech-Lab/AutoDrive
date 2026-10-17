@@ -1,32 +1,25 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  type TimeTrialDrivingEntry = {
-    name: string;
-    run_time: string;
-    upload_hash: string;
-    run_number: number;
-    run_uuid: string;
-    upload_comment: string;
-    hardware_id: string;
+  type AutoScript = {
+    owner_name: string;
+    // Made these optional in case your Rust struct doesn't serialize them yet
+    run_time?: string;
+    waiting_time?: string;
+    upload_hash?: string;
+    run_number?: number;
+    run_uuid?: string;
+    upload_comment?: string;
+    hardware_id?: string;
   };
 
-  type TimeTrialQueueEntry = {
-    name: string;
-    waiting_time: string;
-    upload_hash: string;
-    run_number: number;
-    run_uuid: string;
-    upload_comment: string;
-    hardware_id: string | undefined;
+  type AutoScripts = {
+    running: Array<AutoScript>;
+    queued: Array<AutoScript>;
+    stopped: Array<AutoScript>;
   };
 
-  type TimeTrialData = {
-    driving_now: Array<TimeTrialDrivingEntry>;
-    queue: Array<TimeTrialQueueEntry>;
-  };
-
-  let timeTrialsData = $state<TimeTrialData | null>(null);
+  let timeTrialsData = $state<AutoScripts | null>(null);
   let connectionStatus = $state("Connecting...");
   let telemetryError = $state("");
 
@@ -55,9 +48,10 @@
       telemetryError = "";
     };
 
-    source.addEventListener("update", (event: MessageEvent<string>) => {
+    // Listen to "overview" instead of "update" based on the new Rust backend
+    source.addEventListener("overview", (event: MessageEvent<string>) => {
       try {
-        const parsed = JSON.parse(event.data) as TimeTrialData;
+        const parsed = JSON.parse(event.data) as AutoScripts;
 
         if (!parsed || typeof parsed !== "object") {
           throw new Error("Invalid telemetry payload");
@@ -88,22 +82,26 @@
   });
 
   // Helper to parse the server's time string (e.g. "5s" or "5") and add the local offset
-  function displayTime(serverTimeStr: string, offset: number): string {
+  function displayTime(serverTimeStr: string | undefined, offset: number): string {
+    if (!serverTimeStr) return `${offset}s`;
     const baseTime = parseInt(serverTimeStr.replace(/\D/g, ""), 10) || 0;
     return `${baseTime + offset}s`;
   }
 
-  function skipTheQueue(run_uuid: string) {
+  function skipTheQueue(run_uuid: string | undefined) {
+    if (!run_uuid) return;
     console.log("Skipping queue for", run_uuid);
     // TODO: Call your hardware stop endpoint.
   }
 
-  function restart(run_uuid: string) {
+  function restart(run_uuid: string | undefined) {
+    if (!run_uuid) return;
     console.log("Restarting", run_uuid);
     // TODO: HTTP request to restart.
   }
 
-  function cancel(run_uuid: string) {
+  function cancel(run_uuid: string | undefined) {
+    if (!run_uuid) return;
     console.log("Canceling", run_uuid);
     // TODO: HTTP request to cancel.
   }
@@ -140,16 +138,16 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          {#if timeTrialsData?.driving_now && timeTrialsData.driving_now.length > 0}
-            {#each timeTrialsData.driving_now as entry (entry.run_uuid)}
+          {#if timeTrialsData?.running && timeTrialsData.running.length > 0}
+            {#each timeTrialsData.running as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
-                <td class="py-3 px-4 font-semibold text-gray-900">{entry.name}</td>
+                <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
                 <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.run_time, localTickOffset)}</td>
-                <td class="py-3 px-4 font-mono">#{entry.run_number}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.run_uuid.substring(0, 13)}...</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_comment.substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.hardware_id.substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.upload_hash || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.upload_comment || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.hardware_id || '').substring(0, 10)}</td>
                 <td class="py-3 px-4">
                   <div class="flex items-center justify-center gap-2">
                     <button 
@@ -172,7 +170,7 @@
             {/each}
           {:else}
             <tr>
-              <td colspan="7" class="py-6 px-4 text-center text-gray-500 italic">No cars currently driving.</td>
+              <td colspan="8" class="py-6 px-4 text-center text-gray-500 italic">No cars currently driving.</td>
             </tr>
           {/if}
         </tbody>
@@ -200,14 +198,14 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          {#if timeTrialsData?.queue && timeTrialsData.queue.length > 0}
-            {#each timeTrialsData.queue as entry (entry.run_uuid)}
+          {#if timeTrialsData?.queued && timeTrialsData.queued.length > 0}
+            {#each timeTrialsData.queued as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
-                <td class="py-3 px-4 font-semibold text-gray-900">{entry.name}</td>
+                <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
                 <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.waiting_time, localTickOffset)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.upload_hash.substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono">#{entry.run_number}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{entry.run_uuid.substring(0, 13)}...</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.upload_hash || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
                 <td class="py-3 px-4 text-center">
                   <button 
                     type="button" 

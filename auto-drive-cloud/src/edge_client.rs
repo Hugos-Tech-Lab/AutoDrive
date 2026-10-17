@@ -133,6 +133,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         uploader_comment,
                         response_tx,
                     } => {
+                        dbg!("starting");
                         let response = client
                             .run_auto_script(RunAutoScriptRequest {
                                 owner,
@@ -149,7 +150,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         the_beginner_car_auto_scripts
                             .lock()
                             .unwrap()
-                            .insert("key".to_string(), sender.clone());
+                            .insert(run_uuid.clone(), sender.clone());
 
                         let watch_auto_script = client
                             .watch_auto_script(WatchAutoScriptRequest {

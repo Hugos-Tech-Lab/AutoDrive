@@ -1142,3 +1142,8 @@ msgstr "Last Refresh: {0}"
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Vehicle ID"
 msgstr "Vehicle ID"
+
+#: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Unknown"
+msgstr "Unknown"

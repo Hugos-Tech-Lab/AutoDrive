@@ -117,9 +117,12 @@ impl AutoScriptManager {
             .iter()
             .find(|script| script.run_uuid == run_uuid)
         else {
-            panic!(); // TODO: error no running script with that id
+            println!("TRYING TO CANCEL SCRIPT THAT WAS ALREADY CANCELLED");
+            return;
         };
 
+
+        println!("sent cancel request"); 
         running_script
             .device
             .outgoing_tx
@@ -261,7 +264,8 @@ impl AutoScriptManager {
                 .iter()
                 .any(|auto_script| auto_script.device.device_id == target_device_id);
             if device_being_used {
-                panic!(); // TODO: proper error
+                // cannot start because it's already being used..
+                return;
             }
 
             let script_to_start = the_beginner_car_scripts_mutex_guard

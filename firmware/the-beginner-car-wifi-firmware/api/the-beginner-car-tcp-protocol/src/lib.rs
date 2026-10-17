@@ -2,7 +2,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum LogLevel {
     Error,
     Warn,
@@ -11,13 +11,13 @@ pub enum LogLevel {
     Trace,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum LogSystemOrigin {
     WasmMcu,
     WifiMcu
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct LogMessage {
     pub system_origin: LogSystemOrigin,
     pub level: LogLevel,
@@ -44,7 +44,7 @@ pub enum TheBeginnerCarIncomingMessages {
     RunAutoScript { script: AutoScript },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TheBeginnerCarOutgoingMessages {
     Log {
         log: LogMessage

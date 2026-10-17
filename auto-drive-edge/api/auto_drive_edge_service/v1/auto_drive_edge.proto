@@ -5,22 +5,37 @@ package auto_drive_edge_service.v1;
 service AutoDriveEdgeService {
   rpc RunAutoScript(RunAutoScriptRequest) returns (RunAutoScriptResponse);
   rpc CancelAutoScript(CancelAutoScriptRequest) returns (CancelAutoScriptResponse);
-  rpc WatchAutoScript(WatchAutoScriptRequest) returns (WatchAutoScriptResponse);
-  rpc WatchAutoScriptQueue(WatchAutoScriptQueueRequest) returns (WatchAutoScriptQueueResponse);
+  rpc WatchAutoScript(WatchAutoScriptRequest) returns (stream WatchAutoScriptResponse);
+  rpc WatchAutoScriptQueue(WatchAutoScriptQueueRequest) returns (stream WatchAutoScriptQueueResponse);
   rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
 }
 
 message WatchAutoScriptQueueRequest {}
 
-message WatchAutoScriptQueueResponse {}
+message WatchAutoScriptQueueResponse {
+  AllAutoScripts scripts = 1;
+}
 
-message WatchAutoScriptRequest {}
+message AllAutoScripts {
+  repeated AutoScript running_scripts = 1;
+  repeated AutoScript queued_scripts = 2;
+  repeated AutoScript stopped_scripts = 3;
+}
+
+message AutoScript {
+  string owner_name = 1;
+}
+
+message WatchAutoScriptRequest {
+  string run_uuid = 1;
+}
 
 message WatchAutoScriptResponse {}
 
 message RunAutoScriptRequest {
   TheBeginnerCarBuild build = 1;
-  bytes data = 2;
+  string owner = 2;
+  bytes data = 3;
 }
 
 message RunAutoScriptResponse {

@@ -21,7 +21,7 @@ enum HardwareState {
     AutoScriptRunning,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
     pub device_id: DeviceId,
     pub mdns_address: String,

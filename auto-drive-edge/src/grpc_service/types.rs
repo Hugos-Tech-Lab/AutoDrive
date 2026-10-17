@@ -2,10 +2,10 @@ use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 
 // Ensure you have these imported from your proto module
 use crate::auto_drive_edge_service::v1::{
-    AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent, 
-    InfraredLedReadingsEvent, LogEvent, LogLevel, LogMessage, LogSystemOrigin, 
-    MotorSpeedUpdatedEvent, SystemStateEvent, WasmInstalledEvent, 
-    WatchTheBeginnerCarEventsResponse, watch_the_beginner_car_events_response::Event,
+    AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent, InfraredLedReadingsEvent,
+    LogEvent, LogLevel, LogMessage, LogSystemOrigin, MotorSpeedUpdatedEvent, SystemStateEvent,
+    WasmInstalledEvent, WatchTheBeginnerCarEventsResponse,
+    watch_the_beginner_car_events_response::Event,
 };
 
 impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse {
@@ -21,8 +21,12 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
                 };
 
                 let system_origin = match log.system_origin {
-                    the_beginner_car_tcp_protocol::LogSystemOrigin::WasmMcu => LogSystemOrigin::WasmMcu,
-                    the_beginner_car_tcp_protocol::LogSystemOrigin::WifiMcu => LogSystemOrigin::WifiMcu,
+                    the_beginner_car_tcp_protocol::LogSystemOrigin::WasmMcu => {
+                        LogSystemOrigin::WasmMcu
+                    }
+                    the_beginner_car_tcp_protocol::LogSystemOrigin::WifiMcu => {
+                        LogSystemOrigin::WifiMcu
+                    }
                 };
 
                 WatchTheBeginnerCarEventsResponse {
@@ -60,13 +64,17 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
                 event: Some(Event::WasmInstalled(WasmInstalledEvent {})),
             },
 
-            TheBeginnerCarOutgoingMessages::AutoScriptRunning => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
-            },
+            TheBeginnerCarOutgoingMessages::AutoScriptRunning => {
+                WatchTheBeginnerCarEventsResponse {
+                    event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
+                }
+            }
 
-            TheBeginnerCarOutgoingMessages::AutoScriptStopped => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
-            },
+            TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
+                WatchTheBeginnerCarEventsResponse {
+                    event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
+                }
+            }
 
             TheBeginnerCarOutgoingMessages::BatteryReading {
                 motor_battery_voltage,
@@ -77,7 +85,7 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
                     mcu_battery_voltage,
                 })),
             },
-            
+
             TheBeginnerCarOutgoingMessages::InfraredLedReadings {
                 utmost_front_utmost_left,
                 utmost_front_utmost_right,
@@ -87,6 +95,28 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
                     utmost_front_utmost_right: utmost_front_utmost_right as u32,
                 })),
             },
+        }
+    }
+}
+
+impl From<&crate::auto_script_manager::AutoScript>
+    for crate::auto_drive_edge_service::v1::AutoScript
+{
+    fn from(value: &crate::auto_script_manager::AutoScript) -> Self {
+        Self {
+            owner_name: value.owner_name.clone(),
+        }
+    }
+}
+
+impl From<crate::auto_script_manager::AutoScriptQueueSnapshot>
+    for crate::auto_drive_edge_service::v1::AllAutoScripts
+{
+    fn from(value: crate::auto_script_manager::AutoScriptQueueSnapshot) -> Self {
+        Self {
+            running_scripts: value.running_scripts.iter().map(|v| v.into()).collect(),
+            queued_scripts: value.queued_scripts.iter().map(|v| v.into()).collect(),
+            stopped_scripts: value.stopped_scripts.iter().map(|v| v.into()).collect(),
         }
     }
 }

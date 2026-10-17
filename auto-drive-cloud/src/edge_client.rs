@@ -14,7 +14,8 @@ pub enum ToDeviceMessage {
 #[derive(Debug, Clone)]
 pub struct Hardware {
   pub logs: Sender<Event>,
-  pub sender: mpsc::Sender<ToDeviceMessage>
+  pub sender: mpsc::Sender<ToDeviceMessage>,
+//   pub 
 }
 
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {

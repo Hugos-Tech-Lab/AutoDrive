@@ -1,3 +1,4 @@
 [[the_beginner_cars]]
-device_id = "BuildA"
+device_category = "TheBeginnerCar"
+device_id = "TcA"
 mdns_address = "the_beginner_car_build_a"

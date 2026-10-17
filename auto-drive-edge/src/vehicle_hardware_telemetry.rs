@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use opentelemetry::{KeyValue, global, metrics::Gauge};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 use tokio::{sync::broadcast, task::JoinSet};

@@ -6,14 +6,15 @@ use std::{
     },
 };
 
+use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::{
-    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+    LogMessage, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
     sync::{
-        Mutex,
-        broadcast::{self, Receiver},
+        Mutex, RwLock,
+        broadcast::{self, Receiver, Sender},
         mpsc::{self},
     },
     task::JoinHandle,
@@ -24,6 +25,7 @@ use crate::{devices_config::DeviceId, the_beginner_car_comms::TheBeginnerCarComm
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
+#[derive(Clone, Debug)]
 pub enum AutoScriptResponseFromHardware {
     HeardNothing,
     Received,
@@ -33,24 +35,48 @@ pub enum AutoScriptResponseFromHardware {
 
 #[derive(Clone, Debug)]
 pub enum AutoScriptEvents {
-    Log,
+    Log { log_message: LogMessage },
 }
 
+// #[derive(Debug, Clone)]
+// pub struct AutoScriptSnapshot {
+//     pub owner_name: String,
+//     pub queued_at: DateTime<Utc>,
+//     pub started_at: Option<DateTime<Utc>>,
+//     pub stopped_at: Option<DateTime<Utc>>,
+//     pub run_uuid: String,
+//     pub upload_file_hash: String,
+// }
+
+#[derive(Clone, Debug)]
+pub struct AutoScriptQueueSnapshot {
+    pub running_scripts: Vec<AutoScript>,
+    pub queued_scripts: Vec<AutoScript>,
+    pub stopped_scripts: Vec<AutoScript>,
+}
+
+#[derive(Clone, Debug)]
 pub struct AutoScript {
+    pub owner_name: String,
     pub run_uuid: String,
-    pub preprocessed_file_hash: String,
+    pub upload_file_hash: String,
     pub run_number: u32,
     pub script: Vec<u8>,
-    pub events: Receiver<AutoScriptEvents>,
+    pub events: Sender<AutoScriptEvents>,
+    pub history: Arc<RwLock<Vec<AutoScriptEvents>>>,
     pub device: TheBeginnerCarComms,
     pub hardware_response: AutoScriptResponseFromHardware,
+    pub queued_at: DateTime<Utc>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub stopped_at: Option<DateTime<Utc>>,
 }
 
 pub struct AutoScriptTheBeginnerCars {
     the_beginner_cars: Vec<TheBeginnerCarComms>,
-    queued_scripts: VecDeque<AutoScript>,
-    running_scripts: Vec<AutoScript>,
-    stopped_scripts: Vec<AutoScript>,
+    queue_events_sender: Sender<AutoScriptQueueSnapshot>,
+    pub running_scripts: Vec<AutoScript>,
+    pub queued_scripts: VecDeque<AutoScript>,
+    pub stopped_scripts: Vec<AutoScript>,
 }
 
 pub struct AutoScriptManager {
@@ -60,11 +86,14 @@ pub struct AutoScriptManager {
 
 impl AutoScriptManager {
     pub fn new(the_beginner_cars: Vec<TheBeginnerCarComms>) -> Self {
+        let (sender, _) = broadcast::channel::<AutoScriptQueueSnapshot>(100);
+
         let the_beginner_car_scripts = Arc::new(Mutex::new(AutoScriptTheBeginnerCars {
             the_beginner_cars: the_beginner_cars.clone(),
             queued_scripts: VecDeque::new(),
             running_scripts: Vec::new(),
             stopped_scripts: Vec::new(),
+            queue_events_sender: sender,
         }));
 
         let connection_handles = the_beginner_cars
@@ -103,12 +132,13 @@ impl AutoScriptManager {
             .unwrap();
     }
 
-    pub async fn enqueue_auto_script(&self, data: Vec<u8>) -> String {
+    pub async fn enqueue_auto_script(&self, owner_name: String, data: Vec<u8>) -> String {
         let digest = Sha256::digest(&data);
         let digest = hex::encode(Sha256::digest(digest));
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
         let run_uuid = Uuid::new_v4().to_string();
-
+        let queue_snapshot: AutoScriptQueueSnapshot;
+        let queue_events_sender: Sender<AutoScriptQueueSnapshot>;
         {
             let mut state = self.the_beginner_car_scripts.lock().await;
             let the_beginner_car = state
@@ -117,70 +147,116 @@ impl AutoScriptManager {
                 .find(|the_beginner_car| the_beginner_car.device_id == DeviceId::TcA)
                 .unwrap();
 
-            let (sender, receiver) = broadcast::channel(100);
+            let (sender, _) = broadcast::channel(100);
+            let history = Arc::new(RwLock::new(Vec::new()));
 
             let auto_script = AutoScript {
+                owner_name,
                 run_uuid: run_uuid.clone(),
-                preprocessed_file_hash: digest,
+                upload_file_hash: digest,
                 run_number,
                 script: data,
                 device: the_beginner_car.clone(),
                 hardware_response: AutoScriptResponseFromHardware::HeardNothing,
-                events: receiver,
+                // Store the history in the struct so your gRPC watch method can access it later
+                history: history.clone(),
+                events: sender.clone(),
+                queued_at: Utc::now(),
+                started_at: None,
+                stopped_at: None,
             };
 
-            // TODO: AutoScript should hold onto the join_handle
+            // 2. Spawn the background task
             let join_handle = tokio::task::spawn({
-                // TODO: should listen to cancellation token and stop when cancelled
                 let mut incoming_tx = the_beginner_car.incoming_tx.subscribe();
                 let run_uuid = run_uuid.clone();
+                let task_history = history.clone();
+                let task_sender = sender.clone();
+
                 async move {
-                    match incoming_tx.recv().await {
-                        Ok(message) => match message {
-                            TheBeginnerCarOutgoingMessages::Log { log } => {
-                                if log.trace_id.is_some_and(|trace_id| trace_id == run_uuid) {
-                                    //
-                                    sender.send(AutoScriptEvents::Log).unwrap(); // TODO: send the log
+                    loop {
+                        // TODO: add `tokio::select!` here later to handle the cancellation token
+                        match incoming_tx.recv().await {
+                            Ok(message) => match message {
+                                TheBeginnerCarOutgoingMessages::Log { log } => {
+                                    if log.trace_id.as_deref() == Some(&run_uuid) {
+                                        let event = AutoScriptEvents::Log {
+                                            log_message: log.clone(),
+                                        };
+
+                                        let mut hist_lock = task_history.write().await;
+                                        hist_lock.push(event.clone());
+                                        let _ = task_sender.send(event);
+                                    }
                                 }
+                                _ => {}
+                            },
+                            Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
+                                eprintln!("Car watcher lagged; skipped {skipped} messages");
                             }
-                            _ => {}
-                        },
-                        Err(broadcast::error::RecvError::Lagged(skipped)) => {
-                            eprintln!("Car watcher lagged; skipped {skipped} messages");
-                        }
-                        Err(broadcast::error::RecvError::Closed) => {
-                            // break;
-                        }
-                    };
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                // The car disconnected or channel closed, exit the loop
+                                break;
+                            }
+                        };
+                    }
                 }
             });
 
+            queue_snapshot = AutoScriptQueueSnapshot {
+                running_scripts: state.running_scripts.clone(),
+                queued_scripts: state.queued_scripts.clone().into(),
+                stopped_scripts: state.stopped_scripts.clone(),
+            };
+            queue_events_sender = state.queue_events_sender.clone();
             state.queued_scripts.push_back(auto_script);
         }
-
-        // Self::start_next_auto_script_if_not_running(self.state.clone(), self.outgoing_tx.clone());
+        queue_events_sender.send(queue_snapshot).unwrap();
+        Self::try_start_next_auto_script(self.the_beginner_car_scripts.clone()).await;
         run_uuid
     }
 
-    pub async fn watch_auto_script(&self, uuid: String) -> Option<Receiver<AutoScriptEvents>> {
+    pub async fn watch_auto_script(
+        &self,
+        uuid: String,
+    ) -> Option<(Vec<AutoScriptEvents>, Receiver<AutoScriptEvents>)> {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
+
         let auto_script = the_beginner_car_scripts_mutex_guard
             .queued_scripts
             .iter()
+            .chain(the_beginner_car_scripts_mutex_guard.running_scripts.iter())
             .find(|asd| asd.run_uuid == uuid);
+
         if let Some(auto_script) = auto_script {
-            return Some(auto_script.events.resubscribe());
-        }
-        let auto_script = the_beginner_car_scripts_mutex_guard
-            .running_scripts
-            .iter()
-            .find(|asd| asd.run_uuid == uuid);
-        if let Some(auto_script) = auto_script {
-            return Some(auto_script.events.resubscribe());
+            let hist_lock = auto_script.history.read().await;
+            let past_events = hist_lock.clone();
+            let live_rx = auto_script.events.subscribe();
+            return Some((past_events, live_rx));
         }
 
         // TODO: also check stopped to provide a clearer error message
         None
+    }
+
+    pub async fn watch_auto_script_queue(
+        &self,
+    ) -> (AutoScriptQueueSnapshot, Receiver<AutoScriptQueueSnapshot>) {
+        let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
+        let snapshot = AutoScriptQueueSnapshot {
+            running_scripts: the_beginner_car_scripts_mutex_guard.running_scripts.clone(),
+            queued_scripts: the_beginner_car_scripts_mutex_guard
+                .queued_scripts
+                .clone()
+                .into(),
+            stopped_scripts: the_beginner_car_scripts_mutex_guard.stopped_scripts.clone(),
+        };
+
+        let receiver = the_beginner_car_scripts_mutex_guard
+            .queue_events_sender
+            .subscribe();
+
+        (snapshot, receiver)
     }
 
     pub async fn try_start_next_auto_script(
@@ -190,6 +266,8 @@ impl AutoScriptManager {
 
         let target_device_outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>;
         let script_to_start_content;
+        let queue_snapshot: AutoScriptQueueSnapshot;
+        let queue_events_sender: Sender<AutoScriptQueueSnapshot>;
         {
             let mut the_beginner_car_scripts_mutex_guard = the_beginner_car_scripts.lock().await;
             let device_being_used = the_beginner_car_scripts_mutex_guard
@@ -208,7 +286,7 @@ impl AutoScriptManager {
                 target_device_outgoing_tx = script.device.outgoing_tx.clone();
                 script_to_start_content = the_beginner_car_tcp_protocol::AutoScript {
                     run_uuid: script.run_uuid.clone(),
-                    preprocessed_file_hash: script.preprocessed_file_hash.clone(),
+                    preprocessed_file_hash: script.upload_file_hash.clone(),
                     run_number: script.run_number,
                     device_id: "script.device.device_id".to_string(),
                     script: script.script.clone(),
@@ -216,12 +294,25 @@ impl AutoScriptManager {
 
                 the_beginner_car_scripts_mutex_guard
                     .running_scripts
-                    .push_mut(script);
+                    .push(script);
             } else {
                 panic!();
             }
+
+            queue_snapshot = AutoScriptQueueSnapshot {
+                running_scripts: the_beginner_car_scripts_mutex_guard.running_scripts.clone(), // TODO: make consistent this variable name with other functions usage: the_beginner_car_scripts_mutex_guard
+                queued_scripts: the_beginner_car_scripts_mutex_guard
+                    .queued_scripts
+                    .clone()
+                    .into(),
+                stopped_scripts: the_beginner_car_scripts_mutex_guard.stopped_scripts.clone(),
+            };
+            queue_events_sender = the_beginner_car_scripts_mutex_guard
+                .queue_events_sender
+                .clone();
         }
 
+        queue_events_sender.send(queue_snapshot).unwrap();
         target_device_outgoing_tx
             .send(TheBeginnerCarIncomingMessages::RunAutoScript {
                 script: script_to_start_content,
@@ -266,6 +357,8 @@ impl AutoScriptManager {
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
         device_id: DeviceId,
     ) {
+        let queue_snapshot: AutoScriptQueueSnapshot;
+        let queue_events_sender: Sender<AutoScriptQueueSnapshot>;
         {
             let mut state_mutex_guard = state.lock().await;
             let stopped_scripts: Vec<AutoScript> = state_mutex_guard
@@ -283,10 +376,17 @@ impl AutoScriptManager {
             for removed_script in stopped_scripts {
                 state_mutex_guard.stopped_scripts.push(removed_script);
             }
+
+            queue_snapshot = AutoScriptQueueSnapshot {
+                running_scripts: state_mutex_guard.running_scripts.clone(),
+                queued_scripts: state_mutex_guard.queued_scripts.clone().into(),
+                stopped_scripts: state_mutex_guard.stopped_scripts.clone(),
+            };
+            queue_events_sender = state_mutex_guard.queue_events_sender.clone();
         }
 
-        Self::try_start_next_auto_script(state);
-    }
+        queue_events_sender.send(queue_snapshot).unwrap();
 
-    // mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
+        Self::try_start_next_auto_script(state).await;
+    }
 }

@@ -55,6 +55,7 @@ pub struct AutoScripts {
     pub stopped: Vec<AutoScript>,
 }
 
+// TODO: separate out metadata from content so cloning is cheaper....
 #[derive(Clone, Debug)]
 pub struct AutoScript {
     pub owner_name: String,
@@ -74,7 +75,7 @@ pub struct AutoScript {
 pub struct AutoScriptTheBeginnerCars {
     the_beginner_cars: Vec<TheBeginnerCarComms>,
     queue_events_sender: Sender<AutoScripts>,
-    pub scripts: AutoScripts
+    pub scripts: AutoScripts,
 }
 
 pub struct AutoScriptManager {
@@ -111,24 +112,48 @@ impl AutoScriptManager {
     }
 
     pub async fn cancel_auto_script(&self, run_uuid: String) {
-        let the_beginner_car_scripts = self.the_beginner_car_scripts.lock().await;
-        let Some(running_script) = the_beginner_car_scripts.scripts
-            .running
-            .iter()
-            .find(|script| script.run_uuid == run_uuid)
-        else {
-            println!("TRYING TO CANCEL SCRIPT THAT WAS ALREADY CANCELLED");
-            return;
-        };
+        let queue_snapshot: AutoScripts;
+        let queue_events_sender: Sender<AutoScripts>;
+        {
+            let mut the_beginner_car_scripts = self.the_beginner_car_scripts.lock().await;
+            if let Some(running_script) = the_beginner_car_scripts
+                .scripts
+                .running
+                .iter()
+                .find(|script| script.run_uuid == run_uuid)
+            {
+                running_script
+                    .device
+                    .outgoing_tx
+                    .send(TheBeginnerCarIncomingMessages::CancelAutoScript {
+                        run_uuid: run_uuid.clone(),
+                    })
+                    .await
+                    .unwrap();
+            }
 
+            if let Some(pos) = the_beginner_car_scripts
+                .scripts
+                .queued
+                .iter()
+                .position(|script| script.run_uuid == run_uuid)
+            {
+                if let Some(script) = the_beginner_car_scripts.scripts.queued.remove(pos) {
+                    the_beginner_car_scripts.scripts.stopped.push(script);
+                } else {
+                    // TODO: print warning
+                }
 
-        println!("sent cancel request"); 
-        running_script
-            .device
-            .outgoing_tx
-            .send(TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid })
-            .await
-            .unwrap();
+                queue_snapshot = the_beginner_car_scripts.scripts.clone();
+                queue_events_sender = the_beginner_car_scripts.queue_events_sender.clone();
+            } else {
+                return;
+            }
+        }
+
+        queue_events_sender.send(queue_snapshot).unwrap();
+
+        println!("sent cancel request");
     }
 
     pub async fn enqueue_auto_script(&self, owner_name: String, data: Vec<u8>) -> String {
@@ -206,7 +231,7 @@ impl AutoScriptManager {
             queue_events_sender = state.queue_events_sender.clone();
             state.scripts.queued.push_back(auto_script);
         }
-        queue_events_sender.send(queue_snapshot).unwrap();
+        let _ = queue_events_sender.send(queue_snapshot);
         Self::try_start_next_auto_script(self.the_beginner_car_scripts.clone()).await;
         run_uuid
     }
@@ -218,7 +243,8 @@ impl AutoScriptManager {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
 
         let auto_script = the_beginner_car_scripts_mutex_guard
-            .scripts.queued
+            .scripts
+            .queued
             .iter()
             .chain(the_beginner_car_scripts_mutex_guard.scripts.running.iter())
             .find(|asd| asd.run_uuid == uuid);
@@ -234,9 +260,7 @@ impl AutoScriptManager {
         None
     }
 
-    pub async fn watch_auto_script_overview(
-        &self,
-    ) -> (AutoScripts, Receiver<AutoScripts>) {
+    pub async fn watch_auto_script_overview(&self) -> (AutoScripts, Receiver<AutoScripts>) {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
         let snapshot = the_beginner_car_scripts_mutex_guard.scripts.clone();
 
@@ -283,18 +307,21 @@ impl AutoScriptManager {
                     script: script.script.clone(),
                 };
 
+                dbg!("started script");
                 the_beginner_car_scripts_mutex_guard
-                .scripts
+                    .scripts
                     .running
                     .push(script);
             } else {
-                panic!();
+                // cannot start because no script is available..
+                return;
             }
 
             queue_snapshot = AutoScripts {
                 running: the_beginner_car_scripts_mutex_guard.scripts.running.clone(), // TODO: make consistent this variable name with other functions usage: the_beginner_car_scripts_mutex_guard
                 queued: the_beginner_car_scripts_mutex_guard
-                    .scripts.queued
+                    .scripts
+                    .queued
                     .clone()
                     .into(),
                 stopped: the_beginner_car_scripts_mutex_guard.scripts.stopped.clone(),
@@ -304,7 +331,8 @@ impl AutoScriptManager {
                 .clone();
         }
 
-        queue_events_sender.send(queue_snapshot).unwrap();
+        // error when no listener
+        let _ = queue_events_sender.send(queue_snapshot);
         target_device_outgoing_tx
             .send(TheBeginnerCarIncomingMessages::RunAutoScript {
                 script: script_to_start_content,
@@ -323,22 +351,27 @@ impl AutoScriptManager {
         the_beginner_car: TheBeginnerCarComms,
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
     ) {
+        let mut incoming_rx = the_beginner_car.incoming_tx.subscribe();
+
         loop {
-            match the_beginner_car.incoming_tx.subscribe().recv().await {
+            match incoming_rx.recv().await {
                 Ok(message) => match message {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
+                        dbg!("stopped from hardware");
                         Self::on_hardware_response_auto_script_stopped(
                             state.clone(),
                             the_beginner_car.device_id.clone(),
                         )
                         .await;
                     }
-                    _ => {}
+                    _ => {
+                    }
                 },
                 Err(broadcast::error::RecvError::Lagged(skipped)) => {
                     eprintln!("Car watcher lagged; skipped {skipped} messages");
                 }
                 Err(broadcast::error::RecvError::Closed) => {
+                    dbg!("closed");
                     break;
                 }
             }
@@ -349,12 +382,15 @@ impl AutoScriptManager {
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
         device_id: DeviceId,
     ) {
+        println!("STOPPED FROM HARDWARE");
+
         let queue_snapshot: AutoScripts;
         let queue_events_sender: Sender<AutoScripts>;
         {
             let mut state_mutex_guard = state.lock().await;
             let stopped: Vec<AutoScript> = state_mutex_guard
-                .scripts.running
+                .scripts
+                .running
                 .extract_if(.., |auto_script| auto_script.device.device_id == device_id)
                 .collect();
             if stopped.len() != 1 {

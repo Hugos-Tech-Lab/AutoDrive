@@ -129,19 +129,21 @@ pub fn run(
                     Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(run_uuid))
                 }));
 
-                let event_stream = run_uuid
-                    .chain(streamed_response.filter_map(|result| async move {
-                    let log = result.unwrap();
-                    let level = match log.level() {
-                        crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED",
-                        crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
-                        crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
-                        crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
-                        crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
-                        crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
-                    };
+                let event_stream =
+                    run_uuid.chain(streamed_response.filter_map(|result| async move {
+                        let log = result.unwrap();
+                        let level = match log.level() {
+                            crate::auto_drive_edge_service::v1::LogLevel::Unspecified => {
+                                "UNSPECIFIED"
+                            }
+                            crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
+                            crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
+                            crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
+                            crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
+                            crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
+                        };
 
-                    let system_origin = match log.system_origin() {
+                        let system_origin = match log.system_origin() {
                         crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmUnspecified => {
                             "UNSPECIFIED"
                         }
@@ -149,11 +151,12 @@ pub fn run(
                         crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
                     };
 
-                    let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
-                    Some(Ok::<_, Infallible>(
-                        warp::sse::Event::default().event("log").data(formatted_log),
-                    ))
-                }));
+                        let formatted_log =
+                            format!("[{}] [{}] {}", level, system_origin, log.message);
+                        Some(Ok::<_, Infallible>(
+                            warp::sse::Event::default().event("log").data(formatted_log),
+                        ))
+                    }));
 
                 Ok(warp::sse::reply(
                     warp::sse::keep_alive()

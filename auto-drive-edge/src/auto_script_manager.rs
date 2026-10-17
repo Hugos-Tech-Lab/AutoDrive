@@ -48,11 +48,11 @@ pub struct AutoScriptEvents {
 //     pub upload_file_hash: String,
 // }
 
-#[derive(Clone, Debug)]
-pub struct AutoScriptQueueSnapshot {
-    pub running_scripts: Vec<AutoScript>,
-    pub queued_scripts: Vec<AutoScript>,
-    pub stopped_scripts: Vec<AutoScript>,
+#[derive(Clone, Debug, Default)]
+pub struct AutoScripts {
+    pub running: Vec<AutoScript>,
+    pub queued: VecDeque<AutoScript>,
+    pub stopped: Vec<AutoScript>,
 }
 
 #[derive(Clone, Debug)]
@@ -73,10 +73,8 @@ pub struct AutoScript {
 
 pub struct AutoScriptTheBeginnerCars {
     the_beginner_cars: Vec<TheBeginnerCarComms>,
-    queue_events_sender: Sender<AutoScriptQueueSnapshot>,
-    pub running_scripts: Vec<AutoScript>,
-    pub queued_scripts: VecDeque<AutoScript>,
-    pub stopped_scripts: Vec<AutoScript>,
+    queue_events_sender: Sender<AutoScripts>,
+    pub scripts: AutoScripts
 }
 
 pub struct AutoScriptManager {
@@ -86,13 +84,11 @@ pub struct AutoScriptManager {
 
 impl AutoScriptManager {
     pub fn new(the_beginner_cars: Vec<TheBeginnerCarComms>) -> Self {
-        let (sender, _) = broadcast::channel::<AutoScriptQueueSnapshot>(100);
+        let (sender, _) = broadcast::channel::<AutoScripts>(100);
 
         let the_beginner_car_scripts = Arc::new(Mutex::new(AutoScriptTheBeginnerCars {
             the_beginner_cars: the_beginner_cars.clone(),
-            queued_scripts: VecDeque::new(),
-            running_scripts: Vec::new(),
-            stopped_scripts: Vec::new(),
+            scripts: AutoScripts::default(),
             queue_events_sender: sender,
         }));
 
@@ -116,8 +112,8 @@ impl AutoScriptManager {
 
     pub async fn cancel_auto_script(&self, run_uuid: String) {
         let the_beginner_car_scripts = self.the_beginner_car_scripts.lock().await;
-        let Some(running_script) = the_beginner_car_scripts
-            .running_scripts
+        let Some(running_script) = the_beginner_car_scripts.scripts
+            .running
             .iter()
             .find(|script| script.run_uuid == run_uuid)
         else {
@@ -137,8 +133,8 @@ impl AutoScriptManager {
         let digest = hex::encode(Sha256::digest(digest));
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
         let run_uuid = Uuid::new_v4().to_string();
-        let queue_snapshot: AutoScriptQueueSnapshot;
-        let queue_events_sender: Sender<AutoScriptQueueSnapshot>;
+        let queue_snapshot: AutoScripts;
+        let queue_events_sender: Sender<AutoScripts>;
         {
             let mut state = self.the_beginner_car_scripts.lock().await;
             let the_beginner_car = state
@@ -203,13 +199,9 @@ impl AutoScriptManager {
                 }
             });
 
-            queue_snapshot = AutoScriptQueueSnapshot {
-                running_scripts: state.running_scripts.clone(),
-                queued_scripts: state.queued_scripts.clone().into(),
-                stopped_scripts: state.stopped_scripts.clone(),
-            };
+            queue_snapshot = state.scripts.clone();
             queue_events_sender = state.queue_events_sender.clone();
-            state.queued_scripts.push_back(auto_script);
+            state.scripts.queued.push_back(auto_script);
         }
         queue_events_sender.send(queue_snapshot).unwrap();
         Self::try_start_next_auto_script(self.the_beginner_car_scripts.clone()).await;
@@ -223,9 +215,9 @@ impl AutoScriptManager {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
 
         let auto_script = the_beginner_car_scripts_mutex_guard
-            .queued_scripts
+            .scripts.queued
             .iter()
-            .chain(the_beginner_car_scripts_mutex_guard.running_scripts.iter())
+            .chain(the_beginner_car_scripts_mutex_guard.scripts.running.iter())
             .find(|asd| asd.run_uuid == uuid);
 
         if let Some(auto_script) = auto_script {
@@ -241,16 +233,9 @@ impl AutoScriptManager {
 
     pub async fn watch_auto_script_queue(
         &self,
-    ) -> (AutoScriptQueueSnapshot, Receiver<AutoScriptQueueSnapshot>) {
+    ) -> (AutoScripts, Receiver<AutoScripts>) {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
-        let snapshot = AutoScriptQueueSnapshot {
-            running_scripts: the_beginner_car_scripts_mutex_guard.running_scripts.clone(),
-            queued_scripts: the_beginner_car_scripts_mutex_guard
-                .queued_scripts
-                .clone()
-                .into(),
-            stopped_scripts: the_beginner_car_scripts_mutex_guard.stopped_scripts.clone(),
-        };
+        let snapshot = the_beginner_car_scripts_mutex_guard.scripts.clone();
 
         let receiver = the_beginner_car_scripts_mutex_guard
             .queue_events_sender
@@ -266,12 +251,13 @@ impl AutoScriptManager {
 
         let target_device_outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>;
         let script_to_start_content;
-        let queue_snapshot: AutoScriptQueueSnapshot;
-        let queue_events_sender: Sender<AutoScriptQueueSnapshot>;
+        let queue_snapshot: AutoScripts;
+        let queue_events_sender: Sender<AutoScripts>;
         {
             let mut the_beginner_car_scripts_mutex_guard = the_beginner_car_scripts.lock().await;
             let device_being_used = the_beginner_car_scripts_mutex_guard
-                .running_scripts
+                .scripts
+                .running
                 .iter()
                 .any(|auto_script| auto_script.device.device_id == target_device_id);
             if device_being_used {
@@ -279,7 +265,8 @@ impl AutoScriptManager {
             }
 
             let script_to_start = the_beginner_car_scripts_mutex_guard
-                .queued_scripts
+                .scripts
+                .queued
                 .pop_front();
 
             if let Some(script) = script_to_start {
@@ -293,19 +280,20 @@ impl AutoScriptManager {
                 };
 
                 the_beginner_car_scripts_mutex_guard
-                    .running_scripts
+                .scripts
+                    .running
                     .push(script);
             } else {
                 panic!();
             }
 
-            queue_snapshot = AutoScriptQueueSnapshot {
-                running_scripts: the_beginner_car_scripts_mutex_guard.running_scripts.clone(), // TODO: make consistent this variable name with other functions usage: the_beginner_car_scripts_mutex_guard
-                queued_scripts: the_beginner_car_scripts_mutex_guard
-                    .queued_scripts
+            queue_snapshot = AutoScripts {
+                running: the_beginner_car_scripts_mutex_guard.scripts.running.clone(), // TODO: make consistent this variable name with other functions usage: the_beginner_car_scripts_mutex_guard
+                queued: the_beginner_car_scripts_mutex_guard
+                    .scripts.queued
                     .clone()
                     .into(),
-                stopped_scripts: the_beginner_car_scripts_mutex_guard.stopped_scripts.clone(),
+                stopped: the_beginner_car_scripts_mutex_guard.scripts.stopped.clone(),
             };
             queue_events_sender = the_beginner_car_scripts_mutex_guard
                 .queue_events_sender
@@ -357,31 +345,27 @@ impl AutoScriptManager {
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
         device_id: DeviceId,
     ) {
-        let queue_snapshot: AutoScriptQueueSnapshot;
-        let queue_events_sender: Sender<AutoScriptQueueSnapshot>;
+        let queue_snapshot: AutoScripts;
+        let queue_events_sender: Sender<AutoScripts>;
         {
             let mut state_mutex_guard = state.lock().await;
-            let stopped_scripts: Vec<AutoScript> = state_mutex_guard
-                .running_scripts
+            let stopped: Vec<AutoScript> = state_mutex_guard
+                .scripts.running
                 .extract_if(.., |auto_script| auto_script.device.device_id == device_id)
                 .collect();
-            if stopped_scripts.len() != 1 {
+            if stopped.len() != 1 {
                 // should only be one.. but ah well maybe we got here somehow..
                 println!(
                     "warn: unexpected number of scripts removed: ({})",
-                    stopped_scripts.len()
+                    stopped.len()
                 );
             }
 
-            for removed_script in stopped_scripts {
-                state_mutex_guard.stopped_scripts.push(removed_script);
+            for removed_script in stopped {
+                state_mutex_guard.scripts.stopped.push(removed_script);
             }
 
-            queue_snapshot = AutoScriptQueueSnapshot {
-                running_scripts: state_mutex_guard.running_scripts.clone(),
-                queued_scripts: state_mutex_guard.queued_scripts.clone().into(),
-                stopped_scripts: state_mutex_guard.stopped_scripts.clone(),
-            };
+            queue_snapshot = state_mutex_guard.scripts.clone();
             queue_events_sender = state_mutex_guard.queue_events_sender.clone();
         }
 

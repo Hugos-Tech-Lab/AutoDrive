@@ -13,13 +13,13 @@ service AutoDriveEdgeService {
 message WatchAutoScriptQueueRequest {}
 
 message WatchAutoScriptQueueResponse {
-  AllAutoScripts scripts = 1;
+  AutoScripts scripts = 1;
 }
 
-message AllAutoScripts {
-  repeated AutoScript running_scripts = 1;
-  repeated AutoScript queued_scripts = 2;
-  repeated AutoScript stopped_scripts = 3;
+message AutoScripts {
+  repeated AutoScript running = 1;
+  repeated AutoScript queued = 2;
+  repeated AutoScript stopped = 3;
 }
 
 message AutoScript {

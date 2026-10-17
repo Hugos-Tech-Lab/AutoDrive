@@ -110,14 +110,14 @@ impl From<&crate::auto_script_manager::AutoScript>
     }
 }
 
-impl From<crate::auto_script_manager::AutoScriptQueueSnapshot>
-    for crate::auto_drive_edge_service::v1::AllAutoScripts
+impl From<crate::auto_script_manager::AutoScripts>
+    for crate::auto_drive_edge_service::v1::AutoScripts
 {
-    fn from(value: crate::auto_script_manager::AutoScriptQueueSnapshot) -> Self {
+    fn from(value: crate::auto_script_manager::AutoScripts) -> Self {
         Self {
-            running_scripts: value.running_scripts.iter().map(|v| v.into()).collect(),
-            queued_scripts: value.queued_scripts.iter().map(|v| v.into()).collect(),
-            stopped_scripts: value.stopped_scripts.iter().map(|v| v.into()).collect(),
+            running: value.running.iter().map(|v| v.into()).collect(),
+            queued: value.queued.iter().map(|v| v.into()).collect(),
+            stopped: value.stopped.iter().map(|v| v.into()).collect(),
         }
     }
 }

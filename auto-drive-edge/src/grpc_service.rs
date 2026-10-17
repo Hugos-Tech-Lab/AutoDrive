@@ -11,7 +11,7 @@ use crate::{
         WatchAutoScriptRequest, WatchAutoScriptResponse, WatchTheBeginnerCarEventsRequest,
         WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
     },
-    auto_script_manager::{AutoScriptManager, AutoScriptQueueSnapshot},
+    auto_script_manager::{AutoScriptManager},
     grpc_service::types::to_grpc_log_message,
     the_beginner_car_comms::TheBeginnerCarComms,
 };

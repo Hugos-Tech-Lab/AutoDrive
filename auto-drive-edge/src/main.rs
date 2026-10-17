@@ -44,16 +44,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let contents = include_str!("../device_config.toml");
     let device_config: DeviceConfig = toml::from_str(&contents)?;
-    let _auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
+    let auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
 
-    let driver = _auto_drive_edge_server
-        .hardware
-        .the_beginner_car_drivers
-        .first()
-        .unwrap()
-        .clone();
-
-    let grpc_service = GrpcService::new(driver.clone());
+    let grpc_service = GrpcService::new(auto_drive_edge_server.auto_script_manager, auto_drive_edge_server.the_beginner_cars.clone());
 
     tokio::spawn(async move {
         let address = "127.0.0.1:50051".parse().unwrap();

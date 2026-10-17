@@ -12,7 +12,8 @@ use the_beginner_car_tcp_protocol::{
 };
 use tokio::{
     sync::{
-        Mutex, broadcast,
+        Mutex,
+        broadcast::{self, Receiver},
         mpsc::{self},
     },
     task::JoinHandle,
@@ -23,11 +24,16 @@ use crate::{devices_config::DeviceId, the_beginner_car_comms::TheBeginnerCarComm
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
-enum AutoScriptResponseFromHardware {
+pub enum AutoScriptResponseFromHardware {
     HeardNothing,
     Received,
     CallingMain,
     Error,
+}
+
+#[derive(Clone, Debug)]
+pub enum AutoScriptEvents {
+    Log,
 }
 
 pub struct AutoScript {
@@ -35,6 +41,7 @@ pub struct AutoScript {
     pub preprocessed_file_hash: String,
     pub run_number: u32,
     pub script: Vec<u8>,
+    pub events: Receiver<AutoScriptEvents>,
     pub device: TheBeginnerCarComms,
     pub hardware_response: AutoScriptResponseFromHardware,
 }
@@ -45,9 +52,6 @@ pub struct AutoScriptTheBeginnerCars {
     running_scripts: Vec<AutoScript>,
     stopped_scripts: Vec<AutoScript>,
 }
-
-
-
 
 pub struct AutoScriptManager {
     the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>,
@@ -79,10 +83,6 @@ impl AutoScriptManager {
             the_beginner_car_scripts,
             connection_handles,
         }
-    }
-
-    pub fn stop() {
-        //
     }
 
     pub async fn cancel_auto_script(&self, run_uuid: String) {
@@ -117,6 +117,8 @@ impl AutoScriptManager {
                 .find(|the_beginner_car| the_beginner_car.device_id == DeviceId::TcA)
                 .unwrap();
 
+            let (sender, receiver) = broadcast::channel(100);
+
             let auto_script = AutoScript {
                 run_uuid: run_uuid.clone(),
                 preprocessed_file_hash: digest,
@@ -124,7 +126,34 @@ impl AutoScriptManager {
                 script: data,
                 device: the_beginner_car.clone(),
                 hardware_response: AutoScriptResponseFromHardware::HeardNothing,
+                events: receiver,
             };
+
+            // TODO: AutoScript should hold onto the join_handle
+            let join_handle = tokio::task::spawn({
+                // TODO: should listen to cancellation token and stop when cancelled
+                let mut incoming_tx = the_beginner_car.incoming_tx.subscribe();
+                let run_uuid = run_uuid.clone();
+                async move {
+                    match incoming_tx.recv().await {
+                        Ok(message) => match message {
+                            TheBeginnerCarOutgoingMessages::Log { log } => {
+                                if log.trace_id.is_some_and(|trace_id| trace_id == run_uuid) {
+                                    //
+                                    sender.send(AutoScriptEvents::Log).unwrap(); // TODO: send the log
+                                }
+                            }
+                            _ => {}
+                        },
+                        Err(broadcast::error::RecvError::Lagged(skipped)) => {
+                            eprintln!("Car watcher lagged; skipped {skipped} messages");
+                        }
+                        Err(broadcast::error::RecvError::Closed) => {
+                            // break;
+                        }
+                    };
+                }
+            });
 
             state.queued_scripts.push_back(auto_script);
         }
@@ -133,14 +162,36 @@ impl AutoScriptManager {
         run_uuid
     }
 
-    pub async fn try_start_next_auto_script(the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>) {
+    pub async fn watch_auto_script(&self, uuid: String) -> Option<Receiver<AutoScriptEvents>> {
+        let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
+        let auto_script = the_beginner_car_scripts_mutex_guard
+            .queued_scripts
+            .iter()
+            .find(|asd| asd.run_uuid == uuid);
+        if let Some(auto_script) = auto_script {
+            return Some(auto_script.events.resubscribe());
+        }
+        let auto_script = the_beginner_car_scripts_mutex_guard
+            .running_scripts
+            .iter()
+            .find(|asd| asd.run_uuid == uuid);
+        if let Some(auto_script) = auto_script {
+            return Some(auto_script.events.resubscribe());
+        }
+
+        // TODO: also check stopped to provide a clearer error message
+        None
+    }
+
+    pub async fn try_start_next_auto_script(
+        the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>,
+    ) {
         let target_device_id = DeviceId::TcA; // In the future, find available device.
 
         let target_device_outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>;
         let script_to_start_content;
         {
-            let mut the_beginner_car_scripts_mutex_guard =
-                the_beginner_car_scripts.lock().await;
+            let mut the_beginner_car_scripts_mutex_guard = the_beginner_car_scripts.lock().await;
             let device_being_used = the_beginner_car_scripts_mutex_guard
                 .running_scripts
                 .iter()

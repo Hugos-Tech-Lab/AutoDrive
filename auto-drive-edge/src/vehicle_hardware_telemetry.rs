@@ -4,7 +4,7 @@ use opentelemetry::{KeyValue, global, metrics::Gauge};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 use tokio::{sync::broadcast, task::JoinSet};
 
-use crate::{devices_config::DeviceId, physical_hardware::PhysicalHardware};
+use crate::{devices_config::DeviceId, the_beginner_car_comms::TheBeginnerCarComms};
 
 #[derive(Debug, Clone)]
 struct VehicleHardwareTelemetryGauges {
@@ -39,13 +39,13 @@ pub struct VehicleHardwareTelemetry {
 }
 
 impl VehicleHardwareTelemetry {
-    pub fn new(hardware: Arc<PhysicalHardware>) -> Self {
+    pub fn new(the_beginner_cars: Vec<TheBeginnerCarComms>) -> Self {
         let gauges = VehicleHardwareTelemetryGauges::new();
 
         let mut the_beginner_car_watcher_handles = tokio::task::JoinSet::new();
-        for the_beginner_car in hardware.the_beginner_cars() {
+        for the_beginner_car in the_beginner_cars {
             the_beginner_car_watcher_handles.spawn({
-                let device_build = the_beginner_car.build.clone();
+                let device_build = the_beginner_car.device_id.clone();
                 let incoming_rx = the_beginner_car.incoming_tx.subscribe();
                 let gauges = gauges.clone();
                 async move {

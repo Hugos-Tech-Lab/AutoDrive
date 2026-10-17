@@ -7,7 +7,7 @@ use tonic::{Request, Response, Status};
 use crate::{
     auto_drive_edge_service::v1::{
         CancelAutoScriptRequest, CancelAutoScriptResponse, RunAutoScriptRequest,
-        RunAutoScriptResponse, WatchAutoScriptQueueRequest, WatchAutoScriptQueueResponse,
+        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
         WatchAutoScriptRequest, WatchAutoScriptResponse, WatchTheBeginnerCarEventsRequest,
         WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
     },
@@ -64,8 +64,8 @@ impl AutoDriveEdgeService for GrpcService {
     type WatchAutoScriptStream =
         Pin<Box<dyn Stream<Item = Result<WatchAutoScriptResponse, Status>> + Send + 'static>>;
 
-    type WatchAutoScriptQueueStream =
-        Pin<Box<dyn Stream<Item = Result<WatchAutoScriptQueueResponse, Status>> + Send + 'static>>;
+    type WatchAutoScriptOverviewStream =
+        Pin<Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>>;
 
     async fn watch_auto_script(
         &self,
@@ -105,19 +105,19 @@ impl AutoDriveEdgeService for GrpcService {
         Ok(Response::new(Box::pin(combined_stream)))
     }
 
-    async fn watch_auto_script_queue(
+    async fn watch_auto_script_overview(
         &self,
-        _request: Request<WatchAutoScriptQueueRequest>,
-    ) -> Result<Response<Self::WatchAutoScriptQueueStream>, Status> {
-        let (snapshot, queue_receiver) = self.auto_script_manager.watch_auto_script_queue().await;
+        _request: Request<WatchAutoScriptOverviewRequest>,
+    ) -> Result<Response<Self::WatchAutoScriptOverviewStream>, Status> {
+        let (snapshot, queue_receiver) = self.auto_script_manager.watch_auto_script_overview().await;
 
-        let current_snapshot = tokio_stream::once(Ok(WatchAutoScriptQueueResponse {
+        let current_snapshot = tokio_stream::once(Ok(WatchAutoScriptOverviewResponse {
             scripts: Some(snapshot.into()),
         }));
 
         let live_stream = BroadcastStream::new(queue_receiver).filter_map(|result| async move {
             match result {
-                Ok(snapshot) => Some(Ok(WatchAutoScriptQueueResponse {
+                Ok(snapshot) => Some(Ok(WatchAutoScriptOverviewResponse {
                     scripts: Some(snapshot.into()),
                 })),
                 Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(skipped)) => {

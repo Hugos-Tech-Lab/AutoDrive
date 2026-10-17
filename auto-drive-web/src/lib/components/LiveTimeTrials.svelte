@@ -48,7 +48,7 @@
     }, 1000);
 
     // 2. Setup the SSE connection
-    const source = new EventSource("http://localhost:3030/autoscript/watch");
+    const source = new EventSource("http://localhost:3030/autoscript/overview");
 
     source.onopen = () => {
       connectionStatus = "Connected";

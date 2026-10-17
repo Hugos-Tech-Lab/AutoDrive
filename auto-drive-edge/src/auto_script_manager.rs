@@ -231,7 +231,7 @@ impl AutoScriptManager {
         None
     }
 
-    pub async fn watch_auto_script_queue(
+    pub async fn watch_auto_script_overview(
         &self,
     ) -> (AutoScripts, Receiver<AutoScripts>) {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;

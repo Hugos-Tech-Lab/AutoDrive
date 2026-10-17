@@ -6,13 +6,13 @@ service AutoDriveEdgeService {
   rpc RunAutoScript(RunAutoScriptRequest) returns (RunAutoScriptResponse);
   rpc CancelAutoScript(CancelAutoScriptRequest) returns (CancelAutoScriptResponse);
   rpc WatchAutoScript(WatchAutoScriptRequest) returns (stream WatchAutoScriptResponse);
-  rpc WatchAutoScriptQueue(WatchAutoScriptQueueRequest) returns (stream WatchAutoScriptQueueResponse);
+  rpc WatchAutoScriptOverview(WatchAutoScriptOverviewRequest) returns (stream WatchAutoScriptOverviewResponse);
   rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
 }
 
-message WatchAutoScriptQueueRequest {}
+message WatchAutoScriptOverviewRequest {}
 
-message WatchAutoScriptQueueResponse {
+message WatchAutoScriptOverviewResponse {
   AutoScripts scripts = 1;
 }
 

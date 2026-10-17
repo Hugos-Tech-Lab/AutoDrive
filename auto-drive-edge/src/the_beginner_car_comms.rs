@@ -132,8 +132,9 @@ impl TheBeginnerCarComms {
                                     }
                                 };
 
-                                // Forward incoming message to broadcast subscribers
-                                let _ = broadcast_sender.send(message);
+                                if let Err(_) = broadcast_sender.send(message) {
+                                    println!("Did not send broadcast message, assuming all receivers dropped, that's strange?")
+                                };
                             }
                             Err(e) => {
                                 eprintln!("Error reading from car: {e}");

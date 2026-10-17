@@ -18,12 +18,37 @@ pub fn run(
 
     warp::path!("autoscript" / "run")
         .and(warp::post())
+        // Extract the optional Authorization header
+        .and(warp::header::optional::<String>("authorization"))
         // Parse multipart form data instead of raw bytes, applying the size limit here
         .and(warp::multipart::form().max_length(MAX_BODY_SIZE))
-        .and_then(move |mut form: warp::multipart::FormData| {
+        .and_then(move |auth_header: Option<String>, mut form: warp::multipart::FormData| {
             // let logs = logs.clone();
             let sender = sender.clone();
             async move {
+                // --- AUTHENTICATION CHECK ---
+                let expected_token = "your_secure_token_here".to_string();
+                
+                let is_authorized = match auth_header {
+                    Some(header) if header.starts_with("Bearer ") => {
+                        let provided_token = header.trim_start_matches("Bearer ");
+                        // Ensure it matches and isn't just succeeding because both are empty
+                        provided_token == expected_token && !expected_token.is_empty()
+                    }
+                    _ => false,
+                };
+
+                if !is_authorized {
+                    return Ok::<_, Infallible>(
+                        warp::reply::with_status(
+                            "Unauthorized: Invalid or missing token",
+                            StatusCode::UNAUTHORIZED,
+                        )
+                        .into_response(),
+                    );
+                }
+                // ----------------------------
+
                 let mut wasm_data = None;
                 let mut args_string = String::new();
 

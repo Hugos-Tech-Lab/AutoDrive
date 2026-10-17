@@ -3,6 +3,44 @@ set -euo pipefail
 
 BASE_URL="http://127.0.0.1:3030/autoscript"
 
+# --- Authentication Requirement ---
+# Look for .env in current directory, then script's directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE=""
+if [[ -f ".env" ]]; then
+    ENV_FILE=".env"
+elif [[ -f "$SCRIPT_DIR/.env" ]]; then
+    ENV_FILE="$SCRIPT_DIR/.env"
+fi
+
+AUTH_TOKEN=""
+if [[ -n "$ENV_FILE" ]]; then
+    # Safely extract AUTH_TOKEN (ignoring comments, stripping carriage returns and quotes)
+    AUTH_TOKEN=$(grep -E '^AUTH_TOKEN=' "$ENV_FILE" | cut -d '=' -f 2- | tr -d '\r' | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+fi
+
+# Halt execution and show instructions if token is missing
+if [[ -z "$AUTH_TOKEN" ]]; then
+    echo -e "\033[31m[ERROR]\033[0m Authentication token could not be loaded." >&2
+    echo "" >&2
+    echo "Please provide a valid .env file to authenticate." >&2
+    echo "----------------------------------------------------" >&2
+    echo "1. Create a file named exactly '.env' in one of these locations:" >&2
+    echo "   - Current directory : $(pwd)" >&2
+    echo "   - Script directory  : $SCRIPT_DIR" >&2
+    echo "" >&2
+    echo "2. Add your token to the file like this:" >&2
+    echo "   AUTH_TOKEN=your_secure_token_here" >&2
+    echo "----------------------------------------------------" >&2
+    echo "Exiting." >&2
+    exit 1
+fi
+
+# Token found; set up the header array
+AUTH_ARGS=("--header" "Authorization: Bearer $AUTH_TOKEN")
+echo "Authentication token loaded successfully."
+# ---------------------------------
+
 # Cargo passes the executable path as $1. Shift it out so $@ contains only user arguments.
 if [[ $# -gt 0 ]]; then
     wasm_arg="$1"
@@ -44,10 +82,10 @@ cleanup() {
         RUN_UUID=$(cat "$UUID_FILE")
         echo "Sending cancel for run: $RUN_UUID"
         
-        # Adjust payload format below based on how your /cancel endpoint expects run_uuid
         curl --fail \
             --show-error \
             --request POST \
+            ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
             --header "Content-Type: application/json" \
             --data "{\"run_uuid\":\"$RUN_UUID\"}" \
             "$BASE_URL/cancel" \
@@ -57,6 +95,7 @@ cleanup() {
         curl --fail \
             --show-error \
             --request POST \
+            ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
             "$BASE_URL/cancel" \
             || echo "Warning: cancel request failed"
     fi
@@ -73,6 +112,7 @@ curl --fail-with-body \
     --show-error \
     --no-buffer \
     --request POST \
+    ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
     -F "file=@$wasm;type=application/wasm" \
     -F "args=$ARGS_STRING" \
     "$BASE_URL/run" |
@@ -88,7 +128,6 @@ curl --fail-with-body \
 
             # Parse and save run_uuid if present in stream line
             if (line ~ /run_uuid/) {
-                # Case 1: JSON formatted key (e.g., "run_uuid": "abc-123")
                 if (match(line, /"run_uuid"[[:space:]]*:[[:space:]]*"[^"]+"/)) {
                     str = substr(line, RSTART, RLENGTH)
                     sub(/^"run_uuid"[[:space:]]*:[[:space:]]*"/, "", str)
@@ -130,7 +169,6 @@ curl --fail-with-body \
         }
 
         # Catch non-SSE plain text responses (like your 413 error message)
-        # We already skipped "event:" and "data:". Skip comments (":") and empty lines.
         !/^:/ && NF > 0 {
             print "\033[31m[SERVER ERROR]\033[0m " $0
             fflush()

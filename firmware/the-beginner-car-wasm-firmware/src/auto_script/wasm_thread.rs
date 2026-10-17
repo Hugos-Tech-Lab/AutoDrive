@@ -13,7 +13,7 @@ use crate::{
     }, hardware::{RequestOrigin, TheBeginnerCarHardware},
 };
 use anyhow::{Result, anyhow};
-use log::info;
+use log::{error, info};
 use the_beginner_car_wasm_sdk::host::host_functions;
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime,
@@ -79,7 +79,9 @@ impl WasmThread {
                 Ok((command, sender)) => match command {
                     WasmThreadCommand::Run { data } => {
                         let ret = self.run(data, sender, self.ct.clone());
-                        ret.unwrap();
+                        if let Err(ret) = ret {
+                            error!("{:?}", ret);
+                        }
                     }
                 },
                 Err(error) => {

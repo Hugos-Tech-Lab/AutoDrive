@@ -1,12 +1,12 @@
 FROM rust:1.99.1 AS build
+
+RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+
+COPY auto-drive-edge /auto-drive-edge
+
 WORKDIR /workspace
+COPY auto-drive-cloud .
 
-# Install the Linux protobuf compiler
-RUN apt-get update && apt-get install -y protobuf-compiler
-
-COPY . .
-
-# Force the build script to use the Linux protoc instead of the Windows .exe
 ENV PROTOC=/usr/bin/protoc
 
 RUN cargo build --release

@@ -36,13 +36,11 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          # Sets the build context to the specific folder
-          context: ./${{ matrix.folder }}
+          context: .
+          file: ./${{ matrix.folder }}/Dockerfile
           push: true
-          # Tags the image with 'latest' and the specific Git commit SHA
           tags: |
-            ${{ matrix.image }}:latest
-            ${{ matrix.image }}:${{ github.sha }}
-          # Utilizes GitHub Actions cache to speed up future builds
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

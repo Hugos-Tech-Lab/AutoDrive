@@ -457,9 +457,8 @@ msgstr "The Beginner Car"
 #~ msgid "Unit D"
 #~ msgstr "Unit D"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Build A"
-msgstr "Build A"
+#~ msgid "Build A"
+#~ msgstr "Build A"
 
 #~ msgid "Build B"
 #~ msgstr "Build B"
@@ -659,6 +658,10 @@ msgstr "Algorithms"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/LiveHardwareBanner.svelte
+#: src/lib/components/LiveHardwareBanner.svelte
+#: src/lib/components/LiveHardwareBanner.svelte
 msgid "Time Trials"
 msgstr "Time Trials"
 
@@ -779,9 +782,8 @@ msgstr "Time Trials"
 #~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust:<6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
 #~ msgstr "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust:<6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Car Control"
-msgstr "Car Control"
+#~ msgid "Car Control"
+#~ msgstr "Car Control"
 
 #~ msgid "s"
 #~ msgstr "s"
@@ -816,10 +818,8 @@ msgstr "Cancel"
 msgid "STOP"
 msgstr "STOP"
 
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-msgid "Build"
-msgstr "Build"
+#~ msgid "Build"
+#~ msgstr "Build"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
@@ -1147,3 +1147,8 @@ msgstr "Vehicle ID"
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Unknown"
 msgstr "Unknown"
+
+#. 0: selectedBuild
+#: src/lib/components/Dashboard.svelte
+msgid "Car Control: {0}"
+msgstr "Car Control: {0}"

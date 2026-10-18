@@ -48,7 +48,6 @@
       telemetryError = "";
     };
 
-    // Listen to "overview" instead of "update" based on the new Rust backend
     source.addEventListener("overview", (event: MessageEvent<string>) => {
       try {
         const parsed = JSON.parse(event.data) as AutoScripts;

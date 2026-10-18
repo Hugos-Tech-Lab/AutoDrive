@@ -2,13 +2,12 @@
   import { goto } from "$app/navigation";
   import HardwareTelemetry from "./HardwareTelemetry.svelte";
   import LiveTimeTrials from "./LiveTimeTrials.svelte";
+  import LiveHardwareBanner from "./LiveHardwareBanner.svelte";
   import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
 
   let {} = $props();
-  type Build = "Time Trials" | "Build A"; // Build B...
-  let selectedBuild = $state<Build>("Time Trials");
-
-  const builds: Build[] = ["Time Trials", "Build A"];
+  
+  let selectedBuild = $state<string>("Time Trials");
 
   type PlayOption = "Leaderboard" | "Algorithms" | "Live";
   let selectedPlayOption = $state<PlayOption>("Leaderboard");
@@ -36,26 +35,10 @@
     <button onclick={() => goto("/dashboard")}>Sign In / Sign up</button>
   </div>
 </div>
+
 <button type="button" class="button block">The Beginner Car</button>
-<div class="row">
-  {#each builds as build}
-    <button
-      type="button"
-      class="button block"
-      class:selected={selectedBuild === build}
-      aria-pressed={selectedBuild === build}
-      onclick={() => (selectedBuild = build)}
-    >
-      {build}
-    </button>
-  {/each}
-  <!-- <button type="button" class="button block">Unit D</button> -->
-  <!-- <button type="button" class="button block hugo">Sign In / Sign up</button> -->
-</div>
-<!-- <button type="button" class="button block">Calendar</button> -->
-<!-- <button type="button" class="button block"
-  >Software Development Kit (SDK)</button
-> -->
+
+<LiveHardwareBanner bind:selectedBuild />
 
 {#if selectedBuild === "Time Trials"}
   <div class="button-container">
@@ -70,13 +53,9 @@
         {playOption}
       </button>
     {/each}
-    <!-- 
-    <button type="button" class="button block">Leaderboard</button>
-    <button type="button" class="button block">Algorithms</button>
-    <button type="button" class="button block">Time Trials</button> -->
-    <!-- <button type="button" class="button block">Experiment</button> -->
   </div>
 {:else}
+  <!-- Sub-menu for Hardware items like "TBC 001" -->
   <div class="button-container">
     {#each buildOptions as buildOption}
       <button
@@ -89,18 +68,11 @@
         {buildOption}
       </button>
     {/each}
-
-    <!-- <button type="button" class="button block">Status</button>
-    <button type="button" class="button block">Sensors</button>
-    <button type="button" class="button block">Upcoming Runs</button>
-    <button type="button" class="button block">Past Runs</button>
-    <button type="button" class="button block">Logs</button> -->
   </div>
 {/if}
 
-{#if selectedBuild.startsWith("Build") && selectedBuildOption === "Control"}
-  <h2 class="text-2xl mb-4 min-w-0 flex-1">Car Control</h2>
-  <!-- <button type="button" class="button block">                      ___</button> -->
+{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Control"}
+  <h2 class="text-2xl mb-4 min-w-0 flex-1">Car Control: {selectedBuild}</h2>
 
   <div class="row">
     <button type="button" class="button block">STOP</button>
@@ -109,39 +81,15 @@
   </div>
 {/if}
 
-{#if selectedBuild.startsWith("Build") && selectedBuildOption === "Telemetry"}
+{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Telemetry"}
   <HardwareTelemetry />
 {/if}
 
-{#if selectedBuild.startsWith("Time Trials") && selectedPlayOption === "Live"}
+{#if selectedBuild === "Time Trials" && selectedPlayOption === "Live"}
   <LiveTimeTrials />
 {/if}
 
-<!-- <h2 class="text-2xl mb-4 min-w-0 flex-1">Software Development Kit</h2>
-<h2 class="mb-4 min-w-0 flex-1">
-  The SDK allows you to control the car from a programming language
-</h2>
-
-Rust:<button type="button" class="button block">Rust Example</button>
-<button type="button" class="button block">Rust Library</button>
-
-API Token
-<h2 class="text-2xl mb-4 min-w-0 flex-1">Create new one</h2> -->
-
-<!-- <div class="row">
-  <button type="button" class="button block">Yesterday</button>
-  <button type="button" class="button block">Today (10.10.2026)</button>
-  <button type="button" class="button block">Tomorrow</button>
-</div>
-
-<button type="button" class="button block">8am - 8:05am: Sem</button>
-<button type="button" class="button block">8.05am - 8:10am: Sem</button>
-<button type="button" class="button block">8.10am - 8:15am: Sem</button> -->
-
-<!-- <button type="button" class="button block">Live Control (shown in selected Build only)</button> -->
-
 <style>
-  /* TODO: this is a bit dangerous if width is small. Do something else if width is small  */
   .button-container {
     display: flex;
     flex-direction: column;
@@ -159,12 +107,4 @@ API Token
   .row .button {
     width: auto;
   }
-
-  .button.selected {
-    background-color: #a4aeff;
-  }
-
-  /* .hugo {
-    margin-left: auto;
-  } */
 </style>

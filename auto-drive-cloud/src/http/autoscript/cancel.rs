@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use serde::Deserialize;
 use std::convert::Infallible;
-use warp::{Filter, Rejection, Reply, http::StatusCode};
+use warp::{Filter, Reply, http::StatusCode};
 
 use crate::edge_client::{Hardware, ToEdgeMessage};
 

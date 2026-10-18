@@ -6,7 +6,7 @@ use futures_util::StreamExt;
 use serde::Serialize;
 use tokio::time::interval;
 use tokio_stream::wrappers::IntervalStream;
-use warp::{Filter, Rejection, Reply};
+use warp::{Filter, Reply};
 
 // 1. Define the Rust structs mapping to your TypeScript types
 #[derive(Serialize, Clone)]
@@ -41,7 +41,7 @@ pub fn autoscript_watch(
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     // Note the new endpoint name
     warp::path!("autoscript" / "watch")
-        .and(warp::get()) // SSE requires GET, not POST
+        .and(warp::get())
         .and_then(move || {
             let hardware = hardware.clone();
 

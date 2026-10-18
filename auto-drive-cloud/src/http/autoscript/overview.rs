@@ -13,7 +13,7 @@ pub fn autoscript_overview(
     let sender = hardware.sender.clone();
 
     warp::path!("autoscript" / "overview")
-        .and(warp::get()) // Changed to GET for SSE streaming
+        .and(warp::get())
         .and_then(move || {
             let sender = sender.clone();
             async move {

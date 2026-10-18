@@ -4,6 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use serde::{Deserialize, Serialize};
 use tokio::sync::{
     broadcast::{self, Receiver, Sender},
     mpsc,
@@ -37,11 +38,14 @@ pub enum ToEdgeMessage {
         response_tx: oneshot::Sender<(AutoScripts, Receiver<AutoScripts>)>,
     },
     WatchHardware {
-        response_tx: oneshot::Sender<(Vec<AutoScripts>, Receiver<Vec<AutoScripts>>)>,
+        response_tx: oneshot::Sender<(
+            HashMap<String, HardwareDeviceState>,
+            watch::Receiver<HashMap<String, HardwareDeviceState>>,
+        )>,
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDeviceState {
     pub id: String,
     pub category: String,
@@ -55,7 +59,7 @@ pub struct Hardware {
     pub the_beginner_car_auto_scripts: Arc<Mutex<HashMap<String, Sender<LogMessage>>>>, // TODO: maybe this could store an array for history
     pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
     pub watch_auto_scripts_overview: Sender<AutoScripts>,
-    pub hardware_states_rx: watch::Receiver<HashMap<String, HardwareDeviceState>>,
+    pub hardware_states_tx: watch::Sender<HashMap<String, HardwareDeviceState>>,
 }
 
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
@@ -151,7 +155,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                     Ok(event) => {
                         hardware_states_tx.send_modify(|v| {
                             for hardware in event.hardware {
-                                let entry = v.entry(hardware.id).or_insert(HardwareDeviceState {
+                                let entry = v.entry(hardware.id.clone()).or_insert(HardwareDeviceState {
                                     id: hardware.id,
                                     category: hardware.category,
                                     is_connected: hardware.is_connected,
@@ -252,9 +256,10 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             .unwrap();
                     }
                     ToEdgeMessage::WatchHardware { response_tx } => {
-                        response_tx
-                            .send((hardware_states_tx.borrow(), hardware_states_tx.subscribe()))
-                            .unwrap();
+                        let _ = response_tx.send((
+                            hardware_states_tx.borrow().clone(), // .clone() gets the owned HashMap out of the watch::Ref
+                            hardware_states_tx.subscribe(),
+                        ));
                     }
                 };
             }
@@ -267,6 +272,6 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         latest_auto_scripts_overview,
         watch_auto_scripts_overview: incoming_auto_scripts_tx,
         the_beginner_car_auto_scripts,
-        hardware_states_rx,
+        hardware_states_tx,
     })
 }

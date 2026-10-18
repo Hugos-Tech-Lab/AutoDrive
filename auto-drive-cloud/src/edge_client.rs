@@ -14,8 +14,8 @@ use tokio_stream::StreamExt;
 
 use crate::auto_drive_edge_service::v1::{
     AutoScripts, CancelAutoScriptRequest, LogMessage, RunAutoScriptRequest,
-    WatchAutoScriptOverviewRequest, WatchAutoScriptRequest, WatchTheBeginnerCarEventsRequest,
-    auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+    WatchAutoScriptOverviewRequest, WatchAutoScriptRequest, WatchHardwareStatusRequest,
+    WatchTheBeginnerCarEventsRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
     watch_the_beginner_car_events_response::Event,
 };
 
@@ -38,7 +38,7 @@ pub enum ToEdgeMessage {
     },
     WatchHardware {
         response_tx: oneshot::Sender<(Vec<AutoScripts>, Receiver<Vec<AutoScripts>>)>,
-    }
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -64,7 +64,8 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     let (incoming_tx, _) = broadcast::channel::<Event>(100);
 
     // It initializes with an empty HashMap.
-    let (hardware_states_tx, hardware_states_rx) = watch::channel(HashMap::new());
+    let (hardware_states_tx, _) =
+        watch::channel::<HashMap<String, HardwareDeviceState>>(HashMap::new());
 
     let latest_auto_scripts_overview = Arc::new(Mutex::new(AutoScripts {
         running: vec![],
@@ -77,7 +78,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         let incoming_tx = incoming_tx.clone();
         let mut client = client.clone();
 
-    // TODO: track the task!
+        // TODO: track the task!
         async move {
             let response = client
                 .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest { build: 1 })
@@ -134,11 +135,46 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         }
     });
 
+    tokio::spawn({
+        let hardware_states_tx = hardware_states_tx.clone();
+        let mut client = client.clone();
+        async move {
+            let response = client
+                .watch_hardware_status(WatchHardwareStatusRequest {})
+                .await
+                .expect("Failed to subscribe to beginner car events");
+
+            let mut stream = response.into_inner();
+
+            while let Some(result) = stream.next().await {
+                match result {
+                    Ok(event) => {
+                        hardware_states_tx.send_modify(|v| {
+                            for hardware in event.hardware {
+                                let entry = v.entry(hardware.id).or_insert(HardwareDeviceState {
+                                    id: hardware.id,
+                                    category: hardware.category,
+                                    is_connected: hardware.is_connected,
+                                });
+                                entry.is_connected = hardware.is_connected;
+                            }
+                        });
+                    }
+                    Err(err) => {
+                        eprintln!("Error receiving auto script overview: {err}");
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
     let (sender, mut receiver) = mpsc::channel::<ToEdgeMessage>(10);
     tokio::spawn({
         let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
         let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
         let the_beginner_car_auto_scripts = the_beginner_car_auto_scripts.clone();
+        let hardware_states_tx = hardware_states_tx.clone();
         async move {
             while let Some(value) = receiver.recv().await {
                 match value {
@@ -216,8 +252,10 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             .unwrap();
                     }
                     ToEdgeMessage::WatchHardware { response_tx } => {
-                        //
-                    },
+                        response_tx
+                            .send((hardware_states_tx.borrow(), hardware_states_tx.subscribe()))
+                            .unwrap();
+                    }
                 };
             }
         }

@@ -1,6 +1,14 @@
 FROM rust:1.99.1 AS build
 WORKDIR /workspace
+
+# Install the Linux protobuf compiler
+RUN apt-get update && apt-get install -y protobuf-compiler
+
 COPY . .
+
+# Force the build script to use the Linux protoc instead of the Windows .exe
+ENV PROTOC=/usr/bin/protoc
+
 RUN cargo build --release
 
 FROM debian:bookworm-slim AS production

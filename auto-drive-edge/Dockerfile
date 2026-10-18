@@ -1,6 +1,10 @@
 FROM rust:1.99.1 AS build
 
-RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    protobuf-compiler \
+    pkg-config \
+    libudev-dev \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY firmware/the-beginner-car-wifi-firmware/api firmware/the-beginner-car-wifi-firmware/api
 
@@ -13,7 +17,10 @@ RUN cargo build --release
 
 FROM debian:bookworm-slim AS production
 
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libudev1 \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /workspace/target/release/auto-drive-edge /bin/auto-drive-edge
 ENV RUST_LOG=INFO

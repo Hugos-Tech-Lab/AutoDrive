@@ -25,11 +25,13 @@ pub fn hardware_telemetry(
             async move {
                 let event_stream = BroadcastStream::new(receiver).filter_map(|result| async move {
                     match result {
-                        Ok(Event::InfraredLedReading(infrared_led_reading)) => Some(Ok::<_, Infallible>(
-                            warp::sse::Event::default()
-                                .event("infrared_led_reading")
-                                .data(serde_json::to_string(&infrared_led_reading).unwrap()),
-                        )),
+                        Ok(Event::InfraredLedReading(infrared_led_reading)) => {
+                            Some(Ok::<_, Infallible>(
+                                warp::sse::Event::default()
+                                    .event("infrared_led_reading")
+                                    .data(serde_json::to_string(&infrared_led_reading).unwrap()),
+                            ))
+                        }
                         Ok(_) => None,
                         Err(error) => {
                             eprintln!("Log broadcast receiver error: {error}");

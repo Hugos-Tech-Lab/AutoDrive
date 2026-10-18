@@ -5,9 +5,9 @@ use tokio_stream::StreamExt;
 
 use crate::http::http_server;
 
+pub mod edge_client;
 pub mod hardware;
 pub mod http;
-pub mod edge_client;
 
 pub mod auto_drive_edge_service {
     pub mod v1 {

@@ -1,11 +1,19 @@
 use warp::Filter;
 
-use crate::{edge_client::Hardware, http::{autoscript::{cancel::cancel, logs::autoscript_watch, overview::autoscript_overview, run::run}, logs::logs}};
 use crate::http::hardware_telemetry::hardware_telemetry;
-pub mod logs;
+use crate::{
+    edge_client::Hardware,
+    http::{
+        autoscript::{
+            cancel::cancel, logs::autoscript_watch, overview::autoscript_overview, run::run,
+        },
+        logs::logs,
+    },
+};
 pub mod autoscript;
 pub mod hardware;
 pub mod hardware_telemetry;
+pub mod logs;
 
 pub async fn http_server(receiver: Hardware) {
     let server = tokio::spawn(async move {

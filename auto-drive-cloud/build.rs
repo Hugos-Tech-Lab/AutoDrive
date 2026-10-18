@@ -1,5 +1,6 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let protoc = std::path::PathBuf::from("../auto-drive-edge/external/protoc-36.2-win64/bin/protoc.exe");
+    let protoc =
+        std::path::PathBuf::from("../auto-drive-edge/external/protoc-36.2-win64/bin/protoc.exe");
 
     if !protoc.exists() {
         return Err(format!("protoc not found at: {}", protoc.display()).into());

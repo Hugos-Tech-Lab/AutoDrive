@@ -1,7 +1,7 @@
-use std::convert::Infallible;
-use serde::Deserialize;
 use bytes::Bytes;
-use warp::{http::StatusCode, Filter, Reply, Rejection};
+use serde::Deserialize;
+use std::convert::Infallible;
+use warp::{Filter, Rejection, Reply, http::StatusCode};
 
 use crate::edge_client::{Hardware, ToEdgeMessage};
 
@@ -44,11 +44,7 @@ pub fn cancel(
                 }
 
                 Ok::<_, Infallible>(
-                    warp::reply::with_status(
-                        "Cancel request sent",
-                        StatusCode::OK,
-                    )
-                    .into_response(),
+                    warp::reply::with_status("Cancel request sent", StatusCode::OK).into_response(),
                 )
             }
         })

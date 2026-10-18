@@ -2,7 +2,7 @@ FROM rust:1.99.1 AS build
 
 RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
 
-COPY auto-drive-edge /auto-drive-edge
+COPY auto-drive-edge/api /auto-drive-edge/api
 
 WORKDIR /workspace
 COPY auto-drive-cloud .

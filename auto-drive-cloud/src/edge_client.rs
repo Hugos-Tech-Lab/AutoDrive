@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     error::Error,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use serde::{Deserialize, Serialize};
@@ -9,8 +10,9 @@ use tokio::sync::{
     broadcast::{self, Receiver, Sender},
     mpsc,
     oneshot,
-    watch, // <-- Added watch
+    watch,
 };
+use tokio::time::sleep;
 use tokio_stream::StreamExt;
 
 use crate::auto_drive_edge_service::v1::{
@@ -56,18 +58,27 @@ pub struct HardwareDeviceState {
 pub struct Hardware {
     pub sender: mpsc::Sender<ToEdgeMessage>,
     pub logs: Sender<Event>,
-    pub the_beginner_car_auto_scripts: Arc<Mutex<HashMap<String, Sender<LogMessage>>>>, // TODO: maybe this could store an array for history
+    pub the_beginner_car_auto_scripts: Arc<Mutex<HashMap<String, Sender<LogMessage>>>>,
     pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
     pub watch_auto_scripts_overview: Sender<AutoScripts>,
     pub hardware_states_tx: watch::Sender<HashMap<String, HardwareDeviceState>>,
 }
 
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
-    let mut client = AutoDriveEdgeServiceClient::connect("http://127.0.0.1:50051").await?;
+    let mut client = loop {
+        match AutoDriveEdgeServiceClient::connect("http://127.0.0.1:50051").await {
+            Ok(c) => {
+                println!("Successfully connected to edge service.");
+                break c;
+            }
+            Err(err) => {
+                eprintln!("Failed to connect to edge service: {err}. Retrying in 5s...");
+                sleep(Duration::from_secs(5)).await;
+            }
+        }
+    };
 
     let (incoming_tx, _) = broadcast::channel::<Event>(100);
-
-    // It initializes with an empty HashMap.
     let (hardware_states_tx, _) =
         watch::channel::<HashMap<String, HardwareDeviceState>>(HashMap::new());
 
@@ -78,32 +89,38 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     }));
     let the_beginner_car_auto_scripts = Arc::new(Mutex::new(HashMap::new()));
 
+    // The loop catches it, sleeps for 5s, and re-requests the stream (which triggers a reconnect).
     tokio::spawn({
         let incoming_tx = incoming_tx.clone();
         let mut client = client.clone();
 
-        // TODO: track the task!
         async move {
-            let response = client
-                .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest { build: 1 })
-                .await
-                .expect("Failed to subscribe to beginner car events");
-
-            let mut stream = response.into_inner();
-
-            while let Some(result) = stream.next().await {
-                match result {
-                    Ok(event) => {
-                        if let Some(event_data) = event.event {
-                            // Forward the event to all broadcast subscribers.
-                            let _ = incoming_tx.send(event_data.clone());
+            loop {
+                match client
+                    .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest { build: 1 })
+                    .await
+                {
+                    Ok(response) => {
+                        let mut stream = response.into_inner();
+                        while let Some(result) = stream.next().await {
+                            match result {
+                                Ok(event) => {
+                                    if let Some(event_data) = event.event {
+                                        let _ = incoming_tx.send(event_data.clone());
+                                    }
+                                }
+                                Err(err) => {
+                                    eprintln!("Beginner car event stream disconnected: {err}. Reconnecting...");
+                                    break;
+                                }
+                            }
                         }
                     }
                     Err(err) => {
-                        eprintln!("Error receiving beginner car event: {err}");
-                        break;
+                        eprintln!("Failed to subscribe to beginner car events: {err}. Retrying in 5s...");
                     }
                 }
+                sleep(Duration::from_secs(5)).await;
             }
         }
     });
@@ -113,28 +130,37 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
         let mut client = client.clone();
         let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
+        
         async move {
-            let response = client
-                .watch_auto_script_overview(WatchAutoScriptOverviewRequest {})
-                .await
-                .expect("Failed to subscribe to beginner car events");
-
-            let mut stream = response.into_inner();
-
-            while let Some(result) = stream.next().await {
-                match result {
-                    Ok(event) => {
-                        if let Some(event_scripts) = event.scripts {
-                            let _ = incoming_auto_scripts_tx.send(event_scripts.clone());
-                            let mut latest_overview = latest_auto_scripts_overview.lock().unwrap();
-                            *latest_overview = event_scripts;
+            loop {
+                match client
+                    .watch_auto_script_overview(WatchAutoScriptOverviewRequest {})
+                    .await
+                {
+                    Ok(response) => {
+                        let mut stream = response.into_inner();
+                        while let Some(result) = stream.next().await {
+                            match result {
+                                Ok(event) => {
+                                    if let Some(event_scripts) = event.scripts {
+                                        let _ = incoming_auto_scripts_tx.send(event_scripts.clone());
+                                        let mut latest_overview =
+                                            latest_auto_scripts_overview.lock().unwrap();
+                                        *latest_overview = event_scripts;
+                                    }
+                                }
+                                Err(err) => {
+                                    eprintln!("Auto script overview stream disconnected: {err}. Reconnecting...");
+                                    break;
+                                }
+                            }
                         }
                     }
                     Err(err) => {
-                        eprintln!("Error receiving auto script overview: {err}");
-                        break;
+                        eprintln!("Failed to subscribe to auto script overview: {err}. Retrying in 5s...");
                     }
                 }
+                sleep(Duration::from_secs(5)).await;
             }
         }
     });
@@ -142,33 +168,43 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     tokio::spawn({
         let hardware_states_tx = hardware_states_tx.clone();
         let mut client = client.clone();
+        
         async move {
-            let response = client
-                .watch_hardware_status(WatchHardwareStatusRequest {})
-                .await
-                .expect("Failed to subscribe to beginner car events");
-
-            let mut stream = response.into_inner();
-
-            while let Some(result) = stream.next().await {
-                match result {
-                    Ok(event) => {
-                        hardware_states_tx.send_modify(|v| {
-                            for hardware in event.hardware {
-                                let entry = v.entry(hardware.id.clone()).or_insert(HardwareDeviceState {
-                                    id: hardware.id,
-                                    category: hardware.category,
-                                    is_connected: hardware.is_connected,
-                                });
-                                entry.is_connected = hardware.is_connected;
+            loop {
+                match client
+                    .watch_hardware_status(WatchHardwareStatusRequest {})
+                    .await
+                {
+                    Ok(response) => {
+                        let mut stream = response.into_inner();
+                        while let Some(result) = stream.next().await {
+                            match result {
+                                Ok(event) => {
+                                    hardware_states_tx.send_modify(|v| {
+                                        for hardware in event.hardware {
+                                            let entry = v.entry(hardware.id.clone()).or_insert(
+                                                HardwareDeviceState {
+                                                    id: hardware.id,
+                                                    category: hardware.category,
+                                                    is_connected: hardware.is_connected,
+                                                },
+                                            );
+                                            entry.is_connected = hardware.is_connected;
+                                        }
+                                    });
+                                }
+                                Err(err) => {
+                                    eprintln!("Hardware status stream disconnected: {err}. Reconnecting...");
+                                    break;
+                                }
                             }
-                        });
+                        }
                     }
                     Err(err) => {
-                        eprintln!("Error receiving auto script overview: {err}");
-                        break;
+                        eprintln!("Failed to subscribe to hardware status: {err}. Retrying in 5s...");
                     }
                 }
+                sleep(Duration::from_secs(5)).await;
             }
         }
     });
@@ -189,75 +225,74 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         response_tx,
                     } => {
                         dbg!("starting");
-                        let response = client
+                        if let Ok(response) = client
                             .run_auto_script(RunAutoScriptRequest {
                                 owner,
                                 build: 1,
                                 data,
                             })
                             .await
-                            .unwrap();
-                        let response = response.into_inner();
-                        let run_uuid = response.run_uuid;
+                        {
+                            let response = response.into_inner();
+                            let run_uuid = response.run_uuid;
 
-                        let (sender, _) = broadcast::channel(100);
+                            let (sender, _) = broadcast::channel(100);
 
-                        the_beginner_car_auto_scripts
-                            .lock()
-                            .unwrap()
-                            .insert(run_uuid.clone(), sender.clone());
+                            the_beginner_car_auto_scripts
+                                .lock()
+                                .unwrap()
+                                .insert(run_uuid.clone(), sender.clone());
 
-                        let watch_auto_script = client
-                            .watch_auto_script(WatchAutoScriptRequest {
-                                run_uuid: run_uuid.clone(),
-                            })
-                            .await
-                            .unwrap();
+                            if let Ok(watch_auto_script) = client
+                                .watch_auto_script(WatchAutoScriptRequest {
+                                    run_uuid: run_uuid.clone(),
+                                })
+                                .await
+                            {
+                                let mut stream = watch_auto_script.into_inner();
 
-                        let mut stream = watch_auto_script.into_inner();
-
-                        tokio::spawn(async move {
-                            while let Ok(Some(update)) = stream.message().await {
-                                if let Some(log_message) = update.log_message {
-                                    let _ = sender.send(log_message);
-                                }
+                                tokio::spawn(async move {
+                                    while let Ok(Some(update)) = stream.message().await {
+                                        if let Some(log_message) = update.log_message {
+                                            let _ = sender.send(log_message);
+                                        }
+                                    }
+                                });
                             }
-                        });
-
-                        response_tx.send(run_uuid.clone()).unwrap();
+                            let _ = response_tx.send(run_uuid.clone());
+                        } else {
+                            eprintln!("Failed to start auto script - service might be temporarily unavailable.");
+                        }
                     }
                     ToEdgeMessage::CancelAutoScript { run_uuid } => {
-                        client
+                        let _ = client
                             .cancel_auto_script(CancelAutoScriptRequest { run_uuid })
-                            .await
-                            .unwrap();
+                            .await;
                     }
                     ToEdgeMessage::WatchAutoScript {
                         run_uuid,
                         response_tx,
                     } => {
-                        let log_sender = the_beginner_car_auto_scripts
+                        if let Some(log_sender) = the_beginner_car_auto_scripts
                             .lock()
                             .unwrap()
                             .get(&run_uuid)
-                            .unwrap()
-                            .clone();
-                        response_tx.send(log_sender.subscribe()).unwrap();
+                        {
+                            let _ = response_tx.send(log_sender.subscribe());
+                        }
                     }
                     ToEdgeMessage::WatchOverview { response_tx } => {
                         let latest_auto_scripts_overview =
                             latest_auto_scripts_overview.lock().unwrap().clone();
 
-                        response_tx
-                            .send((
-                                latest_auto_scripts_overview,
-                                incoming_auto_scripts_tx.subscribe(),
-                            ))
-                            .unwrap();
+                        let _ = response_tx.send((
+                            latest_auto_scripts_overview,
+                            incoming_auto_scripts_tx.subscribe(),
+                        ));
                     }
                     ToEdgeMessage::WatchHardware { response_tx } => {
                         let _ = response_tx.send((
-                            hardware_states_tx.borrow().clone(), // .clone() gets the owned HashMap out of the watch::Ref
+                            hardware_states_tx.borrow().clone(),
                             hardware_states_tx.subscribe(),
                         ));
                     }

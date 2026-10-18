@@ -18,6 +18,7 @@ jobs:
         include:
           - name: auto-drive-cloud
           - name: auto-drive-edge
+          - name: auto-drive-web
 
     steps:
       - name: Checkout repository

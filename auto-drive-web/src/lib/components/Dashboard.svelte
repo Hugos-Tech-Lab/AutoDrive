@@ -36,7 +36,7 @@
   </div>
 </div>
 
-<button type="button" class="button block">The Beginner Car</button>
+<!-- <button type="button" class="button block">The Beginner Car</button> -->
 
 <LiveHardwareBanner bind:selectedBuild />
 
@@ -55,7 +55,6 @@
     {/each}
   </div>
 {:else}
-  <!-- Sub-menu for Hardware items like "TBC 001" -->
   <div class="button-container">
     {#each buildOptions as buildOption}
       <button
@@ -79,6 +78,14 @@
     <button type="button" class="button block">Run Script</button>
     <button type="button" class="button block">Navigate To Start</button>
   </div>
+{/if}
+
+{#if selectedBuild === "Time Trials" && selectedPlayOption === "Leaderboard"}
+  <h2 class="text-2xl mb-4 min-w-0 flex-1">No leaderboard yet.</h2>
+{/if}
+
+{#if selectedBuild === "Time Trials" && selectedPlayOption === "Algorithms"}
+  <h2 class="text-2xl mb-4 min-w-0 flex-1">No algorithms yet.</h2>
 {/if}
 
 {#if selectedBuild !== "Time Trials" && selectedBuildOption === "Telemetry"}
@@ -106,5 +113,9 @@
 
   .row .button {
     width: auto;
+  }
+
+  .button.selected {
+    background-color: #a4aeff;
   }
 </style>

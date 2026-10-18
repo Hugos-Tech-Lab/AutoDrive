@@ -296,6 +296,7 @@ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Leaderboard"
 msgstr ""
 
@@ -429,9 +430,8 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "The Beginner Car"
-msgstr ""
+#~ msgid "The Beginner Car"
+#~ msgstr ""
 
 #~ msgid "The Beginner Car V"
 #~ msgstr ""
@@ -621,6 +621,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Algorithms"
 msgstr ""
 
@@ -654,6 +655,8 @@ msgstr ""
 #~ msgid "Experiment"
 #~ msgstr ""
 
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
@@ -1151,4 +1154,18 @@ msgstr ""
 #. 0: selectedBuild
 #: src/lib/components/Dashboard.svelte
 msgid "Car Control: {0}"
+msgstr ""
+
+#~ msgid "No leaderboard yet!"
+#~ msgstr ""
+
+#~ msgid "No algorithms yet!"
+#~ msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "No leaderboard yet."
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "No algorithms yet."
 msgstr ""

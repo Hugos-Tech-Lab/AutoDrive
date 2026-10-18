@@ -296,6 +296,7 @@ msgstr "Auto Drive"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Leaderboard"
 msgstr "Leaderboard"
 
@@ -429,9 +430,8 @@ msgstr "Control a real small machine remotely"
 msgid "Status"
 msgstr "Status"
 
-#: src/lib/components/Dashboard.svelte
-msgid "The Beginner Car"
-msgstr "The Beginner Car"
+#~ msgid "The Beginner Car"
+#~ msgstr "The Beginner Car"
 
 #~ msgid "The Beginner Car V"
 #~ msgstr "The Beginner Car V"
@@ -621,6 +621,7 @@ msgstr "Sign In / Sign up"
 #~ msgstr "Logs"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Algorithms"
 msgstr "Algorithms"
 
@@ -654,6 +655,8 @@ msgstr "Algorithms"
 #~ msgid "Experiment"
 #~ msgstr "Experiment"
 
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
@@ -1152,3 +1155,17 @@ msgstr "Unknown"
 #: src/lib/components/Dashboard.svelte
 msgid "Car Control: {0}"
 msgstr "Car Control: {0}"
+
+#~ msgid "No leaderboard yet!"
+#~ msgstr "No leaderboard yet!"
+
+#~ msgid "No algorithms yet!"
+#~ msgstr "No algorithms yet!"
+
+#: src/lib/components/Dashboard.svelte
+msgid "No leaderboard yet."
+msgstr "No leaderboard yet."
+
+#: src/lib/components/Dashboard.svelte
+msgid "No algorithms yet."
+msgstr "No algorithms yet."

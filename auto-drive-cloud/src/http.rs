@@ -4,6 +4,7 @@ use crate::{edge_client::Hardware, http::{autoscript::{cancel::cancel, logs::aut
 use crate::http::hardware_telemetry::hardware_telemetry;
 pub mod logs;
 pub mod autoscript;
+pub mod hardware;
 pub mod hardware_telemetry;
 
 pub async fn http_server(receiver: Hardware) {

@@ -21,7 +21,7 @@ use tokio::{
 };
 use uuid::Uuid;
 
-use crate::{devices_config::DeviceId, the_beginner_car_comms::TheBeginnerCarComms};
+use crate::{the_beginner_car_comms::TheBeginnerCarComms};
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
@@ -168,7 +168,7 @@ impl AutoScriptManager {
             let the_beginner_car = state
                 .the_beginner_cars
                 .iter()
-                .find(|the_beginner_car| the_beginner_car.device_id == DeviceId::TcA)
+                .find(|the_beginner_car| the_beginner_car.device_id == "TBC 001".to_string())
                 .unwrap();
 
             let (sender, _) = broadcast::channel(100);
@@ -274,7 +274,7 @@ impl AutoScriptManager {
     pub async fn try_start_next_auto_script(
         the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>,
     ) {
-        let target_device_id = DeviceId::TcA; // In the future, find available device.
+        let target_device_id = "TBC 001".to_string(); // In the future, find available device.
 
         let target_device_outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>;
         let script_to_start_content;
@@ -380,7 +380,7 @@ impl AutoScriptManager {
 
     pub async fn on_hardware_response_auto_script_stopped(
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
-        device_id: DeviceId,
+        device_id: String,
     ) {
         println!("STOPPED FROM HARDWARE");
 

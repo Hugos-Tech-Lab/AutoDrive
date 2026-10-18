@@ -5,16 +5,10 @@ pub enum DeviceCategory {
     TheBeginnerCar,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub enum DeviceId {
-  TcA,
-  TcB
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HardwareMetadata {
     pub device_category: DeviceCategory,
-    pub device_id: DeviceId,
+    pub device_id: String,
     pub mdns_address: String,
 }
 

@@ -1,19 +1,14 @@
 use std::{pin::Pin, sync::Arc};
 
 use futures_util::{Stream, StreamExt};
-use tokio_stream::wrappers::BroadcastStream;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
 use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, CancelAutoScriptResponse, RunAutoScriptRequest,
-        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
-        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchTheBeginnerCarEventsRequest,
-        WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
-    },
-    auto_script_manager::{AutoScriptManager},
-    grpc_service::types::to_grpc_log_message,
-    the_beginner_car_comms::TheBeginnerCarComms,
+        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware, RunAutoScriptRequest, RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse, WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
+    }, auto_script_manager::AutoScriptManager, grpc_service::types::to_grpc_log_message, the_beginner_car_comms::TheBeginnerCarComms,
 };
 
 pub mod types;
@@ -66,6 +61,9 @@ impl AutoDriveEdgeService for GrpcService {
 
     type WatchAutoScriptOverviewStream =
         Pin<Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>>;
+
+    type WatchHardwareStatusStream =
+        Pin<Box<dyn Stream<Item = Result<WatchHardwareStatusResponse, Status>> + Send + 'static>>;
 
     async fn watch_auto_script(
         &self,
@@ -157,5 +155,58 @@ impl AutoDriveEdgeService for GrpcService {
         );
 
         Ok(Response::new(Box::pin(stream)))
+    }
+
+    async fn watch_hardware_status(
+        &self,
+        _request: Request<WatchHardwareStatusRequest>,
+    ) -> Result<Response<Self::WatchHardwareStatusStream>, Status> {
+        let (tx, rx) = mpsc::channel(128);
+
+        let mut initial_hardware = Vec::new();
+        
+        for car_entry in self.the_beginner_cars.iter() {
+            let comms = car_entry;
+            
+            initial_hardware.push(Hardware {
+                id: comms.device_id.clone(),
+                category: "TheBeginnerCar".to_string(),
+                is_connected: *comms.connected_rx.borrow(),
+            });
+        }
+
+        let initial_msg = WatchHardwareStatusResponse {
+            hardware: initial_hardware,
+        };
+        
+        if tx.send(Ok(initial_msg)).await.is_err() {
+            return Ok(Response::new(Box::pin(ReceiverStream::new(rx))));
+        }
+
+        for car_entry in self.the_beginner_cars.iter() {
+            let comms = car_entry.clone();
+            let mut is_connected_rx = comms.connected_rx.clone();
+            let tx_clone = tx.clone();
+
+            tokio::spawn(async move {
+                while is_connected_rx.changed().await.is_ok() {
+                    let current_state = *is_connected_rx.borrow();
+                    
+                    let update_msg = WatchHardwareStatusResponse {
+                        hardware: vec![Hardware {
+                            id: comms.device_id.clone(),
+                            category: "TheBeginnerCar".to_string(),
+                            is_connected: current_state,
+                        }],
+                    };
+
+                    if tx_clone.send(Ok(update_msg)).await.is_err() {
+                        break;
+                    }
+                }
+            });
+        }
+
+        Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
     }
 }

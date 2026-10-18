@@ -8,6 +8,19 @@ service AutoDriveEdgeService {
   rpc WatchAutoScript(WatchAutoScriptRequest) returns (stream WatchAutoScriptResponse);
   rpc WatchAutoScriptOverview(WatchAutoScriptOverviewRequest) returns (stream WatchAutoScriptOverviewResponse);
   rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
+  rpc WatchHardwareStatus(WatchHardwareStatusRequest) returns (stream WatchHardwareStatusResponse);
+}
+
+message WatchHardwareStatusRequest {}
+
+message WatchHardwareStatusResponse {
+  repeated Hardware hardware = 1;
+}
+
+message Hardware {
+  string id = 1;
+  string category = 2;
+  bool is_connected = 3;
 }
 
 message WatchAutoScriptOverviewRequest {}

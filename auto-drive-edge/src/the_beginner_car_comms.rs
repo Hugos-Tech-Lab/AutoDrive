@@ -11,21 +11,16 @@ use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::{TcpStream, lookup_host},
-    select,
-    sync::{broadcast, mpsc},
-    task::JoinHandle,
-    time::timeout,
+    io::{AsyncReadExt, AsyncWriteExt}, net::{TcpStream, lookup_host}, select, sync::{broadcast, mpsc, watch}, task::JoinHandle, time::timeout,
 };
 
-use crate::devices_config::{DeviceId, HardwareMetadata};
+use crate::devices_config::{HardwareMetadata};
 
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
-    pub device_id: DeviceId,
+    pub device_id: String,
     pub mdns_address: String,
-    pub is_connected: Arc<AtomicBool>, // TODO: make this work
+    pub connected_rx: watch::Receiver<bool>,
     pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
 }
@@ -38,14 +33,14 @@ impl TheBeginnerCarComms {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
         let (incoming_tx, _) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);
 
-        let is_connected = Arc::new(AtomicBool::new(false));
+        let (connected_tx, connected_rx) = watch::channel(false);
 
         let connection_handle = tokio::spawn({
             let mdns_address = device_metadata.mdns_address.clone();
             let incoming_tx = incoming_tx.clone();
-            let is_connected = is_connected.clone();
+            let connected_tx = connected_tx.clone();
             async {
-                Self::long_lived_connection(mdns_address, internal_receiver, incoming_tx, is_connected).await;
+                Self::long_lived_connection(mdns_address, internal_receiver, incoming_tx, connected_tx).await;
             }
         });
 
@@ -53,7 +48,7 @@ impl TheBeginnerCarComms {
             Self {
                 device_id: device_metadata.device_id,
                 mdns_address: device_metadata.mdns_address,
-                is_connected,
+                connected_rx,
                 outgoing_tx,
                 incoming_tx,
             },
@@ -62,14 +57,14 @@ impl TheBeginnerCarComms {
     }
 
     pub fn is_connected(&self) -> bool {
-        self.is_connected.load(Ordering::Relaxed)
+        self.connected_rx.borrow().clone()
     }
 
     async fn long_lived_connection(
         mdns_address: String,
         mut receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
-        is_connected: Arc<AtomicBool>
+        connected_tx: watch::Sender<bool>
     ) {
         loop {
             let m_dns = mdns_address.clone();
@@ -92,13 +87,13 @@ impl TheBeginnerCarComms {
                 .await
             {
                 Ok(Ok(stream)) => {
-                    is_connected.store(true, Ordering::Relaxed);
+                    connected_tx.send(true).unwrap();
                     println!("Connected to {host}.");
                     stream
                 }
 
                 Ok(Err(error)) => {
-                    is_connected.store(false, Ordering::Relaxed);
+                    connected_tx.send(false).unwrap();
                     let addr = addr.clone();
                     eprintln!(
                         "Failed to connect to {addr} error: {error}. Trying again in 10 seconds"
@@ -153,12 +148,12 @@ impl TheBeginnerCarComms {
                             }
                             Ok(Err(e)) => {
                                 eprintln!("Error reading from car: {e}");
-                                is_connected.store(false, Ordering::Relaxed);
+                                connected_tx.send(false).unwrap();
                                 break;
                             }
                             Err(_) => {
                                 eprintln!("Read timeout: Car silently disconnected or lost power.");
-                                is_connected.store(false, Ordering::Relaxed);
+                                connected_tx.send(false).unwrap();
                                 break;
                             }
                         }
@@ -172,12 +167,12 @@ impl TheBeginnerCarComms {
 
                                 if let Err(e) = stream_write.write_all(&bytes).await {
                                     eprintln!("Error writing to car: {e}");
-                                    is_connected.store(false, Ordering::Relaxed);
+                                    connected_tx.send(false).unwrap();
                                     break;
                                 }
                             }
                             None => {
-                                is_connected.store(false, Ordering::Relaxed); 
+                                connected_tx.send(false).unwrap();
                                 break;
                             }
                         }

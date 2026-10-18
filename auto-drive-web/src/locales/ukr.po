@@ -80,9 +80,7 @@ msgid "Remote Firmware Manager"
 msgstr ""
 
 #. 0: new Date().getFullYear()
-#. 0: new Date().getFullYear()
 #: src/lib/Footer.svelte
-#: src/lib/components/Footer.svelte
 msgid "© {0} Hugo Luccarini. All Rights Reserved. Czech Business Number (IČO): 29876834."
 msgstr ""
 

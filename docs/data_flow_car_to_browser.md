@@ -15,8 +15,8 @@ flowchart LR
 
     E["Auto Drive Edge <br/> <br/> - keeps track of all devices"]
     C["Auto Drive Cloud <br/> <br/> - user authentication / authorization <br/> - keeps track of the state of all devices "]
-    W2["John Doe Web Browser"]
-    W1["Jan Novák Web Browser"]
+    W2["Auto Drive Web (i.e. John Doe Web Browser)"]
+    W1["Auto Drive Web (i.e. Jan Novák Web Browser)"]
 
     S31 -->|TCP| E
     S32 -->|TCP| E

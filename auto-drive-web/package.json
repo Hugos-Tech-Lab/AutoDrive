@@ -13,7 +13,8 @@
     "translations": "wuchale",
     "translations-check": "wuchale check --full && pnpm run translations-check-full",
     "translations-check-full": "node -e \"const s=JSON.parse(require('child_process').execSync('wuchale status --json',{encoding:'utf8'}));const x=s.flatMap(a=>a.storage?.details??[]).filter(d=>d?.untranslated>0);if(x.length){console.error(x.map(d=>d.locale+': '+d.untranslated+' untranslated').join('\\n'));process.exit(1)}\"",
-    "translations-clean": "wuchale --clean"
+    "translations-clean": "wuchale --clean",
+    "prod": "kubectl rollout restart deployment autodrive-web-deployment"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",

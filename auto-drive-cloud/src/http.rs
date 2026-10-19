@@ -27,7 +27,7 @@ pub async fn http_server(receiver: Hardware) {
         let hardware_telemetry = hardware_telemetry(receiver.logs);
 
         let cors = warp::cors()
-            .allow_origin("http://100.96.0.1:50051")
+            .allow_origin("http://localhost:5173")
             .allow_methods(vec!["GET", "POST", "OPTIONS"])
             .allow_headers(vec!["content-type"]);
 

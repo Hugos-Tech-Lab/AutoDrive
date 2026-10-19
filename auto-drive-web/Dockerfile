@@ -14,7 +14,6 @@ FROM nginx:alpine AS production
 
 # Copy compiled static assets (e.g. dist/ or build/) to Nginx HTML root
 COPY --from=build /workspace/dist /usr/share/nginx/html
-COPY --from=build /workspace/nginx_common.conf /etc/nginx/nginx_common.conf
 COPY --from=build /workspace/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

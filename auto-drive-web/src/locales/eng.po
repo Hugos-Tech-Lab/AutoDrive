@@ -7,20 +7,15 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/lib/Header.svelte
 #: src/lib/components/Header.svelte
 #, url:main
 msgid "/"
 msgstr "/"
 
-#. /profile
-#. /sign-in
 #. /dashboard
 #. /dashboard
 #. /profile
 #. /dashboard
-#: src/lib/UserAccount.svelte
-#: src/lib/UserAccount.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/LandingPage.svelte
 #: src/lib/components/UserAccount.svelte
@@ -29,13 +24,11 @@ msgstr "/"
 msgid "/**"
 msgstr "/**"
 
-#: src/lib/Logo.svelte
 #: src/lib/components/Logo.svelte
 #: src/routes/[locale]/location/+page.svelte
 msgid "Hugo's Tech Lab"
 msgstr "Hugo's Tech Lab"
 
-#: src/lib/Translations.svelte
 #: src/lib/components/Translations.svelte
 msgid "ENG"
 msgstr "ENG"
@@ -53,17 +46,14 @@ msgstr "Dark"
 msgid "Not found"
 msgstr "Not found"
 
-#: src/lib/Translations.svelte
 #: src/lib/components/Translations.svelte
 msgid "CZE"
 msgstr "CZE"
 
-#: src/lib/Translations.svelte
 #: src/lib/components/Translations.svelte
 msgid "UKR"
 msgstr "UKR"
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/routes/[locale]/sign-in/+page.svelte
 msgid "Sign in"
@@ -74,97 +64,72 @@ msgstr "Sign in"
 msgid "Redirecting to {0}..."
 msgstr "Redirecting to {0}..."
 
-#: src/lib/Header.svelte
-#: src/lib/LandingPage.svelte
-msgid "Remote Firmware Manager"
-msgstr "Remote Firmware Manager"
+#~ msgid "Remote Firmware Manager"
+#~ msgstr "Remote Firmware Manager"
 
-#. 0: new Date().getFullYear()
-#: src/lib/Footer.svelte
-msgid "© {0} Hugo Luccarini. All Rights Reserved. Czech Business Number (IČO): 29876834."
-msgstr "© {0} Hugo Luccarini. All Rights Reserved. Czech Business Number (IČO): 29876834."
+#~ msgid "© {0} Hugo Luccarini. All Rights Reserved. Czech Business Number (IČO): 29876834."
+#~ msgstr "© {0} Hugo Luccarini. All Rights Reserved. Czech Business Number (IČO): 29876834."
 
 #: src/routes/[locale]/settings/+page.svelte
 msgid "Settings"
 msgstr "Settings"
 
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Your email"
 msgstr "Your email"
 
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Email"
 msgstr "Email"
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Send magic link"
 msgstr "Send magic link"
 
-#: src/lib/Account.svelte
 #: src/lib/components/Account.svelte
 msgid "Website"
 msgstr "Website"
 
-#: src/lib/Account.svelte
-msgid "Saving ..."
-msgstr "Saving ..."
+#~ msgid "Saving ..."
+#~ msgstr "Saving ..."
 
-#: src/lib/Account.svelte
-msgid "Update profile"
-msgstr "Update profile"
+#~ msgid "Update profile"
+#~ msgstr "Update profile"
 
-#. 0: session.user.email
-#: src/lib/Account.svelte
-msgid "Email: {0}"
-msgstr "Email: {0}"
+#~ msgid "Email: {0}"
+#~ msgstr "Email: {0}"
 
-#: src/lib/Account.svelte
 #: src/lib/components/Account.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Name"
 msgstr "Name"
 
-#: src/lib/Account.svelte
 #: src/lib/components/Account.svelte
 msgid "Sign Out"
 msgstr "Sign Out"
 
-#: src/routes/[locale]/settings/+page.svelte
-msgid "Logged Out"
-msgstr "Logged Out"
+#~ msgid "Logged Out"
+#~ msgstr "Logged Out"
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Sign in via password"
 msgstr "Sign in via password"
 
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Password"
 msgstr "Password"
 
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Your password"
 msgstr "Your password"
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Sign up"
 msgstr "Sign up"
@@ -213,40 +178,30 @@ msgstr "Model:"
 msgid "Firmware"
 msgstr "Firmware"
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Check your email for the login link!"
 msgstr "Check your email for the login link!"
 
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Something went wrong."
 msgstr "Something went wrong."
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Account created! Check your email if confirmation is required."
 msgstr "Account created! Check your email if confirmation is required."
 
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Loading..."
 msgstr "Loading..."
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Sign in via a magic link sent to your email."
 msgstr "Sign in via a magic link sent to your email."
 
-#: src/lib/Auth.svelte
 #: src/lib/components/Auth.svelte
 msgid "Create account"
 msgstr "Create account"
@@ -254,17 +209,14 @@ msgstr "Create account"
 #~ msgid "Authentication failed."
 #~ msgstr "Authentication failed."
 
-#: src/lib/LandingPage.svelte
-msgid "Manage software on real physical hardware devices in the lab."
-msgstr "Manage software on real physical hardware devices in the lab."
+#~ msgid "Manage software on real physical hardware devices in the lab."
+#~ msgstr "Manage software on real physical hardware devices in the lab."
 
-#: src/lib/LandingPage.svelte
-msgid "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
-msgstr "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
+#~ msgid "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
+#~ msgstr "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
 
-#: src/lib/UserAccount.svelte
-msgid "SIGN IN / SIGN UP"
-msgstr "SIGN IN / SIGN UP"
+#~ msgid "SIGN IN / SIGN UP"
+#~ msgstr "SIGN IN / SIGN UP"
 
 #~ msgid "Sign out"
 #~ msgstr "Sign out"
@@ -591,6 +543,7 @@ msgstr "Status"
 #~ msgstr "Log In"
 
 #: src/lib/components/Dashboard.svelte
+#: src/routes/[locale]/settings/+page.svelte
 msgid "Sign In / Sign up"
 msgstr "Sign In / Sign up"
 
@@ -1167,3 +1120,9 @@ msgstr "No leaderboard yet."
 #: src/lib/components/Dashboard.svelte
 msgid "No algorithms yet."
 msgstr "No algorithms yet."
+
+#~ msgid "THINK YOU CAN CODE? <0>Prove</0> it."
+#~ msgstr "THINK YOU CAN CODE? <0>Prove</0> it."
+
+#~ msgid "THINK YOU CAN CODE? <0>Prove</0> it.."
+#~ msgstr "THINK YOU CAN CODE? <0>Prove</0> it.."

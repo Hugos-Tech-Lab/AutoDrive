@@ -7,7 +7,7 @@
   let hardwareList = $state<HardwareData[]>([]);
 
   onMount(() => {
-    const sse = new EventSource("http://localhost:3030/hardware/overview");
+    const sse = new EventSource("https://cloud-autodrive.hugostechlab.com/hardware/overview");
 
     sse.addEventListener("overview", (event) => {
       try {

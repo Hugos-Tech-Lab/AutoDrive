@@ -41,7 +41,7 @@
     }, 1000);
 
     // 2. Setup the SSE connection
-    const source = new EventSource("http://localhost:3030/autoscript/overview");
+    const source = new EventSource("https://cloud-autodrive.hugostechlab.com/autoscript/overview");
 
     source.onopen = () => {
       connectionStatus = "Connected";

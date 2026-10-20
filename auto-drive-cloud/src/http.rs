@@ -27,9 +27,10 @@ pub async fn http_server(receiver: Hardware) {
         let hardware_telemetry = hardware_telemetry(receiver.logs);
 
         let cors = warp::cors()
-            .allow_origin("http://localhost:5173")
+            .allow_origin("https://autodrive.hugostechlab.com")
             .allow_methods(vec!["GET", "POST", "OPTIONS"])
-            .allow_headers(vec!["content-type"]);
+            .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+            .allow_headers(vec!["content-type", "authorization"]);
 
         let routes = watch_logs
             .or(run)

@@ -15,7 +15,7 @@
 
   onMount(() => {
     const source = new EventSource(
-      "http://localhost:3030/hardware_telemetry"
+      "https://cloud-autodrive.hugostechlab.com/hardware_telemetry"
     );
 
     source.onopen = () => {

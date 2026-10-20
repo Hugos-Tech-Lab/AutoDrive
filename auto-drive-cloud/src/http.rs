@@ -40,7 +40,7 @@ pub async fn http_server(receiver: Hardware) {
             .or(hardware_overview)
             .with(cors);
 
-        let address = ([127, 0, 0, 1], 3030);
+        let address = ([0, 0, 0, 0], 3030);
         println!("serving HTTP to {address:?}");
 
         warp::serve(routes).run(address).await;

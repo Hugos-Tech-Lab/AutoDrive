@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="http://127.0.0.1:3030/autoscript"
+BASE_URL="https://cloud-autodrive.hugostechlab.com/autoscript"
 
 # --- Authentication Requirement ---
 # Look for .env in current directory, then script's directory

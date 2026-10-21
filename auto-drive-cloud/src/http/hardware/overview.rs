@@ -60,8 +60,7 @@ pub fn hardware_overview(
                                 .event("overview")
                                 .json_data(&state)
                                 .unwrap_or_else(|_| warp::sse::Event::default().data("{}")),
-                        )),
-                        _ => None,
+                        ))
                     }
                 });
 

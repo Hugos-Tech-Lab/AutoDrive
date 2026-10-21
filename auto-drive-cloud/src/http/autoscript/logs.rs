@@ -35,6 +35,7 @@ pub struct TimeTrialData {
     pub queue: Vec<TimeTrialQueueEntry>,
 }
 
+// TODO: fix this and use this.
 // 2. The new GET endpoint for SSE streaming
 pub fn autoscript_watch(
     hardware: Hardware, // Assuming you need to pass state to fetch real queue data
@@ -43,7 +44,7 @@ pub fn autoscript_watch(
     warp::path!("autoscript" / "watch")
         .and(warp::get())
         .and_then(move || {
-            let hardware = hardware.clone();
+            let _hardware = hardware.clone();
 
             async move {
                 // Set up a 10-second tick interval for updates

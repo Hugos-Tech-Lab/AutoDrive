@@ -8,9 +8,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 use tokio::sync::{
     broadcast::{self, Receiver, Sender},
-    mpsc,
-    oneshot,
-    watch,
+    mpsc, oneshot, watch,
 };
 use tokio::time::sleep;
 use tokio_stream::StreamExt;
@@ -42,10 +40,7 @@ pub enum ToEdgeMessage {
         response_tx: oneshot::Sender<(AutoScripts, Receiver<AutoScripts>)>,
     },
     WatchHardware {
-        response_tx: oneshot::Sender<(
-            HardwareHashMap,
-            watch::Receiver<HardwareHashMap>,
-        )>,
+        response_tx: oneshot::Sender<(HardwareHashMap, watch::Receiver<HardwareHashMap>)>,
     },
 }
 
@@ -72,7 +67,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         let auto_drive_edge_ip = "http://127.0.0.1:50051";
         #[cfg(feature = "production")]
         let auto_drive_edge_ip = "http://100.96.0.1:50051";
-        
+
         match AutoDriveEdgeServiceClient::connect(auto_drive_edge_ip).await {
             Ok(c) => {
                 println!("Successfully connected to edge service.");
@@ -86,8 +81,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     };
 
     let (incoming_tx, _) = broadcast::channel::<Event>(100);
-    let (hardware_states_tx, _) =
-        watch::channel::<HardwareHashMap>(HashMap::new());
+    let (hardware_states_tx, _) = watch::channel::<HardwareHashMap>(HashMap::new());
 
     let latest_auto_scripts_overview = Arc::new(Mutex::new(AutoScripts {
         running: vec![],
@@ -117,14 +111,18 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                     }
                                 }
                                 Err(err) => {
-                                    eprintln!("Beginner car event stream disconnected: {err}. Reconnecting...");
+                                    eprintln!(
+                                        "Beginner car event stream disconnected: {err}. Reconnecting..."
+                                    );
                                     break;
                                 }
                             }
                         }
                     }
                     Err(err) => {
-                        eprintln!("Failed to subscribe to beginner car events: {err}. Retrying in 5s...");
+                        eprintln!(
+                            "Failed to subscribe to beginner car events: {err}. Retrying in 5s..."
+                        );
                     }
                 }
                 sleep(Duration::from_secs(5)).await;
@@ -137,7 +135,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
         let mut client = client.clone();
         let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
-        
+
         async move {
             loop {
                 match client
@@ -150,21 +148,26 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             match result {
                                 Ok(event) => {
                                     if let Some(event_scripts) = event.scripts {
-                                        let _ = incoming_auto_scripts_tx.send(event_scripts.clone());
+                                        let _ =
+                                            incoming_auto_scripts_tx.send(event_scripts.clone());
                                         let mut latest_overview =
                                             latest_auto_scripts_overview.lock().unwrap();
                                         *latest_overview = event_scripts;
                                     }
                                 }
                                 Err(err) => {
-                                    eprintln!("Auto script overview stream disconnected: {err}. Reconnecting...");
+                                    eprintln!(
+                                        "Auto script overview stream disconnected: {err}. Reconnecting..."
+                                    );
                                     break;
                                 }
                             }
                         }
                     }
                     Err(err) => {
-                        eprintln!("Failed to subscribe to auto script overview: {err}. Retrying in 5s...");
+                        eprintln!(
+                            "Failed to subscribe to auto script overview: {err}. Retrying in 5s..."
+                        );
                     }
                 }
                 sleep(Duration::from_secs(5)).await;
@@ -175,7 +178,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     tokio::spawn({
         let hardware_states_tx = hardware_states_tx.clone();
         let mut client = client.clone();
-        
+
         async move {
             loop {
                 match client
@@ -201,14 +204,18 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                     });
                                 }
                                 Err(err) => {
-                                    eprintln!("Hardware status stream disconnected: {err}. Reconnecting...");
+                                    eprintln!(
+                                        "Hardware status stream disconnected: {err}. Reconnecting..."
+                                    );
                                     break;
                                 }
                             }
                         }
                     }
                     Err(err) => {
-                        eprintln!("Failed to subscribe to hardware status: {err}. Retrying in 5s...");
+                        eprintln!(
+                            "Failed to subscribe to hardware status: {err}. Retrying in 5s..."
+                        );
                     }
                 }
                 sleep(Duration::from_secs(5)).await;
@@ -268,7 +275,9 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             }
                             let _ = response_tx.send(run_uuid.clone());
                         } else {
-                            eprintln!("Failed to start auto script - service might be temporarily unavailable.");
+                            eprintln!(
+                                "Failed to start auto script - service might be temporarily unavailable."
+                            );
                         }
                     }
                     ToEdgeMessage::CancelAutoScript { run_uuid } => {
@@ -280,10 +289,8 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         run_uuid,
                         response_tx,
                     } => {
-                        if let Some(log_sender) = the_beginner_car_auto_scripts
-                            .lock()
-                            .unwrap()
-                            .get(&run_uuid)
+                        if let Some(log_sender) =
+                            the_beginner_car_auto_scripts.lock().unwrap().get(&run_uuid)
                         {
                             let _ = response_tx.send(log_sender.subscribe());
                         }

@@ -3,6 +3,11 @@ name = "auto-drive-edge"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["development"]
+development = []
+production = []
+
 [dependencies]
 the-beginner-car-tcp-protocol = { path = "../firmware/the-beginner-car-wifi-firmware/api/the-beginner-car-tcp-protocol" }
 gilrs = { version = "0.11.2", default-features = false, features = [

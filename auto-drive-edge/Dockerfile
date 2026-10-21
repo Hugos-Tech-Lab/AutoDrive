@@ -1,5 +1,8 @@
 FROM rust:1.99.1 AS build
 
+ARG GIT_HASH
+ENV GIT_HASH=${GIT_HASH}
+
 RUN apt-get update && apt-get install -y \
     protobuf-compiler \
     pkg-config \
@@ -13,7 +16,7 @@ COPY auto-drive-edge .
 
 ENV PROTOC=/usr/bin/protoc
 
-RUN cargo build --release
+RUN cargo build --release --no-default-features --features production
 
 FROM debian:bookworm-slim AS production
 

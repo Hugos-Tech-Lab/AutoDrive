@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  packages: write # Required to push images to GHCR
+  packages: write
 
 jobs:
   build-and-push:
@@ -32,7 +32,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }} # Automatically provided by GitHub
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker metadata
         id: meta
@@ -50,6 +50,10 @@ jobs:
           file: ./${{ matrix.name }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          build-args: |
+            GIT_HASH=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

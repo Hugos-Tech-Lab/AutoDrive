@@ -40,6 +40,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "futures-util",
+ "log",
  "prost",
  "serde",
  "serde_json",

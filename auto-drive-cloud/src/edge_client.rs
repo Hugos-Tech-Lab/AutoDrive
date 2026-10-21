@@ -66,7 +66,12 @@ pub struct Hardware {
 
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     let mut client = loop {
-        match AutoDriveEdgeServiceClient::connect("http://100.96.0.1:50051").await {
+        #[cfg(feature = "development")]
+        let auto_drive_edge_ip = "http://127.0.0.1:50051";
+        #[cfg(feature = "production")]
+        let auto_drive_edge_ip = "http://100.96.0.1:50051";
+        
+        match AutoDriveEdgeServiceClient::connect(auto_drive_edge_ip).await {
             Ok(c) => {
                 println!("Successfully connected to edge service.");
                 break c;

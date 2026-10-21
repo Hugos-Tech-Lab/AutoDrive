@@ -9,7 +9,7 @@ COPY auto-drive-cloud .
 
 ENV PROTOC=/usr/bin/protoc
 
-RUN cargo build --release
+RUN cargo build --release --no-default-features --features production
 
 FROM debian:bookworm-slim AS production
 

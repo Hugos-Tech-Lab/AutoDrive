@@ -1,11 +1,4 @@
-use std::{
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
-    thread,
-    time::Duration,
-};
+use std::{thread, time::Duration};
 
 use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,

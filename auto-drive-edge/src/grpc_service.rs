@@ -7,8 +7,15 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware, RunAutoScriptRequest, RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse, WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
-    }, auto_script_manager::AutoScriptManager, grpc_service::types::to_grpc_log_message, the_beginner_car_comms::TheBeginnerCarComms,
+        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware, RunAutoScriptRequest,
+        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
+        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwareStatusRequest,
+        WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
+        WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
+    },
+    auto_script_manager::AutoScriptManager,
+    grpc_service::types::to_grpc_log_message,
+    the_beginner_car_comms::TheBeginnerCarComms,
 };
 
 pub mod types;
@@ -59,8 +66,9 @@ impl AutoDriveEdgeService for GrpcService {
     type WatchAutoScriptStream =
         Pin<Box<dyn Stream<Item = Result<WatchAutoScriptResponse, Status>> + Send + 'static>>;
 
-    type WatchAutoScriptOverviewStream =
-        Pin<Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>>;
+    type WatchAutoScriptOverviewStream = Pin<
+        Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>,
+    >;
 
     type WatchHardwareStatusStream =
         Pin<Box<dyn Stream<Item = Result<WatchHardwareStatusResponse, Status>> + Send + 'static>>;
@@ -85,11 +93,9 @@ impl AutoDriveEdgeService for GrpcService {
 
         let live_stream = BroadcastStream::new(live_rx).filter_map(|result| async move {
             match result {
-                Ok(event) => {
-                    Some(Ok(WatchAutoScriptResponse {
-                        log_message: Some(to_grpc_log_message(event.log_message)),
-                    }))
-                }
+                Ok(event) => Some(Ok(WatchAutoScriptResponse {
+                    log_message: Some(to_grpc_log_message(event.log_message)),
+                })),
                 Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(skipped)) => {
                     eprintln!("Watch stream lagged; skipped {skipped} messages");
                     None
@@ -107,7 +113,8 @@ impl AutoDriveEdgeService for GrpcService {
         &self,
         _request: Request<WatchAutoScriptOverviewRequest>,
     ) -> Result<Response<Self::WatchAutoScriptOverviewStream>, Status> {
-        let (snapshot, queue_receiver) = self.auto_script_manager.watch_auto_script_overview().await;
+        let (snapshot, queue_receiver) =
+            self.auto_script_manager.watch_auto_script_overview().await;
 
         let current_snapshot = tokio_stream::once(Ok(WatchAutoScriptOverviewResponse {
             scripts: Some(snapshot.into()),
@@ -164,10 +171,10 @@ impl AutoDriveEdgeService for GrpcService {
         let (tx, rx) = mpsc::channel(128);
 
         let mut initial_hardware = Vec::new();
-        
+
         for car_entry in self.the_beginner_cars.iter() {
             let comms = car_entry;
-            
+
             initial_hardware.push(Hardware {
                 id: comms.device_id.clone(),
                 category: "TheBeginnerCar".to_string(),
@@ -178,7 +185,7 @@ impl AutoDriveEdgeService for GrpcService {
         let initial_msg = WatchHardwareStatusResponse {
             hardware: initial_hardware,
         };
-        
+
         if tx.send(Ok(initial_msg)).await.is_err() {
             return Ok(Response::new(Box::pin(ReceiverStream::new(rx))));
         }
@@ -191,7 +198,7 @@ impl AutoDriveEdgeService for GrpcService {
             tokio::spawn(async move {
                 while is_connected_rx.changed().await.is_ok() {
                     let current_state = *is_connected_rx.borrow();
-                    
+
                     let update_msg = WatchHardwareStatusResponse {
                         hardware: vec![Hardware {
                             id: comms.device_id.clone(),

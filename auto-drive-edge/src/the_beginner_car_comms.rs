@@ -11,10 +11,15 @@ use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt}, net::{TcpStream, lookup_host}, select, sync::{broadcast, mpsc, watch}, task::JoinHandle, time::timeout,
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpStream, lookup_host},
+    select,
+    sync::{broadcast, mpsc, watch},
+    task::JoinHandle,
+    time::timeout,
 };
 
-use crate::devices_config::{HardwareMetadata};
+use crate::devices_config::HardwareMetadata;
 
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
@@ -40,7 +45,13 @@ impl TheBeginnerCarComms {
             let incoming_tx = incoming_tx.clone();
             let connected_tx = connected_tx.clone();
             async {
-                Self::long_lived_connection(mdns_address, internal_receiver, incoming_tx, connected_tx).await;
+                Self::long_lived_connection(
+                    mdns_address,
+                    internal_receiver,
+                    incoming_tx,
+                    connected_tx,
+                )
+                .await;
             }
         });
 
@@ -64,7 +75,7 @@ impl TheBeginnerCarComms {
         mdns_address: String,
         mut receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
-        connected_tx: watch::Sender<bool>
+        connected_tx: watch::Sender<bool>,
     ) {
         loop {
             let m_dns = mdns_address.clone();

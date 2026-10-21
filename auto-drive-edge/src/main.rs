@@ -8,10 +8,10 @@ use opentelemetry_sdk::{metrics::SdkMeterProvider, trace::SpanExporter as _};
 use std::error::Error;
 
 pub mod auto_drive_edge_server;
+pub mod auto_script_manager;
 pub mod devices_config;
 pub mod grpc_service;
 pub mod the_beginner_car_comms;
-pub mod auto_script_manager;
 pub mod vehicle_hardware_telemetry;
 
 pub mod auto_drive_edge_service {
@@ -46,7 +46,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let device_config: DeviceConfig = toml::from_str(&contents)?;
     let auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
 
-    let grpc_service = GrpcService::new(auto_drive_edge_server.auto_script_manager, auto_drive_edge_server.the_beginner_cars.clone());
+    let grpc_service = GrpcService::new(
+        auto_drive_edge_server.auto_script_manager,
+        auto_drive_edge_server.the_beginner_cars.clone(),
+    );
 
     tokio::spawn(async move {
         let address = "0.0.0.0:50051".parse().unwrap();

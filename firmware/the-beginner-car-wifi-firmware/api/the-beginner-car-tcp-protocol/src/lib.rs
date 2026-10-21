@@ -14,7 +14,7 @@ pub enum LogLevel {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum LogSystemOrigin {
     WasmMcu,
-    WifiMcu
+    WifiMcu,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -23,7 +23,7 @@ pub struct LogMessage {
     pub level: LogLevel,
     pub target: String,
     pub message: String,
-    pub trace_id: Option<String>
+    pub trace_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -32,7 +32,7 @@ pub struct AutoScript {
     pub preprocessed_file_hash: String,
     pub run_number: u32,
     pub device_id: String,
-    pub script: Vec<u8>
+    pub script: Vec<u8>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,14 +40,14 @@ pub enum TheBeginnerCarIncomingMessages {
     SetMotorASpeed { speed: i8 },
     SetMotorBSpeed { speed: i8 },
     InformPositionFromCamera { x: i32, y: i32 },
-    CancelAutoScript { run_uuid : String },
+    CancelAutoScript { run_uuid: String },
     RunAutoScript { script: AutoScript },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TheBeginnerCarOutgoingMessages {
     Log {
-        log: LogMessage
+        log: LogMessage,
     },
     SystemState {},
     MotorASpeedUpdated {
@@ -65,8 +65,8 @@ pub enum TheBeginnerCarOutgoingMessages {
     },
     InfraredLedReadings {
         utmost_front_utmost_left: u16,
-        utmost_front_utmost_right: u16
-    }
+        utmost_front_utmost_right: u16,
+    },
 }
 
 /// Serializes a message with a 4-byte big-endian length prefix.

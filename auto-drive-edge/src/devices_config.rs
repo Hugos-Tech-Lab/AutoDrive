@@ -15,5 +15,5 @@ pub struct HardwareMetadata {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeviceConfig {
     // pub devices: Vec<HardwareMetadata>,
-    pub the_beginner_cars: Vec<HardwareMetadata>
+    pub the_beginner_cars: Vec<HardwareMetadata>,
 }

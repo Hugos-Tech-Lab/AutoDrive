@@ -59,7 +59,7 @@ impl VehicleHardwareTelemetry {
     }
 
     async fn the_beginner_car_long_lived_watcher(
-        id: String, // 
+        id: String, //
         mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
         gauges: VehicleHardwareTelemetryGauges,
     ) {
@@ -71,7 +71,10 @@ impl VehicleHardwareTelemetry {
         loop {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
-                    TheBeginnerCarOutgoingMessages::BatteryReading { motor_battery_voltage, mcu_battery_voltage } => {
+                    TheBeginnerCarOutgoingMessages::BatteryReading {
+                        motor_battery_voltage,
+                        mcu_battery_voltage,
+                    } => {
                         gauges
                             .motor_battery_voltage
                             .record(motor_battery_voltage.into(), attributes);

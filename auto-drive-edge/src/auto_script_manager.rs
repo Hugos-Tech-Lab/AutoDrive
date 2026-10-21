@@ -21,7 +21,7 @@ use tokio::{
 };
 use uuid::Uuid;
 
-use crate::{the_beginner_car_comms::TheBeginnerCarComms};
+use crate::the_beginner_car_comms::TheBeginnerCarComms;
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
@@ -364,8 +364,7 @@ impl AutoScriptManager {
                         )
                         .await;
                     }
-                    _ => {
-                    }
+                    _ => {}
                 },
                 Err(broadcast::error::RecvError::Lagged(skipped)) => {
                     eprintln!("Car watcher lagged; skipped {skipped} messages");

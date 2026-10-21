@@ -18,9 +18,7 @@ pub fn logs(
             let event_stream = BroadcastStream::new(receiver).filter_map(|result| async move {
                 match result {
                     Ok(Event::Log(log_event)) => {
-                        let Some(log) = log_event.log else {
-                            return None;
-                        };
+                        let log = log_event.log?;
 
                         Some(Ok::<_, Infallible>(
                             warp::sse::Event::default().event("log").data(log.message),

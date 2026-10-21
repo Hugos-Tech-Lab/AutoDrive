@@ -22,6 +22,8 @@ use crate::auto_drive_edge_service::v1::{
     watch_the_beginner_car_events_response::Event,
 };
 
+type HardwareHashMap = HashMap<String, HardwareDeviceState>;
+
 pub enum ToEdgeMessage {
     StartAutoScript {
         owner: String,
@@ -41,8 +43,8 @@ pub enum ToEdgeMessage {
     },
     WatchHardware {
         response_tx: oneshot::Sender<(
-            HashMap<String, HardwareDeviceState>,
-            watch::Receiver<HashMap<String, HardwareDeviceState>>,
+            HardwareHashMap,
+            watch::Receiver<HardwareHashMap>,
         )>,
     },
 }
@@ -61,7 +63,7 @@ pub struct Hardware {
     pub the_beginner_car_auto_scripts: Arc<Mutex<HashMap<String, Sender<LogMessage>>>>,
     pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
     pub watch_auto_scripts_overview: Sender<AutoScripts>,
-    pub hardware_states_tx: watch::Sender<HashMap<String, HardwareDeviceState>>,
+    pub hardware_states_tx: watch::Sender<HardwareHashMap>,
 }
 
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
@@ -85,7 +87,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
 
     let (incoming_tx, _) = broadcast::channel::<Event>(100);
     let (hardware_states_tx, _) =
-        watch::channel::<HashMap<String, HardwareDeviceState>>(HashMap::new());
+        watch::channel::<HardwareHashMap>(HashMap::new());
 
     let latest_auto_scripts_overview = Arc::new(Mutex::new(AutoScripts {
         running: vec![],

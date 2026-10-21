@@ -53,15 +53,13 @@ pub fn hardware_overview(
                     )
                 });
 
-                let update_stream = WatchStream::new(receiver).filter_map(|result| async move {
-                    match result {
-                        state => Some(Ok::<_, Infallible>(
-                            warp::sse::Event::default()
-                                .event("overview")
-                                .json_data(&state)
-                                .unwrap_or_else(|_| warp::sse::Event::default().data("{}")),
-                        ))
-                    }
+                let update_stream = WatchStream::new(receiver).filter_map(|state| async move {
+                    Some(Ok::<_, Infallible>(
+                        warp::sse::Event::default()
+                            .event("overview")
+                            .json_data(&state)
+                            .unwrap_or_else(|_| warp::sse::Event::default().data("{}")),
+                    ))
                 });
 
                 let event_stream = initial_stream.chain(update_stream);

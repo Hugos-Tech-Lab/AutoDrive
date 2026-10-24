@@ -27,9 +27,11 @@ define_wasm_api! {
 
     fn set_led_right_off();
 
-    /// Gets utmost front left IR value
-    fn get_ir_utmost_front_utmost_left_value() -> u16;
+    fn get_ir_back_center_value() -> u16;
 
-    /// Gets utmost front right IR value
-    fn get_ir_utmost_front_utmost_right_value() -> u16;
+    fn get_ir_front_left_value() -> u16;
+
+    fn get_ir_front_center_value() -> u16;
+
+    fn get_ir_front_right_value() -> u16;
 }

@@ -72,17 +72,14 @@ impl ServerSpi {
             RequestToHardware::NotifyPositionFromCamera { x, y } => {
                 println!("{x}, {y}.. pos from camera")
             }
-            RequestToHardware::NotifyBatteryReadings {
-                motor_battery,
-                mcu_battery,
-            } => {
+            RequestToHardware::NotifyBatteryReadings { voltage } => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.notify_battery_readings(motor_battery, mcu_battery);
+                the_beginner_car.notify_battery_reading(voltage);
             }
             RequestToHardware::RunAutoScript { data } => {
                 info!("run auto script");
                 match auto_script.run(data) {
-                    Ok(ok) => {},
+                    Ok(ok) => {}
                     Err(err) => log::error!("{}", err),
                 }
             }

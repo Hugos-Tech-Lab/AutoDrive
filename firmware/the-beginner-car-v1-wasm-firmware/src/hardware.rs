@@ -21,8 +21,7 @@ pub struct TheBeginnerCarHardware {
     wheel_b: Motor,
     led_left: Led,
     led_right: Led,
-    motor_battery: f32,
-    mcu_battery: f32,
+    battery_voltage: f32,
     ir_utmost_front_utmost_left_latest_reading: Arc<AtomicU16>,
     ir_utmost_front_utmost_right_latest_reading: Arc<AtomicU16>,
 }
@@ -42,8 +41,7 @@ impl TheBeginnerCarHardware {
             wheel_b,
             led_left,
             led_right,
-            motor_battery: 0.0,
-            mcu_battery: 0.0,
+            battery_voltage: 0.0,
             ir_utmost_front_utmost_left_latest_reading,
             ir_utmost_front_utmost_right_latest_reading,
         }
@@ -76,9 +74,8 @@ impl TheBeginnerCarHardware {
         self.allowed_controller = controller;
     }
 
-    pub fn notify_battery_readings(&mut self, motor_battery: f32, mcu_battery: f32) {
-        self.motor_battery = motor_battery;
-        self.mcu_battery = mcu_battery;
+    pub fn notify_battery_reading(&mut self, battery_voltage: f32) {
+        self.battery_voltage = battery_voltage;
     }
 
     pub fn get_ir_utmost_front_utmost_left_value(&self) -> u16 {

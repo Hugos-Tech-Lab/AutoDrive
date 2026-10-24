@@ -276,7 +276,7 @@ pub fn main() -> anyhow::Result<()> {
         .name("spi_driver".into())
         .stack_size(16 * 1024)
         .spawn(move || {
-            let mut spi = SpiMaster::new(
+            let mut spi = SpiMaster::new( // TODO: cleanup this similar to SpiSlave.
                 peripherals.spi2,
                 peripherals.pins.gpio15.into(),
                 peripherals.pins.gpio23.into(),

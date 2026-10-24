@@ -46,19 +46,19 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
 
     let motor_a = Motor::new(
-        peripherals.pins.gpio15.into(),
-        peripherals.pins.gpio23.into(),
+        peripherals.pins.gpio7.into(),
+        peripherals.pins.gpio8.into(),
         peripherals.ledc.channel0,
         peripherals.ledc.timer1,
     );
     let motor_b = Motor::new(
-        peripherals.pins.gpio21.into(),
-        peripherals.pins.gpio22.into(),
+        peripherals.pins.gpio11.into(),
+        peripherals.pins.gpio10.into(),
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
     );
     let led_left = Led::new(peripherals.pins.gpio18.into());
-    let led_right = Led::new(peripherals.pins.gpio10.into());
+    let led_right = Led::new(peripherals.pins.gpio9.into());
 
     // pin.set_color(20, 2, 2);
     if reason == 9 {
@@ -169,12 +169,12 @@ pub fn main() -> anyhow::Result<()> {
 
     let spi_hardware = SpiSlaveHardware {
         spi_2: peripherals.spi2,
-        a_sclk: peripherals.pins.gpio4,
-        b_sdi: peripherals.pins.gpio5,
-        c_sdo: peripherals.pins.gpio6,
-        d_slave_ready_pin: peripherals.pins.gpio7,
-        e_cs: peripherals.pins.gpio0,
-        f_master_ready_pin: peripherals.pins.gpio1,
+        a_sclk: peripherals.pins.gpio15,
+        b_sdi: peripherals.pins.gpio23,
+        c_sdo: peripherals.pins.gpio22,
+        d_slave_ready_pin: peripherals.pins.gpio21,
+        e_cs: peripherals.pins.gpio20,
+        f_master_ready_pin: peripherals.pins.gpio19,
     };
 
     let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;

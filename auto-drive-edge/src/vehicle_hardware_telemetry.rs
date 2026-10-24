@@ -6,28 +6,21 @@ use crate::the_beginner_car_comms::TheBeginnerCarComms;
 
 #[derive(Debug, Clone)]
 struct VehicleHardwareTelemetryGauges {
-    motor_battery_voltage: Gauge<f64>,
-    mcu_battery_voltage: Gauge<f64>,
+    battery_voltage: Gauge<f64>,
 }
 
 impl VehicleHardwareTelemetryGauges {
     pub fn new() -> Self {
         let meter = global::meter("auto-drive-edge");
 
-        let motor_battery_voltage: Gauge<f64> = meter
-            .f64_gauge("motor_battery_voltage")
+        let battery_voltage: Gauge<f64> = meter
+            .f64_gauge("battery_voltage")
             .with_unit("V")
-            .with_description("The motor battery voltage")
-            .build();
-        let mcu_battery_voltage: Gauge<f64> = meter
-            .f64_gauge("mcu_battery_voltage")
-            .with_unit("V")
-            .with_description("The MCU battery voltage")
+            .with_description("The battery voltage")
             .build();
 
         Self {
-            motor_battery_voltage,
-            mcu_battery_voltage,
+            battery_voltage,
         }
     }
 }
@@ -72,15 +65,11 @@ impl VehicleHardwareTelemetry {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
                     TheBeginnerCarOutgoingMessages::BatteryReading {
-                        motor_battery_voltage,
-                        mcu_battery_voltage,
+                        voltage,
                     } => {
                         gauges
-                            .motor_battery_voltage
-                            .record(motor_battery_voltage.into(), attributes);
-                        gauges
-                            .mcu_battery_voltage
-                            .record(mcu_battery_voltage.into(), attributes);
+                            .battery_voltage
+                            .record(voltage.into(), attributes);
                     }
                     _ => {}
                 },

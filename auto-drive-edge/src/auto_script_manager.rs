@@ -48,6 +48,7 @@ pub struct AutoScriptEvents {
 //     pub upload_file_hash: String,
 // }
  
+#[derive(Clone, Debug, Default)]
 pub struct AutoScripts {
     pub running: Vec<AutoScript>,
     pub queued: VecDeque<AutoScript>,

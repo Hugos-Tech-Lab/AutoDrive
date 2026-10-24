@@ -137,7 +137,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut stream = match timeout(
         Duration::from_secs(5),
-        TcpStream::connect("192.168.0.180:8080"),
+        TcpStream::connect("192.168.0.197:8080"),
     )
     .await
     {
@@ -183,7 +183,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         //   +1 = forward
         //   -1 = reverse
         //
-        let forward = -y;
+        let forward = y;
         let steering = -x;
 
         // Differential drive mixing.

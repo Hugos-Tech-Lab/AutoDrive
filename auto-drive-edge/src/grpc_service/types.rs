@@ -77,15 +77,11 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
                 }
             }
 
-            TheBeginnerCarOutgoingMessages::BatteryReading {
-                motor_battery_voltage,
-                mcu_battery_voltage,
-            } => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::BatteryReading(BatteryReadingEvent {
-                    motor_battery_voltage,
-                    mcu_battery_voltage,
-                })),
-            },
+            TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
+                WatchTheBeginnerCarEventsResponse {
+                    event: Some(Event::BatteryReading(BatteryReadingEvent { battery_voltage: voltage })),
+                }
+            }
 
             TheBeginnerCarOutgoingMessages::InfraredLedReadings {
                 utmost_front_utmost_left,

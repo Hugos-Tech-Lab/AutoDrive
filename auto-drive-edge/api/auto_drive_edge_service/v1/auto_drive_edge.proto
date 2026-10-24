@@ -111,8 +111,7 @@ message InfraredLedReadingsEvent {
 }
 
 message BatteryReadingEvent {
-  float motor_battery_voltage = 1;
-  float mcu_battery_voltage = 2;
+  float battery_voltage = 1;
 }
 
 enum LogLevel {

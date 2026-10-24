@@ -1,3 +1,5 @@
 .env
 *.wasm
 *.o
+**/.embuild
+**/target

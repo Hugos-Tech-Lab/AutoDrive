@@ -16,7 +16,7 @@ use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarOutgoingMessages};
 
 use crate::{
-    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, logger::init_logging, tcp_server::accept, utils::stack,
+    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, logger::init_logging, tcp_server::accept
 };
 
 use esp_idf_sys::esp_reset_reason;
@@ -77,12 +77,7 @@ pub fn main() -> anyhow::Result<()> {
     let (hardware_sender, hardware_receiver) =
         std::sync::mpsc::sync_channel::<HardwareMessage>(100);
 
-    let ready_pin = PinDriver::input(peripherals.pins.gpio41, Pull::Down)?;
-    let master_ready_pin = PinDriver::output(peripherals.pins.gpio39)?;
-
     let (sender_tx, receiver_tx) = flume::bounded(1000);
-
-    // sender_tx.clo
 
     let tcp_handle = std::thread::Builder::new()
         .name("tcp_handle".to_string())
@@ -227,24 +222,19 @@ pub fn main() -> anyhow::Result<()> {
             let sender_tx = sender_tx.clone();
             move || {
                 let adc = AdcDriver::new(peripherals.adc1).unwrap();
-                let mut motor_battery = Battery::new(&adc, peripherals.pins.gpio10).unwrap();
-                let mut mcu_battery = Battery::new(&adc, peripherals.pins.gpio9).unwrap();
+                let mut battery = Battery::new(&adc, peripherals.pins.gpio4).unwrap();
 
                 loop {
-                    let motor_battery_reading = motor_battery.read().unwrap();
-                    let mcu_battery_reading = mcu_battery.read().unwrap();
+                    let motor_battery_reading = battery.read().unwrap();
 
                     {
                         sender_tx
                             .send(TheBeginnerCarOutgoingMessages::BatteryReading {
-                                motor_battery_voltage: motor_battery_reading.voltage,
-                                mcu_battery_voltage: mcu_battery_reading.voltage,
+                                voltage: motor_battery_reading.voltage
                             })
                             .unwrap();
                     }
 
-                    // dbg!(motor_battery_reading);
-                    // dbg!(mcu_battery_reading);
                     let (sender, receiver) = std::sync::mpsc::sync_channel::<
                         Result<ResponseFromHardware, anyhow::Error>,
                     >(1);
@@ -252,8 +242,7 @@ pub fn main() -> anyhow::Result<()> {
                     hardware_sender
                         .send(HardwareMessage {
                             request: RequestToHardware::NotifyBatteryReadings {
-                                motor_battery: motor_battery_reading.voltage,
-                                mcu_battery: mcu_battery_reading.voltage,
+                                voltage: motor_battery_reading.voltage
                             },
                             response_tx: sender,
                         })
@@ -288,13 +277,13 @@ pub fn main() -> anyhow::Result<()> {
         .stack_size(16 * 1024)
         .spawn(move || {
             let mut spi = SpiMaster::new(
-                peripherals.spi3,
-                peripherals.pins.gpio1.into(),
-                peripherals.pins.gpio2.into(),
-                peripherals.pins.gpio42.into(),
-                ready_pin.into(),
-                peripherals.pins.gpio40.into(),
-                master_ready_pin,
+                peripherals.spi2,
+                peripherals.pins.gpio15.into(),
+                peripherals.pins.gpio23.into(),
+                peripherals.pins.gpio22.into(),
+                PinDriver::input(peripherals.pins.gpio21, Pull::Down).unwrap().into(),
+                peripherals.pins.gpio20.into(),
+                PinDriver::output(peripherals.pins.gpio19).unwrap().into(),
                 5_000_000,
             )
             .unwrap();

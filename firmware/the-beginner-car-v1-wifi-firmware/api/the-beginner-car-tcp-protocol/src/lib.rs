@@ -60,8 +60,7 @@ pub enum TheBeginnerCarOutgoingMessages {
     AutoScriptRunning,
     AutoScriptStopped,
     BatteryReading {
-        motor_battery_voltage: f32,
-        mcu_battery_voltage: f32,
+        voltage: f32,
     },
     InfraredLedReadings {
         utmost_front_utmost_left: u16,

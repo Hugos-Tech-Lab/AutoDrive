@@ -10,7 +10,7 @@ harness = false
 
 [dependencies]
 the-beginner-car-tcp-protocol = { path = "api/the-beginner-car-tcp-protocol" }
-the-beginner-car-spi-protocol = { path = "../the-beginner-car-wasm-firmware/api/the-beginner-car-spi-protocol" }
+the-beginner-car-spi-protocol = { path = "../the-beginner-car-v1-wasm-firmware/api/the-beginner-car-spi-protocol" }
 auto-drive-interfaces = { path = "../../interfaces" }
 common-firmware = { path = "../common-firmware" }
 anyhow = "1.0.104"

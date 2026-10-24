@@ -29,8 +29,7 @@ pub enum RequestToHardware {
         y: i32,
     },
     NotifyBatteryReadings {
-        motor_battery: f32,
-        mcu_battery: f32,
+        voltage: f32
     },
     RunAutoScript {
         data: Vec<u8>,

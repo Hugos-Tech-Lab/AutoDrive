@@ -5,8 +5,8 @@ use std::sync::{
 
 use crate::hardware::{led::Led, motor::Motor};
 
-pub mod motor;
 pub mod led;
+pub mod motor;
 
 #[derive(Debug, PartialEq)]
 pub enum RequestOrigin {
@@ -19,36 +19,42 @@ pub struct TheBeginnerCarHardware {
     allowed_controller: RequestOrigin,
     wheel_a: Motor,
     wheel_b: Motor,
-    led_left: Led,
+    // led_left: Led,
     led_right: Led,
     battery_voltage: f32,
-    ir_utmost_front_utmost_left_latest_reading: Arc<AtomicU16>,
-    ir_utmost_front_utmost_right_latest_reading: Arc<AtomicU16>,
+    ir_front_left_latest_reading: Arc<AtomicU16>,
+    ir_back_center_latest_reading: Arc<AtomicU16>,
+    ir_front_center_latest_reading: Arc<AtomicU16>,
+    ir_front_right_latest_reading: Arc<AtomicU16>,
 }
 
 impl TheBeginnerCarHardware {
     pub fn new(
         wheel_a: Motor,
         wheel_b: Motor,
-        led_left: Led,
+        // led_left: Led,
         led_right: Led,
-        ir_utmost_front_utmost_left_latest_reading: Arc<AtomicU16>,
-        ir_utmost_front_utmost_right_latest_reading: Arc<AtomicU16>,
+        ir_front_left_latest_reading: Arc<AtomicU16>,
+        ir_back_center_latest_reading: Arc<AtomicU16>,
+        ir_front_center_latest_reading: Arc<AtomicU16>,
+        ir_front_right_latest_reading: Arc<AtomicU16>,
     ) -> Self {
         Self {
             allowed_controller: RequestOrigin::Manual,
             wheel_a,
             wheel_b,
-            led_left,
+            // led_left,
             led_right,
             battery_voltage: 0.0,
-            ir_utmost_front_utmost_left_latest_reading,
-            ir_utmost_front_utmost_right_latest_reading,
+            ir_front_left_latest_reading,
+            ir_back_center_latest_reading,
+            ir_front_center_latest_reading,
+            ir_front_right_latest_reading,
         }
     }
 
     pub fn led_left(&mut self) -> &mut Led {
-        &mut self.led_left
+        &mut self.led_right // TODO fix this
     }
 
     pub fn led_right(&mut self) -> &mut Led {
@@ -78,20 +84,26 @@ impl TheBeginnerCarHardware {
         self.battery_voltage = battery_voltage;
     }
 
-    pub fn get_ir_utmost_front_utmost_left_value(&self) -> u16 {
-        self.ir_utmost_front_utmost_left_latest_reading
-            .load(Ordering::Relaxed)
+    pub fn get_ir_back_center_value(&self) -> u16 {
+        self.ir_back_center_latest_reading.load(Ordering::Relaxed)
     }
 
-    pub fn get_ir_utmost_front_utmost_right_value(&self) -> u16 {
-        self.ir_utmost_front_utmost_right_latest_reading
-            .load(Ordering::Relaxed)
+    pub fn get_ir_front_left_value(&self) -> u16 {
+        self.ir_front_left_latest_reading.load(Ordering::Relaxed)
+    }
+
+    pub fn get_ir_front_center_value(&self) -> u16 {
+        self.ir_front_center_latest_reading.load(Ordering::Relaxed)
+    }
+
+    pub fn get_ir_front_right_value(&self) -> u16 {
+        self.ir_front_right_latest_reading.load(Ordering::Relaxed)
     }
 
     pub fn stop_all(&mut self) {
         self.wheel_a.stop().unwrap();
         self.wheel_b.stop().unwrap();
-        self.led_left.stop().unwrap();
+        // self.led_left.stop().unwrap();
         self.led_right.stop().unwrap();
     }
 

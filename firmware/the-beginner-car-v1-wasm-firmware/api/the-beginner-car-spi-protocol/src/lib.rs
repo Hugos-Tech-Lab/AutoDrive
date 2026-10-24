@@ -43,8 +43,10 @@ pub enum Event {
         message: LogMessage,
     },
     InfraredLedReadings {
-        utmost_front_utmost_left: u16,
-        utmost_front_utmost_right: u16,
+        back_center: u16,
+        front_left: u16,
+        front_center: u16,
+        front_right: u16,
     },
     AutoScriptStopped,
 }

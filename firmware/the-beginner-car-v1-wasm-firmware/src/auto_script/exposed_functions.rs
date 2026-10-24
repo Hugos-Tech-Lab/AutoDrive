@@ -126,43 +126,6 @@ impl WasmExports for TheBeginnerCarExports {
         hardware.set_wheel_b_speed(speed, crate::hardware::RequestOrigin::Manual);
     }
 
-    /// # Safety
-    ///
-    /// Must be called from within a WASM runtime with a valid exec_env.
-    #[unsafe(no_mangle)]
-    unsafe extern "C" fn get_ir_utmost_front_utmost_left_value(exec_env: *mut c_void) -> u16 {
-        if exec_env.is_null() {
-            return 0;
-        }
-        let exec_env = exec_env.cast::<WASMExecEnv>();
-        let exec_env = exec_env.cast::<WASMExecEnv>();
-        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-        if wasm_data.ct.is_cancelled() {
-            unsafe { terminate(exec_env) };
-        }
-
-        let hardware = wasm_data.hardware.lock().unwrap();
-        hardware.get_ir_utmost_front_utmost_left_value()
-    }
-
-    /// # Safety
-    ///
-    /// Must be called from within a WASM runtime with a valid exec_env.
-    #[unsafe(no_mangle)]
-    unsafe extern "C" fn get_ir_utmost_front_utmost_right_value(exec_env: *mut c_void) -> u16 {
-        if exec_env.is_null() {
-            return 0;
-        }
-        let exec_env = exec_env.cast::<WASMExecEnv>();
-        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-        if wasm_data.ct.is_cancelled() {
-            unsafe { terminate(exec_env) };
-        }
-
-        let hardware = wasm_data.hardware.lock().unwrap();
-        hardware.get_ir_utmost_front_utmost_right_value()
-    }
-    
     unsafe extern "C" fn set_led_left_on(exec_env: *mut c_void) {
         if exec_env.is_null() {
             return;
@@ -218,6 +181,62 @@ impl WasmExports for TheBeginnerCarExports {
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
         hardware.led_right().off().unwrap();
+    }
+    
+    unsafe extern "C" fn get_ir_back_center_value(exec_env: *mut c_void,) -> u16 {
+        if exec_env.is_null() {
+            return 0;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let hardware = wasm_data.hardware.lock().unwrap();
+        hardware.get_ir_back_center_value()
+    }
+    
+    unsafe extern "C" fn get_ir_front_left_value(exec_env: *mut c_void,) -> u16 {
+        if exec_env.is_null() {
+            return 0;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let hardware = wasm_data.hardware.lock().unwrap();
+        hardware.get_ir_front_left_value()
+    }
+    
+    unsafe extern "C" fn get_ir_front_center_value(exec_env: *mut c_void,) -> u16 {
+        if exec_env.is_null() {
+            return 0;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let hardware = wasm_data.hardware.lock().unwrap();
+        hardware.get_ir_front_center_value()
+    }
+    
+    unsafe extern "C" fn get_ir_front_right_value(exec_env: *mut c_void,) -> u16 {
+        if exec_env.is_null() {
+            return 0;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let hardware = wasm_data.hardware.lock().unwrap();
+        hardware.get_ir_front_right_value()
     }
 }
 

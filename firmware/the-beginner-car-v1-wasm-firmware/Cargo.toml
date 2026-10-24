@@ -1,0 +1,34 @@
+[package]
+name = "auto-drive-the-beginner-fw"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+harness = false
+
+[dependencies]
+common-firmware = { path = "../common-firmware" }
+the-beginner-car-wasm-sdk = { path = "api/the-beginner-car-wasm-sdk" }
+the-beginner-car-spi-protocol = { path = "api/the-beginner-car-spi-protocol" }
+wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.2", default-features = false, features = ["esp-idf"] }
+anyhow = "1.0.104"
+log = "0.4"
+esp-idf-svc = { version = "0.53.0", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
+esp-idf-sys = "0.38.1"
+# KEEP THIS DEPENDENCY EVEN THOUGH IT'S NOT EXPLICITLY USED OTHERWISE COMPILER ERROR MISSING "__embassy_time_queue_item_from_waker"
+embassy-time = { version = "0.5", features = ["generic-queue-8"] }
+
+
+[build-dependencies]
+embuild = "0.33"
+
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/mdns", version = "1.8.2" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(esp_idf_app_compile_time_date)',
+    'cfg(esp_idf_app_reproducible_build)',
+] }

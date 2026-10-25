@@ -5,7 +5,7 @@ use crate::edge_client::{Hardware, ToEdgeMessage};
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
 use tokio::sync::oneshot;
-use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
+use tokio_stream::wrappers::ReceiverStream;
 use warp::{Filter, Rejection, Reply, http::StatusCode};
 
 // TODO: should automatically exit on run end.
@@ -158,7 +158,7 @@ pub fn run(
 
                     let confirmation = stream::once(async {
                         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(
-                        "[INFO] [AUTO_DRIVE_CLOUD] Got the run WASM request and sent to the edge",
+                        "[INFO] [AUTO_DRIVE_CLOUD] Got the run WASM request and sent to the edge (PC in lab)",
                     ))
                     });
 

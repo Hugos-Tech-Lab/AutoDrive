@@ -329,7 +329,7 @@ impl AutoScriptManager {
                         .send(TheBeginnerCarOutgoingMessages::Log {
                             log: LogMessage {
                                 system_origin: LogSystemOrigin::WasmMcu,
-                                level: LogLevel::Info,
+                                level: LogLevel::Error,
                                 target: "asd".to_string(),
                                 message: "Cannot start script because hardware is not connected."
                                     .to_string(),

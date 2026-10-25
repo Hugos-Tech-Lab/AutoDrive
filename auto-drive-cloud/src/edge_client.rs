@@ -258,7 +258,6 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         uploader_comment: _,
                         response_tx,
                     } => {
-                        dbg!("starting");
                         if let Ok(response) = client
                             .run_auto_script(RunAutoScriptRequest {
                                 owner,
@@ -341,7 +340,6 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             let history_snapshot = history_lock.clone();
                             let mut grpc_receiver = live.subscribe();
                             drop(history_lock);
-                            dbg!(&history_snapshot);
                             let (domain_sender, domain_receiver) =
                                 mpsc::channel::<AutoScriptEvent>(100);
 

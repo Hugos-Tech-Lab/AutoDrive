@@ -22,7 +22,11 @@ use tokio::{
 };
 use uuid::Uuid;
 
-use crate::the_beginner_car_comms::TheBeginnerCarComms;
+pub mod auto_script;
+
+use crate::{
+    auto_script_manager::auto_script::AutoScript, the_beginner_car_comms::TheBeginnerCarComms,
+};
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
@@ -55,23 +59,6 @@ pub struct AutoScripts {
     pub running: Vec<AutoScript>,
     pub queued: VecDeque<AutoScript>,
     pub stopped: Vec<AutoScript>,
-}
-
-// TODO: separate out metadata from content so cloning is cheaper....
-#[derive(Clone, Debug)]
-pub struct AutoScript {
-    pub owner_name: String,
-    pub run_uuid: String,
-    pub upload_file_hash: String,
-    pub run_number: u32,
-    pub script: Vec<u8>,
-    pub events: Sender<AutoScriptEvents>,
-    pub history: Arc<RwLock<Vec<AutoScriptEvents>>>,
-    pub device: TheBeginnerCarComms,
-    pub hardware_response: AutoScriptResponseFromHardware,
-    pub queued_at: DateTime<Utc>,
-    pub started_at: Option<DateTime<Utc>>,
-    pub stopped_at: Option<DateTime<Utc>>,
 }
 
 pub struct AutoScriptTheBeginnerCars {

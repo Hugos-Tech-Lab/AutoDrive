@@ -79,7 +79,9 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
 
             TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
                 WatchTheBeginnerCarEventsResponse {
-                    event: Some(Event::BatteryReading(BatteryReadingEvent { battery_voltage: voltage })),
+                    event: Some(Event::BatteryReading(BatteryReadingEvent {
+                        battery_voltage: voltage,
+                    })),
                 }
             }
 
@@ -96,10 +98,10 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
     }
 }
 
-impl From<&crate::auto_script_manager::AutoScript>
+impl From<&crate::auto_script_manager::auto_script::AutoScript>
     for crate::auto_drive_edge_service::v1::AutoScript
 {
-    fn from(value: &crate::auto_script_manager::AutoScript) -> Self {
+    fn from(value: &crate::auto_script_manager::auto_script::AutoScript) -> Self {
         Self {
             owner_name: value.owner_name.clone(),
         }

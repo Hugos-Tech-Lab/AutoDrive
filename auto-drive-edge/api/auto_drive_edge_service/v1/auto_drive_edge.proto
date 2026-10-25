@@ -44,7 +44,10 @@ message WatchAutoScriptRequest {
 }
 
 message WatchAutoScriptResponse {
-  LogMessage log_message = 1;
+  oneof event {
+    LogMessage log_message = 1;
+    int32 script_exited = 2;
+  }
 }
 
 message RunAutoScriptRequest {

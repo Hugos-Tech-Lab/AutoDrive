@@ -7,10 +7,10 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware, RunAutoScriptRequest,
-        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
-        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwareStatusRequest,
-        WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
+        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware,
+        RunAutoScriptRequest, RunAutoScriptResponse, WatchAutoScriptOverviewRequest,
+        WatchAutoScriptOverviewResponse, WatchAutoScriptRequest, WatchAutoScriptResponse,
+        WatchHardwareStatusRequest, WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
         WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
     },
     auto_script_manager::AutoScriptManager,
@@ -87,14 +87,14 @@ impl AutoDriveEdgeService for GrpcService {
 
         let history_stream = tokio_stream::iter(past_events).map(|event| {
             Ok(WatchAutoScriptResponse {
-                log_message: Some(to_grpc_log_message(event.log_message.clone())),
+                event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(event.log_message.clone())))
             })
         });
 
         let live_stream = BroadcastStream::new(live_rx).filter_map(|result| async move {
             match result {
                 Ok(event) => Some(Ok(WatchAutoScriptResponse {
-                    log_message: Some(to_grpc_log_message(event.log_message)),
+                    event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(event.log_message.clone())))
                 })),
                 Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(skipped)) => {
                     eprintln!("Watch stream lagged; skipped {skipped} messages");

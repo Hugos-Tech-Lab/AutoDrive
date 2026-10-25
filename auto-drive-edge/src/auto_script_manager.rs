@@ -15,8 +15,7 @@ use the_beginner_car_tcp_protocol::{
 use tokio::{
     sync::{
         Mutex, RwLock,
-        broadcast::{self, Receiver, Sender},
-        mpsc::{self},
+        broadcast::{self, Receiver, Sender}
     },
     task::JoinHandle,
 };
@@ -193,7 +192,7 @@ impl AutoScriptManager {
             let join_handle = tokio::task::spawn({
                 let mut incoming_tx = the_beginner_car.incoming_tx.subscribe();
                 let run_uuid = run_uuid.clone();
-                let task_history = history.clone();
+                let history = history.clone();
                 let task_sender = sender.clone();
 
                 async move {
@@ -206,8 +205,7 @@ impl AutoScriptManager {
                                         let event = AutoScriptEvents {
                                             log_message: log.clone(),
                                         };
-
-                                        let mut hist_lock = task_history.write().await;
+                                        let mut hist_lock = history.write().await;
                                         hist_lock.push(event.clone());
                                         let _ = task_sender.send(event);
                                     }
@@ -240,7 +238,7 @@ impl AutoScriptManager {
         uuid: String,
     ) -> Option<(Vec<AutoScriptEvents>, Receiver<AutoScriptEvents>)> {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
-
+        dbg!("watch auto script");
         let auto_script = the_beginner_car_scripts_mutex_guard
             .scripts
             .queued
@@ -470,8 +468,21 @@ impl AutoScriptManager {
                 );
             }
 
-            for removed_script in stopped {
-                state_mutex_guard.scripts.stopped.push(removed_script);
+            for stopped_script in stopped {
+                stopped_script.device
+                    .incoming_tx
+                    .send(TheBeginnerCarOutgoingMessages::Log {
+                        log: LogMessage {
+                            system_origin: LogSystemOrigin::WasmMcu,
+                            level: LogLevel::Info,
+                            target: "asd".to_string(),
+                            message: "Script exited".to_string(),
+                            trace_id: Some(stopped_script.run_uuid.clone()),
+                        },
+                    })
+                    .unwrap();
+
+                state_mutex_guard.scripts.stopped.push(stopped_script);
             }
 
             queue_snapshot = state_mutex_guard.scripts.clone();

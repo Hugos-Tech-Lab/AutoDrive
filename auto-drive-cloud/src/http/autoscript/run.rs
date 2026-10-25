@@ -5,7 +5,7 @@ use crate::edge_client::{Hardware, ToEdgeMessage};
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
 use tokio::sync::oneshot;
-use tokio_stream::wrappers::BroadcastStream;
+use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
 use warp::{Filter, Rejection, Reply, http::StatusCode};
 
 // TODO: should automatically exit on run end.
@@ -143,7 +143,6 @@ pub fn run(
                         run_uuid: started_script_uuid.clone(),
                         response_tx: sender_start,
                     };
-
                     if sender.send(message).await.is_err() {
                         return Ok::<_, Infallible>(
                             warp::reply::with_status(
@@ -155,7 +154,7 @@ pub fn run(
                     }
 
                     let log_stream = receiver_start.await;
-                    let streamed_response = BroadcastStream::new(log_stream.unwrap());
+                    let streamed_response = ReceiverStream::new(log_stream.unwrap());
 
                     let confirmation = stream::once(async {
                         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(
@@ -169,8 +168,14 @@ pub fn run(
                     }));
 
                     let event_stream =
-                        run_uuid.chain(streamed_response.filter_map(|result| async move {
-                            let log = result.unwrap();
+                        run_uuid.chain(streamed_response.filter_map(|auto_script_event| async move {
+                            let log = match auto_script_event {
+                                crate::edge_client::AutoScriptEvent::LogMessage { log_message } => log_message,
+                                crate::edge_client::AutoScriptEvent::Exited => {
+                                    return None;
+                                },
+                            };
+
                             let level = match log.level() {
                                 crate::auto_drive_edge_service::v1::LogLevel::Unspecified => {
                                     "UNSPECIFIED"

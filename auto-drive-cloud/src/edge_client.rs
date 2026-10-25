@@ -8,6 +8,7 @@ use std::{
 use log::warn;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{
+    RwLock,
     broadcast::{self, Receiver, Sender},
     mpsc, oneshot, watch,
 };
@@ -37,7 +38,7 @@ pub enum ToEdgeMessage {
     },
     WatchAutoScript {
         run_uuid: String,
-        response_tx: oneshot::Sender<Receiver<LogMessage>>,
+        response_tx: oneshot::Sender<mpsc::Receiver<AutoScriptEvent>>,
     },
     CancelAutoScript {
         run_uuid: String,
@@ -58,10 +59,22 @@ pub struct HardwareDeviceState {
 }
 
 #[derive(Debug, Clone)]
+pub enum AutoScriptEvent {
+    LogMessage { log_message: LogMessage },
+    Exited,
+}
+
+#[derive(Debug, Clone)]
+pub struct AutoScriptEvents {
+    history: Arc<RwLock<Vec<AutoScriptEvent>>>,
+    live: Sender<AutoScriptEvent>,
+}
+
+#[derive(Debug, Clone)]
 pub struct Hardware {
     pub sender: mpsc::Sender<ToEdgeMessage>,
     pub logs: Sender<Event>,
-    pub the_beginner_car_auto_scripts: Arc<Mutex<HashMap<String, Sender<LogMessage>>>>,
+    pub the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>>,
     pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
     pub watch_auto_scripts_overview: Sender<AutoScripts>,
     pub hardware_states_tx: watch::Sender<HardwareHashMap>,
@@ -94,7 +107,8 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         queued: vec![],
         stopped: vec![],
     }));
-    let the_beginner_car_auto_scripts = Arc::new(Mutex::new(HashMap::new()));
+    let the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>> =
+        Arc::new(Mutex::new(HashMap::new()));
 
     // The loop catches it, sleeps for 5s, and re-requests the stream (which triggers a reconnect).
     tokio::spawn({
@@ -233,7 +247,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     tokio::spawn({
         let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
         let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
-        let the_beginner_car_auto_scripts = the_beginner_car_auto_scripts.clone();
+        let the_beginner_car_auto_script_events = the_beginner_car_auto_script_events.clone();
         let hardware_states_tx = hardware_states_tx.clone();
         async move {
             while let Some(value) = receiver.recv().await {
@@ -257,11 +271,17 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             let run_uuid = response.run_uuid;
 
                             let (sender, _) = broadcast::channel(100);
+                            // sender.subscribe();
 
-                            the_beginner_car_auto_scripts
-                                .lock()
-                                .unwrap()
-                                .insert(run_uuid.clone(), sender.clone());
+                            let history = Arc::new(RwLock::new(Vec::new()));
+
+                            the_beginner_car_auto_script_events.lock().unwrap().insert(
+                                run_uuid.clone(),
+                                AutoScriptEvents {
+                                    history: history.clone(),
+                                    live: sender.clone(),
+                                },
+                            );
                             if let Ok(watch_auto_script) = client
                                 .watch_auto_script(WatchAutoScriptRequest {
                                     run_uuid: run_uuid.clone(),
@@ -272,8 +292,19 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
 
                                 tokio::spawn(async move {
                                     while let Ok(Some(update)) = stream.message().await {
-                                        if let Some(log_message) = update.log_message {
-                                            let _ = sender.send(log_message);
+                                        if let Some(event) = update.event {
+                                            let event =
+                                            match event {
+                                                crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(log_message) => {
+                                                    AutoScriptEvent::LogMessage{log_message}
+                                                }
+                                                crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(_) => {
+                                                    AutoScriptEvent::Exited
+                                                }
+                                            };
+                                            let mut history_lock = history.write().await;
+                                            let _ = sender.send(event.clone());
+                                            history_lock.push(event);
                                         }
                                     }
                                 });
@@ -286,7 +317,8 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                 uuid: run_uuid.clone(),
                             });
                         } else {
-                            let _ = response_tx.send(StartAutoScriptResponse::EdgeClientUnavailable);
+                            let _ =
+                                response_tx.send(StartAutoScriptResponse::EdgeClientUnavailable);
                         }
                     }
                     ToEdgeMessage::CancelAutoScript { run_uuid } => {
@@ -298,10 +330,45 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         run_uuid,
                         response_tx,
                     } => {
-                        if let Some(log_sender) =
-                            the_beginner_car_auto_scripts.lock().unwrap().get(&run_uuid)
-                        {
-                            let _ = response_tx.send(log_sender.subscribe());
+                        let log_sender_data = {
+                            let map = the_beginner_car_auto_script_events.lock().unwrap();
+                            map.get(&run_uuid)
+                                .map(|sender| (sender.history.clone(), sender.live.clone()))
+                        };
+
+                        if let Some((history, live)) = log_sender_data {
+                            let history_lock = history.read().await;
+                            let history_snapshot = history_lock.clone();
+                            let mut grpc_receiver = live.subscribe();
+                            drop(history_lock);
+                            dbg!(&history_snapshot);
+                            let (domain_sender, domain_receiver) =
+                                mpsc::channel::<AutoScriptEvent>(100);
+
+                            tokio::spawn(async move {
+                                for event in history_snapshot {
+                                    if domain_sender.send(event).await.is_err() {
+                                        return; // Stop if the receiver dropped
+                                    }
+                                }
+
+                                // 5. Stream subsequent live events
+                                while let Ok(grpc_event) = grpc_receiver.recv().await {
+                                    let domain_event = match grpc_event {
+                                        AutoScriptEvent::LogMessage { log_message } => {
+                                            AutoScriptEvent::LogMessage { log_message }
+                                        }
+                                        AutoScriptEvent::Exited => AutoScriptEvent::Exited,
+                                    };
+
+                                    // Stop forwarding if all receivers drop
+                                    if domain_sender.send(domain_event).await.is_err() {
+                                        break;
+                                    }
+                                }
+                            });
+
+                            let _ = response_tx.send(domain_receiver);
                         }
                     }
                     ToEdgeMessage::WatchOverview { response_tx } => {
@@ -329,7 +396,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         sender,
         latest_auto_scripts_overview,
         watch_auto_scripts_overview: incoming_auto_scripts_tx,
-        the_beginner_car_auto_scripts,
+        the_beginner_car_auto_script_events,
         hardware_states_tx,
     })
 }

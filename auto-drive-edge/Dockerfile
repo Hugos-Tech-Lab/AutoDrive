@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     libudev-dev \
  && rm -rf /var/lib/apt/lists/*
 
-COPY firmware/the-beginner-car-wifi-firmware/api firmware/the-beginner-car-wifi-firmware/api
+COPY firmware/the-beginner-car-v1-wifi-firmware/api firmware/the-beginner-car-v1-wifi-firmware/api
 
 WORKDIR /workspace
 COPY auto-drive-edge .

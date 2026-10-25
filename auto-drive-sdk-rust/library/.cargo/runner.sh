@@ -2,6 +2,7 @@
 set -euo pipefail
 
 BASE_URL="https://cloud-autodrive.hugostechlab.com/autoscript"
+# BASE_URL="http://localhost:3030/autoscript"
 
 # --- Authentication Requirement ---
 # Look for .env in current directory, then script's directory

@@ -103,7 +103,6 @@ impl AutoDriveEdgeService for GrpcService {
             }
         });
 
-        // 4. Chain the history directly into the live stream
         let combined_stream = history_stream.chain(live_stream);
 
         Ok(Response::new(Box::pin(combined_stream)))

@@ -9,7 +9,8 @@ use std::{
 use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::{
-    LogMessage, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
+    LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarIncomingMessages,
+    TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
     sync::{
@@ -47,7 +48,7 @@ pub struct AutoScriptEvents {
 //     pub run_uuid: String,
 //     pub upload_file_hash: String,
 // }
- 
+
 #[derive(Clone, Debug, Default)]
 pub struct AutoScripts {
     pub running: Vec<AutoScript>,
@@ -124,12 +125,10 @@ impl AutoScriptManager {
             {
                 running_script
                     .device
-                    .outgoing_tx
                     .send(TheBeginnerCarIncomingMessages::CancelAutoScript {
                         run_uuid: run_uuid.clone(),
                     })
-                    .await
-                    .unwrap();
+                    .await;
             }
 
             if let Some(pos) = the_beginner_car_scripts
@@ -276,10 +275,12 @@ impl AutoScriptManager {
     ) {
         let target_device_id = "TBC 001".to_string(); // In the future, find available device.
 
-        let target_device_outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>;
+        let target_device: TheBeginnerCarComms;
         let script_to_start_content;
         let queue_snapshot: AutoScripts;
         let queue_events_sender: Sender<AutoScripts>;
+        let target_device_incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>; // TODO: hack to easily send logs
+
         {
             let mut the_beginner_car_scripts_mutex_guard = the_beginner_car_scripts.lock().await;
             let device_being_used = the_beginner_car_scripts_mutex_guard
@@ -289,6 +290,29 @@ impl AutoScriptManager {
                 .any(|auto_script| auto_script.device.device_id == target_device_id);
             if device_being_used {
                 // cannot start because it's already being used..
+                for (i, script) in the_beginner_car_scripts_mutex_guard
+                    .scripts
+                    .queued
+                    .iter()
+                    .enumerate()
+                {
+                    script
+                        .device
+                        .incoming_tx
+                        .send(
+                            the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Log {
+                                log: LogMessage {
+                                    system_origin: LogSystemOrigin::WasmMcu,
+                                    level: LogLevel::Info,
+                                    target: "asd".to_string(),
+                                    message: format!("You are waiting in the queue, position {i}"),
+                                    trace_id: Some(script.run_uuid.clone()),
+                                },
+                            },
+                        )
+                        .unwrap();
+                }
+
                 return;
             }
 
@@ -298,7 +322,32 @@ impl AutoScriptManager {
                 .pop_front();
 
             if let Some(script) = script_to_start {
-                target_device_outgoing_tx = script.device.outgoing_tx.clone();
+                if !script.device.is_connected() {
+                    // dbg!("sent cause no connect");
+
+                    script
+                        .device
+                        .incoming_tx
+                        .send(TheBeginnerCarOutgoingMessages::Log {
+                            log: LogMessage {
+                                system_origin: LogSystemOrigin::WasmMcu,
+                                level: LogLevel::Info,
+                                target: "asd".to_string(),
+                                message: "Cannot start script because hardware is not connected."
+                                    .to_string(),
+                                trace_id: Some(script.run_uuid.clone()),
+                            },
+                        })
+                        .unwrap();
+                    the_beginner_car_scripts_mutex_guard
+                        .scripts
+                        .queued
+                        .push_front(script);
+
+                    return;
+                }
+
+                target_device = script.device.clone();
                 script_to_start_content = the_beginner_car_tcp_protocol::AutoScript {
                     run_uuid: script.run_uuid.clone(),
                     preprocessed_file_hash: script.upload_file_hash.clone(),
@@ -307,7 +356,25 @@ impl AutoScriptManager {
                     script: script.script.clone(),
                 };
 
-                dbg!("started script");
+                // TODO: fix, this is a bit of a hack because it's not really outgoing messages of the car...
+                script
+                    .device
+                    .incoming_tx
+                    .send(TheBeginnerCarOutgoingMessages::Log {
+                        log: LogMessage {
+                            system_origin: LogSystemOrigin::WasmMcu,
+                            level: LogLevel::Info,
+                            target: "asd".to_string(),
+                            message: "Sending script run command to hardware.".to_string(),
+                            trace_id: Some(script.run_uuid.clone()),
+                        },
+                    })
+                    .unwrap();
+
+                // target_device_incoming_tx = script
+                //     .device
+                //     .incoming_tx.clone();
+
                 the_beginner_car_scripts_mutex_guard
                     .scripts
                     .running
@@ -333,12 +400,15 @@ impl AutoScriptManager {
 
         // error when no listener
         let _ = queue_events_sender.send(queue_snapshot);
-        target_device_outgoing_tx
+        let sent = target_device
             .send(TheBeginnerCarIncomingMessages::RunAutoScript {
                 script: script_to_start_content,
             })
-            .await
-            .unwrap();
+            .await;
+
+        if !sent {
+            //
+        }
     }
 
     pub fn list_queued_auto_scripts() {
@@ -357,7 +427,7 @@ impl AutoScriptManager {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
-                        dbg!("stopped from hardware");
+                        // dbg!("stopped from hardware");
                         Self::on_hardware_response_auto_script_stopped(
                             state.clone(),
                             the_beginner_car.device_id.clone(),

@@ -8,6 +8,7 @@ use tokio::sync::oneshot;
 use tokio_stream::wrappers::BroadcastStream;
 use warp::{Filter, Rejection, Reply, http::StatusCode};
 
+// TODO: should automatically exit on run end.
 pub fn run(
     hardware: Hardware,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
@@ -122,12 +123,24 @@ pub fn run(
                         );
                     }
 
-                    let run_uuid = receiver_start.await.unwrap();
+                    let start_auto_script_response = receiver_start.await.unwrap();
+                    let started_script_uuid = match start_auto_script_response {
+                        crate::edge_client::StartAutoScriptResponse::Uuid { uuid } => uuid,
+                        crate::edge_client::StartAutoScriptResponse::EdgeClientUnavailable => {
+                            return Ok::<_, Infallible>(
+                                warp::reply::with_status(
+                                    "Edge client (the PC that runs in the lab) is unavailable",
+                                    StatusCode::SERVICE_UNAVAILABLE,
+                                )
+                                .into_response(),
+                            );
+                        }
+                    };
 
                     let (sender_start, receiver_start) = oneshot::channel();
 
                     let message = ToEdgeMessage::WatchAutoScript {
-                        run_uuid: run_uuid.clone(),
+                        run_uuid: started_script_uuid.clone(),
                         response_tx: sender_start,
                     };
 
@@ -151,7 +164,7 @@ pub fn run(
                     });
 
                     let run_uuid = confirmation.chain(stream::once(async move {
-                        let run_uuid = serde_json::json!({ "run_uuid": run_uuid }).to_string();
+                        let run_uuid = serde_json::json!({ "run_uuid": started_script_uuid }).to_string();
                         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(run_uuid))
                     }));
 

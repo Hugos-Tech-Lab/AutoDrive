@@ -5,6 +5,7 @@ use std::{
     time::Duration,
 };
 
+use log::warn;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{
     broadcast::{self, Receiver, Sender},
@@ -22,12 +23,17 @@ use crate::auto_drive_edge_service::v1::{
 
 type HardwareHashMap = HashMap<String, HardwareDeviceState>;
 
+pub enum StartAutoScriptResponse {
+    Uuid { uuid: String },
+    EdgeClientUnavailable,
+}
+
 pub enum ToEdgeMessage {
     StartAutoScript {
         owner: String,
         data: Vec<u8>,
         uploader_comment: String,
-        response_tx: oneshot::Sender<String>,
+        response_tx: oneshot::Sender<StartAutoScriptResponse>,
     },
     WatchAutoScript {
         run_uuid: String,
@@ -256,7 +262,6 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                 .lock()
                                 .unwrap()
                                 .insert(run_uuid.clone(), sender.clone());
-
                             if let Ok(watch_auto_script) = client
                                 .watch_auto_script(WatchAutoScriptRequest {
                                     run_uuid: run_uuid.clone(),
@@ -272,12 +277,16 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                         }
                                     }
                                 });
+                            } else {
+                                dbg!("could not watch script"); // TODO: fix warn! not working.
+                                warn!("could not watch script"); // TODO propagate this to user
                             }
-                            let _ = response_tx.send(run_uuid.clone());
+
+                            let _ = response_tx.send(StartAutoScriptResponse::Uuid {
+                                uuid: run_uuid.clone(),
+                            });
                         } else {
-                            eprintln!(
-                                "Failed to start auto script - service might be temporarily unavailable."
-                            );
+                            let _ = response_tx.send(StartAutoScriptResponse::EdgeClientUnavailable);
                         }
                     }
                     ToEdgeMessage::CancelAutoScript { run_uuid } => {

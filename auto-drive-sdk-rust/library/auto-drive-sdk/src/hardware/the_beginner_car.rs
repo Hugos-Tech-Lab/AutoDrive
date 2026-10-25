@@ -38,12 +38,20 @@ impl TheBeginnerCar {
         unsafe { guest::set_led_right_off() }
     }
 
-    pub fn get_ir_utmost_front_utmost_left_value(&self) -> u16 {
-        unsafe { guest::get_ir_utmost_front_utmost_left_value() }
+    pub fn get_ir_back_center_value(&self) -> u16 {
+        unsafe { guest::get_ir_back_center_value() }
     }
 
-    pub fn get_ir_utmost_front_utmost_right_value(&self) -> u16 {
-        unsafe { guest::get_ir_utmost_front_utmost_right_value() }
+    pub fn get_ir_front_left_value(&self) -> u16 {
+        unsafe { guest::get_ir_front_left_value() }
+    }
+
+    pub fn get_ir_front_center_value(&self) -> u16 {
+        unsafe { guest::get_ir_front_center_value() }
+    }
+
+    pub fn get_ir_front_right_value(&self) -> u16 {
+        unsafe { guest::get_ir_front_right_value() }
     }
 }
 

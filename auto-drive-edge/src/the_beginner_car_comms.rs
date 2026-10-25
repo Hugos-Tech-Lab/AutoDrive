@@ -19,7 +19,7 @@ pub struct TheBeginnerCarComms {
     pub device_id: String,
     pub mdns_address: String,
     pub connected_rx: watch::Receiver<bool>,
-    pub outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
+    outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
 }
 
@@ -64,9 +64,18 @@ impl TheBeginnerCarComms {
         self.connected_rx.borrow().clone()
     }
 
+    pub async fn send(&self, message: TheBeginnerCarIncomingMessages) -> bool {
+        if !self.is_connected() {
+            return false;
+        }
+
+        self.outgoing_tx.send(message).await.unwrap();
+        true
+    }
+
     async fn long_lived_connection(
         mdns_address: String,
-        mut receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
+        mut internal_receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
         connected_tx: watch::Sender<bool>,
     ) {
@@ -75,6 +84,7 @@ impl TheBeginnerCarComms {
 
             let host = format!("{m_dns}:8080");
             let Ok(mut addresses) = lookup_host(&host).await else {
+                connected_tx.send(false).unwrap();
                 println!("Could not find {host}. Trying again in 10 seconds");
                 thread::sleep(Duration::from_secs(10));
                 continue;
@@ -164,7 +174,7 @@ impl TheBeginnerCarComms {
                     }
 
                     // Outgoing data to the car
-                    message = receiver.recv() => {
+                    message = internal_receiver.recv() => {
                         match message {
                             Some(message_to_car) => {
                                 let bytes = message_to_car.to_bytes().unwrap();
@@ -173,10 +183,11 @@ impl TheBeginnerCarComms {
                                     eprintln!("Error writing to car: {e}");
                                     connected_tx.send(false).unwrap();
                                     break;
+                                } else {
+                                    connected_tx.send(true).unwrap();
                                 }
                             }
                             None => {
-                                connected_tx.send(false).unwrap();
                                 break;
                             }
                         }

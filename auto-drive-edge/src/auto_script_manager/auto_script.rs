@@ -15,7 +15,7 @@ pub struct AutoScript {
     pub run_uuid: String,
     pub upload_file_hash: String,
     pub run_number: u32,
-    pub script: Arc<Vec<u8>>,
+    pub script: Arc<[u8]>,
     pub events: Sender<AutoScriptEvents>,
     pub history: Arc<RwLock<Vec<AutoScriptEvents>>>,
     pub device: TheBeginnerCarComms,

@@ -164,7 +164,7 @@ impl AutoScriptManager {
                 run_uuid: run_uuid.clone(),
                 upload_file_hash: digest,
                 run_number,
-                script: Arc::new(data),
+                script: Arc::from(data.as_slice()),
                 device: the_beginner_car.clone(),
                 hardware_response: AutoScriptResponseFromHardware::HeardNothing,
                 // Store the history in the struct so your gRPC watch method can access it later

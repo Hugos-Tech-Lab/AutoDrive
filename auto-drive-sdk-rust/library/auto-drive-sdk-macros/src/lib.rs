@@ -26,7 +26,7 @@ pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     if function.sig.asyncness.is_some() {
         return syn::Error::new_spanned(
-            &function.sig.asyncness,
+            function.sig.asyncness,
             "async main is not supported",
         )
         .to_compile_error()

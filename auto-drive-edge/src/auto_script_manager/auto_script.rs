@@ -127,9 +127,9 @@ impl AutoScript {
     pub async fn send_log_info(&self, message: String) {
         let event = AutoScriptEvents::LogMessage {
             log_message: LogMessage {
-                system_origin: LogSystemOrigin::WasmMcu,
-                level: LogLevel::Info,
-                target: "".to_string(),
+                system_origin: LogSystemOrigin::WasmMcu, // TODO: change this origin to Edge.
+                level: LogLevel::Info,                   // TODO: support for other than info.
+                target: "".to_string(),                  // TODO: what does target mean?.
                 message: message,
                 trace_id: Some(self.run_uuid.clone()),
             },

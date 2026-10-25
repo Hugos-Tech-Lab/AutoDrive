@@ -1,6 +1,5 @@
 use the_beginner_car_wasm_sdk::guest;
 
-
 pub fn delay(milliseconds: u64) {
     let mut milliseconds = milliseconds;
     // convert from u64 -> u8

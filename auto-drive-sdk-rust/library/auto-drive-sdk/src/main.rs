@@ -21,18 +21,26 @@ pub fn is_back_on_line(the_beginner_car: &TheBeginnerCar) -> bool {
 
 #[auto_drive_sdk::main]
 fn main(the_beginner_car: TheBeginnerCar) {
-    while is_left_on_line(&the_beginner_car) && is_center_on_line(&the_beginner_car) && is_right_on_line(&the_beginner_car)  && is_back_on_line(&the_beginner_car) {
+    while is_left_on_line(&the_beginner_car)
+        && is_center_on_line(&the_beginner_car)
+        && is_right_on_line(&the_beginner_car)
+        && is_back_on_line(&the_beginner_car)
+    {
         the_beginner_car.set_motor_left_speed(127);
         // the_beginner_car.set_motor_right_speed(127);
     }
 
     loop {
-        if is_left_on_line(&the_beginner_car) && is_center_on_line(&the_beginner_car) && is_right_on_line(&the_beginner_car)  && is_back_on_line(&the_beginner_car) {
+        if is_left_on_line(&the_beginner_car)
+            && is_center_on_line(&the_beginner_car)
+            && is_right_on_line(&the_beginner_car)
+            && is_back_on_line(&the_beginner_car)
+        {
             the_beginner_car.set_motor_left_speed(0);
             the_beginner_car.set_motor_right_speed(0);
             continue;
         }
-        
+
         if is_center_on_line(&the_beginner_car) {
             the_beginner_car.set_motor_left_speed(50);
             the_beginner_car.set_motor_right_speed(50);

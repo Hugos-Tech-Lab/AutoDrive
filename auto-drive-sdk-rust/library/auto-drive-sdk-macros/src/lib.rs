@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, ItemFn};
+use syn::{ItemFn, parse_macro_input};
 
 #[proc_macro_attribute]
 pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -25,21 +25,15 @@ pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     if function.sig.asyncness.is_some() {
-        return syn::Error::new_spanned(
-            function.sig.asyncness,
-            "async main is not supported",
-        )
-        .to_compile_error()
-        .into();
+        return syn::Error::new_spanned(function.sig.asyncness, "async main is not supported")
+            .to_compile_error()
+            .into();
     }
 
     if !matches!(function.sig.output, syn::ReturnType::Default) {
-        return syn::Error::new_spanned(
-            &function.sig.output,
-            "main must not return a value",
-        )
-        .to_compile_error()
-        .into();
+        return syn::Error::new_spanned(&function.sig.output, "main must not return a value")
+            .to_compile_error()
+            .into();
     }
 
     let helper_name = format_ident!("__auto_drive_user_main");

@@ -257,19 +257,10 @@ impl AutoScriptManager {
             if let Some(script) = script_to_start {
                 if !script.hardware.is_connected() {
                     script
-                        .hardware
-                        .incoming_tx
-                        .send(TheBeginnerCarOutgoingMessages::Log {
-                            log: LogMessage {
-                                system_origin: LogSystemOrigin::WasmMcu,
-                                level: LogLevel::Error,
-                                target: "asd".to_string(),
-                                message: "Cannot start script because hardware is not connected."
-                                    .to_string(),
-                                trace_id: Some(script.run_uuid.clone()),
-                            },
-                        })
-                        .unwrap();
+                        .send_log_info(
+                            "Cannot start script because hardware is not connected.".to_string(),
+                        )
+                        .await;
                     the_beginner_car_scripts_mutex_guard
                         .scripts
                         .queued
@@ -287,20 +278,9 @@ impl AutoScriptManager {
                     script: script.uploaded_script.to_vec(),
                 };
 
-                // TODO: fix, this is a bit of a hack because it's not really outgoing messages of the car...
                 script
-                    .hardware
-                    .incoming_tx
-                    .send(TheBeginnerCarOutgoingMessages::Log {
-                        log: LogMessage {
-                            system_origin: LogSystemOrigin::WasmMcu,
-                            level: LogLevel::Info,
-                            target: "asd".to_string(),
-                            message: "Sending script run command to hardware.".to_string(),
-                            trace_id: Some(script.run_uuid.clone()),
-                        },
-                    })
-                    .unwrap();
+                    .send_log_info("Sending script run command to hardware.".to_string())
+                    .await;
 
                 // target_device_incoming_tx = script
                 //     .device
@@ -399,18 +379,8 @@ impl AutoScriptManager {
 
             for stopped_script in stopped {
                 stopped_script
-                    .hardware
-                    .incoming_tx
-                    .send(TheBeginnerCarOutgoingMessages::Log {
-                        log: LogMessage {
-                            system_origin: LogSystemOrigin::WasmMcu,
-                            level: LogLevel::Info,
-                            target: "asd".to_string(),
-                            message: "Script exited".to_string(),
-                            trace_id: Some(stopped_script.run_uuid.clone()),
-                        },
-                    })
-                    .unwrap();
+                    .send_log_info("Script exited".to_string())
+                    .await;
 
                 state_mutex_guard.scripts.stopped.push(stopped_script);
             }

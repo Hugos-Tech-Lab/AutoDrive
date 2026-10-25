@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
-use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
+use the_beginner_car_tcp_protocol::{
+    LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarOutgoingMessages,
+};
 use tokio::{
     sync::{
         RwLock,
@@ -120,5 +122,20 @@ impl AutoScript {
                 }
             };
         }
+    }
+
+    pub async fn send_log_info(&self, message: String) {
+        let event = AutoScriptEvents::LogMessage {
+            log_message: LogMessage {
+                system_origin: LogSystemOrigin::WasmMcu,
+                level: LogLevel::Info,
+                target: "".to_string(),
+                message: message,
+                trace_id: Some(self.run_uuid.clone()),
+            },
+        };
+        let mut hist_lock = self.events_history.write().await;
+        hist_lock.push(event.clone());
+        let _ = self.events_tx.send(event);
     }
 }

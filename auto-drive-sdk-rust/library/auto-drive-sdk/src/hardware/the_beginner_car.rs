@@ -59,4 +59,3 @@ impl TheBeginnerCar {
 pub fn __auto_drive_create_beginner_car() -> TheBeginnerCar {
     TheBeginnerCar::new()
 }
-

@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Define ANSI color codes
+RESET="\033[0m"
+RED="\033[31m"
+YELLOW="\033[33m"
+GREEN="\033[32m"
+BLUE="\033[34m"
+GRAY="\033[90m"
+
 # BASE_URL="https://cloud-autodrive.hugostechlab.com/autoscript"
 BASE_URL="http://localhost:3030/autoscript"
-echo "Endpoint: $BASE_URL"
+echo -e "${GREEN}[INFO]${RESET} Endpoint: $BASE_URL"
 
 # --- Authentication Requirement ---
 # Look for .env in current directory, then script's directory
@@ -23,7 +31,7 @@ fi
 
 # Halt execution and show instructions if token is missing
 if [[ -z "$AUTH_TOKEN" ]]; then
-    echo -e "\033[31m[ERROR]\033[0m Authentication token could not be loaded." >&2
+    echo -e "${RED}[ERROR]${RESET} Authentication token could not be loaded." >&2
     echo "" >&2
     echo "Please provide a valid .env file to authenticate." >&2
     echo "----------------------------------------------------" >&2
@@ -40,7 +48,7 @@ fi
 
 # Token found; set up the header array
 AUTH_ARGS=("--header" "Authorization: Bearer $AUTH_TOKEN")
-echo "Authentication token loaded successfully."
+echo -e "${GREEN}[INFO]${RESET} Authentication token loaded successfully."
 # ---------------------------------
 
 # Cargo passes the executable path as $1. Shift it out so $@ contains only user arguments.
@@ -65,24 +73,24 @@ else
 fi
 
 if [[ -z "$wasm" || ! -f "$wasm" ]]; then
-    echo "WASM file not found: ${wasm:-none}" >&2
+    echo -e "${RED}[ERROR]${RESET} WASM file not found: ${wasm:-none}" >&2
     exit 1
 fi
 
-echo "Running: $wasm"
+echo -e "${GREEN}[INFO]${RESET} Running: $wasm"
 if [[ -n "$ARGS_STRING" ]]; then
-    echo "Arguments passed: $ARGS_STRING"
+    echo -e "${GREEN}[INFO]${RESET} Arguments passed: $ARGS_STRING"
 fi
-echo "Sending run wasm request to the cloud..."
+echo -e "${GREEN}[INFO]${RESET} Sending run wasm request to the cloud..."
 
 cleanup() {
     trap - INT TERM
     echo
-    echo "Cancelling."
+    echo -e "${YELLOW}[WARN]${RESET} Cancelling."
 
     if [[ -s "$UUID_FILE" ]]; then
         RUN_UUID=$(cat "$UUID_FILE")
-        echo "Sending cancel for run: $RUN_UUID"
+        echo -e "${GREEN}[INFO]${RESET} Sending cancel for run: $RUN_UUID"
         
         curl --fail \
             --show-error \
@@ -91,15 +99,15 @@ cleanup() {
             --header "Content-Type: application/json" \
             --data "{\"run_uuid\":\"$RUN_UUID\"}" \
             "$BASE_URL/cancel" \
-            || echo "Warning: cancel request failed"
+            || echo -e "${YELLOW}[WARN]${RESET} Warning: cancel request failed"
     else
-        echo "No run_uuid received yet, sending general cancel."
+        echo -e "${GREEN}[INFO]${RESET} No run_uuid received yet, sending general cancel."
         curl --fail \
             --show-error \
             --request POST \
             ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
             "$BASE_URL/cancel" \
-            || echo "Warning: cancel request failed"
+            || echo -e "${YELLOW}[WARN]${RESET} Warning: cancel request failed"
     fi
 
     echo
@@ -128,6 +136,13 @@ curl --fail-with-body \
             sub(/^data:[[:space:]]?/, "")
             line = $0
 
+            reset = "\033[0m"
+            red = "\033[31m"
+            yellow = "\033[33m"
+            green = "\033[32m"
+            blue = "\033[34m"
+            gray = "\033[90m"
+
             # Parse and save run_uuid if present in stream line
             if (line ~ /run_uuid/) {
                 if (match(line, /"run_uuid"[[:space:]]*:[[:space:]]*"[^"]+"/)) {
@@ -136,15 +151,12 @@ curl --fail-with-body \
                     sub(/"$/, "", str)
                     print str > uuid_file
                     close(uuid_file)
+
+                    print green "[INFO]" reset " Assigned run UUID: " str
+                    fflush()
+                    next
                 }
             }
-
-            reset = "\033[0m"
-            red = "\033[31m"
-            yellow = "\033[33m"
-            green = "\033[32m"
-            blue = "\033[34m"
-            gray = "\033[90m"
 
             if (line ~ /^\[ERROR\]/) {
                 color = red

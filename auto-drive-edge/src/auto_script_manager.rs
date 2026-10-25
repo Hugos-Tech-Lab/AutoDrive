@@ -6,21 +6,18 @@ use std::{
     },
 };
 
-use chrono::Utc;
 use log::{info, warn};
-use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::{
     LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarIncomingMessages,
     TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
     sync::{
-        Mutex, RwLock,
+        Mutex,
         broadcast::{self, Receiver, Sender},
     },
     task::JoinHandle,
 };
-use uuid::Uuid;
 
 pub mod auto_script;
 
@@ -112,7 +109,7 @@ impl AutoScriptManager {
                 .find(|script| script.run_uuid == run_uuid)
             {
                 running_script
-                    .device
+                    .hardware
                     .send(TheBeginnerCarIncomingMessages::CancelAutoScript {
                         run_uuid: run_uuid.clone(),
                     })
@@ -142,12 +139,10 @@ impl AutoScriptManager {
     }
 
     pub async fn enqueue_auto_script(&self, owner_name: String, data: Vec<u8>) -> String {
-        let digest = Sha256::digest(&data);
-        let digest = hex::encode(Sha256::digest(digest));
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
-        let run_uuid = Uuid::new_v4().to_string();
         let queue_snapshot: AutoScripts;
         let queue_events_sender: Sender<AutoScripts>;
+        let auto_script_run_uuid: String;
         {
             let mut state = self.the_beginner_car_scripts.lock().await;
             let the_beginner_car = state
@@ -156,66 +151,14 @@ impl AutoScriptManager {
                 .find(|the_beginner_car| the_beginner_car.device_id == "TBC 001".to_string())
                 .unwrap();
 
-            let (sender, _) = broadcast::channel(100);
-            let history = Arc::new(RwLock::new(Vec::new()));
-
-            let auto_script = AutoScript {
+            let auto_script = AutoScript::new(
                 owner_name,
-                run_uuid: run_uuid.clone(),
-                upload_file_hash: digest,
                 run_number,
-                script: Arc::from(data.as_slice()),
-                device: the_beginner_car.clone(),
-                hardware_response: AutoScriptResponseFromHardware::HeardNothing,
-                // Store the history in the struct so your gRPC watch method can access it later
-                history: history.clone(),
-                events: sender.clone(),
-                queued_at: Utc::now(),
-                started_at: None,
-                stopped_at: None,
-            };
+                data.into(),
+                the_beginner_car.clone(),
+            );
 
-            // 2. Spawn the background task
-            let join_handle = tokio::task::spawn({
-                let mut incoming_tx = the_beginner_car.incoming_tx.subscribe();
-                let run_uuid = run_uuid.clone();
-                let history = history.clone();
-                let task_sender = sender.clone();
-
-                async move {
-                    loop {
-                        // TODO: add `tokio::select!` here later to handle the cancellation token
-                        match incoming_tx.recv().await {
-                            Ok(message) => match message {
-                                TheBeginnerCarOutgoingMessages::Log { log } => {
-                                    if log.trace_id.as_deref() == Some(&run_uuid) {
-                                        let event = AutoScriptEvents::LogMessage {
-                                            log_message: log.clone(),
-                                        };
-                                        let mut hist_lock = history.write().await;
-                                        hist_lock.push(event.clone());
-                                        let _ = task_sender.send(event);
-                                    }
-                                }
-                                TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
-                                    let event = AutoScriptEvents::ScriptExited;
-                                    let mut hist_lock = history.write().await;
-                                    hist_lock.push(event.clone());
-                                    let _ = task_sender.send(event);
-                                }
-                                _ => {}
-                            },
-                            Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-                                eprintln!("Car watcher lagged; skipped {skipped} messages");
-                            }
-                            Err(tokio::sync::broadcast::error::RecvError::Closed) => {
-                                // The car disconnected or channel closed, exit the loop
-                                break;
-                            }
-                        };
-                    }
-                }
-            });
+            auto_script_run_uuid = auto_script.run_uuid.clone();
 
             queue_snapshot = state.scripts.clone();
             queue_events_sender = state.queue_events_sender.clone();
@@ -223,7 +166,7 @@ impl AutoScriptManager {
         }
         let _ = queue_events_sender.send(queue_snapshot);
         Self::try_start_next_auto_script(self.the_beginner_car_scripts.clone()).await;
-        run_uuid
+        auto_script_run_uuid
     }
 
     pub async fn watch_auto_script(
@@ -239,9 +182,9 @@ impl AutoScriptManager {
             .find(|asd| asd.run_uuid == uuid);
 
         if let Some(auto_script) = auto_script {
-            let hist_lock = auto_script.history.read().await;
+            let hist_lock = auto_script.events_history.read().await;
             let past_events = hist_lock.clone();
-            let live_rx = auto_script.events.subscribe();
+            let live_rx = auto_script.events_tx.subscribe();
             return Some((past_events, live_rx));
         }
 
@@ -277,7 +220,7 @@ impl AutoScriptManager {
                 .scripts
                 .running
                 .iter()
-                .any(|auto_script| auto_script.device.device_id == target_device_id);
+                .any(|auto_script| auto_script.hardware.device_id == target_device_id);
             if device_being_used {
                 // cannot start because it's already being used..
                 for (i, script) in the_beginner_car_scripts_mutex_guard
@@ -287,7 +230,7 @@ impl AutoScriptManager {
                     .enumerate()
                 {
                     script
-                        .device
+                        .hardware
                         .incoming_tx
                         .send(
                             the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Log {
@@ -312,9 +255,9 @@ impl AutoScriptManager {
                 .pop_front();
 
             if let Some(script) = script_to_start {
-                if !script.device.is_connected() {
+                if !script.hardware.is_connected() {
                     script
-                        .device
+                        .hardware
                         .incoming_tx
                         .send(TheBeginnerCarOutgoingMessages::Log {
                             log: LogMessage {
@@ -335,18 +278,18 @@ impl AutoScriptManager {
                     return;
                 }
 
-                target_device = script.device.clone();
+                target_device = script.hardware.clone();
                 script_to_start_content = the_beginner_car_tcp_protocol::AutoScript {
                     run_uuid: script.run_uuid.clone(),
-                    preprocessed_file_hash: script.upload_file_hash.clone(),
+                    preprocessed_file_hash: script.uploaded_script_hash.clone(),
                     run_number: script.run_number,
                     device_id: "script.device.device_id".to_string(),
-                    script: script.script.to_vec(),
+                    script: script.uploaded_script.to_vec(),
                 };
 
                 // TODO: fix, this is a bit of a hack because it's not really outgoing messages of the car...
                 script
-                    .device
+                    .hardware
                     .incoming_tx
                     .send(TheBeginnerCarOutgoingMessages::Log {
                         log: LogMessage {
@@ -445,7 +388,9 @@ impl AutoScriptManager {
             let stopped: Vec<AutoScript> = state_mutex_guard
                 .scripts
                 .running
-                .extract_if(.., |auto_script| auto_script.device.device_id == device_id)
+                .extract_if(.., |auto_script| {
+                    auto_script.hardware.device_id == device_id
+                })
                 .collect();
             if stopped.len() != 1 {
                 // should only be one.. but ah well maybe we got here somehow..
@@ -454,7 +399,7 @@ impl AutoScriptManager {
 
             for stopped_script in stopped {
                 stopped_script
-                    .device
+                    .hardware
                     .incoming_tx
                     .send(TheBeginnerCarOutgoingMessages::Log {
                         log: LogMessage {

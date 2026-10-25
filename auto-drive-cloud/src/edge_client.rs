@@ -350,7 +350,6 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                     }
                                 }
 
-                                // 5. Stream subsequent live events
                                 while let Ok(grpc_event) = grpc_receiver.recv().await {
                                     let domain_event = match grpc_event {
                                         AutoScriptEvent::LogMessage { log_message } => {

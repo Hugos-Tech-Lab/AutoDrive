@@ -7,10 +7,10 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware,
-        RunAutoScriptRequest, RunAutoScriptResponse, WatchAutoScriptOverviewRequest,
-        WatchAutoScriptOverviewResponse, WatchAutoScriptRequest, WatchAutoScriptResponse,
-        WatchHardwareStatusRequest, WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
+        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware, RunAutoScriptRequest,
+        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
+        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwareStatusRequest,
+        WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
         WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
     },
     auto_script_manager::AutoScriptManager,
@@ -86,16 +86,32 @@ impl AutoDriveEdgeService for GrpcService {
             .ok_or_else(|| Status::not_found("Script run not found or already stopped"))?;
 
         let history_stream = tokio_stream::iter(past_events).map(|event| {
-            Ok(WatchAutoScriptResponse {
-                event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(event.log_message.clone())))
-            })
+            let res;
+            match event {
+                crate::auto_script_manager::AutoScriptEvents::LogMessage { log_message } => res = WatchAutoScriptResponse {
+                event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(log_message.clone())))
+                },
+                crate::auto_script_manager::AutoScriptEvents::ScriptExited => res = WatchAutoScriptResponse {
+                event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(0))
+                },
+            };
+            Ok(res)
         });
 
         let live_stream = BroadcastStream::new(live_rx).filter_map(|result| async move {
             match result {
-                Ok(event) => Some(Ok(WatchAutoScriptResponse {
-                    event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(event.log_message.clone())))
-                })),
+                Ok(event) => {
+                    let res;
+                    match event {
+                            crate::auto_script_manager::AutoScriptEvents::LogMessage { log_message } => res = WatchAutoScriptResponse {
+                            event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(log_message.clone())))
+                        },
+                        crate::auto_script_manager::AutoScriptEvents::ScriptExited => res = WatchAutoScriptResponse {
+                        event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(0))
+                        },
+                    };
+                    Some(Ok(res))
+                },
                 Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(skipped)) => {
                     eprintln!("Watch stream lagged; skipped {skipped} messages");
                     None

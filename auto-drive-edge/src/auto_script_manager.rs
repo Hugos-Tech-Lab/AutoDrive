@@ -15,7 +15,7 @@ use the_beginner_car_tcp_protocol::{
 use tokio::{
     sync::{
         Mutex, RwLock,
-        broadcast::{self, Receiver, Sender}
+        broadcast::{self, Receiver, Sender},
     },
     task::JoinHandle,
 };
@@ -34,8 +34,9 @@ pub enum AutoScriptResponseFromHardware {
 }
 
 #[derive(Clone, Debug)]
-pub struct AutoScriptEvents {
-    pub log_message: LogMessage,
+pub enum AutoScriptEvents {
+    LogMessage { log_message: LogMessage },
+    ScriptExited,
 }
 
 // #[derive(Debug, Clone)]
@@ -202,13 +203,19 @@ impl AutoScriptManager {
                             Ok(message) => match message {
                                 TheBeginnerCarOutgoingMessages::Log { log } => {
                                     if log.trace_id.as_deref() == Some(&run_uuid) {
-                                        let event = AutoScriptEvents {
+                                        let event = AutoScriptEvents::LogMessage {
                                             log_message: log.clone(),
                                         };
                                         let mut hist_lock = history.write().await;
                                         hist_lock.push(event.clone());
                                         let _ = task_sender.send(event);
                                     }
+                                }
+                                TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
+                                    let event = AutoScriptEvents::ScriptExited;
+                                    let mut hist_lock = history.write().await;
+                                    hist_lock.push(event.clone());
+                                    let _ = task_sender.send(event);
                                 }
                                 _ => {}
                             },
@@ -469,7 +476,8 @@ impl AutoScriptManager {
             }
 
             for stopped_script in stopped {
-                stopped_script.device
+                stopped_script
+                    .device
                     .incoming_tx
                     .send(TheBeginnerCarOutgoingMessages::Log {
                         log: LogMessage {

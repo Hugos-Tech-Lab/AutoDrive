@@ -1,5 +1,6 @@
 use std::{thread, time::Duration};
 
+use log::{info, warn};
 use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
@@ -85,7 +86,7 @@ impl TheBeginnerCarComms {
             let host = format!("{m_dns}:8080");
             let Ok(mut addresses) = lookup_host(&host).await else {
                 connected_tx.send(false).unwrap();
-                println!("Could not find {host}. Trying again in 10 seconds");
+                warn!("Could not find {host}. Trying again in 10 seconds");
                 thread::sleep(Duration::from_secs(10));
                 continue;
             };
@@ -102,7 +103,7 @@ impl TheBeginnerCarComms {
             {
                 Ok(Ok(stream)) => {
                     connected_tx.send(true).unwrap();
-                    println!("Connected to {host}.");
+                    info!("Connected to {host}.");
                     stream
                 }
 
@@ -157,7 +158,7 @@ impl TheBeginnerCarComms {
                                 };
 
                                 if let Err(_) = broadcast_sender.send(message) {
-                                    println!("Did not send broadcast message, assuming all receivers dropped, that's strange?")
+                                    warn!("Did not send broadcast message, assuming all receivers dropped, that's strange?")
                                 };
                             }
                             Ok(Err(e)) => {

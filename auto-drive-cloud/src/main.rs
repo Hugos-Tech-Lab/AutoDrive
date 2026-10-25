@@ -1,5 +1,8 @@
 use std::error::Error;
 
+use env_logger::Env;
+use log::info;
+
 use crate::http::http_server;
 
 pub mod edge_client;
@@ -14,13 +17,17 @@ pub mod auto_drive_edge_service {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .format_source_path(true) // Enables file and line number
+        .init();
+
     #[cfg(feature = "development")]
-    println!("auto-drive-cloud launched in development mode");
+    info!("auto-drive-cloud launched in development mode");
 
     #[cfg(feature = "production")]
     {
         const GIT_HASH: &str = env!("GIT_HASH");
-        log::info!("Starting auto-drive-edge in production mode at git hash ({GIT_HASH})");
+        info!("Starting auto-drive-edge in production mode at git hash ({GIT_HASH})");
     }
 
     let edge_client_ = edge_client::edge_client().await?;

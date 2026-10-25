@@ -182,12 +182,9 @@ pub fn run(
             );
             std::future::ready(keep)
         }).filter_map(|auto_script_event| async move {
-                            dbg!("some event!");
-                            dbg!(&auto_script_event);
                             let log = match auto_script_event {
                                 crate::edge_client::AutoScriptEvent::LogMessage { log_message } => log_message,
                                 crate::edge_client::AutoScriptEvent::Exited => {
-                                    dbg!("exited none");
                                     return None;
                                             },
                             };

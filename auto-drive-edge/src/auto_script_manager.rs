@@ -7,6 +7,7 @@ use std::{
 };
 
 use chrono::{DateTime, Utc};
+use log::{info, warn};
 use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::{
     LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarIncomingMessages,
@@ -151,8 +152,6 @@ impl AutoScriptManager {
         }
 
         queue_events_sender.send(queue_snapshot).unwrap();
-
-        println!("sent cancel request");
     }
 
     pub async fn enqueue_auto_script(&self, owner_name: String, data: Vec<u8>) -> String {
@@ -245,7 +244,6 @@ impl AutoScriptManager {
         uuid: String,
     ) -> Option<(Vec<AutoScriptEvents>, Receiver<AutoScriptEvents>)> {
         let the_beginner_car_scripts_mutex_guard = self.the_beginner_car_scripts.lock().await;
-        dbg!("watch auto script");
         let auto_script = the_beginner_car_scripts_mutex_guard
             .scripts
             .queued
@@ -328,8 +326,6 @@ impl AutoScriptManager {
 
             if let Some(script) = script_to_start {
                 if !script.device.is_connected() {
-                    // dbg!("sent cause no connect");
-
                     script
                         .device
                         .incoming_tx
@@ -432,7 +428,6 @@ impl AutoScriptManager {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
-                        // dbg!("stopped from hardware");
                         Self::on_hardware_response_auto_script_stopped(
                             state.clone(),
                             the_beginner_car.device_id.clone(),
@@ -442,10 +437,10 @@ impl AutoScriptManager {
                     _ => {}
                 },
                 Err(broadcast::error::RecvError::Lagged(skipped)) => {
-                    eprintln!("Car watcher lagged; skipped {skipped} messages");
+                    warn!("Car watcher lagged; skipped {skipped} messages");
                 }
                 Err(broadcast::error::RecvError::Closed) => {
-                    dbg!("closed");
+                    info!("AutoScript long lived watcher closed");
                     break;
                 }
             }
@@ -456,8 +451,6 @@ impl AutoScriptManager {
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
         device_id: String,
     ) {
-        println!("STOPPED FROM HARDWARE");
-
         let queue_snapshot: AutoScripts;
         let queue_events_sender: Sender<AutoScripts>;
         {
@@ -469,10 +462,7 @@ impl AutoScriptManager {
                 .collect();
             if stopped.len() != 1 {
                 // should only be one.. but ah well maybe we got here somehow..
-                println!(
-                    "warn: unexpected number of scripts removed: ({})",
-                    stopped.len()
-                );
+                warn!("Unexpected number of scripts removed: ({})", stopped.len());
             }
 
             for stopped_script in stopped {

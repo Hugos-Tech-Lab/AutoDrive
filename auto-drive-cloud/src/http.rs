@@ -1,3 +1,4 @@
+use log::info;
 use warp::Filter;
 
 use crate::http::hardware::overview::hardware_overview;
@@ -45,7 +46,7 @@ pub async fn http_server(receiver: Hardware) {
             .with(cors);
 
         let address = ([0, 0, 0, 0], 3030);
-        println!("serving HTTP to {address:?}");
+        info!("serving HTTP to {address:?}");
 
         warp::serve(routes).run(address).await;
     });

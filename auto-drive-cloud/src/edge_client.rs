@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use log::warn;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{
     RwLock,
@@ -89,11 +89,11 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
 
         match AutoDriveEdgeServiceClient::connect(auto_drive_edge_ip).await {
             Ok(c) => {
-                println!("Successfully connected to edge service.");
+                info!("Successfully connected to edge service.");
                 break c;
             }
             Err(err) => {
-                eprintln!("Failed to connect to edge service: {err}. Retrying in 5s...");
+                warn!("Failed to connect to edge service: {err}. Retrying in 5s...");
                 sleep(Duration::from_secs(5)).await;
             }
         }
@@ -131,7 +131,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                     }
                                 }
                                 Err(err) => {
-                                    eprintln!(
+                                    warn!(
                                         "Beginner car event stream disconnected: {err}. Reconnecting..."
                                     );
                                     break;
@@ -140,7 +140,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         }
                     }
                     Err(err) => {
-                        eprintln!(
+                        warn!(
                             "Failed to subscribe to beginner car events: {err}. Retrying in 5s..."
                         );
                     }
@@ -176,7 +176,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                     }
                                 }
                                 Err(err) => {
-                                    eprintln!(
+                                    warn!(
                                         "Auto script overview stream disconnected: {err}. Reconnecting..."
                                     );
                                     break;
@@ -185,7 +185,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         }
                     }
                     Err(err) => {
-                        eprintln!(
+                        warn!(
                             "Failed to subscribe to auto script overview: {err}. Retrying in 5s..."
                         );
                     }
@@ -224,7 +224,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                     });
                                 }
                                 Err(err) => {
-                                    eprintln!(
+                                    warn!(
                                         "Hardware status stream disconnected: {err}. Reconnecting..."
                                     );
                                     break;
@@ -233,7 +233,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         }
                     }
                     Err(err) => {
-                        eprintln!(
+                        warn!(
                             "Failed to subscribe to hardware status: {err}. Retrying in 5s..."
                         );
                     }
@@ -308,8 +308,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                     }
                                 });
                             } else {
-                                dbg!("could not watch script"); // TODO: fix warn! not working.
-                                warn!("could not watch script"); // TODO propagate this to user
+                                warn!("Could not watch script"); // TODO propagate this to user
                             }
 
                             let _ = response_tx.send(StartAutoScriptResponse::Uuid {

@@ -2,6 +2,7 @@ use std::convert::Infallible;
 use std::time::Duration;
 
 use futures_util::StreamExt;
+use log::warn;
 use tokio::sync::broadcast::Sender;
 use tokio_stream::wrappers::BroadcastStream;
 use warp::Filter;
@@ -26,7 +27,7 @@ pub fn logs(
                     }
                     Ok(_) => None,
                     Err(error) => {
-                        eprintln!("Log broadcast receiver error: {error}");
+                        warn!("Log broadcast receiver error: {error}");
 
                         Some(Ok::<_, Infallible>(
                             warp::sse::Event::default()

@@ -3,6 +3,10 @@ use crate::{
     auto_drive_edge_service::v1::auto_drive_edge_service_server::AutoDriveEdgeServiceServer,
     devices_config::DeviceConfig, grpc_service::GrpcService,
 };
+
+use env_logger::Env;
+#[cfg(feature = "development")]
+use log::info;
 use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{metrics::SdkMeterProvider, trace::SpanExporter as _};
 use std::error::Error;
@@ -22,13 +26,17 @@ pub mod auto_drive_edge_service {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .format_source_path(true) // Enables file and line number
+        .init();
+
     #[cfg(feature = "development")]
-    println!("auto-drive-cloud launched in development mode");
+    info!("auto-drive-cloud launched in development mode");
 
     #[cfg(feature = "production")]
     {
         const GIT_HASH: &str = env!("GIT_HASH");
-        log::info!("Starting auto-drive-edge in production mode at git hash ({GIT_HASH})");
+        info!("Starting auto-drive-edge in production mode at git hash ({GIT_HASH})");
     }
 
     unsafe {
@@ -63,7 +71,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async move {
         let address = "0.0.0.0:50051".parse().unwrap();
 
-        println!("serving gRPC to {address}");
+        info!("serving gRPC to {address}");
         tonic::transport::Server::builder()
             .add_service(AutoDriveEdgeServiceServer::new(grpc_service))
             .serve(address)

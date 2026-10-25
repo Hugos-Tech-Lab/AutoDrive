@@ -6,7 +6,7 @@ use std::{
     },
 };
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use log::{info, warn};
 use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::{
@@ -164,7 +164,7 @@ impl AutoScriptManager {
                 run_uuid: run_uuid.clone(),
                 upload_file_hash: digest,
                 run_number,
-                script: data,
+                script: Arc::new(data),
                 device: the_beginner_car.clone(),
                 hardware_response: AutoScriptResponseFromHardware::HeardNothing,
                 // Store the history in the struct so your gRPC watch method can access it later
@@ -341,7 +341,7 @@ impl AutoScriptManager {
                     preprocessed_file_hash: script.upload_file_hash.clone(),
                     run_number: script.run_number,
                     device_id: "script.device.device_id".to_string(),
-                    script: script.script.clone(),
+                    script: script.script.to_vec(),
                 };
 
                 // TODO: fix, this is a bit of a hack because it's not really outgoing messages of the car...

@@ -79,7 +79,7 @@ impl ServerSpi {
             RequestToHardware::RunAutoScript { data } => {
                 info!("run auto script");
                 match auto_script.run(data) {
-                    Ok(ok) => {}
+                    Ok(_) => {}
                     Err(err) => log::error!("{}", err),
                 }
             }

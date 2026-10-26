@@ -1,14 +1,12 @@
 use std::sync::mpsc::{self, Receiver, SyncSender};
 
+use auto_drive_common_types::{LogLevel, LogMessage, LogSystemOrigin};
 use esp_idf_svc::log::EspIdfLogger;
 use log::{LevelFilter, Log, Metadata, Record};
-use the_beginner_car_spi_protocol::{LogLevel, LogMessage};
 
 use std::cell::RefCell;
 
 thread_local! {
-    // Clippy false positive I guess? Open issue: https://github.com/rust-lang/rust-clippy/issues/13422
-    #[allow(clippy::missing_const_for_thread_local)]
     static TRACE_ID: RefCell<Option<String>> =
         const { RefCell::new(None) };
 }
@@ -32,6 +30,7 @@ fn current_trace_id() -> Option<String> {
 struct Logger {
     inner: EspIdfLogger<()>,
     sender: SyncSender<LogMessage>,
+    origin: LogSystemOrigin,
 }
 
 impl Log for Logger {
@@ -57,6 +56,7 @@ impl Log for Logger {
             target: record.target().to_owned(),
             message: record.args().to_string(),
             trace_id: current_trace_id(),
+            system_origin: self.origin.clone(),
         };
 
         // Don't block the application if the SPI consumer is slow.
@@ -71,16 +71,16 @@ impl Log for Logger {
     }
 }
 
-pub fn init_logging() -> Receiver<LogMessage> {
+pub fn init_logging(origin: LogSystemOrigin) -> Receiver<LogMessage> {
     let (sender, receiver) = mpsc::sync_channel(100);
 
     let logger = Box::leak(Box::new(Logger {
         inner: EspIdfLogger::new(()),
         sender: sender.clone(),
+        origin,
     }));
 
     log::set_logger(logger).expect("failed to initialize logger");
-
     log::set_max_level(LevelFilter::Debug);
 
     receiver

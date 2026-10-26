@@ -1,30 +1,7 @@
+use auto_drive_common_types::LogMessage;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum LogLevel {
-    Error,
-    Warn,
-    Info,
-    Debug,
-    Trace,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum LogSystemOrigin {
-    WasmMcu,
-    WifiMcu,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct LogMessage {
-    pub system_origin: LogSystemOrigin,
-    pub level: LogLevel,
-    pub target: String,
-    pub message: String,
-    pub trace_id: Option<String>,
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AutoScript {
@@ -63,8 +40,10 @@ pub enum TheBeginnerCarOutgoingMessages {
         voltage: f32,
     },
     InfraredLedReadings {
-        utmost_front_utmost_left: u16,
-        utmost_front_utmost_right: u16,
+        back_center: u16,
+        front_left: u16,
+        front_center: u16,
+        front_right: u16,
     },
 }
 

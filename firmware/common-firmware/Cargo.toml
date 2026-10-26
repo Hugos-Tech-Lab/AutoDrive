@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+auto-drive-common-types = { path = "../the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types" }
 esp-idf-svc = { version = "0.53.0", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
 esp-idf-sys = "0.38.1"
 embassy-time = "0.5.1"

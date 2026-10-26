@@ -1,21 +1,5 @@
+use auto_drive_common_types::LogMessage;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum LogLevel {
-    Error,
-    Warn,
-    Info,
-    Debug,
-    Trace,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LogMessage {
-    pub level: LogLevel,
-    pub target: String,
-    pub message: String,
-    pub trace_id: Option<String>,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RequestToHardware {
@@ -24,16 +8,9 @@ pub enum RequestToHardware {
     SetMotorASpeed(i8),
     SetMotorBSpeed(i8),
     DrainEvents,
-    NotifyPositionFromCamera {
-        x: i32,
-        y: i32,
-    },
-    NotifyBatteryReadings {
-        voltage: f32
-    },
-    RunAutoScript {
-        data: Vec<u8>,
-    },
+    NotifyPositionFromCamera { x: i32, y: i32 },
+    NotifyBatteryReadings { voltage: f32 },
+    RunAutoScript { data: Vec<u8> },
     StopAutoScript,
 }
 

@@ -10,7 +10,8 @@ use std::{
 use crate::{
     auto_script::{
         cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarExports,
-    }, hardware::{RequestOrigin, TheBeginnerCarHardware},
+    },
+    hardware::TheBeginnerCarHardware,
 };
 use anyhow::{Result, anyhow};
 use log::{error, info};
@@ -140,7 +141,6 @@ impl WasmThread {
             let mut hardware = wasm_data.hardware.lock().unwrap();
             hardware.stop_all();
         }
-        
 
         log::info!("done");
         Ok(())

@@ -6,7 +6,8 @@ use std::{
     time::Duration,
 };
 
-use common_firmware::spi_slave::SpiSlaveHardware;
+use auto_drive_common_types::LogSystemOrigin;
+use common_firmware::{logger::init_logging, spi_slave::SpiSlaveHardware};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::{
@@ -19,14 +20,15 @@ use esp_idf_svc::hal::{
 use the_beginner_car_spi_protocol::Event;
 
 use crate::{
-    auto_script::AutoScript, hardware::{TheBeginnerCarHardware, led::Led, motor::Motor}, logger::init_logging, server_spi::ServerSpi,
+    auto_script::AutoScript,
+    hardware::{TheBeginnerCarHardware, led::Led, motor::Motor},
+    server_spi::ServerSpi,
 };
 
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod auto_script;
 pub mod hardware;
-pub mod logger;
 pub mod server_spi;
 
 pub fn main() -> anyhow::Result<()> {
@@ -40,7 +42,7 @@ pub fn main() -> anyhow::Result<()> {
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
-    let log_receiver = init_logging();
+    let log_receiver = init_logging(LogSystemOrigin::WasmMcu);
 
     info!("starting");
     let peripherals = Peripherals::take()?;
@@ -142,19 +144,22 @@ pub fn main() -> anyhow::Result<()> {
                 let mut pin_ir_front_right =
                     AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
 
-
                 let mut last_flush = std::time::Instant::now();
 
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
                     let back_center_latest_reading =
-                        ((pin_ir_back_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
-                    let front_left_latest_reading =
-                        ((pin_ir_front_left.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
+                        ((pin_ir_back_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
+                            as u16;
+                    let front_left_latest_reading = ((pin_ir_front_left.read_raw().unwrap() as u32
+                        * u16::MAX as u32)
+                        / 4095) as u16;
                     let front_center_latest_reading =
-                        ((pin_ir_front_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
+                        ((pin_ir_front_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
+                            as u16;
                     let front_right_latest_reading =
-                        ((pin_ir_front_right.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095) as u16;
+                        ((pin_ir_front_right.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
+                            as u16;
 
                     ir_back_center_latest_reading
                         .store(back_center_latest_reading, Ordering::Relaxed);
@@ -168,15 +173,14 @@ pub fn main() -> anyhow::Result<()> {
                     ir_front_right_latest_reading
                         .store(front_right_latest_reading, Ordering::Relaxed);
 
-
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();
 
                         events.push(Event::InfraredLedReadings {
-                            back_center: todo!(),
-                            front_left: todo!(),
-                            front_center: todo!(),
-                            front_right: todo!(),
+                            back_center: back_center_latest_reading,
+                            front_left: front_left_latest_reading,
+                            front_center: front_center_latest_reading,
+                            front_right: front_right_latest_reading,
                         });
 
                         last_flush = std::time::Instant::now();

@@ -1,7 +1,8 @@
 use std::{sync::mpsc::SyncSender, thread, time::Duration};
 pub mod battery_monitor;
 
-use common_firmware::spi_master::SpiMaster;
+use auto_drive_common_types::LogSystemOrigin;
+use common_firmware::{logger::init_logging, spi_master::SpiMaster};
 use esp_idf_hal::adc::oneshot::AdcDriver;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
@@ -13,21 +14,18 @@ use esp_idf_svc::{
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
-use the_beginner_car_tcp_protocol::{LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarOutgoingMessages};
+use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 
 use crate::{
-    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, logger::init_logging, tcp_server::accept
+    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, tcp_server::accept,
 };
 
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod connect_to_wifi;
-pub mod esp_app_desc_2;
 pub mod inter_thread;
-pub mod logger;
 pub mod tcp_server;
 pub mod utils;
-
 
 pub struct HardwareMessage {
     request: RequestToHardware,
@@ -53,7 +51,7 @@ pub fn main() -> anyhow::Result<()> {
     let reason = unsafe { esp_reset_reason() };
     println!("Last reset reason: {:?}", reason);
 
-    let log_receiver = init_logging();
+    let log_receiver = init_logging(LogSystemOrigin::WifiMcu);
     info!("starting");
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
@@ -125,7 +123,9 @@ pub fn main() -> anyhow::Result<()> {
 
                     if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
                         for log in pending_logs.drain(..) {
-                            sender_tx.send(TheBeginnerCarOutgoingMessages::Log { log }).unwrap();
+                            sender_tx
+                                .send(TheBeginnerCarOutgoingMessages::Log { log })
+                                .unwrap();
                         }
                         last_flush = std::time::Instant::now();
                     }
@@ -173,26 +173,14 @@ pub fn main() -> anyhow::Result<()> {
                                     the_beginner_car_spi_protocol::Event::Log { message } => {
                                         sender_tx
                                             .send(TheBeginnerCarOutgoingMessages::Log {
-                                                log: LogMessage {
-                                                    level: match message.level {
-                                                        the_beginner_car_spi_protocol::LogLevel::Error => LogLevel::Error,
-                                                        the_beginner_car_spi_protocol::LogLevel::Warn => LogLevel::Warn,
-                                                        the_beginner_car_spi_protocol::LogLevel::Info => LogLevel::Info,
-                                                        the_beginner_car_spi_protocol::LogLevel::Debug => LogLevel::Debug,
-                                                        the_beginner_car_spi_protocol::LogLevel::Trace => LogLevel::Trace,
-                                                    },
-                                                    target: message.target,
-                                                    message: message.message,
-                                                    trace_id: message.trace_id,
-                                                    system_origin: LogSystemOrigin::WifiMcu,
-                                                },
+                                                log: message,
                                             })
                                             .unwrap()
                                     } // TODO: this should send vec
-                                    the_beginner_car_spi_protocol::Event::InfraredLedReadings { utmost_front_utmost_left, utmost_front_utmost_right } => {
+                                    the_beginner_car_spi_protocol::Event::InfraredLedReadings { back_center, front_left, front_center, front_right  } => {
                                         // dbg!(value);
                                         sender_tx
-                                            .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { utmost_front_utmost_left, utmost_front_utmost_right })
+                                            .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { back_center, front_left, front_center, front_right })
                                             .unwrap()
                                     }
                                     the_beginner_car_spi_protocol::Event::AutoScriptStopped => {
@@ -230,7 +218,7 @@ pub fn main() -> anyhow::Result<()> {
                     {
                         sender_tx
                             .send(TheBeginnerCarOutgoingMessages::BatteryReading {
-                                voltage: motor_battery_reading.voltage
+                                voltage: motor_battery_reading.voltage,
                             })
                             .unwrap();
                     }
@@ -242,7 +230,7 @@ pub fn main() -> anyhow::Result<()> {
                     hardware_sender
                         .send(HardwareMessage {
                             request: RequestToHardware::NotifyBatteryReadings {
-                                voltage: motor_battery_reading.voltage
+                                voltage: motor_battery_reading.voltage,
                             },
                             response_tx: sender,
                         })
@@ -276,12 +264,15 @@ pub fn main() -> anyhow::Result<()> {
         .name("spi_driver".into())
         .stack_size(16 * 1024)
         .spawn(move || {
-            let mut spi = SpiMaster::new( // TODO: cleanup this similar to SpiSlave.
+            let mut spi = SpiMaster::new(
+                // TODO: cleanup this similar to SpiSlave.
                 peripherals.spi2,
                 peripherals.pins.gpio15.into(),
                 peripherals.pins.gpio23.into(),
                 peripherals.pins.gpio22.into(),
-                PinDriver::input(peripherals.pins.gpio21, Pull::Down).unwrap().into(),
+                PinDriver::input(peripherals.pins.gpio21, Pull::Down)
+                    .unwrap()
+                    .into(),
                 peripherals.pins.gpio20.into(),
                 PinDriver::output(peripherals.pins.gpio19).unwrap().into(),
                 5_000_000,

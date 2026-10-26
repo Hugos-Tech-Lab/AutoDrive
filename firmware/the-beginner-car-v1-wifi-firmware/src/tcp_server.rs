@@ -1,3 +1,4 @@
+use std::sync::atomic::AtomicU32;
 use std::sync::mpsc::{self, SyncSender};
 use std::time::{Duration, Instant};
 
@@ -15,8 +16,8 @@ use flume::Receiver;
 use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, try_join};
 use log::error;
 use log::info;
-use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use std::io;
+use std::net::{TcpListener, TcpStream, ToSocketAddrs};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{
     TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
@@ -73,19 +74,13 @@ where
 
         match message {
             TheBeginnerCarIncomingMessages::SetMotorASpeed { speed } => {
-                set_motor_a_speed::set_motor_a_speed_on_hardware(
-                    hardware_sender.clone(),
-                    speed,
-                )
-                .map_err(|err| anyhow::anyhow!("{err:?}"))?;
+                set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed)
+                    .map_err(|err| anyhow::anyhow!("{err:?}"))?;
             }
 
             TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
-                set_motor_b_speed::set_motor_b_speed_on_hardware(
-                    hardware_sender.clone(),
-                    speed,
-                )
-                .map_err(|err| anyhow::anyhow!("{err:?}"))?;
+                set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed)
+                    .map_err(|err| anyhow::anyhow!("{err:?}"))?;
             }
 
             TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {
@@ -99,7 +94,9 @@ where
 
                 hardware_sender
                     .send(HardwareMessage {
-                        request: RequestToHardware::RunAutoScript { data: script.script },
+                        request: RequestToHardware::RunAutoScript {
+                            data: script.script,
+                        },
                         response_tx: sender,
                     })
                     .context("sending RunAutoScript to hardware")?;
@@ -108,7 +105,7 @@ where
                 match response {
                     ResponseFromHardware::AutoScriptStarted { id } => {
                         dbg!(id);
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -126,7 +123,7 @@ where
                 match response {
                     ResponseFromHardware::Ok => {
                         dbg!("ok");
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -151,11 +148,10 @@ where
             dbg!("stopped");
         }
 
-        let bytes = postcard::to_allocvec(&message)
-            .context("encoding outgoing message")?;
+        let bytes = postcard::to_allocvec(&message).context("encoding outgoing message")?;
 
-        let len = u32::try_from(bytes.len())
-            .context("outgoing message exceeds u32 frame length")?;
+        let len =
+            u32::try_from(bytes.len()).context("outgoing message exceeds u32 frame length")?;
 
         writer
             .write_all(&len.to_be_bytes())
@@ -196,12 +192,29 @@ async fn wait_for_hardware_response(
 pub async fn accept(
     spawner: LocalSpawner,
     hardware_sender: SyncSender<HardwareMessage>,
-    receiver_tx: Receiver<TheBeginnerCarOutgoingMessages>
+    receiver_tx: Receiver<TheBeginnerCarOutgoingMessages>,
 ) -> Result<(), io::Error> {
     info!("Binding to port 8080");
 
     let addr = "0.0.0.0:8080".to_socket_addrs()?.next().unwrap();
     let listener = Async::<TcpListener>::bind(addr)?;
+    let edge_connection_len = AtomicU32::new(0);
+
+    // if edge_connection_len.load(Ordering::Relaxed) > 0 {
+    //     bail!("too many edge connections");
+    // }
+
+    // edge_connection_len.fetch_add(1, Ordering::Relaxed);
+    // // let mut bytes = [0u8; 1];
+    // // reader
+    // //     .read_exact(&mut bytes)
+    // //     .await
+    // //     .context("reading incoming frame length")?;
+
+    // // let authentication_id = u8::from_be_bytes(bytes);
+    // // if authentication_id == 3 {
+
+    // // }
 
     loop {
         let stream = listener.accept().await;

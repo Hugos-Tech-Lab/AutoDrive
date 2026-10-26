@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+auto-drive-common-types = { path = "../auto-drive-common-types" }
 serde = { version = "1.0.229", features = ["derive"] }

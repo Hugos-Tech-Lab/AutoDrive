@@ -10,12 +10,23 @@ harness = false
 
 [dependencies]
 common-firmware = { path = "../common-firmware" }
+auto-drive-common-types = { path = "api/auto-drive-common-types" }
 the-beginner-car-wasm-sdk = { path = "api/the-beginner-car-wasm-sdk" }
 the-beginner-car-spi-protocol = { path = "api/the-beginner-car-spi-protocol" }
-wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.2", default-features = false, features = ["esp-idf"] }
+wamr-rust-sdk = { git = "https://github.com/hugosvirak/wamr-rust-sdk/", tag = "v0.0.2", default-features = false, features = [
+    "esp-idf",
+] }
 anyhow = "1.0.104"
 log = "0.4"
-esp-idf-svc = { version = "0.53.0", features = ["critical-section", "embassy-time-driver", "embassy-sync", "std", "experimental", "alloc", "default"] }
+esp-idf-svc = { version = "0.53.0", features = [
+    "critical-section",
+    "embassy-time-driver",
+    "embassy-sync",
+    "std",
+    "experimental",
+    "alloc",
+    "default",
+] }
 esp-idf-sys = "0.38.1"
 # KEEP THIS DEPENDENCY EVEN THOUGH IT'S NOT EXPLICITLY USED OTHERWISE COMPILER ERROR MISSING "__embassy_time_queue_item_from_waker"
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }

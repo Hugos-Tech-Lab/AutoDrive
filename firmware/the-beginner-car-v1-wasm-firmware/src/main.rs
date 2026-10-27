@@ -68,19 +68,28 @@ pub fn main() -> anyhow::Result<()> {
         FreeRtos::delay_ms(1000);
     }
 
+    // front
+    let ir_front_far_left_latest_reading = Arc::new(AtomicU16::new(0));
     let ir_front_left_latest_reading = Arc::new(AtomicU16::new(0));
-    let ir_back_center_latest_reading = Arc::new(AtomicU16::new(0));
     let ir_front_center_latest_reading = Arc::new(AtomicU16::new(0));
     let ir_front_right_latest_reading = Arc::new(AtomicU16::new(0));
+    let ir_front_far_right_latest_reading = Arc::new(AtomicU16::new(0));
+
+    // back
+    let ir_back_center_latest_reading = Arc::new(AtomicU16::new(0));
+    let ir_back_left_latest_reading = Arc::new(AtomicU16::new(0));
 
     let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
         motor_a,
         motor_b,
         led_right,
+        ir_front_far_left_latest_reading.clone(),
         ir_front_left_latest_reading.clone(),
-        ir_back_center_latest_reading.clone(),
         ir_front_center_latest_reading.clone(),
         ir_front_right_latest_reading.clone(),
+        ir_front_far_right_latest_reading.clone(),
+        ir_back_center_latest_reading.clone(),
+        ir_back_left_latest_reading.clone(),
     )));
 
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
@@ -135,34 +144,56 @@ pub fn main() -> anyhow::Result<()> {
                     ..Default::default()
                 };
 
-                let mut pin_ir_back_center =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio0, &config).unwrap();
-                let mut pin_ir_front_left =
+                let mut pin_ir_front_far_left =
                     AdcChannelDriver::new(&adc, peripherals.pins.gpio1, &config).unwrap();
-                let mut pin_ir_front_center =
+                let mut pin_ir_front_left =
                     AdcChannelDriver::new(&adc, peripherals.pins.gpio2, &config).unwrap();
+                let mut pin_ir_front_center =
+                    AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &config).unwrap();
                 let mut pin_ir_front_right =
                     AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
+                let mut pin_ir_front_far_right =
+                    AdcChannelDriver::new(&adc, peripherals.pins.gpio4, &config).unwrap();
+
+                let mut pin_ir_back_center =
+                    AdcChannelDriver::new(&adc, peripherals.pins.gpio0, &config).unwrap();
+                let mut pin_ir_back_left =
+                    AdcChannelDriver::new(&adc, peripherals.pins.gpio6, &config).unwrap();
 
                 let mut last_flush = std::time::Instant::now();
 
                 loop {
                     // TODO: this polling could be based on the speed of the wheels
-                    let back_center_latest_reading =
-                        ((pin_ir_back_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
-                            as u16;
+                    let front_far_left_latest_reading =
+                        ((pin_ir_front_far_left.read_raw().unwrap() as u32 * u16::MAX as u32)
+                            / 4095) as u16;
+
                     let front_left_latest_reading = ((pin_ir_front_left.read_raw().unwrap() as u32
                         * u16::MAX as u32)
                         / 4095) as u16;
+
                     let front_center_latest_reading =
                         ((pin_ir_front_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
                             as u16;
+
                     let front_right_latest_reading =
                         ((pin_ir_front_right.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
                             as u16;
 
-                    ir_back_center_latest_reading
-                        .store(back_center_latest_reading, Ordering::Relaxed);
+                    let front_far_right_latest_reading =
+                        ((pin_ir_front_far_right.read_raw().unwrap() as u32 * u16::MAX as u32)
+                            / 4095) as u16;
+
+                    let back_left_latest_reading = ((pin_ir_back_left.read_raw().unwrap() as u32
+                        * u16::MAX as u32)
+                        / 4095) as u16;
+
+                    let back_center_latest_reading =
+                        ((pin_ir_back_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
+                            as u16;
+
+                    ir_front_far_left_latest_reading
+                        .store(front_far_left_latest_reading, Ordering::Relaxed);
 
                     ir_front_left_latest_reading
                         .store(front_left_latest_reading, Ordering::Relaxed);
@@ -172,6 +203,14 @@ pub fn main() -> anyhow::Result<()> {
 
                     ir_front_right_latest_reading
                         .store(front_right_latest_reading, Ordering::Relaxed);
+
+                    ir_front_far_right_latest_reading
+                        .store(front_far_right_latest_reading, Ordering::Relaxed);
+
+                    ir_back_left_latest_reading.store(back_left_latest_reading, Ordering::Relaxed);
+
+                    ir_back_center_latest_reading
+                        .store(back_center_latest_reading, Ordering::Relaxed);
 
                     if last_flush.elapsed() >= Duration::from_millis(100) {
                         let mut events = events.lock().unwrap();

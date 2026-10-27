@@ -22,10 +22,15 @@ pub struct TheBeginnerCarHardware {
     // led_left: Led,
     led_right: Led,
     battery_voltage: f32,
+    // front
+    ir_front_far_left_latest_reading: Arc<AtomicU16>,
     ir_front_left_latest_reading: Arc<AtomicU16>,
-    ir_back_center_latest_reading: Arc<AtomicU16>,
     ir_front_center_latest_reading: Arc<AtomicU16>,
     ir_front_right_latest_reading: Arc<AtomicU16>,
+    ir_front_far_right_latest_reading: Arc<AtomicU16>,
+    // back
+    ir_back_center_latest_reading: Arc<AtomicU16>,
+    ir_back_left_latest_reading: Arc<AtomicU16>,
 }
 
 impl TheBeginnerCarHardware {
@@ -34,10 +39,15 @@ impl TheBeginnerCarHardware {
         wheel_b: Motor,
         // led_left: Led,
         led_right: Led,
+        // front
+        ir_front_far_left_latest_reading: Arc<AtomicU16>,
         ir_front_left_latest_reading: Arc<AtomicU16>,
-        ir_back_center_latest_reading: Arc<AtomicU16>,
         ir_front_center_latest_reading: Arc<AtomicU16>,
         ir_front_right_latest_reading: Arc<AtomicU16>,
+        ir_front_far_right_latest_reading: Arc<AtomicU16>,
+        // back
+        ir_back_center_latest_reading: Arc<AtomicU16>,
+        ir_back_left_latest_reading: Arc<AtomicU16>,
     ) -> Self {
         Self {
             allowed_controller: RequestOrigin::Manual,
@@ -46,10 +56,13 @@ impl TheBeginnerCarHardware {
             // led_left,
             led_right,
             battery_voltage: 0.0,
+            ir_front_far_left_latest_reading,
             ir_front_left_latest_reading,
-            ir_back_center_latest_reading,
             ir_front_center_latest_reading,
             ir_front_right_latest_reading,
+            ir_front_far_right_latest_reading,
+            ir_back_center_latest_reading,
+            ir_back_left_latest_reading,
         }
     }
 
@@ -84,8 +97,9 @@ impl TheBeginnerCarHardware {
         self.battery_voltage = battery_voltage;
     }
 
-    pub fn get_ir_back_center_value(&self) -> u16 {
-        self.ir_back_center_latest_reading.load(Ordering::Relaxed)
+    pub fn get_ir_front_far_left_value(&self) -> u16 {
+        self.ir_front_far_left_latest_reading
+            .load(Ordering::Relaxed)
     }
 
     pub fn get_ir_front_left_value(&self) -> u16 {
@@ -98,6 +112,19 @@ impl TheBeginnerCarHardware {
 
     pub fn get_ir_front_right_value(&self) -> u16 {
         self.ir_front_right_latest_reading.load(Ordering::Relaxed)
+    }
+
+    pub fn get_ir_front_far_right_value(&self) -> u16 {
+        self.ir_front_far_right_latest_reading
+            .load(Ordering::Relaxed)
+    }
+
+    pub fn get_ir_back_center_value(&self) -> u16 {
+        self.ir_back_center_latest_reading.load(Ordering::Relaxed)
+    }
+
+    pub fn get_ir_back_left_value(&self) -> u16 {
+        self.ir_back_left_latest_reading.load(Ordering::Relaxed)
     }
 
     pub fn stop_all(&mut self) {

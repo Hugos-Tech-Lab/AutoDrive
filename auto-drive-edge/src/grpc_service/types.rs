@@ -12,19 +12,21 @@ use crate::auto_drive_edge_service::{
 };
 
 pub fn to_grpc_log_message(
-    log_message: the_beginner_car_tcp_protocol::LogMessage,
+    log_message: auto_drive_common_types::LogMessage,
 ) -> auto_drive_edge_service::v1::LogMessage {
     let log_level = match log_message.level {
-        the_beginner_car_tcp_protocol::LogLevel::Error => LogLevel::Error,
-        the_beginner_car_tcp_protocol::LogLevel::Warn => LogLevel::Warn,
-        the_beginner_car_tcp_protocol::LogLevel::Info => LogLevel::Info,
-        the_beginner_car_tcp_protocol::LogLevel::Debug => LogLevel::Debug,
-        the_beginner_car_tcp_protocol::LogLevel::Trace => LogLevel::Trace,
+        auto_drive_common_types::LogLevel::Error => LogLevel::Error,
+        auto_drive_common_types::LogLevel::Warn => LogLevel::Warn,
+        auto_drive_common_types::LogLevel::Info => LogLevel::Info,
+        auto_drive_common_types::LogLevel::Debug => LogLevel::Debug,
+        auto_drive_common_types::LogLevel::Trace => LogLevel::Trace,
     };
 
     let system_origin = match log_message.system_origin {
-        the_beginner_car_tcp_protocol::LogSystemOrigin::WasmMcu => LogSystemOrigin::WasmMcu,
-        the_beginner_car_tcp_protocol::LogSystemOrigin::WifiMcu => LogSystemOrigin::WifiMcu,
+        auto_drive_common_types::LogSystemOrigin::WasmMcu => LogSystemOrigin::WasmMcu,
+        auto_drive_common_types::LogSystemOrigin::WifiMcu => LogSystemOrigin::WifiMcu,
+        auto_drive_common_types::LogSystemOrigin::CloudServer => LogSystemOrigin::WifiMcu,
+        auto_drive_common_types::LogSystemOrigin::EdgeServer => LogSystemOrigin::WifiMcu,
     };
 
     crate::auto_drive_edge_service::v1::LogMessage {
@@ -86,12 +88,14 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
             }
 
             TheBeginnerCarOutgoingMessages::InfraredLedReadings {
-                utmost_front_utmost_left,
-                utmost_front_utmost_right,
+                back_center,
+                front_left,
+                front_center,
+                front_right,
             } => WatchTheBeginnerCarEventsResponse {
                 event: Some(Event::InfraredLedReading(InfraredLedReadingsEvent {
-                    utmost_front_utmost_left: utmost_front_utmost_left as u32,
-                    utmost_front_utmost_right: utmost_front_utmost_right as u32,
+                    utmost_front_utmost_left: back_center as u32,
+                    utmost_front_utmost_right: front_left as u32,
                 })),
             },
         }

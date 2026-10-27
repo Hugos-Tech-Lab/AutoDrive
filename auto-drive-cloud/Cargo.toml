@@ -9,6 +9,8 @@ development = []
 production = []
 
 [dependencies]
+auto-drive-common-types = { path = "../firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types" }
+
 prost = "0.14"
 tonic = "0.14.6"
 tonic-prost = "0.14.6"
@@ -19,7 +21,7 @@ tokio = { version = "1", features = [
   "macros",
   "rt-multi-thread",
   "time",
-  "sync"
+  "sync",
 ] }
 tokio-stream = { version = "0.1.19", features = ["sync"] }
 warp = { version = "0.4.3", features = ["server", "multipart"] }

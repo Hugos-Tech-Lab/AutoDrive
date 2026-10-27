@@ -12,6 +12,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "auto-drive-common-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "auto-drive-edge"
 version = "0.1.0"
 dependencies = [
@@ -447,6 +454,7 @@ dependencies = [
 name = "the-beginner-car-tcp-protocol"
 version = "0.1.0"
 dependencies = [
+ "auto-drive-common-types",
  "postcard",
  "serde",
 ]

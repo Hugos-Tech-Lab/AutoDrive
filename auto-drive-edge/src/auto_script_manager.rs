@@ -6,10 +6,10 @@ use std::{
     },
 };
 
+use auto_drive_common_types::{LogLevel, LogMessage};
 use log::{info, warn};
 use the_beginner_car_tcp_protocol::{
-    LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarIncomingMessages,
-    TheBeginnerCarOutgoingMessages,
+    TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 use tokio::{
     sync::{
@@ -22,7 +22,8 @@ use tokio::{
 pub mod auto_script;
 
 use crate::{
-    auto_script_manager::auto_script::AutoScript, the_beginner_car_comms::TheBeginnerCarComms,
+    auto_drive_edge_service::v1::LogSystemOrigin, auto_script_manager::auto_script::AutoScript,
+    the_beginner_car_comms::TheBeginnerCarComms,
 };
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
@@ -235,11 +236,13 @@ impl AutoScriptManager {
                         .send(
                             the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Log {
                                 log: LogMessage {
-                                    system_origin: LogSystemOrigin::WasmMcu,
+                                    system_origin:
+                                        auto_drive_common_types::LogSystemOrigin::EdgeServer,
                                     level: LogLevel::Info,
                                     target: "asd".to_string(),
+                                    // trace_id: Some(script.run_uuid.clone()),
                                     message: format!("You are waiting in the queue, position {i}"),
-                                    trace_id: Some(script.run_uuid.clone()),
+                                    trace_id: None,
                                 },
                             },
                         )

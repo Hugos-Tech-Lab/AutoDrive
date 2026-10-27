@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
+use auto_drive_common_types::{LogLevel, LogMessage, LogSystemOrigin};
 use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
-use the_beginner_car_tcp_protocol::{
-    LogLevel, LogMessage, LogSystemOrigin, TheBeginnerCarOutgoingMessages,
-};
+use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 use tokio::{
     sync::{
         RwLock,

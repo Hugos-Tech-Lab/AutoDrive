@@ -6,6 +6,7 @@ ENV GIT_HASH=${GIT_HASH}
 RUN apt-get update && apt-get install -y protobuf-compiler && rm -rf /var/lib/apt/lists/*
 
 COPY auto-drive-edge/api /auto-drive-edge/api
+COPY firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types
 
 WORKDIR /workspace
 COPY auto-drive-cloud .

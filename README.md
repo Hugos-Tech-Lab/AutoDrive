@@ -1,7 +1,7 @@
 # AutoDrive
 AutoDrive - Be the quickest. Think you can code? Prove it.
 
-CURRENT CHALLENGE: Get the car to from START to FINISH as quick as possible.
+CURRENT CHALLENGE: Get the car from START to FINISH as quick as possible.
 
 ## What is AutoDrive?
 

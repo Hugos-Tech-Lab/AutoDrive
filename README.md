@@ -1,7 +1,13 @@
 # AutoDrive
 AutoDrive - Be the quickest. Think you can code? Prove it.
 
+CURRENT CHALLENGE: Get the car to from START to FINISH as quick as possible.
 
+## What is AutoDrive?
+
+A platform to run code on devices in our lab. After compiling your code (compiled down to WASM), you upload the code to our servers and we run it physically in the lab. An oppurtunity to test your coding skills and see it live without ANY shortcuts (well you can always try...)
+
+## Architecture overview.
 ```mermaid
 flowchart LR
     subgraph DEVICE1["The Beginner Car - Build A"]

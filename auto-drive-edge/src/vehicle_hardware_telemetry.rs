@@ -19,9 +19,7 @@ impl VehicleHardwareTelemetryGauges {
             .with_description("The battery voltage")
             .build();
 
-        Self {
-            battery_voltage,
-        }
+        Self { battery_voltage }
     }
 }
 
@@ -36,11 +34,11 @@ impl VehicleHardwareTelemetry {
         let mut the_beginner_car_watcher_handles = tokio::task::JoinSet::new();
         for the_beginner_car in the_beginner_cars {
             the_beginner_car_watcher_handles.spawn({
-                let device_build = the_beginner_car.device_id.clone();
+                let number_plate = the_beginner_car.number_plate.clone();
                 let incoming_rx = the_beginner_car.incoming_tx.subscribe();
                 let gauges = gauges.clone();
                 async move {
-                    Self::the_beginner_car_long_lived_watcher(device_build, incoming_rx, gauges)
+                    Self::the_beginner_car_long_lived_watcher(number_plate, incoming_rx, gauges)
                         .await;
                 }
             });
@@ -52,7 +50,7 @@ impl VehicleHardwareTelemetry {
     }
 
     async fn the_beginner_car_long_lived_watcher(
-        id: String, //
+        number_plate: String, //
         mut incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
         gauges: VehicleHardwareTelemetryGauges,
     ) {
@@ -64,12 +62,8 @@ impl VehicleHardwareTelemetry {
         loop {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
-                    TheBeginnerCarOutgoingMessages::BatteryReading {
-                        voltage,
-                    } => {
-                        gauges
-                            .battery_voltage
-                            .record(voltage.into(), attributes);
+                    TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
+                        gauges.battery_voltage.record(voltage.into(), attributes);
                     }
                     _ => {}
                 },

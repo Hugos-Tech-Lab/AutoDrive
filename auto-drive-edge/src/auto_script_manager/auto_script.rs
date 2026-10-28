@@ -22,6 +22,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct AutoScript {
     pub owner_name: String,
+    pub owner_comment: String,
     pub run_uuid: String,
     pub run_number: u32,
     pub uploaded_script: Arc<[u8]>,
@@ -31,14 +32,17 @@ pub struct AutoScript {
     pub events_history: Arc<RwLock<Vec<AutoScriptEvents>>>,
     pub hardware: TheBeginnerCarComms,
     pub hardware_response: AutoScriptResponseFromHardware,
-    pub queued_at: DateTime<Utc>,
-    pub started_at: Option<DateTime<Utc>>,
-    pub stopped_at: Option<DateTime<Utc>>,
+    pub script_queue_time: DateTime<Utc>,
+    pub script_start_time: Option<DateTime<Utc>>,
+    pub vehicle_start_time: Option<DateTime<Utc>>,
+    pub vehicle_finish_time: Option<DateTime<Utc>>,
+    pub script_stop_time: Option<DateTime<Utc>>,
 }
 
 impl AutoScript {
     pub fn new(
         owner_name: String,
+        owner_comment: String,
         run_number: u32,
         uploaded_script: Arc<[u8]>,
         hardware: TheBeginnerCarComms,
@@ -70,6 +74,7 @@ impl AutoScript {
 
         Self {
             owner_name,
+            owner_comment,
             run_uuid,
             run_number,
             uploaded_script,
@@ -79,9 +84,11 @@ impl AutoScript {
             events_history,
             hardware,
             hardware_response: AutoScriptResponseFromHardware::HeardNothing,
-            queued_at: Utc::now(),
-            started_at: None,
-            stopped_at: None,
+            script_queue_time: Utc::now(),
+            script_start_time: None,
+            script_stop_time: None,
+            vehicle_start_time: None,
+            vehicle_finish_time: None,
         }
     }
 

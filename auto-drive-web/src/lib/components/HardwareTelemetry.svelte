@@ -2,6 +2,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
+  import { endpointRoot } from "../../endpoint";
 
   type InfraredLedReadings = {
     utmost_front_utmost_left: number;
@@ -15,7 +16,7 @@
 
   onMount(() => {
     const source = new EventSource(
-      "https://cloud-autodrive.hugostechlab.com/hardware_telemetry"
+      `${endpointRoot()}/hardware_telemetry`
     );
 
     source.onopen = () => {

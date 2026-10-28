@@ -22,8 +22,7 @@ use tokio::{
 pub mod auto_script;
 
 use crate::{
-    auto_drive_edge_service::v1::LogSystemOrigin, auto_script_manager::auto_script::AutoScript,
-    the_beginner_car_comms::TheBeginnerCarComms,
+    auto_script_manager::auto_script::AutoScript, the_beginner_car_comms::TheBeginnerCarComms,
 };
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
@@ -139,7 +138,12 @@ impl AutoScriptManager {
         queue_events_sender.send(queue_snapshot).unwrap();
     }
 
-    pub async fn enqueue_auto_script(&self, owner_name: String, data: Vec<u8>) -> String {
+    pub async fn enqueue_auto_script(
+        &self,
+        owner_name: String,
+        owner_comment: String,
+        data: Vec<u8>,
+    ) -> String {
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
         let queue_snapshot: AutoScripts;
         let queue_events_sender: Sender<AutoScripts>;
@@ -149,11 +153,12 @@ impl AutoScriptManager {
             let the_beginner_car = state
                 .the_beginner_cars
                 .iter()
-                .find(|the_beginner_car| the_beginner_car.device_id == "TBC 001".to_string())
+                .find(|the_beginner_car| the_beginner_car.number_plate == "TBC 001".to_string())
                 .unwrap();
 
             let auto_script = AutoScript::new(
                 owner_name,
+                owner_comment,
                 run_number,
                 data.into(),
                 the_beginner_car.clone(),
@@ -221,7 +226,7 @@ impl AutoScriptManager {
                 .scripts
                 .running
                 .iter()
-                .any(|auto_script| auto_script.hardware.device_id == target_device_id);
+                .any(|auto_script| auto_script.hardware.number_plate == target_device_id);
             if device_being_used {
                 // cannot start because it's already being used..
                 for (i, script) in the_beginner_car_scripts_mutex_guard
@@ -344,7 +349,7 @@ impl AutoScriptManager {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
                         Self::on_hardware_response_auto_script_stopped(
                             state.clone(),
-                            the_beginner_car.device_id.clone(),
+                            the_beginner_car.number_plate.clone(),
                         )
                         .await;
                     }
@@ -363,7 +368,7 @@ impl AutoScriptManager {
 
     pub async fn on_hardware_response_auto_script_stopped(
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
-        device_id: String,
+        number_plate: String,
     ) {
         let queue_snapshot: AutoScripts;
         let queue_events_sender: Sender<AutoScripts>;
@@ -373,7 +378,7 @@ impl AutoScriptManager {
                 .scripts
                 .running
                 .extract_if(.., |auto_script| {
-                    auto_script.hardware.device_id == device_id
+                    auto_script.hardware.number_plate == number_plate
                 })
                 .collect();
             if stopped.len() != 1 {

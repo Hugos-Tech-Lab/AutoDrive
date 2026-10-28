@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { endpointRoot } from "../../endpoint";
 
   type AutoScript = {
     owner_name: string;
-    // Made these optional in case your Rust struct doesn't serialize them yet
     run_time?: string;
     waiting_time?: string;
     upload_hash?: string;
@@ -41,7 +41,7 @@
     }, 1000);
 
     // 2. Setup the SSE connection
-    const source = new EventSource("https://cloud-autodrive.hugostechlab.com/autoscript/overview");
+    const source = new EventSource(`${endpointRoot()}/autoscript/overview`);
 
     source.onopen = () => {
       connectionStatus = "Connected";

@@ -17,7 +17,7 @@ use crate::devices_config::HardwareMetadata;
 
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
-    pub device_id: String,
+    pub number_plate: String,
     pub mdns_address: String,
     pub connected_rx: watch::Receiver<bool>,
     outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
@@ -51,7 +51,7 @@ impl TheBeginnerCarComms {
 
         (
             Self {
-                device_id: device_metadata.device_id,
+                number_plate: device_metadata.number_plate,
                 mdns_address: device_metadata.mdns_address,
                 connected_rx,
                 outgoing_tx,

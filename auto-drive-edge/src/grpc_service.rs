@@ -46,7 +46,7 @@ impl AutoDriveEdgeService for GrpcService {
         let request = request.into_inner();
         let run_uuid = self
             .auto_script_manager
-            .enqueue_auto_script(request.owner, request.data)
+            .enqueue_auto_script(request.owner_name, request.owner_comment, request.data)
             .await;
         dbg!("run request");
 
@@ -192,7 +192,7 @@ impl AutoDriveEdgeService for GrpcService {
             let comms = car_entry;
 
             initial_hardware.push(Hardware {
-                id: comms.device_id.clone(),
+                number_plate: comms.number_plate.clone(),
                 category: "TheBeginnerCar".to_string(),
                 is_connected: *comms.connected_rx.borrow(),
             });
@@ -217,7 +217,7 @@ impl AutoDriveEdgeService for GrpcService {
 
                     let update_msg = WatchHardwareStatusResponse {
                         hardware: vec![Hardware {
-                            id: comms.device_id.clone(),
+                            number_plate: comms.number_plate.clone(),
                             category: "TheBeginnerCar".to_string(),
                             is_connected: current_state,
                         }],

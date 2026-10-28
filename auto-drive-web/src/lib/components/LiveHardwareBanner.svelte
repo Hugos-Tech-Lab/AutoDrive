@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { endpointRoot } from "../../endpoint";
 
   let { selectedBuild = $bindable() }: { selectedBuild: string } = $props();
 
@@ -7,7 +8,7 @@
   let hardwareList = $state<HardwareData[]>([]);
 
   onMount(() => {
-    const sse = new EventSource("https://cloud-autodrive.hugostechlab.com/hardware/overview");
+    const sse = new EventSource(`${endpointRoot()}/hardware/overview`);
 
     sse.addEventListener("overview", (event) => {
       try {
@@ -50,7 +51,8 @@
       aria-pressed={selectedBuild === hw.id}
       onclick={() => (selectedBuild = hw.id)}
     >
-      {hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"} {hw.id}
+    <!-- TODO: it shows connected even when conneciton to backend not made? Fix that -->
+      {hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"} {hw.id} 
     </button>
   {/each}
 </div>

@@ -8,7 +8,7 @@ pub enum DeviceCategory {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HardwareMetadata {
     pub device_category: DeviceCategory,
-    pub device_id: String,
+    pub number_plate: String,
     pub mdns_address: String,
 }
 

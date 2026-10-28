@@ -7,6 +7,17 @@ CURRENT CHALLENGE: Get the car from START to FINISH as quick as possible.
 
 A platform to run code on devices in our lab. After compiling your code (compiled down to WASM), you upload the code to our servers and we run it physically in the lab. An oppurtunity to test your coding skills and see it live without ANY shortcuts (well you can always try...)
 
+## How to get started?
+
+Pick your language, here are some starter projects you can clone and adapt.
+
+- Rust: [AutoDrive Rust Example](https://github.com/Hugos-Tech-Lab/AutoDrive-Rust-Example)
+
+More to come soon, let me know what I should prioritize (only supporting languages that don't need a runtime and can be compiled to WASM).
+
+<!-- - C++ with Conan: [AutoDrive Rust Example](https://github.com/Hugos-Tech-Lab/AutoDrive-C++-With-Conan-Example) -->
+
+
 ## Architecture overview.
 ```mermaid
 flowchart LR

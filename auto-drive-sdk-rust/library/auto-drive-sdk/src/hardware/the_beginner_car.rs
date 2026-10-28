@@ -42,6 +42,10 @@ impl TheBeginnerCar {
         unsafe { guest::get_ir_back_center_value() }
     }
 
+    pub fn get_ir_front_far_left_value(&self) -> u16 {
+        unsafe { guest::get_ir_front_far_left_value() }
+    }
+
     pub fn get_ir_front_left_value(&self) -> u16 {
         unsafe { guest::get_ir_front_left_value() }
     }
@@ -52,6 +56,14 @@ impl TheBeginnerCar {
 
     pub fn get_ir_front_right_value(&self) -> u16 {
         unsafe { guest::get_ir_front_right_value() }
+    }
+
+    pub fn get_ir_front_far_right_value(&self) -> u16 {
+        unsafe { guest::get_ir_front_far_right_value() }
+    }
+
+    pub fn get_ir_back_left_value(&self) -> u16 {
+        unsafe { guest::get_ir_back_left_value() }
     }
 }
 

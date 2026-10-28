@@ -8,7 +8,7 @@
     "start": "vite --host",
     "build": "vite build",
     "live": "node deploy-live.js",
-    "preview": "serve dist",
+    "preview": "serve -s dist",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
     "translations": "wuchale",
     "translations-check": "wuchale check --full && pnpm run translations-check-full",

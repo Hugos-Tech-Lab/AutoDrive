@@ -1,36 +1,41 @@
-import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 import { loadLocale } from 'wuchale/load-utils';
-
 import type { Locale } from '$lib/Locale';
 
 import '../locales/main.loader.svelte.js';
 import '../locales/js.loader.js';
 
+export const ssr = false;
+export const prerender = false;
+
 export const load = async ({ url }) => {
-	let locale: Locale = 'eng';
+  const match = url.pathname.match(/^\/(eng|cze|ukr)(?:\/|$)/);
 
-	const match = url.pathname.match(/^\/(eng|cze|ukr)(?:\/|$)/);
+  if (match) {
+    const locale = match[1] as Locale;
+    await loadLocale(locale);
+    return { locale };
+  }
 
-	if (match) {
-		locale = match[1] as Locale;
-	} else if (browser) {
-		const language = navigator.language.toLowerCase();
+  // Detect locale from browser or default to eng
+  let targetLocale: Locale = 'eng';
 
-		if (language.startsWith('cs')) {
-			locale = 'cze';
-		} else if (language.startsWith('uk')) {
-			locale = 'ukr';
-		}
+  if (typeof navigator !== 'undefined') {
+    const language = navigator.language.toLowerCase();
+    if (language.startsWith('cs')) {
+      targetLocale = 'cze';
+    } else if (language.startsWith('uk')) {
+      targetLocale = 'ukr';
+    }
+  }
 
-		window.location.replace(
-			`/${locale}${window.location.pathname}${window.location.search}${window.location.hash}`
-		);
-	}
+  const targetPath = `/${targetLocale}${url.pathname}${url.search}${url.hash}`;
+  
+  // Prevent infinite loops if target path is already root
+  if (`/${targetLocale}` !== url.pathname) {
+    throw redirect(307, targetPath);
+  }
 
-	await loadLocale(locale);
-
-	return { locale };
+  await loadLocale(targetLocale);
+  return { locale: targetLocale };
 };
-
-export const prerender = true;

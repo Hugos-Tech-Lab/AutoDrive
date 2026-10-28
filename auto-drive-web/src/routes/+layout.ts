@@ -29,7 +29,7 @@ export const load = async ({ url }) => {
     }
   }
 
-  const targetPath = `/${targetLocale}${url.pathname}${url.search}${url.hash}`;
+  const targetPath = `/${targetLocale}${url.pathname}${url.search}`;
   
   // Prevent infinite loops if target path is already root
   if (`/${targetLocale}` !== url.pathname) {

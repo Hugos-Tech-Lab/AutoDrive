@@ -1209,3 +1209,16 @@ msgstr "Your username"
 #: src/lib/components/CreateAccount.svelte
 msgid "Username"
 msgstr "Username"
+
+#: src/routes/[locale]/count-down/+page.svelte
+msgid "Europe/Paris"
+msgstr "Europe/Paris"
+
+#: src/routes/[locale]/count-down/+page.svelte
+msgid "Stream Live"
+msgstr "Stream Live"
+
+#. 0: remainingSeconds
+#: src/routes/[locale]/count-down/+page.svelte
+msgid "LIVE IN {0} SECONDS"
+msgstr "LIVE IN {0} SECONDS"

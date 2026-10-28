@@ -250,7 +250,7 @@
   <!-- STOPPED SECTION -->
   <div class="w-full flex flex-col gap-3">
     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-      <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+      <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
       Stopped
     </h2>
 

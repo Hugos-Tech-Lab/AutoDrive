@@ -8,6 +8,7 @@
 
   let signupEmail = $state("");
   let signupPassword = $state("");
+  let signupUsername = $state("");
 
   const handleSignup = async () => {
     try {
@@ -15,7 +16,12 @@
 
       const { error } = await supabase.auth.signUp({
         email: signupEmail,
-        password: signupPassword
+        password: signupPassword,
+        options: {
+          data: {
+            display_name: signupUsername
+          }
+        }
       });
 
       if (error) throw error;
@@ -31,7 +37,6 @@
 
 <div class="row flex-center flex">
   <div class="col-6 form-widget" aria-live="polite">
-
     <!-- Sign Up -->
     <form
       class="form-widget m-4 p-4"
@@ -41,6 +46,18 @@
       }}
     >
       <h2 class="description">Create Account</h2>
+
+      <div>
+        <label for="signup-username">Username</label>
+        <input
+          id="signup-username"
+          class="inputField"
+          type="text"
+          placeholder="Your username"
+          bind:value={signupUsername}
+          required
+        />
+      </div>
 
       <div>
         <label for="signup-email">Email</label>

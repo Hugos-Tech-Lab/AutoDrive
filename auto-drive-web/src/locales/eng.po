@@ -113,6 +113,8 @@ msgid "Name"
 msgstr "Name"
 
 #: src/lib/components/Account.svelte
+#: src/lib/components/Profile.svelte
+#: src/lib/components/Profile.svelte
 msgid "Sign Out"
 msgstr "Sign Out"
 
@@ -192,6 +194,7 @@ msgstr "Firmware"
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
+#: src/lib/components/Profile.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Something went wrong."
 msgstr "Something went wrong."
@@ -204,6 +207,7 @@ msgstr "Account created! Check your email if confirmation is required."
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
+#: src/lib/components/Profile.svelte
 #: src/lib/components/SignIn.svelte
 #: src/lib/components/UserAccountButton.svelte
 msgid "Loading..."
@@ -234,6 +238,7 @@ msgstr "Create account"
 
 #: src/lib/components/Dashboard.svelte
 #: src/routes/[locale]/create-account/+page.svelte
+#: src/routes/[locale]/profile/+page.svelte
 #: src/routes/[locale]/sign-in/+page.svelte
 msgid "Dashboard"
 msgstr "Dashboard"
@@ -1196,3 +1201,11 @@ msgstr "Create Account"
 #: src/lib/components/UserAccountButton.svelte
 msgid "Profile"
 msgstr "Profile"
+
+#: src/lib/components/CreateAccount.svelte
+msgid "Your username"
+msgstr "Your username"
+
+#: src/lib/components/CreateAccount.svelte
+msgid "Username"
+msgstr "Username"

@@ -19,7 +19,6 @@ export const getUsername = async (user: User) => {
       }
     }
 
-    // No cache or cache has expired
     username = await getUsernameFromSupabase(user);
 
     if (username !== null) {
@@ -38,24 +37,6 @@ export const getUsername = async (user: User) => {
   return username;
 };
 
-export const getUsernameFromSupabase = async (user: User) => {
-  let username = "";
- 
-  try {
-    const { data, error, status } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("id", user.id)
-      .single();
-
-    if (error && status !== 406) throw error;
-
-    if (data) {
-      username = data.username;
-    }
-  } finally {
-    //
-  }
-
-  return username;
+export const getUsernameFromSupabase = (user: User) => {
+  return user.user_metadata?.display_name;
 };

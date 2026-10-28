@@ -998,14 +998,17 @@ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Upload Hash"
 msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Run #"
 msgstr ""
 
+#: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Run UUID"
@@ -1075,6 +1078,7 @@ msgid "Queue is currently empty."
 msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Upload Comment"
 msgstr ""
 
@@ -1093,6 +1097,7 @@ msgstr ""
 #~ msgid "Vehicle ID"
 #~ msgstr ""
 
+#: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Unknown"
@@ -1125,6 +1130,7 @@ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Owner"
 msgstr ""
 
@@ -1142,5 +1148,14 @@ msgid "Script Start"
 msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
 msgid "Number Plate"
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "No recently stopped runs."
+msgstr ""
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "<0/> Stopped"
 msgstr ""

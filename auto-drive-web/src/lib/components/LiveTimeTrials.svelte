@@ -58,6 +58,12 @@
           throw new Error("Invalid telemetry payload");
         }
 
+        // Sort all arrays by run_number descending (biggest first)
+        const sortDesc = (a: AutoScript, b: AutoScript) => b.run_number - a.run_number;
+        if (parsed.running) parsed.running.sort(sortDesc);
+        if (parsed.queued) parsed.queued.sort(sortDesc);
+        if (parsed.stopped) parsed.stopped.sort(sortDesc);
+
         // Store data and reset the local ticker
         timeTrialsData = parsed;
         lastUpdateMs = Date.now();
@@ -101,10 +107,23 @@
     // TODO: HTTP request to restart.
   }
 
-  function cancel(run_uuid: string | undefined) {
+  async function cancel(run_uuid: string | undefined) {
     if (!run_uuid) return;
     console.log("Canceling", run_uuid);
-    // TODO: HTTP request to cancel.
+    try {
+      const response = await fetch(`${endpointRoot()}/autoscript/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ run_uuid }),
+      });
+      if (!response.ok) {
+        console.error("Failed to cancel run:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error executing cancel request:", error);
+    }
   }
 </script>
 
@@ -221,6 +240,47 @@
           {:else}
             <tr>
               <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic">Queue is currently empty.</td>
+            </tr>
+          {/if}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- STOPPED SECTION -->
+  <div class="w-full flex flex-col gap-3">
+    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+      Stopped
+    </h2>
+
+    <div class="w-full overflow-x-auto border-2 border-black shadow-sm bg-white">
+      <table class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]">
+        <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black">
+          <tr>
+            <th class="py-3 px-4">Owner</th>
+            <th class="py-3 px-4">Run #</th>
+            <th class="py-3 px-4">Run UUID</th>
+            <th class="py-3 px-4">Upload Hash</th>
+            <th class="py-3 px-4">Upload Comment</th>
+            <th class="py-3 px-4">Number Plate</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {#if timeTrialsData?.stopped && timeTrialsData.stopped.length > 0}
+            {#each timeTrialsData.stopped as entry, i (entry.run_uuid || i)}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
+                <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.uploaded_script_hash || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.owner_comment || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.number_plate || '').substring(0, 10)}</td>
+              </tr>
+            {/each}
+          {:else}
+            <tr>
+              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic">No recently stopped runs.</td>
             </tr>
           {/if}
         </tbody>

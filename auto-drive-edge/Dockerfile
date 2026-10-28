@@ -12,10 +12,6 @@ RUN apt-get update && apt-get install -y \
 COPY firmware/the-beginner-car-v1-wifi-firmware/api firmware/the-beginner-car-v1-wifi-firmware/api
 COPY firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types
 
-
-RUN ls
-RUN ls /firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types
-
 WORKDIR /workspace
 COPY auto-drive-edge .
 

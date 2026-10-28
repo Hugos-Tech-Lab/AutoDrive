@@ -4,13 +4,16 @@
 
   type AutoScript = {
     owner_name: string;
-    run_time?: string;
-    waiting_time?: string;
-    upload_hash?: string;
-    run_number?: number;
-    run_uuid?: string;
-    upload_comment?: string;
-    hardware_id?: string;
+    owner_comment: string;
+    uploaded_script_hash: string;
+    script_queue_time: string;
+    script_start_time?: string;
+    vehicle_start_time?: string;
+    vehicle_finish_time?: string;
+    script_stop_time?: number;
+    run_number: number;
+    run_uuid: string;
+    number_plate: string;
   };
 
   type AutoScripts = {
@@ -33,7 +36,6 @@
   );
 
   onMount(() => {
-    // 1. Setup the interval to tick the seconds up locally between server updates
     const ticker = setInterval(() => {
       if (timeTrialsData) {
         localTickOffset = Math.floor((Date.now() - lastUpdateMs) / 1000);
@@ -126,13 +128,13 @@
       <table class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]">
         <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black">
           <tr>
-            <th class="py-3 px-4">Name</th>
-            <th class="py-3 px-4">Run Time</th>
+            <th class="py-3 px-4">Owner</th>
+            <th class="py-3 px-4">Script Start</th>
             <th class="py-3 px-4">Run #</th>
             <th class="py-3 px-4">Run UUID</th>
             <th class="py-3 px-4">Upload Hash</th>
             <th class="py-3 px-4">Upload Comment</th>
-            <th class="py-3 px-4">Vehicle ID</th>
+            <th class="py-3 px-4">Number Plate</th>
             <th class="py-3 px-4 text-center">Actions</th>
           </tr>
         </thead>
@@ -141,12 +143,12 @@
             {#each timeTrialsData.running as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
                 <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
-                <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.run_time, localTickOffset)}</td>
+                <td class="py-3 px-4 font-mono text-gray-600">{entry.script_start_time}</td>
                 <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.upload_hash || '').substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.upload_comment || '').substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.hardware_id || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.uploaded_script_hash || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.owner_comment || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.number_plate || '').substring(0, 10)}</td>
                 <td class="py-3 px-4">
                   <div class="flex items-center justify-center gap-2">
                     <button 
@@ -188,7 +190,7 @@
       <table class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]">
         <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black">
           <tr>
-            <th class="py-3 px-4">Name</th>
+            <th class="py-3 px-4">Owner</th>
             <th class="py-3 px-4">Queued Time</th>
             <th class="py-3 px-4">Upload Hash</th>
             <th class="py-3 px-4">Run #</th>
@@ -201,8 +203,8 @@
             {#each timeTrialsData.queued as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
                 <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
-                <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.waiting_time, localTickOffset)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.upload_hash || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.script_start_time, localTickOffset)}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.uploaded_script_hash  || '').substring(0, 10)}</td>
                 <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
                 <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
                 <td class="py-3 px-4 text-center">

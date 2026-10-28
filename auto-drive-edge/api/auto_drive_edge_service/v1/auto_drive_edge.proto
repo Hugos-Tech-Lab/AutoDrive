@@ -37,15 +37,16 @@ message AutoScripts {
 
 message AutoScript {
   string owner_name = 1;
-  string script_queue_time = 2;
-  optional string script_start_time = 3;
-  optional string vehicle_start_time = 4;
-  optional string vehicle_finish_time = 5;
-  optional string script_stop_time = 6;
-  uint32 run_number = 7;
-  string run_uuid = 8;
-  string upload_comment = 9;
-  string number_plate = 10;
+  string owner_comment = 2;
+  string uploaded_script_hash = 3;
+  string script_queue_time = 4;
+  optional string script_start_time = 5;
+  optional string vehicle_start_time = 6;
+  optional string vehicle_finish_time = 7;
+  optional string script_stop_time = 8;
+  uint32 run_number = 9;
+  string run_uuid = 10;
+  string number_plate = 11;
 }
 
 message WatchAutoScriptRequest {

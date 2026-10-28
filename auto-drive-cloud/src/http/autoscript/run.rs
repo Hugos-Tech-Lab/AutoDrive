@@ -47,7 +47,6 @@ async fn handle_autoscript_run(
     mut form: warp::multipart::FormData,
     sender: tokio::sync::mpsc::Sender<ToEdgeMessage>,
 ) -> Result<warp::reply::Response, Infallible> {
-    // --- AUTHENTICATION CHECK ---
     let expected_token = "your_secure_token_here".to_string();
 
     let is_authorized = match auth_header {
@@ -68,7 +67,7 @@ async fn handle_autoscript_run(
     // ----------------------------
 
     let mut wasm_data = None;
-    let mut args_string = String::new();
+    let mut owner_comment = String::new();
 
     // Extract fields from the multipart form
     while let Some(Ok(mut part)) = form.next().await {
@@ -85,7 +84,7 @@ async fn handle_autoscript_run(
                 while let Some(Ok(chunk)) = part.data().await {
                     data.extend_from_slice(chunk.chunk());
                 }
-                args_string = String::from_utf8_lossy(&data).to_string();
+                owner_comment = String::from_utf8_lossy(&data).to_string();
             }
             _ => {}
         }
@@ -104,9 +103,9 @@ async fn handle_autoscript_run(
     };
 
     // Validate arguments length limit (< 50 chars)
-    if args_string.chars().count() >= 50 {
+    if owner_comment.chars().count() >= 50 {
         return Ok(warp::reply::with_status(
-            "Arguments string must be less than 50 characters",
+            "Comment must be less than 50 characters",
             StatusCode::BAD_REQUEST,
         )
         .into_response());
@@ -115,10 +114,10 @@ async fn handle_autoscript_run(
     let (sender_start, receiver_start) = oneshot::channel();
 
     let message = ToEdgeMessage::StartAutoScript {
+        owner_name: expected_token,
+        owner_comment,
         data: wasm_bytes,
-        uploader_comment: args_string,
         response_tx: sender_start,
-        owner: "hugoooo".to_string(),
     };
 
     if sender.send(message).await.is_err() {

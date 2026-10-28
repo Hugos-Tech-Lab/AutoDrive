@@ -59,7 +59,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     opentelemetry::global::set_meter_provider(meter_provider.clone());
 
     let contents = include_str!("../device_config.toml");
-    let device_config: DeviceConfig = toml::from_str(&contents)?;
+
+    let device_config: DeviceConfig = match toml::from_str(&contents) {
+        Ok(ok) => Ok(ok),
+        Err(err) => {
+            log::error!("Could not deserialize config: {err}");
+            Err(err)
+        }
+    }?;
+    // let device_config = toml::from_str(&contents)?;
     let auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
 
     let grpc_service = GrpcService::new(

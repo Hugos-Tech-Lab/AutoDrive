@@ -31,9 +31,9 @@ pub enum StartAutoScriptResponse {
 
 pub enum ToEdgeMessage {
     StartAutoScript {
-        owner: String,
+        owner_name: String,
+        owner_comment: String,
         data: Vec<u8>,
-        uploader_comment: String,
         response_tx: oneshot::Sender<StartAutoScriptResponse>,
     },
     WatchAutoScript {
@@ -53,7 +53,7 @@ pub enum ToEdgeMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDeviceState {
-    pub id: String,
+    pub number_plate: String,
     pub category: String,
     pub is_connected: bool,
 }
@@ -212,13 +212,13 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                 Ok(event) => {
                                     hardware_states_tx.send_modify(|v| {
                                         for hardware in event.hardware {
-                                            let entry = v.entry(hardware.id.clone()).or_insert(
-                                                HardwareDeviceState {
-                                                    id: hardware.id,
+                                            let entry = v
+                                                .entry(hardware.number_plate.clone())
+                                                .or_insert(HardwareDeviceState {
+                                                    number_plate: hardware.number_plate,
                                                     category: hardware.category,
                                                     is_connected: hardware.is_connected,
-                                                },
-                                            );
+                                                });
                                             entry.is_connected = hardware.is_connected;
                                         }
                                     });
@@ -233,9 +233,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                         }
                     }
                     Err(err) => {
-                        warn!(
-                            "Failed to subscribe to hardware status: {err}. Retrying in 5s..."
-                        );
+                        warn!("Failed to subscribe to hardware status: {err}. Retrying in 5s...");
                     }
                 }
                 sleep(Duration::from_secs(5)).await;
@@ -253,14 +251,15 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
             while let Some(value) = receiver.recv().await {
                 match value {
                     ToEdgeMessage::StartAutoScript {
-                        owner,
+                        owner_name,
+                        owner_comment,
                         data,
-                        uploader_comment: _,
                         response_tx,
                     } => {
                         if let Ok(response) = client
                             .run_auto_script(RunAutoScriptRequest {
-                                owner,
+                                owner_name,
+                                owner_comment,
                                 build: 1,
                                 data,
                             })

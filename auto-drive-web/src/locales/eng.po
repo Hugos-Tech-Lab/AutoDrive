@@ -104,8 +104,6 @@ msgstr "Website"
 #~ msgstr "Email: {0}"
 
 #: src/lib/components/Account.svelte
-#: src/lib/components/LiveTimeTrials.svelte
-#: src/lib/components/LiveTimeTrials.svelte
 msgid "Name"
 msgstr "Name"
 
@@ -995,9 +993,8 @@ msgstr "Live Time Trials - On Now"
 #~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | restart | cancel | |________ __________ | name | queued_time_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
 #~ msgstr "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | restart | cancel | |________ __________ | name | queued_time_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "Run Time"
-msgstr "Run Time"
+#~ msgid "Run Time"
+#~ msgstr "Run Time"
 
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
@@ -1093,9 +1090,8 @@ msgstr "Last Refresh: {0}"
 #~ msgid "Car Build"
 #~ msgstr "Car Build"
 
-#: src/lib/components/LiveTimeTrials.svelte
-msgid "Vehicle ID"
-msgstr "Vehicle ID"
+#~ msgid "Vehicle ID"
+#~ msgstr "Vehicle ID"
 
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
@@ -1126,3 +1122,25 @@ msgstr "No algorithms yet."
 
 #~ msgid "THINK YOU CAN CODE? <0>Prove</0> it.."
 #~ msgstr "THINK YOU CAN CODE? <0>Prove</0> it.."
+
+#: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Owner"
+msgstr "Owner"
+
+#~ msgid "Script Run Duration"
+#~ msgstr "Script Run Duration"
+
+#~ msgid "Script Duration"
+#~ msgstr "Script Duration"
+
+#~ msgid "Script Start Time"
+#~ msgstr "Script Start Time"
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Script Start"
+msgstr "Script Start"
+
+#: src/lib/components/LiveTimeTrials.svelte
+msgid "Number Plate"
+msgstr "Number Plate"

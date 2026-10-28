@@ -108,6 +108,8 @@ impl From<&crate::auto_script_manager::auto_script::AutoScript>
     fn from(value: &crate::auto_script_manager::auto_script::AutoScript) -> Self {
         Self {
             owner_name: value.owner_name.clone(),
+            owner_comment: value.owner_comment.clone(),
+            uploaded_script_hash: value.uploaded_script_hash.clone(),
             script_queue_time: value.script_queue_time.to_string(),
             script_start_time: value.script_start_time.map(|v| v.to_string()),
             vehicle_start_time: value.vehicle_start_time.map(|v| v.to_string()),
@@ -115,7 +117,6 @@ impl From<&crate::auto_script_manager::auto_script::AutoScript>
             script_stop_time: value.script_stop_time.map(|v| v.to_string()),
             run_number: value.run_number,
             run_uuid: value.run_uuid.clone(),
-            upload_comment: value.owner_comment.clone(),
             number_plate: value.hardware.number_plate.clone(),
         }
     }

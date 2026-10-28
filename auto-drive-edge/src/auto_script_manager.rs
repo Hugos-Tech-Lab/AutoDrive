@@ -135,7 +135,9 @@ impl AutoScriptManager {
             }
         }
 
-        queue_events_sender.send(queue_snapshot).unwrap();
+        if let Err(err) = queue_events_sender.send(queue_snapshot) {
+            log::error!("Error when sending event {}", err);
+        }
     }
 
     pub async fn enqueue_auto_script(

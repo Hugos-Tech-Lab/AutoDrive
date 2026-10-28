@@ -9,8 +9,8 @@ GREEN="\033[32m"
 BLUE="\033[34m"
 GRAY="\033[90m"
 
-# BASE_URL="https://cloud-autodrive.hugostechlab.com/autoscript"
-BASE_URL="http://localhost:3030/autoscript"
+BASE_URL="https://cloud-autodrive.hugostechlab.com/autoscript"
+# BASE_URL="http://localhost:3030/autoscript"
 echo -e "${GREEN}[INFO]${RESET} Endpoint: $BASE_URL"
 
 # --- Authentication Requirement ---

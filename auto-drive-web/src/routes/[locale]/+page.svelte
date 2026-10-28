@@ -3,7 +3,6 @@
   import Header from "$lib/components/Header.svelte";
   import Footer from "$lib/components/Footer.svelte";
   import type { PageData } from "./$types";
-  import InnerHeader from "$lib/components/InnerHeader.svelte";
   import { supabase } from "$lib/supabaseClient";
   import { onMount } from "svelte";
   import type { AuthSession } from "@supabase/supabase-js";
@@ -36,6 +35,7 @@
   });
 
   $effect(() => {
+    console.log("hhh");
     if (session && username === null) {
       (async () => {
         loading = true;
@@ -50,7 +50,7 @@
 
 <section>
   <div class="section-inner main relative">
-    <!-- <InnerHeader {username}>Dashboard</InnerHeader> -->
+
     <!-- <div class="px-4 py-4">
       <h2>Location</h2>
       <button>Hugo's Tech Lab</button>

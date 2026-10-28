@@ -4,9 +4,15 @@
   import LiveTimeTrials from "./LiveTimeTrials.svelte";
   import LiveHardwareBanner from "./LiveHardwareBanner.svelte";
   import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
+  import UserAccountButton from "./UserAccountButton.svelte";
+  import type { AuthState } from "$lib/auth.svelte";
 
-  let {} = $props();
-  
+  interface Props {
+    session: AuthState;
+  }
+
+  let { session }: Props = $props();
+  let userName = $state<string | undefined>();
   let selectedBuild = $state<string>("Time Trials");
 
   type PlayOption = "Leaderboard" | "Algorithms" | "Live";
@@ -32,7 +38,7 @@
   <h1 class="text-4xl mb-4 min-w-0 flex-1">Dashboard</h1>
 
   <div class="flex flex-col items-end gap-2 shrink-0">
-    <button onclick={() => goto("/dashboard")}>Sign In / Sign up</button>
+    <UserAccountButton authState={session} />
   </div>
 </div>
 

@@ -8,7 +8,6 @@
   import type { PageData } from "./$types";
   import type { AuthSession } from '@supabase/supabase-js'
   import Translations from "$lib/components/Translations.svelte";
-  import InnerHeader from "$lib/components//InnerHeader.svelte";
   import Account from "$lib/components/Account.svelte";
 
   let session = $state<AuthSession | null>(null)
@@ -28,7 +27,6 @@
 
 <section>
   <div class="section-inner main relative">
-    <InnerHeader>Settings</InnerHeader>
     <Translations locale = {data.locale as Locale} />
 
     {#if !session}

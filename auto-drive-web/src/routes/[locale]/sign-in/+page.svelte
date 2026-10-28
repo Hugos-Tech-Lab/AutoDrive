@@ -2,8 +2,7 @@
   import type { Locale } from "$lib/Locale";
   import Footer from "$lib/components/Footer.svelte";
   import Header from "$lib/components/Header.svelte";
-  import InnerHeader from "$lib/components/InnerHeader.svelte";
-  import Auth from "$lib/components/Auth.svelte";
+  import SignIn from "$lib/components/SignIn.svelte";
 
   let { locale }: { locale: Locale } = $props();
 </script>
@@ -11,9 +10,9 @@
 <Header {locale} />
 <section>
   <div class="section-inner main relative">
-    <InnerHeader>Sign in</InnerHeader>
     <div class="px-4 py-4">
-      <Auth />
+      <h1 class="text-4xl mb-4 min-w-0 flex-1">Dashboard</h1>
+      <SignIn />
     </div>
   </div>
 </section>

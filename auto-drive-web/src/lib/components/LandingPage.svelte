@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import InnerHeader from "./InnerHeader.svelte";
 
   // let { username }: { username: string | null } = $props();
 </script>

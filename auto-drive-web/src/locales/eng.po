@@ -13,13 +13,17 @@ msgid "/"
 msgstr "/"
 
 #. /dashboard
-#. /dashboard
 #. /profile
 #. /dashboard
-#: src/lib/components/Dashboard.svelte
+#. /profile
+#. /create-account
+#. /sign-in
 #: src/lib/components/LandingPage.svelte
 #: src/lib/components/UserAccount.svelte
 #: src/lib/components/UserAccount.svelte
+#: src/lib/components/UserAccountButton.svelte
+#: src/lib/components/UserAccountButton.svelte
+#: src/lib/components/UserAccountButton.svelte
 #, url:main
 msgid "/**"
 msgstr "/**"
@@ -55,7 +59,7 @@ msgid "UKR"
 msgstr "UKR"
 
 #: src/lib/components/Auth.svelte
-#: src/routes/[locale]/sign-in/+page.svelte
+#: src/lib/components/SignIn.svelte
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -76,19 +80,20 @@ msgstr "Settings"
 
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
+#: src/lib/components/SignIn.svelte
 msgid "Your email"
 msgstr "Your email"
 
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
+#: src/lib/components/SignIn.svelte
 msgid "Email"
 msgstr "Email"
 
-#: src/lib/components/Auth.svelte
-msgid "Send magic link"
-msgstr "Send magic link"
+#~ msgid "Send magic link"
+#~ msgstr "Send magic link"
 
 #: src/lib/components/Account.svelte
 msgid "Website"
@@ -115,16 +120,21 @@ msgstr "Sign Out"
 #~ msgstr "Logged Out"
 
 #: src/lib/components/Auth.svelte
+#: src/lib/components/SignIn.svelte
 msgid "Sign in via password"
 msgstr "Sign in via password"
 
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
+#: src/lib/components/SignIn.svelte
 msgid "Password"
 msgstr "Password"
 
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
+#: src/lib/components/SignIn.svelte
 msgid "Your password"
 msgstr "Your password"
 
@@ -176,31 +186,34 @@ msgstr "Model:"
 msgid "Firmware"
 msgstr "Firmware"
 
-#: src/lib/components/Auth.svelte
-msgid "Check your email for the login link!"
-msgstr "Check your email for the login link!"
+#~ msgid "Check your email for the login link!"
+#~ msgstr "Check your email for the login link!"
 
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
+#: src/lib/components/SignIn.svelte
 msgid "Something went wrong."
 msgstr "Something went wrong."
 
 #: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
 msgid "Account created! Check your email if confirmation is required."
 msgstr "Account created! Check your email if confirmation is required."
 
 #: src/lib/components/Auth.svelte
 #: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
+#: src/lib/components/SignIn.svelte
+#: src/lib/components/UserAccountButton.svelte
 msgid "Loading..."
 msgstr "Loading..."
 
-#: src/lib/components/Auth.svelte
-msgid "Sign in via a magic link sent to your email."
-msgstr "Sign in via a magic link sent to your email."
+#~ msgid "Sign in via a magic link sent to your email."
+#~ msgstr "Sign in via a magic link sent to your email."
 
 #: src/lib/components/Auth.svelte
+#: src/lib/components/CreateAccount.svelte
 msgid "Create account"
 msgstr "Create account"
 
@@ -220,6 +233,8 @@ msgstr "Create account"
 #~ msgstr "Sign out"
 
 #: src/lib/components/Dashboard.svelte
+#: src/routes/[locale]/create-account/+page.svelte
+#: src/routes/[locale]/sign-in/+page.svelte
 msgid "Dashboard"
 msgstr "Dashboard"
 
@@ -540,7 +555,6 @@ msgstr "Status"
 #~ msgid "Log In"
 #~ msgstr "Log In"
 
-#: src/lib/components/Dashboard.svelte
 #: src/routes/[locale]/settings/+page.svelte
 msgid "Sign In / Sign up"
 msgstr "Sign In / Sign up"
@@ -1159,3 +1173,26 @@ msgstr "No recently stopped runs."
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> Stopped"
 msgstr "<0/> Stopped"
+
+#: src/lib/components/InnerHeader.svelte
+msgid "asdasd"
+msgstr "asdasd"
+
+#~ msgid "Sign In / Sign Up"
+#~ msgstr "Sign In / Sign Up"
+
+#: src/lib/components/UserAccountButton.svelte
+msgid "Sign In"
+msgstr "Sign In"
+
+#~ msgid "Sign Up"
+#~ msgstr "Sign Up"
+
+#: src/lib/components/CreateAccount.svelte
+#: src/lib/components/UserAccountButton.svelte
+msgid "Create Account"
+msgstr "Create Account"
+
+#: src/lib/components/UserAccountButton.svelte
+msgid "Profile"
+msgstr "Profile"

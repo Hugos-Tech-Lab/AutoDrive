@@ -321,6 +321,7 @@ impl AutoScriptManager {
             .await;
 
         if !sent {
+            dbg!("not sent");
             //
         }
     }

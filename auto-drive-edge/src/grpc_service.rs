@@ -48,6 +48,7 @@ impl AutoDriveEdgeService for GrpcService {
             .auto_script_manager
             .enqueue_auto_script(request.owner, request.data)
             .await;
+        dbg!("run request");
 
         Ok(Response::new(RunAutoScriptResponse { run_uuid }))
     }

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use auto_drive_common_types::{LogLevel, LogMessage, LogSystemOrigin};
 use chrono::{DateTime, Utc};
+use log::info;
 use sha2::{Digest, Sha256};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 use tokio::{
@@ -116,6 +117,7 @@ impl AutoScript {
                     eprintln!("Car watcher lagged; skipped {skipped} messages");
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                    info!("Closed");
                     // The car disconnected or channel closed, exit the loop
                     break;
                 }

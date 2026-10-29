@@ -1,0 +1,72 @@
+name: Publish Rust SDK
+
+on:
+  push:
+    tags:
+      - 'sdk/v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-crate:
+    name: Publish to Crates.io
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auto-drive-sdk-rust
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry & index
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Validate Tag matches all Workspace Crate Versions
+        run: |
+          TAG_VERSION=${GITHUB_REF_NAME#sdk/v}
+          echo "Target Git Tag Version: $TAG_VERSION"
+
+          # Extract name and version for all local workspace members
+          MISMATCH_FOUND=false
+
+          while IFS= read -r line; do
+            NAME=$(echo "$line" | jq -r '.name')
+            VERSION=$(echo "$line" | jq -r '.version')
+
+            echo "Checking crate '$NAME' (v$VERSION)..."
+
+            if [ "$VERSION" != "$TAG_VERSION" ]; then
+              echo "::error::Crate '$NAME' version ($VERSION) does not match Git tag ($TAG_VERSION)"
+              MISMATCH_FOUND=true
+            fi
+          done < <(cargo metadata --no-deps --format-version 1 | jq -c '.workspace_members[] as $id | .packages[] | select(.id == $id)')
+
+          if [ "$MISMATCH_FOUND" = true ]; then
+            exit 1
+          fi
+
+          echo "All workspace crates match $TAG_VERSION!"
+
+      - name: Publish Workspace Crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --workspace
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Rust SDK ${{ github.ref_name }}
+          generate_release_notes: true

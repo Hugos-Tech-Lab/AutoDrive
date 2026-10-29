@@ -2,6 +2,13 @@
 members = ["auto-drive-sdk", "auto-drive-sdk-macros"]
 resolver = "2"
 
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+
+[workspace.dependencies]
+auto-drive-sdk-macros = { path = "auto-drive-sdk-macros", version = "0.0.1" }
+
 [profile.dev]
 opt-level = "z"      # Optimize strictly for size
 lto = true           # Enable Link-Time Optimization across all crates

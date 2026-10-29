@@ -1,10 +1,10 @@
 [package]
 name = "auto-drive-sdk"
-version = "0.0.1"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
-auto-drive-sdk-macros = { path = "../auto-drive-sdk-macros" }
+auto-drive-sdk-macros.workspace = true
 the-beginner-car-wasm-sdk = { path = "../../firmware/the-beginner-car-v1-wasm-firmware/api/the-beginner-car-wasm-sdk" }
 
 [lib]

@@ -2,6 +2,7 @@
 name = "auto-drive-sdk-macros"
 version.workspace = true
 edition.workspace = true
+readme = "README.md"
 
 [lib]
 proc-macro = true

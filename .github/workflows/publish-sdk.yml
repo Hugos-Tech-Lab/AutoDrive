@@ -34,13 +34,26 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Validate Tag matches all Workspace Crate Versions
+      - name: Validate Tag matches all Workspace Crate Versions & External WASM SDK
         run: |
           TAG_VERSION=${GITHUB_REF_NAME#sdk/v}
           echo "Target Git Tag Version: $TAG_VERSION"
 
-          # Extract name and version for all local workspace members
           MISMATCH_FOUND=false
+
+          WASM_SDK_PATH="../firmware/the-beginner-car-v1-wasm-firmware/api/the-beginner-car-wasm-sdk"
+          if [ -d "$WASM_SDK_PATH" ]; then
+            WASM_VERSION=$(cargo metadata --no-deps --format-version 1 --manifest-path "$WASM_SDK_PATH/Cargo.toml" | jq -r '.packages[0].version')
+            echo "Checking crate 'the-beginner-car-wasm-sdk' (v$WASM_VERSION)..."
+
+            if [ "$WASM_VERSION" != "$TAG_VERSION" ]; then
+              echo "::error::Crate 'the-beginner-car-wasm-sdk' version ($WASM_VERSION) does not match Git tag ($TAG_VERSION)"
+              MISMATCH_FOUND=true
+            fi
+          else
+            echo "::error::Directory '$WASM_SDK_PATH' not found!"
+            MISMATCH_FOUND=true
+          fi
 
           while IFS= read -r line; do
             NAME=$(echo "$line" | jq -r '.name')
@@ -58,7 +71,21 @@ jobs:
             exit 1
           fi
 
-          echo "All workspace crates match $TAG_VERSION!"
+          echo "Crates match $TAG_VERSION!"
+
+      - name: Publish WASM SDK Dependency
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          cargo publish --manifest-path ../firmware/the-beginner-car-v1-wasm-firmware/api/the-beginner-car-wasm-sdk/Cargo.toml
+          
+          TAG_VERSION=${GITHUB_REF_NAME#sdk/v}
+          echo "Waiting for the-beginner-car-wasm-sdk v$TAG_VERSION to be indexable on Crates.io..."
+          
+          # Retry cargo check every 10s up to 12 times (2 minutes max)
+          for i in {1..12}; do
+            cargo check && break || sleep 10
+          done
 
       - name: Publish Workspace Crates
         env:

@@ -3,7 +3,8 @@ name = "the-beginner-car-wasm-sdk"
 version = "0.0.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-description = "The Beginner Car WASM SDK provides the exposed functions to control the small car."
+description = "The Beginner Car WASM SDK declares the functions used to control the car."
+readme = "README.md"
 
 [dependencies]
 

@@ -26,7 +26,7 @@
     });
 
     const currentCET = new Date(p.year, p.month - 1, p.day, p.hour === 24 ? 0 : p.hour, p.minute, p.second);
-    const targetCET = new Date(p.year, p.month - 1, p.day, 20, 27, 0, 0);
+    const targetCET = new Date(p.year, p.month - 1, p.day, 19, 0, 0, 0);
 
     const diffInSeconds = Math.floor((targetCET.getTime() - currentCET.getTime()) / 1000);
 

@@ -18,15 +18,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
+
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.99.1
         with:
           targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
       - name: Ensure WASM Target is active
         run: rustup target add wasm32-unknown-unknown
       - name: Cache cargo registry & index
-        uses: actions/cache@v4
+        uses: actions/cache@v6.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -94,7 +96,7 @@ jobs:
         run: cargo publish --workspace
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3.0.3
         with:
           name: Rust SDK ${{ github.ref_name }}
           generate_release_notes: true

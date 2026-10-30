@@ -2,7 +2,9 @@
 name = "auto-drive-sdk-macros"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 readme = "README.md"
+description = "AutoDrive SDK Macros is a macro library which just makes the main function look pretty in the code to control the RC car."
 
 [lib]
 proc-macro = true

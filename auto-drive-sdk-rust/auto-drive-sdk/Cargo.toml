@@ -2,7 +2,9 @@
 name = "auto-drive-sdk"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 readme = "README.md"
+description = "The AutoDrive SDK is a library providing functionality to write programs that would be uploaded onto small vehicles in the lab."
 
 [dependencies]
 auto-drive-sdk-macros.workspace = true

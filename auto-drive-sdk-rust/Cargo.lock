@@ -49,7 +49,7 @@ dependencies = [
 
 [[package]]
 name = "the-beginner-car-wasm-sdk"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "proc-macro2",
  "syn",

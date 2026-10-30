@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
 auto-drive-sdk-macros = { path = "auto-drive-sdk-macros", version = "0.0.1" }
-the-beginner-car-wasm-sdk = { path = "../../firmware/the-beginner-car-v1-wasm-firmware/api/the-beginner-car-wasm-sdk", version = "0.0.1" }
+the-beginner-car-wasm-sdk = { path = "../firmware/the-beginner-car-v1-wasm-firmware/api/the-beginner-car-wasm-sdk", version = "0.0.1" }
 
 [profile.dev]
 opt-level = "z"      # Optimize strictly for size

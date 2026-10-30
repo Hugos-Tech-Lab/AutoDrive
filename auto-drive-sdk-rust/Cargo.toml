@@ -1,5 +1,5 @@
 [workspace]
-members = ["auto-drive-sdk", "auto-drive-sdk-macros"]
+members = ["auto-drive-sdk", "auto-drive-sdk-macros", "auto-drive-sdk-runner"]
 resolver = "2"
 
 [workspace.package]

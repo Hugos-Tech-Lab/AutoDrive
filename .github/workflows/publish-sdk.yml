@@ -80,7 +80,14 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          cargo publish --manifest-path ../firmware/the-beginner-car-v1-wasm-firmware/api/the-beginner-car-wasm-sdk/Cargo.toml --target wasm32-unknown-unknown --no-verify
+          OUT=$(cargo publish --manifest-path ../firmware/the-beginner-car-v1-wasm-firmware/api/the-beginner-car-wasm-sdk/Cargo.toml --target wasm32-unknown-unknown --no-verify 2>&1) || {
+            if echo "$OUT" | grep -q "already uploaded"; then
+              echo "Crate version already exists on Crates.io, skipping..."
+            else
+              echo "$OUT"
+              exit 1
+            fi
+          }
           
           TAG_VERSION=${GITHUB_REF_NAME#sdk/v}
           echo "Waiting for the-beginner-car-wasm-sdk v$TAG_VERSION to be indexable on Crates.io..."
@@ -88,7 +95,6 @@ jobs:
           for i in {1..12}; do
             cargo check && break || sleep 10
           done
-
       - name: Publish Workspace Crates
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

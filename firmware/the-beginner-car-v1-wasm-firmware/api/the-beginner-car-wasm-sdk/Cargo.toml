@@ -1,6 +1,6 @@
 [package]
 name = "the-beginner-car-wasm-sdk"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "The Beginner Car WASM SDK declares the functions used to control the car."

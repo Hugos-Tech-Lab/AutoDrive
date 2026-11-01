@@ -18,6 +18,7 @@ use crate::{
 
 pub mod led;
 pub mod motor;
+pub mod wheel;
 
 #[derive(Debug, PartialEq)]
 pub enum RequestOrigin {
@@ -95,78 +96,17 @@ impl TheBeginnerCarHardware {
         &mut self.wheel_left
     }
 
+    // pub fn move_forward_by_cm(&mut self, cm: i8) {
+    // self.wheel_left.
+    // }
+
     pub fn wheel_left_wait_for_rotations(
         &mut self,
         target_rotations: u32,
         timeout: u32,
         ct: CancellationToken,
     ) -> u32 {
-        let timeout = Duration::from_millis(timeout as u64);
-        let function_duration = Instant::now();
-
-        if target_rotations == 0 {
-            return 0;
-        }
-
-        let detected = Arc::new(AtomicBool::new(false));
-        let sensor = &mut self.wheel_left_hall_sensor;
-
-        sensor.set_interrupt_type(InterruptType::NegEdge).unwrap();
-
-        unsafe {
-            sensor
-                .subscribe({
-                    let detected = detected.clone();
-                    move || {
-                        detected.store(true, Ordering::Relaxed);
-                    }
-                })
-                .unwrap();
-        }
-
-        sensor.enable_interrupt().unwrap();
-
-        // warm up get to first detected
-        loop {
-            if ct.is_cancelled() || function_duration.elapsed() >= timeout {
-                break;
-            }
-
-            if detected.swap(false, Ordering::Relaxed) {
-                break;
-            }
-
-            FreeRtos::delay_ms(1);
-        }
-
-        sensor.enable_interrupt().unwrap();
-
-        let target_start = Instant::now();
-
-        let mut completed_rotations = 0u32;
-
-        loop {
-            if ct.is_cancelled() || function_duration.elapsed() >= timeout {
-                break;
-            }
-
-            if detected.swap(false, Ordering::Relaxed) {
-                sensor.enable_interrupt().unwrap();
-                completed_rotations += 1;
-            }
-
-            if completed_rotations >= target_rotations {
-                break;
-            }
-
-            FreeRtos::delay_ms(1);
-        }
-
-        let target_duration = target_start.elapsed();
-        let target_duration = target_duration.as_millis() as u32;
-
-        sensor.unsubscribe().unwrap();
-
+        //
         target_duration
     }
 

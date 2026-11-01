@@ -307,6 +307,32 @@ impl WasmExports for TheBeginnerCarExports {
         let mut hardware = wasm_data.hardware.lock().unwrap();
         let _ = hardware.wheel_right().set_pwm(pwm);
     }
+
+    unsafe extern "C" fn delay_for_motor_left_rotations(
+        exec_env: *mut c_void,
+        count: u32,
+        timeout: u32,
+    ) -> u32 {
+        if exec_env.is_null() {
+            return 0;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        hardware.wheel_left_wait_for_rotations(count, timeout)
+    }
+
+    unsafe extern "C" fn delay_for_motor_right_rotations(
+        exec_env: *mut c_void,
+        count: u32,
+        timeout: u32,
+    ) -> u32 {
+        todo!()
+    }
 }
 
 unsafe fn terminate(exec_env: *mut WASMExecEnv) {

@@ -82,6 +82,14 @@ impl TheBeginnerCarHardware {
         &mut self.wheel_left
     }
 
+    pub fn wheel_left_wait_for_rotations(&self, count: u32, timeout: u32) -> u32 {
+        0
+    }
+
+    pub fn wheel_right_wait_for_rotations(&self, count: u32, timeout: u32) -> u32 {
+        0
+    }
+
     pub fn set_wheel_left_speed(&mut self, speed: i8, _origin: RequestOrigin) {
         // if self.allowed_controller != origin {
         // panic!(); // TODO: not authorized

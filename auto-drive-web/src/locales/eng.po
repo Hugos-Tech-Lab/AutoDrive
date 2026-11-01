@@ -585,8 +585,9 @@ msgstr "Sign In / Sign up"
 #~ msgid "Past"
 #~ msgstr "Past"
 
-#~ msgid "Logs"
-#~ msgstr "Logs"
+#: src/lib/components/Dashboard.svelte
+msgid "Logs"
+msgstr "Logs"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
@@ -1222,3 +1223,7 @@ msgstr "Stream Live"
 #: src/routes/[locale]/count-down/+page.svelte
 msgid "LIVE IN {0} SECONDS"
 msgstr "LIVE IN {0} SECONDS"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Calibration"
+msgstr "Calibration"

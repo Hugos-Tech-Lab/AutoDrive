@@ -585,8 +585,9 @@ msgstr ""
 #~ msgid "Past"
 #~ msgstr ""
 
-#~ msgid "Logs"
-#~ msgstr ""
+#: src/lib/components/Dashboard.svelte
+msgid "Logs"
+msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
@@ -1221,4 +1222,8 @@ msgstr ""
 #. 0: remainingSeconds
 #: src/routes/[locale]/count-down/+page.svelte
 msgid "LIVE IN {0} SECONDS"
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Calibration"
 msgstr ""

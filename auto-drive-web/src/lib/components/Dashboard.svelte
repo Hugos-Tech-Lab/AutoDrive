@@ -24,13 +24,15 @@
     "Live"
   ];
 
-  type BuildOption = "Status" | "Telemetry" | "Control";
+  type BuildOption = "Status" | "Logs" | "Telemetry" | "Control" | "Calibration";
   let selectedBuildOption = $state<BuildOption>("Status");
 
   const buildOptions: BuildOption[] = [
     "Status",
+    "Logs",
     "Telemetry",
     "Control",
+    "Calibration"
   ];
 </script>
 

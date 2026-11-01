@@ -323,7 +323,11 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.wheel_left_wait_for_rotations(count, timeout)
+        let delay_ms = hardware.wheel_left_wait_for_rotations(count, timeout, wasm_data.ct.clone());
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+        delay_ms
     }
 
     unsafe extern "C" fn delay_for_motor_right_rotations(

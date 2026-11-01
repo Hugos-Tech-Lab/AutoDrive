@@ -4,10 +4,29 @@ use esp_idf_svc::hal::{
     ledc::{LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, SpeedMode, config::TimerConfig},
 };
 
+struct MotorCalibration {
+    speed_to_pwm: [i8; 256],
+}
+
+impl Default for MotorCalibration {
+    fn default() -> Self {
+        Self {
+            speed_to_pwm: [0; 256],
+        }
+    }
+}
+
+impl MotorCalibration {
+    pub fn get_pwm(&self, speed: i8) -> i8 {
+        *self.speed_to_pwm.get(speed as usize).unwrap_or(&speed)
+    }
+}
+
 pub struct Motor {
     power_driver: LedcDriver<'static>,
     directional_pin: PinDriver<'static, Output>,
     max_duty: u32,
+    motor_calibration: MotorCalibration,
 }
 
 impl Motor {
@@ -37,6 +56,7 @@ impl Motor {
             directional_pin,
             power_driver,
             max_duty,
+            motor_calibration: MotorCalibration::default(),
         }
     }
 
@@ -45,8 +65,14 @@ impl Motor {
         Ok(())
     }
 
+    /// Percetange from -100 to 100
     pub fn set_speed(&mut self, speed: i8) -> anyhow::Result<()> {
-        let (power, reverse) = Self::convert(speed, self.max_duty);
+        let pwm = self.motor_calibration.get_pwm(speed);
+        self.set_pwm(pwm)
+    }
+
+    pub fn set_pwm(&mut self, pwm: i8) -> anyhow::Result<()> {
+        let (power, reverse) = Self::convert(pwm, self.max_duty);
         if reverse {
             self.directional_pin.set_high().unwrap();
         } else {

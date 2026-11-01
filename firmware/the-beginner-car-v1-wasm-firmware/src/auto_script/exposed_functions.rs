@@ -94,7 +94,7 @@ impl WasmExports for TheBeginnerCarExports {
     ///
     /// Must be called from within a WASM runtime with a valid exec_env.
     #[unsafe(no_mangle)]
-    unsafe extern "C" fn set_motor_a_speed(exec_env: *mut c_void, speed: i8) {
+    unsafe extern "C" fn set_motor_left_speed(exec_env: *mut c_void, speed: i8) {
         if exec_env.is_null() {
             return;
         }
@@ -105,14 +105,14 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.set_wheel_a_speed(speed, crate::hardware::RequestOrigin::Manual);
+        hardware.set_wheel_left_speed(speed, crate::hardware::RequestOrigin::Manual);
     }
 
     /// # Safety
     ///
     /// Must be called from within a WASM runtime with a valid exec_env.
     #[unsafe(no_mangle)]
-    unsafe extern "C" fn set_motor_b_speed(exec_env: *mut c_void, speed: i8) {
+    unsafe extern "C" fn set_motor_right_speed(exec_env: *mut c_void, speed: i8) {
         if exec_env.is_null() {
             return;
         }
@@ -123,7 +123,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.set_wheel_b_speed(speed, crate::hardware::RequestOrigin::Manual);
+        hardware.set_wheel_right_speed(speed, crate::hardware::RequestOrigin::Manual);
     }
 
     unsafe extern "C" fn set_led_left_on(exec_env: *mut c_void) {
@@ -278,6 +278,34 @@ impl WasmExports for TheBeginnerCarExports {
 
         let hardware = wasm_data.hardware.lock().unwrap();
         hardware.get_ir_back_left_value()
+    }
+
+    unsafe extern "C" fn set_motor_left_pwm(exec_env: *mut c_void, pwm: i8) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        let _ = hardware.wheel_left().set_pwm(pwm);
+    }
+
+    unsafe extern "C" fn set_motor_right_pwm(exec_env: *mut c_void, pwm: i8) {
+        if exec_env.is_null() {
+            return;
+        }
+        let exec_env = exec_env.cast::<WASMExecEnv>();
+        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        if wasm_data.ct.is_cancelled() {
+            unsafe { terminate(exec_env) };
+        }
+
+        let mut hardware = wasm_data.hardware.lock().unwrap();
+        let _ = hardware.wheel_right().set_pwm(pwm);
     }
 }
 

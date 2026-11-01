@@ -53,13 +53,13 @@ impl ServerSpi {
         match request {
             RequestToHardware::LightOn => println!("LightOn"),
             RequestToHardware::LightOff => println!("LightOff"),
-            RequestToHardware::SetMotorASpeed(speed) => {
+            RequestToHardware::SetMotorLeftSpeed(speed) => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_a_speed(speed, RequestOrigin::Manual);
+                the_beginner_car.set_wheel_left_speed(speed, RequestOrigin::Manual);
             }
-            RequestToHardware::SetMotorBSpeed(speed) => {
+            RequestToHardware::SetMotorRightSpeed(speed) => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_b_speed(speed, RequestOrigin::Manual);
+                the_beginner_car.set_wheel_right_speed(speed, RequestOrigin::Manual);
             }
             RequestToHardware::DrainEvents => {
                 let events = {
@@ -69,8 +69,12 @@ impl ServerSpi {
 
                 return ResponseFromHardware::Events { events };
             }
-            RequestToHardware::NotifyPositionFromCamera { x, y } => {
-                println!("{x}, {y}.. pos from camera")
+            RequestToHardware::NotifyPositionFromCamera {
+                x,
+                y,
+                rotation_radians,
+            } => {
+                println!("{x}, {y}, {rotation_radians}.. pos from camera")
             }
             RequestToHardware::NotifyBatteryReadings { voltage } => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
@@ -92,6 +96,10 @@ impl ServerSpi {
                     events.push(Event::AutoScriptStopped);
                 }
             } // TODO: RENAME TO CANCEL AutoScript
+            RequestToHardware::RunCalibration => {
+                let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                the_beginner_car.run_calibration();
+            }
         }
 
         // pin.set_color(3, 20, 3);

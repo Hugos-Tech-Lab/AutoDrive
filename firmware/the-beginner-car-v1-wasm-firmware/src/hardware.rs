@@ -17,8 +17,8 @@ pub enum RequestOrigin {
 pub struct TheBeginnerCarHardware {
     // auto_script: AutoScript,
     allowed_controller: RequestOrigin,
-    wheel_a: Motor,
-    wheel_b: Motor,
+    wheel_left: Motor,
+    wheel_right: Motor,
     // led_left: Led,
     led_right: Led,
     battery_voltage: f32,
@@ -35,8 +35,8 @@ pub struct TheBeginnerCarHardware {
 
 impl TheBeginnerCarHardware {
     pub fn new(
-        wheel_a: Motor,
-        wheel_b: Motor,
+        wheel_left: Motor,
+        wheel_right: Motor,
         // led_left: Led,
         led_right: Led,
         // front
@@ -51,8 +51,8 @@ impl TheBeginnerCarHardware {
     ) -> Self {
         Self {
             allowed_controller: RequestOrigin::Manual,
-            wheel_a,
-            wheel_b,
+            wheel_left,
+            wheel_right,
             // led_left,
             led_right,
             battery_voltage: 0.0,
@@ -74,19 +74,27 @@ impl TheBeginnerCarHardware {
         &mut self.led_right
     }
 
-    pub fn set_wheel_a_speed(&mut self, speed: i8, _origin: RequestOrigin) {
+    pub fn wheel_left(&mut self) -> &mut Motor {
+        &mut self.wheel_left
+    }
+
+    pub fn wheel_right(&mut self) -> &mut Motor {
+        &mut self.wheel_left
+    }
+
+    pub fn set_wheel_left_speed(&mut self, speed: i8, _origin: RequestOrigin) {
         // if self.allowed_controller != origin {
         // panic!(); // TODO: not authorized
         // }
 
-        self.wheel_a.set_speed(speed).unwrap();
+        self.wheel_left.set_speed(speed).unwrap();
     }
 
-    pub fn set_wheel_b_speed(&mut self, speed: i8, _origin: RequestOrigin) {
+    pub fn set_wheel_right_speed(&mut self, speed: i8, _origin: RequestOrigin) {
         // if self.allowed_controller != origin {
         //     panic!(); // TODO: not allowed
         // }
-        self.wheel_b.set_speed(speed).unwrap();
+        self.wheel_right.set_speed(speed).unwrap();
     }
 
     pub fn set_allowed_controller(&mut self, controller: RequestOrigin) {
@@ -128,11 +136,13 @@ impl TheBeginnerCarHardware {
     }
 
     pub fn stop_all(&mut self) {
-        self.wheel_a.stop().unwrap();
-        self.wheel_b.stop().unwrap();
+        self.wheel_left.stop().unwrap();
+        self.wheel_right.stop().unwrap();
         // self.led_left.stop().unwrap();
         self.led_right.stop().unwrap();
     }
 
-    // pub fn switch_
+    pub fn run_calibration(&mut self) {
+        // self.
+    }
 }

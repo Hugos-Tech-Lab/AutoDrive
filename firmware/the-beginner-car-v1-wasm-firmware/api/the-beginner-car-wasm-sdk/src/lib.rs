@@ -13,11 +13,18 @@ define_wasm_api! {
     /// Sets the onboard LED color
     fn set_onboard_led_color(r: u8, g: u8, b: u8);
 
-    /// Sets motor A speed
-    fn set_motor_a_speed(speed: i8);
 
-    /// Sets motor B speed
-    fn set_motor_b_speed(speed: i8);
+    // This is a % from -100 to 100
+    fn set_motor_left_speed(speed: i8);
+
+    // This is a % from -100 to 100
+    fn set_motor_right_speed(speed: i8);
+
+    // From -128 to 127
+    fn set_motor_left_pwm(pwm: i8);
+
+    // From -128 to 127
+    fn set_motor_right_pwm(pwm: i8);
 
     fn set_led_left_on();
 

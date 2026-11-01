@@ -4,7 +4,8 @@
 
   let { selectedBuild = $bindable() }: { selectedBuild: string } = $props();
 
-  type HardwareData = { id: string; category: string; is_connected: boolean };
+  type HardwareData = { number_plate: string; category: string; is_connected: boolean };
+
   let hardwareList = $state<HardwareData[]>([]);
 
   onMount(() => {
@@ -47,12 +48,12 @@
     <button
       type="button"
       class="button block"
-      class:selected={selectedBuild === hw.id}
-      aria-pressed={selectedBuild === hw.id}
-      onclick={() => (selectedBuild = hw.id)}
+      class:selected={selectedBuild === hw.number_plate}
+      aria-pressed={selectedBuild === hw.number_plate}
+      onclick={() => (selectedBuild = hw.number_plate)}
     >
-    <!-- TODO: it shows connected even when conneciton to backend not made? Fix that -->
-      {hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"} {hw.id} 
+    <!-- TODO: it shows connected even when connection to backend not made? Fix that -->
+      {hw.number_plate} {hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"} 
     </button>
   {/each}
 </div>

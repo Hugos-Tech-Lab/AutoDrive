@@ -1,8 +1,5 @@
 use std::{
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicU16, Ordering},
-    },
+    sync::{Arc, Mutex, atomic::Ordering},
     time::Duration,
 };
 
@@ -21,15 +18,20 @@ use the_beginner_car_spi_protocol::Event;
 
 use crate::{
     auto_script::AutoScript,
-    hardware::{TheBeginnerCarHardware, led::Led, motor::Motor},
     server_spi::ServerSpi,
+    the_beginner_car_hardware::{
+        TheBeginnerCarHardware,
+        ir_sensor_array::IrSensorArrayData,
+        led::Led,
+        wheel::{Wheel, motor::Motor, tachometer::Tachometer},
+    },
 };
 
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod auto_script;
-pub mod hardware;
 pub mod server_spi;
+pub mod the_beginner_car_hardware;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -47,18 +49,26 @@ pub fn main() -> anyhow::Result<()> {
     info!("starting");
     let peripherals = Peripherals::take()?;
 
-    let motor_a = Motor::new(
+    let motor_left = Motor::new(
         peripherals.pins.gpio7.into(),
         peripherals.pins.gpio18.into(),
         peripherals.ledc.channel0,
         peripherals.ledc.timer1,
     );
-    let motor_b = Motor::new(
+
+    let motor_right = Motor::new(
         peripherals.pins.gpio11.into(),
         peripherals.pins.gpio10.into(),
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
     );
+
+    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio12.into());
+    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
+
+    let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
+    let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
+
     // let led_left = Led::new(peripherals.pins.gpio13.into());
     let led_right = Led::new(peripherals.pins.gpio9.into());
 
@@ -68,28 +78,13 @@ pub fn main() -> anyhow::Result<()> {
         FreeRtos::delay_ms(1000);
     }
 
-    // front
-    let ir_front_far_left_latest_reading = Arc::new(AtomicU16::new(0));
-    let ir_front_left_latest_reading = Arc::new(AtomicU16::new(0));
-    let ir_front_center_latest_reading = Arc::new(AtomicU16::new(0));
-    let ir_front_right_latest_reading = Arc::new(AtomicU16::new(0));
-    let ir_front_far_right_latest_reading = Arc::new(AtomicU16::new(0));
-
-    // back
-    let ir_back_center_latest_reading = Arc::new(AtomicU16::new(0));
-    let ir_back_left_latest_reading = Arc::new(AtomicU16::new(0));
+    let ir_sensor_array = Arc::new(IrSensorArrayData::default());
 
     let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
-        motor_a,
-        motor_b,
+        wheel_left,
+        wheel_right,
         led_right,
-        ir_front_far_left_latest_reading.clone(),
-        ir_front_left_latest_reading.clone(),
-        ir_front_center_latest_reading.clone(),
-        ir_front_right_latest_reading.clone(),
-        ir_front_far_right_latest_reading.clone(),
-        ir_back_center_latest_reading.clone(),
-        ir_back_left_latest_reading.clone(),
+        ir_sensor_array.clone(),
     )));
 
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
@@ -132,105 +127,7 @@ pub fn main() -> anyhow::Result<()> {
         })
         .unwrap();
 
-    let reading = std::thread::Builder::new()
-        .stack_size(2_000)
-        .name("sensor_readings".to_string())
-        .spawn({
-            let events = events.clone();
-            move || {
-                let adc = AdcDriver::new(peripherals.adc1).unwrap();
-                let config = AdcChannelConfig {
-                    attenuation: DB_12,
-                    ..Default::default()
-                };
-
-                let mut pin_ir_front_far_left =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio1, &config).unwrap();
-                let mut pin_ir_front_left =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio2, &config).unwrap();
-                let mut pin_ir_front_center =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio5, &config).unwrap();
-                let mut pin_ir_front_right =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio3, &config).unwrap();
-                let mut pin_ir_front_far_right =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio4, &config).unwrap();
-
-                let mut pin_ir_back_center =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio0, &config).unwrap();
-                let mut pin_ir_back_left =
-                    AdcChannelDriver::new(&adc, peripherals.pins.gpio6, &config).unwrap();
-
-                let mut last_flush = std::time::Instant::now();
-
-                loop {
-                    // TODO: this polling could be based on the speed of the wheels
-                    let front_far_left_latest_reading =
-                        ((pin_ir_front_far_left.read_raw().unwrap() as u32 * u16::MAX as u32)
-                            / 4095) as u16;
-
-                    let front_left_latest_reading = ((pin_ir_front_left.read_raw().unwrap() as u32
-                        * u16::MAX as u32)
-                        / 4095) as u16;
-
-                    let front_center_latest_reading =
-                        ((pin_ir_front_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
-                            as u16;
-
-                    let front_right_latest_reading =
-                        ((pin_ir_front_right.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
-                            as u16;
-
-                    let front_far_right_latest_reading =
-                        ((pin_ir_front_far_right.read_raw().unwrap() as u32 * u16::MAX as u32)
-                            / 4095) as u16;
-
-                    let back_left_latest_reading = ((pin_ir_back_left.read_raw().unwrap() as u32
-                        * u16::MAX as u32)
-                        / 4095) as u16;
-
-                    let back_center_latest_reading =
-                        ((pin_ir_back_center.read_raw().unwrap() as u32 * u16::MAX as u32) / 4095)
-                            as u16;
-
-                    ir_front_far_left_latest_reading
-                        .store(front_far_left_latest_reading, Ordering::Relaxed);
-
-                    ir_front_left_latest_reading
-                        .store(front_left_latest_reading, Ordering::Relaxed);
-
-                    ir_front_center_latest_reading
-                        .store(front_center_latest_reading, Ordering::Relaxed);
-
-                    ir_front_right_latest_reading
-                        .store(front_right_latest_reading, Ordering::Relaxed);
-
-                    ir_front_far_right_latest_reading
-                        .store(front_far_right_latest_reading, Ordering::Relaxed);
-
-                    ir_back_left_latest_reading.store(back_left_latest_reading, Ordering::Relaxed);
-
-                    ir_back_center_latest_reading
-                        .store(back_center_latest_reading, Ordering::Relaxed);
-
-                    if last_flush.elapsed() >= Duration::from_millis(100) {
-                        let mut events = events.lock().unwrap();
-
-                        events.push(Event::InfraredLedReadings {
-                            back_center: back_center_latest_reading,
-                            front_left: front_left_latest_reading,
-                            front_center: front_center_latest_reading,
-                            front_right: front_right_latest_reading,
-                        });
-
-                        last_flush = std::time::Instant::now();
-                    }
-
-                    // dbg!(led_a_latest_reading);
-                    FreeRtos::delay_ms(1);
-                }
-            }
-        })
-        .unwrap();
+    //
 
     let spi_hardware = SpiSlaveHardware {
         spi_2: peripherals.spi2,
@@ -245,6 +142,6 @@ pub fn main() -> anyhow::Result<()> {
     let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;
 
     server_spi.handle.join().unwrap();
-    reading.join().unwrap();
+    // reading.join().unwrap();
     Ok(())
 }

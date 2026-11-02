@@ -12,7 +12,7 @@ use crate::{
         cancellation_token::CancellationToken,
         wasm_thread::{WasmThread, WasmThreadCommand},
     },
-    hardware::TheBeginnerCarHardware,
+    the_beginner_car_hardware::TheBeginnerCarHardware,
 };
 use anyhow::{Result, bail};
 use log::info;

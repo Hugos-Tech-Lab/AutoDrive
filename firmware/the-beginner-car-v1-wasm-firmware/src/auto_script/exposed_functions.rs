@@ -105,7 +105,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.set_wheel_left_speed(speed, crate::hardware::RequestOrigin::Manual);
+        hardware.set_wheel_left_speed(speed);
     }
 
     /// # Safety
@@ -123,7 +123,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.set_wheel_right_speed(speed, crate::hardware::RequestOrigin::Manual);
+        hardware.set_wheel_right_speed(speed);
     }
 
     unsafe extern "C" fn set_led_left_on(exec_env: *mut c_void) {

@@ -8,10 +8,7 @@ use esp_idf_svc::hal::gpio::{InputPin, OutputPin};
 use log::info;
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
-use crate::{
-    auto_script::AutoScript,
-    hardware::{RequestOrigin, TheBeginnerCarHardware},
-};
+use crate::{auto_script::AutoScript, the_beginner_car_hardware::TheBeginnerCarHardware};
 
 pub struct ServerSpi {
     pub handle: JoinHandle<()>,
@@ -55,11 +52,11 @@ impl ServerSpi {
             RequestToHardware::LightOff => println!("LightOff"),
             RequestToHardware::SetMotorLeftSpeed(speed) => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_left_speed(speed, RequestOrigin::Manual);
+                the_beginner_car.set_wheel_left_speed(speed);
             }
             RequestToHardware::SetMotorRightSpeed(speed) => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_right_speed(speed, RequestOrigin::Manual);
+                the_beginner_car.set_wheel_right_speed(speed);
             }
             RequestToHardware::DrainEvents => {
                 let events = {

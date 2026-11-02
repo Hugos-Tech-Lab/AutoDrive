@@ -1,23 +1,68 @@
 use std::{
     sync::{
         Arc,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU32, Ordering},
     },
     time::{Duration, Instant},
 };
 
 use esp_idf_svc::hal::{
     delay::FreeRtos,
-    gpio::{Input, InterruptType, PinDriver},
+    gpio::{AnyIOPin, Input, InterruptType, PinDriver, Pull},
 };
 
 use crate::auto_script::cancellation_token::CancellationToken;
 
 pub struct Tachometer {
-    hall_sensor: PinDriver<'static, Input>,
+    //
 }
 
 impl Tachometer {
+    pub fn new(hall_sensor: AnyIOPin<'static>) -> Self {
+        let rpm = Arc::new(AtomicU32::new(0));
+
+        std::thread::Builder::new()
+            .name("tachometer".to_string())
+            .spawn(|| {
+                let mut hall_sensor = PinDriver::input(hall_sensor, Pull::Up).unwrap();
+                hall_sensor
+                    .set_interrupt_type(InterruptType::NegEdge)
+                    .unwrap();
+
+                let detected = Arc::new(AtomicBool::new(false));
+
+                unsafe {
+                    hall_sensor
+                        .subscribe({
+                            let detected = detected.clone();
+                            move || {
+                                detected.store(true, Ordering::Relaxed);
+                            }
+                        })
+                        .unwrap();
+                }
+
+                loop {
+                    // if ct.is_cancelled() || function_duration.elapsed() >= timeout {
+                    //     break;
+                    // }
+
+                    if detected.swap(false, Ordering::Relaxed) {
+                        //
+                        hall_sensor.enable_interrupt().unwrap();
+                    }
+
+                    FreeRtos::delay_ms(1);
+                }
+            });
+
+        Self {}
+    }
+
+    pub fn get_rpm() {
+        //
+    }
+
     pub fn wait_for_rotations(
         &mut self,
         target_rotations: u32,

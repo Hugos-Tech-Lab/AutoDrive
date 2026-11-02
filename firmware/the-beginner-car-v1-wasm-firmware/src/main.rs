@@ -63,85 +63,85 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.timer2,
     );
 
-    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio12.into());
-    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
+    let wheel_left_tachometer = Tachometer::new(peripherals.pcnt0, peripherals.pins.gpio12.into());
+    // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 
-    let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
-    let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
+    // let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
+    // let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
 
-    // let led_left = Led::new(peripherals.pins.gpio13.into());
-    let led_right = Led::new(peripherals.pins.gpio9.into());
+    // // let led_left = Led::new(peripherals.pins.gpio13.into());
+    // let led_right = Led::new(peripherals.pins.gpio9.into());
 
-    // pin.set_color(20, 2, 2);
-    if reason == 9 {
-        // pin.set_color(9, 0, 200);
-        FreeRtos::delay_ms(1000);
-    }
+    // // pin.set_color(20, 2, 2);
+    // if reason == 9 {
+    //     // pin.set_color(9, 0, 200);
+    //     FreeRtos::delay_ms(1000);
+    // }
 
-    let ir_sensor_array = Arc::new(IrSensorArrayData::default());
+    // let ir_sensor_array = Arc::new(IrSensorArrayData::default());
 
-    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
-        wheel_left,
-        wheel_right,
-        led_right,
-        ir_sensor_array.clone(),
-    )));
+    // let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
+    //     wheel_left,
+    //     wheel_right,
+    //     led_right,
+    //     ir_sensor_array.clone(),
+    // )));
 
-    let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
+    // let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
-    let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
-        let events = events.clone();
-        move || {
-            let mut events = events.lock().unwrap();
-            events.push(Event::AutoScriptStopped);
-        }
-    })?);
+    // let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
+    //     let events = events.clone();
+    //     move || {
+    //         let mut events = events.lock().unwrap();
+    //         events.push(Event::AutoScriptStopped);
+    //     }
+    // })?);
 
-    std::thread::Builder::new()
-        .stack_size(2_000)
-        .name("flush_logs".to_string())
-        .spawn({
-            let events = events.clone();
-            move || {
-                let mut pending_logs = Vec::new();
-                let mut last_flush = std::time::Instant::now();
+    // std::thread::Builder::new()
+    //     .stack_size(2_000)
+    //     .name("flush_logs".to_string())
+    //     .spawn({
+    //         let events = events.clone();
+    //         move || {
+    //             let mut pending_logs = Vec::new();
+    //             let mut last_flush = std::time::Instant::now();
 
-                loop {
-                    match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
-                        Ok(log) => pending_logs.push(log),
-                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-                        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                            dbg!();
-                            panic!();
-                        }
-                    }
+    //             loop {
+    //                 match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
+    //                     Ok(log) => pending_logs.push(log),
+    //                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+    //                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+    //                         dbg!();
+    //                         panic!();
+    //                     }
+    //                 }
 
-                    if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
-                        let mut events = events.lock().unwrap();
-                        events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
+    //                 if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
+    //                     let mut events = events.lock().unwrap();
+    //                     events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
 
-                        last_flush = std::time::Instant::now();
-                    }
-                }
-            }
-        })
-        .unwrap();
+    //                     last_flush = std::time::Instant::now();
+    //                 }
+    //             }
+    //         }
+    //     })
+    //     .unwrap();
 
-    //
+    // //
 
-    let spi_hardware = SpiSlaveHardware {
-        spi_2: peripherals.spi2,
-        a_sclk: peripherals.pins.gpio15,
-        b_sdi: peripherals.pins.gpio23,
-        c_sdo: peripherals.pins.gpio22,
-        d_slave_ready_pin: peripherals.pins.gpio21,
-        e_cs: peripherals.pins.gpio20,
-        f_master_ready_pin: peripherals.pins.gpio19,
-    };
+    // let spi_hardware = SpiSlaveHardware {
+    //     spi_2: peripherals.spi2,
+    //     a_sclk: peripherals.pins.gpio15,
+    //     b_sdi: peripherals.pins.gpio23,
+    //     c_sdo: peripherals.pins.gpio22,
+    //     d_slave_ready_pin: peripherals.pins.gpio21,
+    //     e_cs: peripherals.pins.gpio20,
+    //     f_master_ready_pin: peripherals.pins.gpio19,
+    // };
 
-    let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;
+    // let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;
 
-    server_spi.handle.join().unwrap();
+    // server_spi.handle.join().unwrap();
     // reading.join().unwrap();
     Ok(())
 }

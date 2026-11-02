@@ -2,7 +2,7 @@ use std::sync::{Arc, atomic::Ordering};
 
 use crate::{
     auto_script::cancellation_token::CancellationToken,
-    the_beginner_car_hardware::{ir_sensor_array::IrSensorArrayReadings, led::Led, wheel::Wheel},
+    the_beginner_car_hardware::{led::Led, wheel::Wheel},
 };
 
 pub mod ir_sensor_array;

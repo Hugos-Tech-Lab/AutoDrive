@@ -17,7 +17,7 @@ pub mod wheel;
 // }
 
 pub struct TheBeginnerCarHardware {
-    ir_sensor_array: Arc<IrSensorArrayReadings>,
+    ir_sensor_array: Arc<IrSensorArrayArray>,
     wheel_left: Wheel,
     wheel_right: Wheel,
     // led_left: Led,
@@ -31,7 +31,7 @@ impl TheBeginnerCarHardware {
         wheel_right: Wheel,
         // led_left: Led,
         led_right: Led,
-        ir_sensor_array: Arc<IrSensorArrayReadings>,
+        ir_sensor_array: Arc<IrSensorArrayArray>,
     ) -> Self {
         Self {
             wheel_left,

@@ -291,7 +291,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        let _ = hardware.wheel_left().set_pwm(pwm);
+        // let _ = hardware.wheel_left().set_pwm(pwm);
     }
 
     unsafe extern "C" fn set_motor_right_pwm(exec_env: *mut c_void, pwm: i8) {
@@ -305,7 +305,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        let _ = hardware.wheel_right().set_pwm(pwm);
+        // let _ = hardware.wheel_right().set_pwm(pwm);
     }
 
     unsafe extern "C" fn delay_for_motor_left_rotations(

@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use std::sync::atomic::{AtomicI8, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicI8, AtomicI32, Ordering};
 
 use esp_idf_svc::hal::delay::FreeRtos;
 use esp_idf_svc::hal::units::*;
@@ -31,7 +31,7 @@ impl MotorCalibration {
 pub struct Motor {
     motor_calibration: MotorCalibration,
     tachometer: Tachometer,
-    target_rpm: Arc<AtomicU32>,
+    target_rpm: Arc<AtomicI32>,
     target_pwm: Arc<AtomicI8>,
 }
 
@@ -50,7 +50,7 @@ impl Motor {
     {
         let mut motor_hardware = MotorHardware::new(directional_pin, power_pin, channel, timer);
 
-        let target_rpm = Arc::<AtomicU32>::new(AtomicU32::new(0));
+        let target_rpm = Arc::new(AtomicI32::new(0));
         let target_pwm = Arc::new(AtomicI8::new(0));
 
         std::thread::Builder::new()
@@ -102,6 +102,16 @@ impl Motor {
             tachometer,
             target_pwm,
         }
+    }
+
+    pub fn set_rpm(&self, rpm: i32) {
+        self.target_rpm.store(rpm, Ordering::Relaxed);
+    }
+
+    pub fn stop(&self) -> anyhow::Result<()> {
+        self.target_rpm.store(0, Ordering::Relaxed);
+        self.target_pwm.store(0, Ordering::Relaxed);
+        Ok(())
     }
 }
 

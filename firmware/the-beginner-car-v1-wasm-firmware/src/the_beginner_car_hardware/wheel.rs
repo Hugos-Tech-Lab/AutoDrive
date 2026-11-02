@@ -12,4 +12,8 @@ impl Wheel {
     pub fn new(motor: Motor, tachometer: Tachometer) -> Self {
         Self { motor, tachometer }
     }
+
+    pub fn motor(&self) -> &Motor {
+        &self.motor
+    }
 }

@@ -2,7 +2,7 @@ use std::sync::{Arc, atomic::Ordering};
 
 use crate::{
     auto_script::cancellation_token::CancellationToken,
-    the_beginner_car_hardware::{led::Led, wheel::Wheel},
+    the_beginner_car_hardware::{ir_sensor_array::IrSensorArray, led::Led, wheel::Wheel},
 };
 
 pub mod ir_sensor_array;
@@ -17,7 +17,7 @@ pub mod wheel;
 // }
 
 pub struct TheBeginnerCarHardware {
-    ir_sensor_array: Arc<IrSensorArrayArray>,
+    ir_sensor_array: Arc<IrSensorArray>,
     wheel_left: Wheel,
     wheel_right: Wheel,
     // led_left: Led,
@@ -31,7 +31,7 @@ impl TheBeginnerCarHardware {
         wheel_right: Wheel,
         // led_left: Led,
         led_right: Led,
-        ir_sensor_array: Arc<IrSensorArrayArray>,
+        ir_sensor_array: Arc<IrSensorArray>,
     ) -> Self {
         Self {
             wheel_left,
@@ -70,7 +70,8 @@ impl TheBeginnerCarHardware {
         ct: CancellationToken,
     ) -> u32 {
         //
-        target_duration
+        0
+        // target_duration
     }
 
     pub fn wheel_right_wait_for_rotations(&self, target_rotations: u32, timeout: u32) -> u32 {
@@ -82,14 +83,14 @@ impl TheBeginnerCarHardware {
         // panic!(); // TODO: not authorized
         // }
 
-        self.wheel_left.set_speed(speed).unwrap();
+        // self.wheel_left.set_speed(speed).unwrap();
     }
 
     pub fn set_wheel_right_speed(&mut self, speed: i8) {
         // if self.allowed_controller != origin {
         //     panic!(); // TODO: not allowed
         // }
-        self.wheel_right.set_speed(speed).unwrap();
+        // self.wheel_right.set_speed(speed).unwrap();
     }
 
     pub fn set_allowed_controller(&mut self) {
@@ -101,38 +102,45 @@ impl TheBeginnerCarHardware {
     }
 
     pub fn get_ir_front_far_left_value(&self) -> u16 {
-        self.ir_front_far_left_latest_reading
-            .load(Ordering::Relaxed)
+        // self.ir_front_far_left_latest_reading
+        //     .load(Ordering::Relaxed)
+        0
     }
 
     pub fn get_ir_front_left_value(&self) -> u16 {
-        self.ir_front_left_latest_reading.load(Ordering::Relaxed)
+        // self.ir_front_left_latest_reading.load(Ordering::Relaxed)
+        0
     }
 
     pub fn get_ir_front_center_value(&self) -> u16 {
-        self.ir_front_center_latest_reading.load(Ordering::Relaxed)
+        // self.ir_front_center_latest_reading.load(Ordering::Relaxed)
+        0
     }
 
     pub fn get_ir_front_right_value(&self) -> u16 {
-        self.ir_front_right_latest_reading.load(Ordering::Relaxed)
+        // self.ir_front_right_latest_reading.load(Ordering::Relaxed)
+        0
     }
 
     pub fn get_ir_front_far_right_value(&self) -> u16 {
-        self.ir_front_far_right_latest_reading
-            .load(Ordering::Relaxed)
+        // self.ir_front_far_right_latest_reading
+        //     .load(Ordering::Relaxed)
+        0
     }
 
     pub fn get_ir_back_center_value(&self) -> u16 {
-        self.ir_back_center_latest_reading.load(Ordering::Relaxed)
+        // self.ir_back_center_latest_reading.load(Ordering::Relaxed)
+        0
     }
 
     pub fn get_ir_back_left_value(&self) -> u16 {
-        self.ir_back_left_latest_reading.load(Ordering::Relaxed)
+        // self.ir_back_left_latest_reading.load(Ordering::Relaxed)
+        0
     }
 
     pub fn stop_all(&mut self) {
-        self.wheel_left.stop().unwrap();
-        self.wheel_right.stop().unwrap();
+        self.wheel_left.motor().stop().unwrap();
+        self.wheel_right.motor().stop().unwrap();
         // self.led_left.stop().unwrap();
         self.led_right.stop().unwrap();
     }

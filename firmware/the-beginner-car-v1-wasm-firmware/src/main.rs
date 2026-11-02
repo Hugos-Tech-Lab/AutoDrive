@@ -49,21 +49,28 @@ pub fn main() -> anyhow::Result<()> {
     info!("starting");
     let peripherals = Peripherals::take()?;
 
-    let motor_left = Motor::new(
-        peripherals.pins.gpio7.into(),
-        peripherals.pins.gpio18.into(),
-        peripherals.ledc.channel0,
-        peripherals.ledc.timer1,
-    );
+    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio9.into());
+
+    // let motor_left = Motor::new(
+    //     peripherals.pins.gpio7.into(),
+    //     peripherals.pins.gpio18.into(),
+    //     peripherals.ledc.channel0,
+    //     peripherals.ledc.timer1,
+    //     wheel_left_tachometer,
+    // );
 
     let motor_right = Motor::new(
         peripherals.pins.gpio11.into(),
         peripherals.pins.gpio10.into(),
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
+        wheel_right_tachometer,
     );
 
-    let wheel_left_tachometer = Tachometer::new(peripherals.pcnt0, peripherals.pins.gpio12.into());
+    motor_right.set_rpm(10);
+    FreeRtos::delay_ms(5000);
+    motor_right.set_rpm(0);
+
     // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 
     // let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);

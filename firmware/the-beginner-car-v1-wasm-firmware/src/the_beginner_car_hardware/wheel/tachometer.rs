@@ -11,6 +11,7 @@ use esp_idf_svc::hal::{
     gpio::{AnyIOPin, InterruptType, PinDriver, Pull},
     task::notification::Notification,
 };
+use log::{Level::Info, info};
 
 #[derive(Clone)]
 pub struct Tachometer {
@@ -49,13 +50,12 @@ impl Tachometer {
                             .unwrap();
                     }
 
-                    hall_sensor.enable_interrupt().unwrap();
-
                     let mut last_edge = None;
                     let ppr = pulses_per_rotation as f32;
 
                     loop {
-                        if let Some(_) = notification.wait(1000) {
+                        hall_sensor.enable_interrupt().unwrap();
+                        if let Some(_) = notification.wait(10000) {
                             let now = Instant::now();
                             if let Some(last_edge_time) = last_edge {
                                 let elapsed = now.duration_since(last_edge_time);
@@ -63,6 +63,7 @@ impl Tachometer {
                                     let elapsed_secs = elapsed.as_secs_f32();
                                     let current_rpm = ((60.0 / elapsed_secs) / ppr) as u32;
                                     rpm.store(current_rpm, Ordering::Relaxed);
+                                    info!("{}", current_rpm);
                                 }
                             }
                             last_edge = Some(now);

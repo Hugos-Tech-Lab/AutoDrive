@@ -7,6 +7,7 @@ use esp_idf_svc::hal::{
     gpio::{AnyIOPin, Output, PinDriver},
     ledc::{LedcChannel, LedcDriver, LedcTimer, LedcTimerDriver, SpeedMode, config::TimerConfig},
 };
+use log::info;
 
 use crate::the_beginner_car_hardware::wheel::tachometer::Tachometer;
 
@@ -61,13 +62,20 @@ impl Motor {
                 let target_rpm = target_rpm.clone();
                 let tachometer = tachometer.clone();
                 move || {
-                    let mut current_pwm: i32 = 0;
+                    let mut current_pwm: i32 = 95;
                     let mut control_counter = 0;
+                    let mut last_rpm_target: i32 = 0;
+                    let mut grace_cycles: i32 = 0;
 
                     loop {
                         FreeRtos::delay_ms(1);
 
                         let target = target_rpm.load(Ordering::Relaxed);
+
+                        if target != last_rpm_target {
+                            last_rpm_target = target;
+                            grace_cycles = 4; // Ignore feedback for the next 4 control cycles (200ms)
+                        }
 
                         if target == 0 {
                             current_pwm = 0;
@@ -84,18 +92,24 @@ impl Motor {
 
                             let is_forward_target = target > 0;
 
+                            if grace_cycles > 0 {
+                                info!("hj");
+                                grace_cycles -= 1;
+                                let _ = motor_hardware.set_pwm(current_pwm as i8);
+                                continue;
+                            }
+
                             // Since tachometer is unsigned magnitude, treat actual speed
                             // with the sign of our target/current motion
                             let effective_actual = if is_forward_target { actual } else { -actual };
 
                             let error = target - effective_actual;
 
-                            let kp = 0.15_f32;
+                            let kp = 0.10_f32;
                             let adjustment = (error as f32 * kp) as i32;
 
                             current_pwm += adjustment;
 
-                            // CRITICAL FIX: Clamp based on direction so it can't accidentally cross over
                             if is_forward_target {
                                 current_pwm = current_pwm.clamp(0, 127); // Forward only
                             } else {
@@ -132,6 +146,7 @@ pub struct MotorHardware {
     power_driver: LedcDriver<'static>,
     directional_pin: PinDriver<'static, Output>,
     max_duty: u32,
+    pwm: i8,
 }
 
 impl MotorHardware {
@@ -161,6 +176,7 @@ impl MotorHardware {
             power_driver,
             directional_pin,
             max_duty,
+            pwm: 0,
         }
     }
 
@@ -170,6 +186,14 @@ impl MotorHardware {
     }
 
     pub fn set_pwm(&mut self, pwm: i8) -> anyhow::Result<()> {
+        if pwm == self.pwm {
+            return Ok(());
+        }
+
+        info!("{}", pwm);
+
+        self.pwm = pwm;
+
         let (power, reverse) = Self::convert(pwm, self.max_duty);
         if reverse {
             self.directional_pin.set_high().unwrap();

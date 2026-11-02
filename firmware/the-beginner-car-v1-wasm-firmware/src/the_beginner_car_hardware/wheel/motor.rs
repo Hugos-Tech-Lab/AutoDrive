@@ -67,9 +67,9 @@ impl Motor {
                     loop {
                         FreeRtos::delay_ms(1);
 
-                        let target_rpm = target_rpm.load(Ordering::Relaxed);
+                        let target = target_rpm.load(Ordering::Relaxed);
 
-                        if target_rpm == 0 {
+                        if target == 0 {
                             current_pwm = 0;
                             let _ = motor_hardware.set_pwm(0);
                             control_counter = 0;
@@ -80,15 +80,27 @@ impl Motor {
                         if control_counter >= 50 {
                             control_counter = 0;
 
-                            let actual = tachometer.get_rpm();
+                            let actual = tachometer.get_rpm() as i32;
 
-                            let error = target_rpm as i32 - actual as i32;
+                            let is_forward_target = target > 0;
+
+                            // Since tachometer is unsigned magnitude, treat actual speed
+                            // with the sign of our target/current motion
+                            let effective_actual = if is_forward_target { actual } else { -actual };
+
+                            let error = target - effective_actual;
 
                             let kp = 0.15_f32;
                             let adjustment = (error as f32 * kp) as i32;
 
                             current_pwm += adjustment;
-                            current_pwm = current_pwm.clamp(-127, 127);
+
+                            // CRITICAL FIX: Clamp based on direction so it can't accidentally cross over
+                            if is_forward_target {
+                                current_pwm = current_pwm.clamp(0, 127); // Forward only
+                            } else {
+                                current_pwm = current_pwm.clamp(-127, 0); // Reverse only
+                            }
 
                             let _ = motor_hardware.set_pwm(current_pwm as i8);
                         }
@@ -96,6 +108,7 @@ impl Motor {
                 }
             })
             .unwrap();
+
         Self {
             motor_calibration: MotorCalibration::default(),
             target_rpm,

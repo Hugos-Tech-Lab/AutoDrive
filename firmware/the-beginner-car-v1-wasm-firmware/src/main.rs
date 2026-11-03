@@ -67,7 +67,7 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right_tachometer,
     );
 
-    motor_right.set_speed(60);
+    motor_right.set_pwm(127);
     FreeRtos::delay_ms(10000);
     motor_right.set_rpm(0);
 

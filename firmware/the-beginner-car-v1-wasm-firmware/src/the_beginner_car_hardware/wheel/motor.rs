@@ -104,52 +104,58 @@ impl Motor {
 
                     loop {
                         FreeRtos::delay_ms(1);
-                        let target = target_rpm.load(Ordering::Relaxed);
+                        let target_pwm = target_pwm.load(Ordering::Relaxed);
+                        if target_pwm != 0 {
+                            let _ = motor_hardware.set_pwm(target_pwm as i8);
+                        } else {
+                            let target = target_rpm.load(Ordering::Relaxed);
 
-                        if target != last_rpm_target {
-                            last_rpm_target = target;
-                            grace_cycles = 4;
-                        }
+                            if target != last_rpm_target {
+                                last_rpm_target = target;
+                                grace_cycles = 4;
+                            }
 
-                        if target == 0 {
-                            current_pwm = 0;
-                            let _ = motor_hardware.set_pwm(0);
-                            control_counter = 0;
-                            continue;
-                        }
-
-                        control_counter += 1;
-                        if control_counter >= 50 {
-                            control_counter = 0;
-
-                            let actual = tachometer.get_rpm() as i32;
-
-                            let is_forward_target = target > 0;
-
-                            if grace_cycles > 0 {
-                                grace_cycles -= 1;
-
-                                let pwm = rpm_to_pwm.get_pwm(current_pwm);
-                                let _ = motor_hardware.set_pwm(pwm);
+                            if target == 0 {
+                                current_pwm = 0;
+                                let _ = motor_hardware.set_pwm(0);
+                                control_counter = 0;
                                 continue;
                             }
 
-                            let effective_actual = if is_forward_target { actual } else { -actual };
+                            control_counter += 1;
+                            if control_counter >= 50 {
+                                control_counter = 0;
 
-                            let error = target - effective_actual;
+                                let actual = tachometer.get_rpm() as i32;
 
-                            let kp = 0.10_f32;
-                            let adjustment = (error as f32 * kp) as i32;
+                                let is_forward_target = target > 0;
 
-                            current_pwm += adjustment;
+                                if grace_cycles > 0 {
+                                    grace_cycles -= 1;
 
-                            if is_forward_target {
-                                current_pwm = current_pwm.clamp(20, 127); // Forward only
-                            } else {
-                                current_pwm = current_pwm.clamp(-127, 20); // Reverse only
+                                    let pwm = rpm_to_pwm.get_pwm(current_pwm);
+                                    let _ = motor_hardware.set_pwm(pwm);
+                                    continue;
+                                }
+
+                                let effective_actual =
+                                    if is_forward_target { actual } else { -actual };
+
+                                let error = target - effective_actual;
+
+                                let kp = 0.10_f32;
+                                let adjustment = (error as f32 * kp) as i32;
+
+                                current_pwm += adjustment;
+
+                                if is_forward_target {
+                                    current_pwm = current_pwm.clamp(20, 127); // Forward only
+                                } else {
+                                    current_pwm = current_pwm.clamp(-127, 20); // Reverse only
+                                }
+
+                                let _ = motor_hardware.set_pwm(current_pwm as i8);
                             }
-
-                            let _ = motor_hardware.set_pwm(current_pwm as i8);
                         }
                     }
                 }
@@ -187,7 +193,13 @@ impl Motor {
 
     pub fn set_rpm(&self, rpm: i32) {
         info!("{}", rpm);
+        self.target_pwm.store(0, Ordering::Relaxed);
         self.target_rpm.store(rpm, Ordering::Relaxed);
+    }
+
+    pub fn set_pwm(&self, pwm: i8) {
+        self.target_rpm.store(0, Ordering::Relaxed);
+        self.target_pwm.store(pwm, Ordering::Relaxed);
     }
 
     pub fn stop(&self) -> anyhow::Result<()> {
@@ -244,8 +256,6 @@ impl MotorHardware {
         if pwm == self.pwm {
             return Ok(());
         }
-
-        // info!("{}", pwm);
 
         self.pwm = pwm;
 

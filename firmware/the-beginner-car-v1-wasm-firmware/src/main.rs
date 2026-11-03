@@ -67,8 +67,8 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right_tachometer,
     );
 
-    motor_right.set_rpm(220);
-    FreeRtos::delay_ms(5000);
+    motor_right.set_speed(60);
+    FreeRtos::delay_ms(10000);
     motor_right.set_rpm(0);
 
     // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());

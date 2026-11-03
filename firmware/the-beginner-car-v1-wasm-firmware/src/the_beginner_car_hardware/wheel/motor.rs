@@ -29,8 +29,41 @@ impl MotorCalibration {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct RpmToPwm {
+    sorted_rpm_to_pwm: Vec<(i32, i8)>,
+}
+
+impl RpmToPwm {
+    pub fn get_pwm(&self, rpm: i32) -> i8 {
+        let sorted_rpm_to_pwm = &self.sorted_rpm_to_pwm;
+
+        let index = match sorted_rpm_to_pwm.binary_search_by_key(&rpm, |p| p.0) {
+            Ok(i) => return sorted_rpm_to_pwm[i].1,
+            Err(i) => i,
+        };
+
+        if index == 0 {
+            return sorted_rpm_to_pwm[0].1;
+        }
+
+        if index >= sorted_rpm_to_pwm.len() {
+            return sorted_rpm_to_pwm[sorted_rpm_to_pwm.len() - 1].1;
+        }
+
+        let (rpm1, pwm1) = sorted_rpm_to_pwm[index - 1];
+        let (rpm2, pwm2) = sorted_rpm_to_pwm[index];
+
+        let ratio = (rpm - rpm1) as f32 / (rpm2 - rpm1) as f32;
+
+        (pwm1 as f32 + ratio * (pwm2 - pwm1) as f32).round() as i8
+    }
+}
+
 pub struct Motor {
-    motor_calibration: MotorCalibration,
+    min_forward_rpm: i32, // typically: 10
+    max_forward_rpm: i32, // typically: 200
+    rpm_to_pwm: RpmToPwm,
     tachometer: Tachometer,
     target_rpm: Arc<AtomicI32>,
     target_pwm: Arc<AtomicI8>,
@@ -53,7 +86,9 @@ impl Motor {
 
         let target_rpm = Arc::new(AtomicI32::new(0));
         let target_pwm = Arc::new(AtomicI8::new(0));
-
+        let rpm_to_pwm = RpmToPwm {
+            sorted_rpm_to_pwm: vec![(60, 20), (260, 127)],
+        };
         std::thread::Builder::new()
             .name("motor".to_string())
             .stack_size(4096)
@@ -62,19 +97,18 @@ impl Motor {
                 let target_rpm = target_rpm.clone();
                 let tachometer = tachometer.clone();
                 move || {
-                    let mut current_pwm: i32 = 95;
+                    let mut current_pwm: i32 = 105;
                     let mut control_counter = 0;
                     let mut last_rpm_target: i32 = 0;
                     let mut grace_cycles: i32 = 0;
 
                     loop {
                         FreeRtos::delay_ms(1);
-
                         let target = target_rpm.load(Ordering::Relaxed);
 
                         if target != last_rpm_target {
                             last_rpm_target = target;
-                            grace_cycles = 4; // Ignore feedback for the next 4 control cycles (200ms)
+                            grace_cycles = 4;
                         }
 
                         if target == 0 {
@@ -93,14 +127,13 @@ impl Motor {
                             let is_forward_target = target > 0;
 
                             if grace_cycles > 0 {
-                                info!("hj");
                                 grace_cycles -= 1;
-                                let _ = motor_hardware.set_pwm(current_pwm as i8);
+
+                                let pwm = rpm_to_pwm.get_pwm(current_pwm);
+                                let _ = motor_hardware.set_pwm(pwm);
                                 continue;
                             }
 
-                            // Since tachometer is unsigned magnitude, treat actual speed
-                            // with the sign of our target/current motion
                             let effective_actual = if is_forward_target { actual } else { -actual };
 
                             let error = target - effective_actual;
@@ -111,9 +144,9 @@ impl Motor {
                             current_pwm += adjustment;
 
                             if is_forward_target {
-                                current_pwm = current_pwm.clamp(0, 127); // Forward only
+                                current_pwm = current_pwm.clamp(20, 127); // Forward only
                             } else {
-                                current_pwm = current_pwm.clamp(-127, 0); // Reverse only
+                                current_pwm = current_pwm.clamp(-127, 20); // Reverse only
                             }
 
                             let _ = motor_hardware.set_pwm(current_pwm as i8);
@@ -124,14 +157,36 @@ impl Motor {
             .unwrap();
 
         Self {
-            motor_calibration: MotorCalibration::default(),
-            target_rpm,
             tachometer,
+            min_forward_rpm: 60,
+            max_forward_rpm: 260,
+            rpm_to_pwm: RpmToPwm {
+                sorted_rpm_to_pwm: vec![(60, 0), (260, 127)],
+            },
+            target_rpm,
             target_pwm,
         }
     }
 
+    pub fn set_speed(&self, speed: i8) {
+        let speed = speed.clamp(-100, 100);
+
+        let rpm = if speed == 0 {
+            0
+        } else {
+            let magnitude = speed.abs() as i32;
+
+            let rpm = self.min_forward_rpm
+                + (self.max_forward_rpm - self.min_forward_rpm) * (magnitude - 1) / 99;
+
+            rpm * speed.signum() as i32
+        };
+
+        self.set_rpm(rpm);
+    }
+
     pub fn set_rpm(&self, rpm: i32) {
+        info!("{}", rpm);
         self.target_rpm.store(rpm, Ordering::Relaxed);
     }
 
@@ -190,7 +245,7 @@ impl MotorHardware {
             return Ok(());
         }
 
-        info!("{}", pwm);
+        // info!("{}", pwm);
 
         self.pwm = pwm;
 

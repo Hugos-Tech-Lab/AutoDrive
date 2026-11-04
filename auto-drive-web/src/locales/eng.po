@@ -1227,3 +1227,7 @@ msgstr "LIVE IN {0} SECONDS"
 #: src/lib/components/Dashboard.svelte
 msgid "Calibration"
 msgstr "Calibration"
+
+#: src/lib/components/Dashboard.svelte
+msgid "Position"
+msgstr "Position"

@@ -24,18 +24,32 @@
     "Live"
   ];
 
-  type BuildOption = "Status" | "Logs" | "Telemetry" | "Control" | "Calibration";
+  type BuildOption = "Status" | "Logs" | "Position" | "Telemetry" | "Control" | "Calibration";
   let selectedBuildOption = $state<BuildOption>("Status");
 
   const buildOptions: BuildOption[] = [
     "Status",
     "Logs",
+    "Position",
     "Telemetry",
     "Control",
     "Calibration"
   ];
 </script>
 
+
+<!-- 
+STATUS 
+
+uptime of WASM chip
+uptime of WIFI chip
+
+
+Position
+
+live overview of car position in room
+
+-->
 <div class="px-4 pt-4 flex items-start gap-8">
   <h1 class="text-4xl mb-4 min-w-0 flex-1">Dashboard</h1>
 

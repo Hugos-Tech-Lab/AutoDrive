@@ -34,6 +34,7 @@
     "@wuchale/svelte": "0.20.7",
     "better-auth": "1.6.23",
     "jwt-decode": "^4.0.0",
+    "pixi.js": "^8.22.0",
     "tailwindcss": "^4.3.3",
     "wuchale": "0.25.8"
   }

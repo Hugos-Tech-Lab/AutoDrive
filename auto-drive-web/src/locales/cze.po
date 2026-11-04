@@ -1227,3 +1227,7 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 msgid "Calibration"
 msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Position"
+msgstr ""

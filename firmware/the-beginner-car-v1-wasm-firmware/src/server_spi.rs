@@ -8,7 +8,10 @@ use esp_idf_svc::hal::gpio::{InputPin, OutputPin};
 use log::info;
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
-use crate::{auto_script::AutoScript, the_beginner_car_hardware::TheBeginnerCarHardware};
+use crate::{
+    auto_script::AutoScript,
+    the_beginner_car_hardware::{Position, TheBeginnerCarHardware},
+};
 
 pub struct ServerSpi {
     pub handle: JoinHandle<()>,
@@ -71,7 +74,14 @@ impl ServerSpi {
                 y,
                 rotation_radians,
             } => {
-                println!("{x}, {y}, {rotation_radians}.. pos from camera")
+                let position = Position {
+                    x,
+                    y,
+                    rotation_radians,
+                };
+
+                let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                the_beginner_car.notify_position_from_camera(position);
             }
             RequestToHardware::NotifyBatteryReadings { voltage } => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();

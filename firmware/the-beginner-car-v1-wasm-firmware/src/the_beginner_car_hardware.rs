@@ -1,13 +1,24 @@
-use std::sync::{Arc, atomic::Ordering};
+use std::sync::{Arc, Mutex, atomic::Ordering};
 
 use crate::{
     auto_script::cancellation_token::CancellationToken,
-    the_beginner_car_hardware::{ir_sensor_array::IrSensorArray, led::Led, wheel::Wheel},
+    the_beginner_car_hardware::{
+        ir_sensor_array::IrSensorArray,
+        led::Led,
+        wheel::{Wheel, tachometer::Tachometer},
+    },
 };
 
 pub mod ir_sensor_array;
 pub mod led;
 pub mod wheel;
+
+#[derive(Debug, Clone)]
+pub struct Position {
+    pub x: f32,
+    pub y: f32,
+    pub rotation_radians: f32,
+}
 
 // #[derive(Debug, PartialEq)]
 // pub enum RequestOrigin {
@@ -16,10 +27,49 @@ pub mod wheel;
 //     Manual,
 // }
 
+pub struct KalmanFilter {
+    position: Arc<Mutex<Option<Position>>>, // 0.1: rotation, distance moved
+                                            // 0.2: rotation, distance moved
+}
+
+impl KalmanFilter {
+    pub fn new(left_tachometer: Tachometer, right_tachometer: Tachometer) -> Self {
+        std::thread::Builder::new()
+            .name("kalman_filter".to_string())
+            .spawn(|| {
+
+                //
+                //
+            });
+
+        Self {
+            position: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    pub fn update(&mut self, position: Position) {
+        let mut position_guard = self.position.lock().unwrap();
+        position_guard.replace(position);
+    }
+
+    // expected to be called, i.e. every 100ms
+    pub fn position(&mut self) -> Option<Position> {
+        let position = self.position.lock().unwrap();
+        position.clone()
+    }
+}
+
+// Checks the position and stops if out of bounds
+pub struct EmergencyStop {
+    //
+}
+
 pub struct TheBeginnerCarHardware {
     ir_sensor_array: Arc<IrSensorArray>,
     wheel_left: Wheel,
     wheel_right: Wheel,
+    kalman_filter: KalmanFilter,
+    emergency_stop: EmergencyStop,
     // led_left: Led,
     led_right: Led,
     battery_voltage: f32,
@@ -33,6 +83,11 @@ impl TheBeginnerCarHardware {
         led_right: Led,
         ir_sensor_array: Arc<IrSensorArray>,
     ) -> Self {
+        let kalman_filter = KalmanFilter::new(
+            wheel_left.tachometer().clone(),
+            wheel_right.tachometer().clone(),
+        );
+
         Self {
             wheel_left,
             wheel_right,
@@ -40,6 +95,8 @@ impl TheBeginnerCarHardware {
             led_right,
             battery_voltage: 0.0,
             ir_sensor_array,
+            kalman_filter,
+            emergency_stop: EmergencyStop {},
         }
     }
 
@@ -95,6 +152,10 @@ impl TheBeginnerCarHardware {
 
     pub fn set_allowed_controller(&mut self) {
         // self.allowed_controller = controller;
+    }
+
+    pub fn notify_position_from_camera(&mut self, position: Position) {
+        self.kalman_filter.update(position);
     }
 
     pub fn notify_battery_reading(&mut self, battery_voltage: f32) {

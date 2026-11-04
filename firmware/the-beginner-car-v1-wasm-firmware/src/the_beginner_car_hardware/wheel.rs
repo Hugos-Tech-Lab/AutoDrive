@@ -16,4 +16,8 @@ impl Wheel {
     pub fn motor(&self) -> &Motor {
         &self.motor
     }
+
+    pub fn tachometer(&self) -> &Tachometer {
+        &self.tachometer
+    }
 }

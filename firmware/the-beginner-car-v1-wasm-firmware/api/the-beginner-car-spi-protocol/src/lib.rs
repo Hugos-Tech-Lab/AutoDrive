@@ -17,8 +17,8 @@ pub enum RequestToHardware {
     SetMotorRightSpeed(i8),
     DrainEvents,
     NotifyPositionFromCamera {
-        x: i32,
-        y: i32,
+        x: f32, // in meters
+        y: f32,
         rotation_radians: f32,
     },
     NotifyBatteryReadings {

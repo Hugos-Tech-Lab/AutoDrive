@@ -87,4 +87,8 @@ impl Tachometer {
     pub fn get_rpm(&self) -> u32 {
         self.rpm.load(Ordering::Relaxed)
     }
+
+    pub fn get_pulses(&self) -> u32 {
+        self.pulses.load(Ordering::Relaxed)
+    }
 }

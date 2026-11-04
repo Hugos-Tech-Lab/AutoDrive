@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex, atomic::Ordering};
+use std::{
+    mem::type_info::TypeKind::Array,
+    sync::{Arc, Mutex, atomic::Ordering},
+};
 
 use crate::{
     auto_script::cancellation_token::CancellationToken,
@@ -47,9 +50,28 @@ impl KalmanFilter {
         }
     }
 
+    pub fn run() {
+        let mut state_state = Vec::new(); // dim n x 1
+        let mut sigma_prev = Vec::new(); // dim n x n
+        let mut measured_pos = Vec::new(); // dim n x n
+        let mut process_noise = Vec::new(); // dim n x n
+        let mut measurement_noise = Vec::new(); // dim n x n
+        let dt: f32; // timestep in ms
+
+        loop {
+            pulses_left = 5; // TODO number of pulses since previous iteration
+            pulses_right = 5;
+        }
+    }
+
     pub fn update(&mut self, position: Position) {
         let mut position_guard = self.position.lock().unwrap();
         position_guard.replace(position);
+    }
+
+    pub fn predict(&mut self, pulses_left: i32, pulses_right: i32) -> Position {
+        // predict position based on odometry
+        let d = 
     }
 
     // expected to be called, i.e. every 100ms

@@ -10,7 +10,7 @@ use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardwa
 
 use crate::{
     auto_script::AutoScript,
-    hardware::{RequestOrigin, TheBeginnerCarHardware},
+    the_beginner_car_hardware::{Position, TheBeginnerCarHardware},
 };
 
 pub struct ServerSpi {
@@ -53,13 +53,13 @@ impl ServerSpi {
         match request {
             RequestToHardware::LightOn => println!("LightOn"),
             RequestToHardware::LightOff => println!("LightOff"),
-            RequestToHardware::SetMotorASpeed(speed) => {
+            RequestToHardware::SetMotorLeftSpeed(speed) => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_a_speed(speed, RequestOrigin::Manual);
+                the_beginner_car.set_wheel_left_speed(speed);
             }
-            RequestToHardware::SetMotorBSpeed(speed) => {
+            RequestToHardware::SetMotorRightSpeed(speed) => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_b_speed(speed, RequestOrigin::Manual);
+                the_beginner_car.set_wheel_right_speed(speed);
             }
             RequestToHardware::DrainEvents => {
                 let events = {
@@ -69,8 +69,19 @@ impl ServerSpi {
 
                 return ResponseFromHardware::Events { events };
             }
-            RequestToHardware::NotifyPositionFromCamera { x, y } => {
-                println!("{x}, {y}.. pos from camera")
+            RequestToHardware::NotifyPositionFromCamera {
+                x,
+                y,
+                rotation_radians,
+            } => {
+                let position = Position {
+                    x,
+                    y,
+                    rotation_radians,
+                };
+
+                let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                the_beginner_car.notify_position_from_camera(position);
             }
             RequestToHardware::NotifyBatteryReadings { voltage } => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
@@ -92,6 +103,10 @@ impl ServerSpi {
                     events.push(Event::AutoScriptStopped);
                 }
             } // TODO: RENAME TO CANCEL AutoScript
+            RequestToHardware::RunCalibration => {
+                let mut the_beginner_car = the_beginner_car.lock().unwrap();
+                the_beginner_car.run_calibration();
+            }
         }
 
         // pin.set_color(3, 20, 3);

@@ -12,9 +12,9 @@ use crate::{
         cancellation_token::CancellationToken,
         wasm_thread::{WasmThread, WasmThreadCommand},
     },
-    hardware::TheBeginnerCarHardware,
+    the_beginner_car_hardware::TheBeginnerCarHardware,
 };
-use anyhow::Result;
+use anyhow::{Result, bail};
 use log::info;
 pub mod cancellation_token;
 pub mod exposed_functions;
@@ -90,7 +90,7 @@ impl AutoScript {
     pub fn run(&self, data: Vec<u8>) -> Result<()> {
         let mut running_guard = self.running.lock().unwrap();
         if *running_guard {
-            panic!("already running");
+            bail!("already running");
         }
 
         self.ct.reset();

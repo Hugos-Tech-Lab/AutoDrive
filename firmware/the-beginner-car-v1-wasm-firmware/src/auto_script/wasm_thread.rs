@@ -11,7 +11,7 @@ use crate::{
     auto_script::{
         cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarExports,
     },
-    hardware::TheBeginnerCarHardware,
+    the_beginner_car_hardware::TheBeginnerCarHardware,
 };
 use anyhow::{Result, anyhow};
 use log::{error, info};

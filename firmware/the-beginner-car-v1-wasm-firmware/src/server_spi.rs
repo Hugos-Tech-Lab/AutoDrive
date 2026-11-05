@@ -73,11 +73,13 @@ impl ServerSpi {
                 x,
                 y,
                 rotation_radians,
+                // time,
             } => {
                 let position = Position {
                     x,
                     y,
                     rotation_radians,
+                    combined_dist: 0.0,
                 };
 
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();

@@ -177,7 +177,7 @@ pub fn main() -> anyhow::Result<()> {
                                             })
                                             .unwrap()
                                     } // TODO: this should send vec
-                                    the_beginner_car_spi_protocol::Event::InfraredLedReadings { back_center, front_left, front_center, front_right  } => {
+                                    the_beginner_car_spi_protocol::Event::InfraredLedReadings { back_center, front_left, front_center, front_right, front_far_left, front_far_right, back_left  } => {
                                         // dbg!(value);
                                         sender_tx
                                             .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { back_center, front_left, front_center, front_right })

@@ -126,16 +126,28 @@ impl KalmanFilter {
         wingspan: f32,
         current_rotation: f32,
     ) -> Position {
-        // predict position based on odometry
-        // let d =
-        let combined_dist = (distance_left_cm + distance_right_cm) / 2.0;
-        let angle = (distance_right_cm - distance_left_cm) / wingspan;
+        let distance = (distance_left_cm + distance_right_cm) / 2.0;
+        let delta_theta = (distance_right_cm - distance_left_cm) / wingspan;
+
+        let (dx, dy) = if delta_theta.abs() < 1e-6 {
+            (
+                distance * current_rotation.cos(),
+                distance * current_rotation.sin(),
+            )
+        } else {
+            let radius = distance / delta_theta;
+
+            (
+                radius * ((current_rotation + delta_theta).sin() - current_rotation.sin()),
+                -radius * ((current_rotation + delta_theta).cos() - current_rotation.cos()),
+            )
+        };
 
         Position {
-            x: combined_dist * angle.cos(),
-            y: combined_dist * angle.sin(),
-            rotation_radians: angle,
-            combined_dist,
+            x: dx,
+            y: dy,
+            rotation_radians: delta_theta,
+            combined_dist: distance,
         }
     }
 

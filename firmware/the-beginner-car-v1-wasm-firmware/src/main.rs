@@ -75,7 +75,7 @@ pub fn main() -> anyhow::Result<()> {
 
     dbg!("{}", kalman_filter.position());
     motor_right.set_pwm(127);
-    FreeRtos::delay_ms(227 * 6);
+    FreeRtos::delay_ms(227 * 9);
     motor_right.set_rpm(0);
     dbg!("{}", kalman_filter.position());
 

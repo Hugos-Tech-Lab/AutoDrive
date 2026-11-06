@@ -10,6 +10,7 @@ pub struct HardwareMetadata {
     pub device_category: DeviceCategory,
     pub number_plate: String,
     pub mdns_address: String,
+    pub aruco_marker_id: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

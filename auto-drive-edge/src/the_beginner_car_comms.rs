@@ -18,6 +18,7 @@ use crate::devices_config::HardwareMetadata;
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
     pub number_plate: String,
+    pub aruco_marker_id: u32,
     pub mdns_address: String,
     pub connected_rx: watch::Receiver<bool>,
     outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
@@ -56,6 +57,7 @@ impl TheBeginnerCarComms {
                 connected_rx,
                 outgoing_tx,
                 incoming_tx,
+                aruco_marker_id: device_metadata.aruco_marker_id,
             },
             connection_handle,
         )

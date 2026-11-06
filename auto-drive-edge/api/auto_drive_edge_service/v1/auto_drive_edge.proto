@@ -9,7 +9,22 @@ service AutoDriveEdgeService {
   rpc WatchAutoScriptOverview(WatchAutoScriptOverviewRequest) returns (stream WatchAutoScriptOverviewResponse);
   rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
   rpc WatchHardwareStatus(WatchHardwareStatusRequest) returns (stream WatchHardwareStatusResponse);
+  rpc NotifyHardwareCoordinates(NotifyHardwareCoordinatesRequest) returns (NotifyHardwareCoordinatesResponse);
 }
+
+message HardwareCoordinate {
+  uint32 aruco_marker_id = 1;
+  float x = 2;
+  float y = 3;
+  float rotation_radians = 4;
+  uint32 timestamp_unix_epoch_ms = 5;
+}
+
+message NotifyHardwareCoordinatesRequest {
+  repeated HardwareCoordinate hardware_coordinates = 1;
+}
+
+message NotifyHardwareCoordinatesResponse {}
 
 message WatchHardwareStatusRequest {}
 

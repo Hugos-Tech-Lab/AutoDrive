@@ -14,11 +14,24 @@ pub struct AutoScript {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TheBeginnerCarIncomingMessages {
-    SetMotorASpeed { speed: i8 },
-    SetMotorBSpeed { speed: i8 },
-    InformPositionFromCamera { x: i32, y: i32 },
-    CancelAutoScript { run_uuid: String },
-    RunAutoScript { script: AutoScript },
+    SetMotorLeftSpeed {
+        speed: i8,
+    },
+    SetMotorRightSpeed {
+        speed: i8,
+    },
+    NotifyPositionFromCamera {
+        x: f32,
+        y: f32,
+        rotation_radians: f32,
+        timestamp_unix_epoch_ms: u32,
+    },
+    CancelAutoScript {
+        run_uuid: String,
+    },
+    RunAutoScript {
+        script: AutoScript,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

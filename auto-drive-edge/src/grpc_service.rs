@@ -7,7 +7,8 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware, RunAutoScriptRequest,
+        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware,
+        NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse, RunAutoScriptRequest,
         RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
         WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwareStatusRequest,
         WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
@@ -231,5 +232,23 @@ impl AutoDriveEdgeService for GrpcService {
         }
 
         Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
+    }
+
+    async fn notify_hardware_coordinates(
+        &self,
+        request: Request<NotifyHardwareCoordinatesRequest>,
+    ) -> Result<Response<NotifyHardwareCoordinatesResponse>, Status> {
+        let request = request.into_inner();
+
+        for hardware_coordinate in request.hardware_coordinates {
+            let beginner_car = self.the_beginner_cars.iter().find(|the_beginner_car| {
+                the_beginner_car.aruco_marker_id == hardware_coordinate.aruco_marker_id
+            });
+
+            if let Some(beginner_car) = beginner_car {
+                beginner_car.send(the_beginner_car_tcp_protocol::TheBeginnerCarIncomingMessages::NotifyPositionFromCamera { x: hardware_coordinate.x, y: hardware_coordinate.y, rotation_radians: hardware_coordinate.rotation_radians, timestamp_unix_epoch_ms: hardware_coordinate.timestamp_unix_epoch_ms }).await;
+            }
+        }
+        Ok(Response::new(NotifyHardwareCoordinatesResponse {}))
     }
 }

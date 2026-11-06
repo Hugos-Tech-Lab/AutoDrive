@@ -36,7 +36,7 @@ pub fn set_motor_b_speed_on_hardware(
         std::sync::mpsc::sync_channel::<Result<ResponseFromHardware, anyhow::Error>>(1);
 
     if let Err(e) = hardware_sender.send(HardwareMessage {
-        request: RequestToHardware::SetMotorBSpeed(speed),
+        request: RequestToHardware::SetMotorRightSpeed(speed),
         response_tx: sender,
     }) {
         return Err(HttpServerError::InternalProgrammerError(format!(

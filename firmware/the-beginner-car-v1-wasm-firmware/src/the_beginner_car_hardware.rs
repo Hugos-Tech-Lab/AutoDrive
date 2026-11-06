@@ -1,7 +1,6 @@
-use std::{
-    mem::type_info::TypeKind::Array,
-    sync::{Arc, Mutex, atomic::Ordering},
-};
+use std::sync::{Arc, Mutex, atomic::Ordering};
+
+use esp_idf_svc::hal::delay::FreeRtos;
 
 use crate::{
     auto_script::cancellation_token::CancellationToken,
@@ -21,6 +20,16 @@ pub struct Position {
     pub x: f32,
     pub y: f32,
     pub rotation_radians: f32,
+    pub combined_dist: f32,
+}
+
+impl Position {
+    pub fn add(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.rotation_radians += other.rotation_radians;
+        self.combined_dist += other.combined_dist;
+    }
 }
 
 // #[derive(Debug, PartialEq)]
@@ -37,30 +46,72 @@ pub struct KalmanFilter {
 
 impl KalmanFilter {
     pub fn new(left_tachometer: Tachometer, right_tachometer: Tachometer) -> Self {
+        let position = Arc::new(Mutex::new(Some(Position {
+            x: 0.0,
+            y: 0.0,
+            rotation_radians: 0.0,
+            combined_dist: 0.0,
+        })));
+
         std::thread::Builder::new()
             .name("kalman_filter".to_string())
-            .spawn(|| {
+            .spawn({
+                let position = position.clone();
+                || Self::run(left_tachometer, right_tachometer, position)
+            })
+            .unwrap();
 
-                //
-                //
-            });
-
-        Self {
-            position: Arc::new(Mutex::new(None)),
-        }
+        Self { position }
     }
 
-    pub fn run() {
-        let mut state_state = Vec::new(); // dim n x 1
-        let mut sigma_prev = Vec::new(); // dim n x n
-        let mut measured_pos = Vec::new(); // dim n x n
-        let mut process_noise = Vec::new(); // dim n x n
-        let mut measurement_noise = Vec::new(); // dim n x n
+    pub fn run(
+        left_tachometer: Tachometer,
+        right_tachometer: Tachometer,
+        position: Arc<Mutex<Option<Position>>>,
+    ) {
+        // let mut state_state = Vec::new(); // dim n x 1
+        // let mut sigma_prev = Vec::new(); // dim n x n
+        // let mut measured_pos = Vec::new(); // dim n x n
+        // let mut process_noise = Vec::new(); // dim n x n
+        // let mut measurement_noise = Vec::new(); // dim n x n
         let dt: f32; // timestep in ms
+        let wingspan: f32 = 18.5;
+        let mut left_tachometer_total_pulses_previous = left_tachometer.get_total_pulses();
+        let mut right_tachometer_total_pulses_previous = right_tachometer.get_total_pulses();
+        let mut current_rotation = 0.0; // TODO: derived from current position
 
         loop {
-            pulses_left = 5; // TODO number of pulses since previous iteration
-            pulses_right = 5;
+            let left_tachometer_total_pulses = left_tachometer.get_total_pulses();
+            let right_tachometer_total_pulses = right_tachometer.get_total_pulses();
+            let left_tachometer_pulses =
+                left_tachometer_total_pulses - left_tachometer_total_pulses_previous;
+            let right_tachometer_pulses =
+                right_tachometer_total_pulses - right_tachometer_total_pulses_previous;
+
+            left_tachometer_total_pulses_previous = left_tachometer_total_pulses;
+            right_tachometer_total_pulses_previous = right_tachometer_total_pulses;
+
+            let distance_left_cm = left_tachometer_pulses as f32 * left_tachometer.cm_per_pulse();
+            let distance_right_cm =
+                right_tachometer_pulses as f32 * right_tachometer.cm_per_pulse();
+            let position_delta = Self::predict(
+                distance_left_cm,
+                distance_right_cm,
+                wingspan,
+                current_rotation,
+            );
+
+            current_rotation += position_delta.rotation_radians;
+
+            {
+                let mut position_guard = position.lock().unwrap();
+                if let Some(pos) = position_guard.as_mut() {
+                    // Replace `&other_position` with whatever value you actually need to add
+                    pos.add(position_delta);
+                }
+            }
+
+            FreeRtos::delay_ms(10);
         }
     }
 
@@ -69,9 +120,35 @@ impl KalmanFilter {
         position_guard.replace(position);
     }
 
-    pub fn predict(&mut self, pulses_left: i32, pulses_right: i32) -> Position {
-        // predict position based on odometry
-        let d = 
+    pub fn predict(
+        distance_left_cm: f32,
+        distance_right_cm: f32,
+        wingspan: f32,
+        current_rotation: f32,
+    ) -> Position {
+        let distance = (distance_left_cm + distance_right_cm) / 2.0;
+        let delta_theta = (distance_right_cm - distance_left_cm) / wingspan;
+
+        let (dx, dy) = if delta_theta.abs() < 1e-6 {
+            (
+                distance * current_rotation.cos(),
+                distance * current_rotation.sin(),
+            )
+        } else {
+            let radius = distance / delta_theta;
+
+            (
+                radius * ((current_rotation + delta_theta).sin() - current_rotation.sin()),
+                -radius * ((current_rotation + delta_theta).cos() - current_rotation.cos()),
+            )
+        };
+
+        Position {
+            x: dx,
+            y: dy,
+            rotation_radians: delta_theta,
+            combined_dist: distance,
+        }
     }
 
     // expected to be called, i.e. every 100ms

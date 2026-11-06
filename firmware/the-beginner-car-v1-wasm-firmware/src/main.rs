@@ -20,7 +20,7 @@ use crate::{
     auto_script::AutoScript,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
-        TheBeginnerCarHardware,
+        KalmanFilter, TheBeginnerCarHardware,
         ir_sensor_array::IrSensorArrayData,
         led::Led,
         wheel::{Wheel, motor::Motor, tachometer::Tachometer},
@@ -50,6 +50,12 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
 
     let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio9.into());
+    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio0.into());
+
+    let mut kalman_filter = KalmanFilter::new(
+        wheel_left_tachometer.clone(),
+        wheel_right_tachometer.clone(),
+    );
 
     // let motor_left = Motor::new(
     //     peripherals.pins.gpio7.into(),
@@ -67,9 +73,11 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right_tachometer,
     );
 
+    dbg!("{}", kalman_filter.position());
     motor_right.set_pwm(127);
-    FreeRtos::delay_ms(10000);
+    FreeRtos::delay_ms(227 * 9);
     motor_right.set_rpm(0);
+    dbg!("{}", kalman_filter.position());
 
     // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 

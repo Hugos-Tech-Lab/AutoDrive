@@ -135,8 +135,13 @@ message AutoScriptRunningEvent {}
 message AutoScriptStoppedEvent {}
 
 message InfraredLedReadingsEvent {
-  uint32 utmost_front_utmost_left = 1;
-  uint32 utmost_front_utmost_right = 2;
+  uint32 front_far_left = 1;
+  uint32 front_left = 2;
+  uint32 front_center = 3;
+  uint32 front_right = 4;
+  uint32 front_far_right = 5;
+  uint32 back_center = 6;
+  uint32 back_left = 7;
 }
 
 message BatteryReadingEvent {

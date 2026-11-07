@@ -88,14 +88,22 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
             }
 
             TheBeginnerCarOutgoingMessages::InfraredLedReadings {
-                back_center,
+                front_far_left,
                 front_left,
                 front_center,
                 front_right,
+                front_far_right,
+                back_center,
+                back_left,
             } => WatchTheBeginnerCarEventsResponse {
                 event: Some(Event::InfraredLedReading(InfraredLedReadingsEvent {
-                    utmost_front_utmost_left: back_center as u32,
-                    utmost_front_utmost_right: front_left as u32,
+                    front_far_left: front_far_left as u32,
+                    front_left: front_left as u32,
+                    front_center: front_center as u32,
+                    front_right: front_right as u32,
+                    front_far_right: front_far_right as u32,
+                    back_center: back_center as u32,
+                    back_left: back_left as u32,
                 })),
             },
         }

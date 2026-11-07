@@ -10,9 +10,16 @@ use warp::Filter;
 
 use crate::auto_drive_edge_service::v1::watch_the_beginner_car_events_response::Event;
 
-#[derive(Serialize, Deserialize)]
-pub enum InfraredLedReading {
-    IrSensorReading { value: u32 },
+#[derive(Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InfraredLedReading {
+    front_far_left: u32,
+    front_left: u32,
+    front_center: u32,
+    front_right: u32,
+    front_far_right: u32,
+    back_left: u32,
+    back_center: u32,
 }
 
 pub fn hardware_telemetry(
@@ -27,6 +34,16 @@ pub fn hardware_telemetry(
                 let event_stream = BroadcastStream::new(receiver).filter_map(|result| async move {
                     match result {
                         Ok(Event::InfraredLedReading(infrared_led_reading)) => {
+                            let infrared_led_reading = InfraredLedReading {
+                                front_far_left: infrared_led_reading.front_far_left,
+                                front_left: infrared_led_reading.front_left,
+                                front_center: infrared_led_reading.front_center,
+                                front_right: infrared_led_reading.front_right,
+                                front_far_right: infrared_led_reading.front_far_right,
+                                back_left: infrared_led_reading.back_left,
+                                back_center: infrared_led_reading.back_center,
+                            };
+
                             Some(Ok::<_, Infallible>(
                                 warp::sse::Event::default()
                                     .event("infrared_led_reading")

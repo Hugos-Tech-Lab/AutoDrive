@@ -910,8 +910,6 @@ msgstr "Last update: {0}"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/HardwareTelemetry.svelte
-#: src/lib/components/hardware/HardwareTelemetry.svelte
-#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Waiting for data..."
 msgstr "Waiting for data..."
 

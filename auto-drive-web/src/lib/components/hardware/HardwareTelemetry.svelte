@@ -3,13 +3,9 @@
   import { onMount } from "svelte";
   import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
   import { endpointRoot } from "../../../endpoint";
+  import { type InfraredLedReading } from "../../../../../auto-drive-cloud/api/InfraredLedReading";
 
-  type InfraredLedReadings = {
-    utmost_front_utmost_left: number;
-    utmost_front_utmost_right: number;
-  };
-
-  let irSensorReadings = $state<InfraredLedReadings | null>(null);
+  let irSensorReadings = $state<InfraredLedReading | null>(null);
   let connectionStatus = $state("Connecting...");
   let lastUpdate = $state<Date | null>(null);
   let telemetryError = $state("");
@@ -28,24 +24,7 @@
       "infrared_led_reading",
       (event: MessageEvent<string>) => {
         try {
-          const parsed: unknown = JSON.parse(event.data);
-
-          if (typeof parsed !== "object" || parsed === null) {
-            throw new Error("Invalid telemetry payload");
-          }
-
-          const data = parsed as Record<string, unknown>;
-          const left = data["utmost_front_utmost_left"];
-          const right = data["utmost_front_utmost_right"];
-
-          if (typeof left !== "number" || typeof right !== "number") {
-            throw new Error("Missing or invalid sensor readings");
-          }
-
-          irSensorReadings = {
-            utmost_front_utmost_left: left,
-            utmost_front_utmost_right: right,
-          };
+          irSensorReadings = JSON.parse(event.data);
 
           lastUpdate = new Date();
           telemetryError = "";
@@ -87,10 +66,10 @@
 
 <h2 class="text-2xl mb-4">Telemetry</h2>
 
-<TheBeginnerCar
+<!-- <TheBeginnerCar
   IRUtmostFrontUtmostLeft={irSensorReadings?.utmost_front_utmost_left}
   IRUtmostFrontUtmostRight={irSensorReadings?.utmost_front_utmost_right}
-/>
+/> -->
 
 <div class="flex flex-col items-center gap-4 mb-6">
   <div class="flex gap-4 text-sm">
@@ -113,7 +92,7 @@
     <div class="rounded border p-4 text-center">
       <p class="text-sm text-gray-500">Front Left IR</p>
       <p class="text-2xl font-bold">
-        {irSensorReadings?.utmost_front_utmost_left ?? "Waiting for data..."}
+        <!-- {irSensorReadings?.utmost_front_utmost_left ?? "Waiting for data..."} -->
       </p>
       <p class="text-xs text-gray-500">Raw sensor value</p>
     </div>
@@ -121,7 +100,7 @@
     <div class="rounded border p-4 text-center">
       <p class="text-sm text-gray-500">Front Right IR</p>
       <p class="text-2xl font-bold">
-        {irSensorReadings?.utmost_front_utmost_right ?? "Waiting for data..."}
+        <!-- {irSensorReadings?.utmost_front_utmost_right ?? "Waiting for data..."} -->
       </p>
       <p class="text-xs text-gray-500">Raw sensor value</p>
     </div>

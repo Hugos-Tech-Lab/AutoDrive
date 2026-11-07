@@ -4,12 +4,12 @@
   import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
   import { endpointRoot } from "../../../endpoint";
 
-  type InfraredLedReadings = {
+  type Status = {
     utmost_front_utmost_left: number;
     utmost_front_utmost_right: number;
   };
 
-  let irSensorReadings = $state<InfraredLedReadings | null>(null);
+  let status = $state<Status | null>(null);
   let connectionStatus = $state("Connecting...");
   let lastUpdate = $state<Date | null>(null);
   let telemetryError = $state("");
@@ -30,23 +30,7 @@
         try {
           const parsed: unknown = JSON.parse(event.data);
 
-          if (typeof parsed !== "object" || parsed === null) {
-            throw new Error("Invalid telemetry payload");
-          }
-
-          const data = parsed as Record<string, unknown>;
-          const left = data["utmost_front_utmost_left"];
-          const right = data["utmost_front_utmost_right"];
-
-          if (typeof left !== "number" || typeof right !== "number") {
-            throw new Error("Missing or invalid sensor readings");
-          }
-
-          irSensorReadings = {
-            utmost_front_utmost_left: left,
-            utmost_front_utmost_right: right,
-          };
-
+    
           lastUpdate = new Date();
           telemetryError = "";
         } catch (error) {

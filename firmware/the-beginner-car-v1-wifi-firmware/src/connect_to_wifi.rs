@@ -9,9 +9,12 @@ use std::ffi::CString;
 const SSID: &str = dotenv!("WIFI_NAME");
 const PASSWORD: &str = dotenv!("WIFI_PASSWORD");
 
-pub fn connect_to_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<()> {
+pub fn connect_to_wifi(
+    hostname: String,
+    wifi: &mut BlockingWifi<EspWifi<'static>>,
+) -> anyhow::Result<()> {
     let netif_sta_ptr = wifi.wifi().sta_netif().handle();
-    let client_name = CString::new("my-custom-esp").unwrap();
+    let client_name = CString::new(hostname).unwrap();
 
     unsafe {
         let err = esp_netif_set_hostname(netif_sta_ptr, client_name.as_ptr());

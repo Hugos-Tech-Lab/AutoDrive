@@ -979,6 +979,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "hardware-config"
+version = "0.1.0"
+
+[[package]]
 name = "hash32"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1736,6 +1740,7 @@ dependencies = [
  "flume",
  "futures",
  "futures-lite",
+ "hardware-config",
  "heapless 0.9.3",
  "log",
  "postcard",

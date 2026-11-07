@@ -35,11 +35,11 @@
     const maxMetersX = 3;
     const maxMetersY = 2;
 
-    const bottomLeftX = 3;
-    const bottomLeftY = 1;
+    const mapStartBottomLeftXMeters = 3;
+    const mapStartBottomLeftYMeters = 1;
     
-    const bottomLeftXCm = bottomLeftX * 100;
-    const bottomLeftYCm = bottomLeftY * 100;
+    const mapStartBottomLeftXCm = mapStartBottomLeftXMeters * 100;
+    const mapStartBottomLeftYCm = mapStartBottomLeftYMeters * 100;
 
     const totalWidthPx = maxMetersX * pixelsPerMeter;
     const totalHeightPx = maxMetersY * pixelsPerMeter;
@@ -73,7 +73,7 @@
       gridLayer.stroke({ width: 1, color: 0x4b5563 });
 
       const label = new PIXI.Text({
-        text: `${bottomLeftX + i}m`,
+        text: `${mapStartBottomLeftXMeters + i}m`,
         style: {
           fontFamily: 'sans-serif',
           fontSize: 12,
@@ -94,7 +94,7 @@
       gridLayer.stroke({ width: 1, color: 0x4b5563 });
 
       const label = new PIXI.Text({
-        text: `${bottomLeftY + i}m`,
+        text: `${mapStartBottomLeftYMeters + i}m`,
         style: {
           fontFamily: 'sans-serif',
           fontSize: 12,
@@ -118,8 +118,8 @@
     const stepHeightPx = (stepHeightCm / 100) * pixelsPerMeter;
 
     // Convert bottom-left world coordinates to screen pixels
-    const blScreenX = originX + ((stepXCm - bottomLeftXCm) / 100) * pixelsPerMeter;
-    const blScreenY = originY - ((stepYCm - bottomLeftYCm) / 100) * pixelsPerMeter;
+    const blScreenX = originX + ((stepXCm - mapStartBottomLeftXCm) / 100) * pixelsPerMeter;
+    const blScreenY = originY - ((stepYCm - mapStartBottomLeftYCm) / 100) * pixelsPerMeter;
 
     // Pixi rect() takes the top-left corner:
     const rectX = blScreenX;
@@ -129,7 +129,7 @@
     
     step.rect(rectX, rectY, stepWidthPx, stepHeightPx);
     step.fill({ color: 0x636363, alpha: 0.4 });
-    step.moveTo(rectX, rectY);                                   
+    step.moveTo(rectX, rectY);                                            
     step.lineTo(rectX, rectY + stepHeightPx);                     
     step.lineTo(rectX + stepWidthPx, rectY + stepHeightPx);         
     step.stroke({ 
@@ -147,8 +147,8 @@
       originX,
       originY,
       pixelsPerMeter,
-      bottomLeftXCm,
-      bottomLeftYCm,
+      bottomLeftXCm: mapStartBottomLeftXCm,
+      bottomLeftYCm: mapStartBottomLeftYCm,
       color: 0x000000,
       label: `(${markerXCm}cm, ${markerYCm}cm)`
     });

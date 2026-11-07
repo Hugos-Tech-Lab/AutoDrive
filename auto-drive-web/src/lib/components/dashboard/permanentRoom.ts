@@ -12,12 +12,20 @@ export function createPermanentRoom(): PIXI.Container {
     maxCmX: roomWidthCm,
     maxCmY: roomHeightCm,
   });
+  tiles.x = 10.4;
+  tiles.y = 12;
+
   container.addChild(tiles);
 
   const step = new PIXI.Graphics();
-  step.rect(400, 200, 100, 100);
-  step.fill({ color: 0x636363, alpha: 0.4 });
+  step.rect(455, 254.5, 102, 100);
+  step.fill({ color: 0x000000, alpha: 0.3 });
   container.addChild(step);
+
+  const door = new PIXI.Graphics();
+  door.rect(557, 254.5, 50, 100);
+  door.fill({ color: 0x00, alpha: 0.8});
+  container.addChild(door);
 
   const markerXCm = 455;
   const markerYCm = 254.5;

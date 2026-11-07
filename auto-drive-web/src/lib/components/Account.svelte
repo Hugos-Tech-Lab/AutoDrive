@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import type { AuthSession } from "@supabase/supabase-js";
   import { supabase } from "$lib/supabaseClient";
+  import { goto } from "$app/navigation";
 
   interface Props {
     session: AuthSession;
@@ -40,38 +41,9 @@
       loading = false;
     }
   };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    goto("/dashboard");
+  };
 </script>
-
-<form
-  onsubmit={(e) => {
-    e.preventDefault();
-    updateProfile();
-  }}
-  class="form-widget"
->
-  <!-- <div>Email: {session.user.email}</div> -->
-  <div>
-    // ...
-
-    <label for="username">Name</label>
-    <input id="username" type="text" bind:value={username} />
-  </div>
-  <div>
-    <label for="website">Website</label>
-    <input id="website" type="text" bind:value={website} />
-  </div>
-  <!-- <div>
-    <button type="submit" class="button primary block" disabled={loading}>
-      {loading ? "Saving ..." : "Update profile"}
-    </button>
-  </div> -->
-
-
-  <button
-    type="button"
-    class="button block"
-    onclick={() => supabase.auth.signOut()}
-  >
-    Sign Out
-  </button>
-</form>

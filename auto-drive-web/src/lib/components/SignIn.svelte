@@ -21,6 +21,8 @@
       });
 
       if (error) throw error;
+
+      goto("/dashboard");
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : "Something went wrong.";
     } finally {

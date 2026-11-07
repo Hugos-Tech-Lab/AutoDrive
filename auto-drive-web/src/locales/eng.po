@@ -13,6 +13,8 @@ msgid "/"
 msgstr "/"
 
 #. /dashboard
+#. /dashboard
+#. /dashboard
 #. /create-account
 #. /profile
 #. /dashboard
@@ -20,6 +22,8 @@ msgstr "/"
 #. /create-account
 #. /sign-in
 #: src/lib/components/LandingPage.svelte
+#: src/lib/components/Profile.svelte
+#: src/lib/components/SignIn.svelte
 #: src/lib/components/SignIn.svelte
 #: src/lib/components/UserAccount.svelte
 #: src/lib/components/UserAccount.svelte

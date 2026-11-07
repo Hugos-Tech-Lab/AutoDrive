@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { supabase } from "$lib/supabaseClient";
 
   let loading = $state(false);
@@ -17,7 +18,7 @@
       });
 
       if (error) throw error;
-
+      goto("/dashboard");
     } catch (error) {
       alert(error instanceof Error ? error.message : "Something went wrong.");
     } finally {

@@ -1,0 +1,6 @@
+[[hardware]]
+category = "TheBeginnerCar"
+number_plate = "TBC 001"
+ip = "192.168.0.197"
+mac_address = "9C-CC-01-43-E0-94"
+aruco_marker_id = 0

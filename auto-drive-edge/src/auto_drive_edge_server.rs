@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::task::JoinHandle;
 
 use crate::{
-    auto_script_manager::AutoScriptManager, devices_config::DeviceConfig,
+    auto_script_manager::AutoScriptManager, hardware::HardwareConfig,
     the_beginner_car_comms::TheBeginnerCarComms,
     vehicle_hardware_telemetry::VehicleHardwareTelemetry,
 };
@@ -16,12 +16,12 @@ pub struct AutoDriveEdgeServer {
 }
 
 impl AutoDriveEdgeServer {
-    pub fn new(config: DeviceConfig) -> Self {
+    pub fn new(config: HardwareConfig) -> Self {
         let (the_beginner_cars, the_beginner_car_handles): (
             Vec<TheBeginnerCarComms>,
             Vec<JoinHandle<()>>,
         ) = config
-            .the_beginner_cars
+            .hardware
             .iter()
             .map(|d| TheBeginnerCarComms::new(d.clone()))
             .unzip();

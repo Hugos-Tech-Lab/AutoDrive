@@ -13,13 +13,13 @@ use tokio::{
     time::timeout,
 };
 
-use crate::devices_config::HardwareMetadata;
+use crate::hardware::HardwareMetadata;
 
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
     pub number_plate: String,
     pub aruco_marker_id: u32,
-    pub mdns_address: String,
+    pub ip: String,
     pub connected_rx: watch::Receiver<bool>,
     outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
@@ -36,24 +36,18 @@ impl TheBeginnerCarComms {
         let (connected_tx, connected_rx) = watch::channel(false);
 
         let connection_handle = tokio::spawn({
-            let mdns_address = device_metadata.mdns_address.clone();
+            let ip = device_metadata.ip.clone();
             let incoming_tx = incoming_tx.clone();
             let connected_tx = connected_tx.clone();
             async {
-                Self::long_lived_connection(
-                    mdns_address,
-                    internal_receiver,
-                    incoming_tx,
-                    connected_tx,
-                )
-                .await;
+                Self::long_lived_connection(ip, internal_receiver, incoming_tx, connected_tx).await;
             }
         });
 
         (
             Self {
                 number_plate: device_metadata.number_plate,
-                mdns_address: device_metadata.mdns_address,
+                ip: device_metadata.ip,
                 connected_rx,
                 outgoing_tx,
                 incoming_tx,

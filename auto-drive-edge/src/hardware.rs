@@ -7,14 +7,14 @@ pub enum DeviceCategory {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HardwareMetadata {
-    pub device_category: DeviceCategory,
+    pub category: DeviceCategory,
     pub number_plate: String,
-    pub mdns_address: String,
+    pub ip: String,
+    pub mac_address: String,
     pub aruco_marker_id: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DeviceConfig {
-    // pub devices: Vec<HardwareMetadata>,
-    pub the_beginner_cars: Vec<HardwareMetadata>,
+pub struct HardwareConfig {
+    pub hardware: Vec<HardwareMetadata>,
 }

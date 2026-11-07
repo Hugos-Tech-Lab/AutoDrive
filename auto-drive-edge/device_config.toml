@@ -1,5 +1,0 @@
-[[the_beginner_cars]]
-device_category = "TheBeginnerCar"
-number_plate = "TBC 001"
-aruco_marker_id = 0
-mdns_address = "the_beginner_car_build_a.local"

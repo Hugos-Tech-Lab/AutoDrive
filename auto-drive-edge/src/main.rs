@@ -1,7 +1,7 @@
 use crate::{
     auto_drive_edge_server::AutoDriveEdgeServer,
     auto_drive_edge_service::v1::auto_drive_edge_service_server::AutoDriveEdgeServiceServer,
-    devices_config::DeviceConfig, grpc_service::GrpcService,
+    grpc_service::GrpcService, hardware::HardwareConfig,
 };
 
 use env_logger::Env;
@@ -12,8 +12,8 @@ use std::error::Error;
 
 pub mod auto_drive_edge_server;
 pub mod auto_script_manager;
-pub mod devices_config;
 pub mod grpc_service;
+pub mod hardware;
 pub mod the_beginner_car_comms;
 pub mod vehicle_hardware_telemetry;
 
@@ -58,17 +58,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     opentelemetry::global::set_meter_provider(meter_provider.clone());
 
-    let contents = include_str!("../device_config.toml");
+    let contents = include_str!("../hardware.toml");
 
-    let device_config: DeviceConfig = match toml::from_str(&contents) {
+    let hardware_config: HardwareConfig = match toml::from_str(&contents) {
         Ok(ok) => Ok(ok),
         Err(err) => {
             log::error!("Could not deserialize config: {err}");
             Err(err)
         }
     }?;
-    // let device_config = toml::from_str(&contents)?;
-    let auto_drive_edge_server = AutoDriveEdgeServer::new(device_config);
+    // let hardware_config = toml::from_str(&contents)?;
+    let auto_drive_edge_server = AutoDriveEdgeServer::new(hardware_config);
 
     let grpc_service = GrpcService::new(
         auto_drive_edge_server.auto_script_manager,

@@ -65,6 +65,7 @@
   .video {
     width: 100%;
     aspect-ratio: 16 / 9;
+    box-shadow: 6px 6px 0px rgba(0, 0, 0, 1);
   }
 
   .video iframe {

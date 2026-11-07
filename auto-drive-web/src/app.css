@@ -8,6 +8,14 @@
   font-display: block;
 }
 
+html, body {
+  /* background-color: #E5E5F7; */
+  opacity: 1;
+  background-image: linear-gradient(#d3d3d6 2px, transparent 2px), linear-gradient(90deg, #d3d3d6 2px, transparent 2px), linear-gradient(#cdced8 1px, transparent 1px), linear-gradient(90deg, #6c6f7a 1px, transparent 1px);
+  background-size: 70px 70px, 70px 70px, 14px 14px, 14px 14px;
+  background-position: -3px -3px, -3px -3px, -1px -1px, -1px -1px;
+}
+
 button {
   width: fit-content;
   background: none;
@@ -20,6 +28,7 @@ button {
   cursor: pointer;
   margin: 5px;
   font-size: 16px;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
 }
 
 @keyframes materialise {

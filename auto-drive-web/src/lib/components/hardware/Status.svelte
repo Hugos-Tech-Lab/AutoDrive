@@ -30,7 +30,6 @@
         try {
           const parsed: unknown = JSON.parse(event.data);
 
-    
           lastUpdate = new Date();
           telemetryError = "";
         } catch (error) {

@@ -6,6 +6,8 @@ export interface MarkerConfig {
   originX: number;
   originY: number;
   pixelsPerMeter: number;
+  bottomLeftXCm: number; // Bottom-left X coordinate in cm
+  bottomLeftYCm: number; // Bottom-left Y coordinate in cm
   color?: number;
   radius?: number;
   label?: string;
@@ -18,33 +20,32 @@ export function createMarker(config: MarkerConfig): PIXI.Container {
     originX,
     originY,
     pixelsPerMeter,
-    color = 0xef4444, // Default red
+    bottomLeftXCm,
+    bottomLeftYCm,
+    color = 0x3b82f6,
     radius = 6,
     label
   } = config;
 
   const container = new PIXI.Container();
-
-  // Convert cm to pixels relative to the origin
   const pixPerCm = pixelsPerMeter / 100;
-  const pixelX = originX + (xCm * pixPerCm);
-  const pixelY = originY - (yCm * pixPerCm);
 
-  // Draw the marker circle
+  const pixelX = originX + ((xCm - bottomLeftXCm) * pixPerCm);
+  const pixelY = originY - ((yCm - bottomLeftYCm) * pixPerCm);
+
   const markerGraphic = new PIXI.Graphics();
   markerGraphic.circle(0, 0, radius);
   markerGraphic.fill({ color });
   markerGraphic.stroke({ width: 2, color: 0xffffff });
   container.addChild(markerGraphic);
 
-  // Optional text label near the marker
   if (label) {
     const text = new PIXI.Text({
       text: label,
       style: {
         fontFamily: 'sans-serif',
         fontSize: 11,
-        fill: 0x1f2937,
+        fill: 0x000000,
         fontWeight: 'bold'
       }
     });

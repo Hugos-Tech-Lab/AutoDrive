@@ -11,8 +11,8 @@
   onMount(async () => {
     app = new PIXI.Application();
 
-    let widthPixels = 800;
-    let heightPixels = 533;
+    const widthPixels = 800;
+    const heightPixels = 533;
 
     await app.init({
       width: widthPixels,
@@ -28,12 +28,17 @@
     const originX = 0;   
     const originY = heightPixels;  
     const pixelsPerMeter = 266;
+    
     const maxMetersX = 3;
     const maxMetersY = 2;
+
+    const bottomLeftX = 3; // in meters (300 cm)
+    const bottomLeftY = 1; // in meters (100 cm)
+
     const totalWidthPx = maxMetersX * pixelsPerMeter;
     const totalHeightPx = maxMetersY * pixelsPerMeter;
 
-    // Use the separated tile layer generator
+    // 1. Tile Layer
     const tileLayer = createTileLayer({
       originX,
       originY,
@@ -43,6 +48,7 @@
     });
     app.stage.addChild(tileLayer);
 
+    // 2. Grid & Axis Lines
     const gridLayer = new PIXI.Graphics();
     gridLayer.moveTo(originX, originY);
     gridLayer.lineTo(originX + totalWidthPx, originY);
@@ -52,8 +58,7 @@
     gridLayer.lineTo(originX, originY - totalHeightPx);
     gridLayer.stroke({ width: 2, color: 0x4b5563 });
 
-    let yStartM = 1;
-    let xStartM = 3; 
+    // Dynamic X-Axis Labels & Ticks
     for (let i = 1; i <= maxMetersX; i++) {
       const xPos = originX + (i * pixelsPerMeter);
       
@@ -62,7 +67,7 @@
       gridLayer.stroke({ width: 1, color: 0x4b5563 });
 
       const label = new PIXI.Text({
-        text: `${xStartM + i}m`,
+        text: `${bottomLeftX + i}m`,
         style: {
           fontFamily: 'sans-serif',
           fontSize: 12,
@@ -74,6 +79,7 @@
       app.stage.addChild(label);
     }
 
+    // Dynamic Y-Axis Labels & Ticks
     for (let i = 1; i <= maxMetersY; i++) {
       const yPos = originY - (i * pixelsPerMeter);
       
@@ -82,7 +88,7 @@
       gridLayer.stroke({ width: 1, color: 0x4b5563 });
 
       const label = new PIXI.Text({
-        text: `${yStartM + i}m`,
+        text: `${bottomLeftY + i}m`,
         style: {
           fontFamily: 'sans-serif',
           fontSize: 12,
@@ -102,13 +108,16 @@
       originX,
       originY,
       pixelsPerMeter,
-      color: 0x3b82f6, // Blue marker
+      bottomLeftXCm: bottomLeftX * 100,
+      bottomLeftYCm: bottomLeftY * 100,
+      color: 0x000000,
       label: '(455cm, 254.5cm)'
     });
     app.stage.addChild(marker);
     
+    // 4. Step Overlay Box
     const step = new PIXI.Graphics();
-    const rectX = widthPixels - (pixelsPerMeter);
+    const rectX = widthPixels - pixelsPerMeter;
     const rectY = heightPixels - (2 * pixelsPerMeter);
     const rectWidth = 1 * pixelsPerMeter;
     const rectHeight = 1 * pixelsPerMeter;
@@ -118,6 +127,7 @@
     step.stroke({ width: 4, color: 0x818cf8 });
     app.stage.addChild(step);
 
+    // 5. Compass Widget
     const compass = new Compass();
     compass.position.set(50, heightPixels - 50);
     compass.scale.set(0.5);

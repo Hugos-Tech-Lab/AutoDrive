@@ -1,8 +1,8 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
-  import { endpointRoot } from "../../endpoint";
+  import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
+  import { endpointRoot } from "../../../endpoint";
 
   type InfraredLedReadings = {
     utmost_front_utmost_left: number;

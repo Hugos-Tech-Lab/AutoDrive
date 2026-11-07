@@ -1,11 +1,12 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import HardwareTelemetry from "./HardwareTelemetry.svelte";
+  import HardwareTelemetry from "./hardware/HardwareTelemetry.svelte";
   import LiveTimeTrials from "./LiveTimeTrials.svelte";
   import LiveHardwareBanner from "./LiveHardwareBanner.svelte";
   import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
   import UserAccountButton from "./UserAccountButton.svelte";
   import type { AuthState } from "$lib/auth.svelte";
+  import Status from "./hardware/Status.svelte";
 
   interface Props {
     session: AuthState;
@@ -100,6 +101,10 @@ live overview of car position in room
     <button type="button" class="button block">Run Script</button>
     <button type="button" class="button block">Navigate To Start</button>
   </div>
+{/if}
+
+{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Status"}
+  <Status />
 {/if}
 
 {#if selectedBuild === "Time Trials" && selectedPlayOption === "Leaderboard"}

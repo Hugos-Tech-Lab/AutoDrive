@@ -401,6 +401,9 @@ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/hardware/Status.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Status"
 msgstr ""
 
@@ -637,6 +640,7 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
@@ -793,6 +797,7 @@ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "STOP"
 msgstr ""
 
@@ -809,11 +814,13 @@ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Run Script"
 msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Navigate To Start"
 msgstr ""
 
@@ -829,6 +836,7 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Telemetry"
 msgstr ""
 
@@ -836,46 +844,61 @@ msgstr ""
 #~ msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "<0/> GPS"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "<0/> Sensors"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Connecting..."
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Connected"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Failed to parse telemetry data"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Disconnected"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Reconnecting..."
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Hardware Telemetry"
 msgstr ""
 
 #. 0: lastUpdate.toLocaleTimeString()
+#. 0: lastUpdate.toLocaleTimeString()
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Last update: {0}"
 msgstr ""
 
@@ -887,6 +910,8 @@ msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Waiting for data..."
 msgstr ""
 
@@ -895,11 +920,15 @@ msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Raw sensor value"
 msgstr ""
 
 #. 0: connectionStatus
+#. 0: connectionStatus
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Connection: {0}"
 msgstr ""
 
@@ -918,11 +947,13 @@ msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/TheBeginnerCarDrawing.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Front Left IR"
 msgstr ""
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/TheBeginnerCarDrawing.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Front Right IR"
 msgstr ""
 
@@ -1240,4 +1271,48 @@ msgstr ""
 
 #: src/lib/components/SignIn.svelte
 msgid "Don't have an account? <0>Create one</0>"
+msgstr ""
+
+#~ msgid "h"
+#~ msgstr ""
+
+#~ msgid "Statu"
+#~ msgstr ""
+
+#~ msgid "Wifi MCU:"
+#~ msgstr ""
+
+#~ msgid "Wifi MCU: uptime: 00:00:00"
+#~ msgstr ""
+
+#~ msgid "Wasm MCU: uptime: 00:00:00"
+#~ msgstr ""
+
+#~ msgid "Wifi MCU. Uptime: 00:00:00"
+#~ msgstr ""
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00"
+#~ msgstr ""
+
+#~ msgid "Wifi MCU. Uptime: 00:00:00."
+#~ msgstr ""
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00."
+#~ msgstr ""
+
+#~ msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987"
+#~ msgstr ""
+
+#: src/lib/components/hardware/Status.svelte
+msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987."
+msgstr ""
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #11111111."
+#~ msgstr ""
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #1111111."
+#~ msgstr ""
+
+#: src/lib/components/hardware/Status.svelte
+msgid "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
 msgstr ""

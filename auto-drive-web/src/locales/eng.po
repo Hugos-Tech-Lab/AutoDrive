@@ -401,6 +401,9 @@ msgstr "Control a real small machine remotely"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/hardware/Status.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Status"
 msgstr "Status"
 
@@ -637,6 +640,7 @@ msgstr "Algorithms"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
@@ -793,6 +797,7 @@ msgstr "Cancel"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "STOP"
 msgstr "STOP"
 
@@ -809,11 +814,13 @@ msgstr "Control"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Run Script"
 msgstr "Run Script"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Navigate To Start"
 msgstr "Navigate To Start"
 
@@ -829,6 +836,7 @@ msgstr "Navigate To Start"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Telemetry"
 msgstr "Telemetry"
 
@@ -836,46 +844,61 @@ msgstr "Telemetry"
 #~ msgstr "Top-down car telemetry diagram"
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "<0/> GPS"
 msgstr "<0/> GPS"
 
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "<0/> Sensors"
 msgstr "<0/> Sensors"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Connecting..."
 msgstr "Connecting..."
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Connected"
 msgstr "Connected"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Failed to parse telemetry data"
 msgstr "Failed to parse telemetry data"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Disconnected"
 msgstr "Disconnected"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/Status.svelte
 msgid "Reconnecting..."
 msgstr "Reconnecting..."
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Hardware Telemetry"
 msgstr "Hardware Telemetry"
 
 #. 0: lastUpdate.toLocaleTimeString()
+#. 0: lastUpdate.toLocaleTimeString()
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Last update: {0}"
 msgstr "Last update: {0}"
 
@@ -887,6 +910,8 @@ msgstr "Last update: {0}"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Waiting for data..."
 msgstr "Waiting for data..."
 
@@ -895,11 +920,15 @@ msgstr "Waiting for data..."
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Raw sensor value"
 msgstr "Raw sensor value"
 
 #. 0: connectionStatus
+#. 0: connectionStatus
 #: src/lib/components/HardwareTelemetry.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Connection: {0}"
 msgstr "Connection: {0}"
 
@@ -918,11 +947,13 @@ msgstr "{0}% darkness"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/TheBeginnerCarDrawing.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Front Left IR"
 msgstr "Front Left IR"
 
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/TheBeginnerCarDrawing.svelte
+#: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Front Right IR"
 msgstr "Front Right IR"
 
@@ -1241,3 +1272,47 @@ msgstr "Position"
 #: src/lib/components/SignIn.svelte
 msgid "Don't have an account? <0>Create one</0>"
 msgstr "Don't have an account? <0>Create one</0>"
+
+#~ msgid "h"
+#~ msgstr "h"
+
+#~ msgid "Statu"
+#~ msgstr "Statu"
+
+#~ msgid "Wifi MCU:"
+#~ msgstr "Wifi MCU:"
+
+#~ msgid "Wifi MCU: uptime: 00:00:00"
+#~ msgstr "Wifi MCU: uptime: 00:00:00"
+
+#~ msgid "Wasm MCU: uptime: 00:00:00"
+#~ msgstr "Wasm MCU: uptime: 00:00:00"
+
+#~ msgid "Wifi MCU. Uptime: 00:00:00"
+#~ msgstr "Wifi MCU. Uptime: 00:00:00"
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00"
+#~ msgstr "Wasm MCU. Uptime: 00:00:00"
+
+#~ msgid "Wifi MCU. Uptime: 00:00:00."
+#~ msgstr "Wifi MCU. Uptime: 00:00:00."
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00."
+#~ msgstr "Wasm MCU. Uptime: 00:00:00."
+
+#~ msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987"
+#~ msgstr "Wifi MCU. Uptime: 00:00:00. Software: #1233987"
+
+#: src/lib/components/hardware/Status.svelte
+msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987."
+msgstr "Wifi MCU. Uptime: 00:00:00. Software: #1233987."
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #11111111."
+#~ msgstr "Wasm MCU. Uptime: 00:00:00. Software: #11111111."
+
+#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #1111111."
+#~ msgstr "Wasm MCU. Uptime: 00:00:00. Software: #1111111."
+
+#: src/lib/components/hardware/Status.svelte
+msgid "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
+msgstr "Wasm MCU. Uptime: 00:00:00. Software: #abcde."

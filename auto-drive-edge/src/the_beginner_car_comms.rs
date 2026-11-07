@@ -33,12 +33,12 @@ impl TheBeginnerCarComms {
         let (connected_tx, connected_rx) = watch::channel(false);
 
         let connection_handle = tokio::spawn({
-            let ip = device_metadata.wifi_mcu.ip.clone();
+            let device_metadata = device_metadata.clone();
             let incoming_tx = incoming_tx.clone();
             let connected_tx = connected_tx.clone();
             async {
                 Self::long_lived_connection(
-                    ip.to_string(),
+                    device_metadata,
                     internal_receiver,
                     incoming_tx,
                     connected_tx,
@@ -72,20 +72,20 @@ impl TheBeginnerCarComms {
     }
 
     async fn long_lived_connection(
-        ip: String,
+        metadata: TheBeginnerCarMetadata,
         mut internal_receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
         connected_tx: watch::Sender<bool>,
     ) {
         loop {
-            let ip = ip.clone();
+            let ip = metadata.wifi_mcu.ip;
             let ip = format!("{ip}:8080");
 
             let stream = match timeout(Duration::from_secs(5), TcpStream::connect(ip.clone())).await
             {
                 Ok(Ok(stream)) => {
                     connected_tx.send(true).unwrap();
-                    info!("Connected to {ip}.");
+                    info!("Connected to {} at {ip}.", metadata.number_plate);
                     stream
                 }
 
@@ -93,14 +93,18 @@ impl TheBeginnerCarComms {
                     connected_tx.send(false).unwrap();
                     let ip = ip.clone();
                     eprintln!(
-                        "Failed to connect to {ip} error: {error}. Trying again in 10 seconds"
+                        "Failed to connect to {} at {ip} error: {error}. Trying again in 10 seconds",
+                        metadata.number_plate
                     );
                     thread::sleep(Duration::from_secs(10));
                     continue;
                 }
 
                 Err(_) => {
-                    eprintln!("Connection timed out after 5 seconds. Trying again in 10 seconds");
+                    eprintln!(
+                        "Connection timed out to {} at {ip} after 5 seconds. Trying again in 10 seconds",
+                        metadata.number_plate
+                    );
                     thread::sleep(Duration::from_secs(10));
                     continue;
                 }

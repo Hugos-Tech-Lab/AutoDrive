@@ -4,6 +4,7 @@
   import { Compass } from './dashboard/compass';
   import { createTileLayer } from './dashboard/tiles';
   import { createMarker } from './dashboard/marker';
+  import { createPermanentRoom } from './dashboard/permanentRoom';
 
   let container: HTMLDivElement;
   let app: PIXI.Application;
@@ -44,14 +45,10 @@
     const totalWidthPx = maxMetersX * pixelsPerMeter;
     const totalHeightPx = maxMetersY * pixelsPerMeter;
 
-    // 1. Tile Layer (Using local meter units + client-side scaling & positioning)
-    const tileLayer = createTileLayer({
-      maxMetersX,
-      maxMetersY,
-    });
-    tileLayer.position.set(originX, originY - totalHeightPx);
-    tileLayer.scale.set(pixelsPerMeter);
-    app.stage.addChild(tileLayer);
+    const permanentRoom = createPermanentRoom();
+    permanentRoom.scale.set(pixelsPerMeter);
+
+    app.stage.addChild(permanentRoom);
 
     // 2. Grid & Axis Lines
     const gridLayer = new PIXI.Graphics();
@@ -107,7 +104,6 @@
 
     app.stage.addChild(gridLayer);
     
-    // 4. Step Overlay Box (Bottom-Left anchored to marker)
     const stepXCm = markerXCm; // Bottom-left X in cm
     const stepYCm = markerYCm; // Bottom-left Y in cm
     const stepWidthCm = 112.2;   // 1 meter wide
@@ -116,7 +112,6 @@
     const stepWidthPx = (stepWidthCm / 100) * pixelsPerMeter;
     const stepHeightPx = (stepHeightCm / 100) * pixelsPerMeter;
 
-    // Convert bottom-left world coordinates to screen pixels
     const blScreenX = originX + ((stepXCm - mapStartBottomLeftXCm) / 100) * pixelsPerMeter;
     const blScreenY = originY - ((stepYCm - mapStartBottomLeftYCm) / 100) * pixelsPerMeter;
 

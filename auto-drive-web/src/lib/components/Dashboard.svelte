@@ -7,7 +7,7 @@
   import UserAccountButton from "./UserAccountButton.svelte";
   import type { AuthState } from "$lib/auth.svelte";
   import Status from "./hardware/Status.svelte";
-  import Position from "./Position.svelte";
+  import Position from "./Map.svelte";
 
   interface Props {
     session: AuthState;

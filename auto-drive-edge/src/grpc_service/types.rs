@@ -139,7 +139,7 @@ impl From<&crate::auto_script_manager::auto_script::AutoScript>
             script_stop_time: value.script_stop_time.map(|v| v.to_string()),
             run_number: value.run_number,
             run_uuid: value.run_uuid.clone(),
-            number_plate: value.hardware.number_plate.clone(),
+            number_plate: value.hardware.metadata.number_plate.to_string(),
         }
     }
 }

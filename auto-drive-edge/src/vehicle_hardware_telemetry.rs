@@ -34,7 +34,7 @@ impl VehicleHardwareTelemetry {
         let mut the_beginner_car_watcher_handles = tokio::task::JoinSet::new();
         for the_beginner_car in the_beginner_cars {
             the_beginner_car_watcher_handles.spawn({
-                let number_plate = the_beginner_car.number_plate.clone();
+                let number_plate = the_beginner_car.metadata.number_plate.to_string();
                 let incoming_rx = the_beginner_car.incoming_tx.subscribe();
                 let gauges = gauges.clone();
                 async move {

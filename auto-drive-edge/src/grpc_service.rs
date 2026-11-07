@@ -192,7 +192,7 @@ impl AutoDriveEdgeService for GrpcService {
     ) -> Result<Response<Self::WatchHardwarePoseStream>, Status> {
         // TODO: find the ID from the request
         let receiver = self.the_beginner_cars.first().unwrap();
-        let number_plate = receiver.number_plate.clone();
+        let number_plate = receiver.metadata.number_plate.to_string();
 
         let stream = BroadcastStream::new(receiver.incoming_tx.subscribe()).filter_map({
             move |result| {
@@ -239,7 +239,7 @@ impl AutoDriveEdgeService for GrpcService {
             let comms = car_entry;
 
             initial_hardware.push(Hardware {
-                number_plate: comms.number_plate.clone(),
+                number_plate: comms.metadata.number_plate.to_string(),
                 category: "TheBeginnerCar".to_string(),
                 is_connected: *comms.connected_rx.borrow(),
             });
@@ -264,7 +264,7 @@ impl AutoDriveEdgeService for GrpcService {
 
                     let update_msg = WatchHardwareStatusResponse {
                         hardware: vec![Hardware {
-                            number_plate: comms.number_plate.clone(),
+                            number_plate: comms.metadata.number_plate.to_string(),
                             category: "TheBeginnerCar".to_string(),
                             is_connected: current_state,
                         }],
@@ -288,7 +288,7 @@ impl AutoDriveEdgeService for GrpcService {
 
         for hardware_coordinate in request.hardware_coordinates {
             let beginner_car = self.the_beginner_cars.iter().find(|the_beginner_car| {
-                the_beginner_car.aruco_marker_id == hardware_coordinate.aruco_marker_id
+                the_beginner_car.metadata.aruco_marker_id == hardware_coordinate.aruco_marker_id
             });
 
             if let Some(beginner_car) = beginner_car {

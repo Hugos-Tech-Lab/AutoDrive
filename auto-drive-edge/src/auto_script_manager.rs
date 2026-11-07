@@ -155,7 +155,9 @@ impl AutoScriptManager {
             let the_beginner_car = state
                 .the_beginner_cars
                 .iter()
-                .find(|the_beginner_car| the_beginner_car.number_plate == "TBC 001".to_string())
+                .find(|the_beginner_car| {
+                    the_beginner_car.metadata.number_plate == "TBC 001".to_string()
+                })
                 .unwrap();
 
             let auto_script = AutoScript::new(
@@ -228,7 +230,7 @@ impl AutoScriptManager {
                 .scripts
                 .running
                 .iter()
-                .any(|auto_script| auto_script.hardware.number_plate == target_device_id);
+                .any(|auto_script| auto_script.hardware.metadata.number_plate == target_device_id);
             if device_being_used {
                 // cannot start because it's already being used..
                 for (i, script) in the_beginner_car_scripts_mutex_guard
@@ -351,7 +353,7 @@ impl AutoScriptManager {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
                         Self::on_hardware_response_auto_script_stopped(
                             state.clone(),
-                            the_beginner_car.number_plate.clone(),
+                            the_beginner_car.metadata.number_plate.to_string(),
                         )
                         .await;
                     }
@@ -380,7 +382,7 @@ impl AutoScriptManager {
                 .scripts
                 .running
                 .extract_if(.., |auto_script| {
-                    auto_script.hardware.number_plate == number_plate
+                    auto_script.hardware.metadata.number_plate == number_plate
                 })
                 .collect();
             if stopped.len() != 1 {

@@ -10,7 +10,7 @@ production = []
 
 [dependencies]
 auto-drive-common-types = { path = "../firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types" }
-
+hardware-config = { path = "api/hardware_config" }
 the-beginner-car-tcp-protocol = { path = "../firmware/the-beginner-car-v1-wifi-firmware/api/the-beginner-car-tcp-protocol" }
 gilrs = { version = "0.11.2", default-features = false, features = [
   "xinput",

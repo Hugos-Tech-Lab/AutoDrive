@@ -1,5 +1,6 @@
 use std::{thread, time::Duration};
 
+use hardware_config::TheBeginnerCarMetadata;
 use log::{info, warn};
 use the_beginner_car_tcp_protocol::{
     MessageCodec, TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
@@ -13,13 +14,9 @@ use tokio::{
     time::timeout,
 };
 
-use crate::hardware::HardwareMetadata;
-
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCarComms {
-    pub number_plate: String,
-    pub aruco_marker_id: u32,
-    pub ip: String,
+    pub metadata: TheBeginnerCarMetadata,
     pub connected_rx: watch::Receiver<bool>,
     outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
@@ -27,7 +24,7 @@ pub struct TheBeginnerCarComms {
 
 impl TheBeginnerCarComms {
     pub fn new(
-        device_metadata: HardwareMetadata,
+        device_metadata: TheBeginnerCarMetadata,
         // vehicle_telemetry: TheBeginnerCarVehicleHardwareTelemetry,
     ) -> (Self, JoinHandle<()>) {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
@@ -36,22 +33,26 @@ impl TheBeginnerCarComms {
         let (connected_tx, connected_rx) = watch::channel(false);
 
         let connection_handle = tokio::spawn({
-            let ip = device_metadata.ip.clone();
+            let ip = device_metadata.wifi_mcu.ip.clone();
             let incoming_tx = incoming_tx.clone();
             let connected_tx = connected_tx.clone();
             async {
-                Self::long_lived_connection(ip, internal_receiver, incoming_tx, connected_tx).await;
+                Self::long_lived_connection(
+                    ip.to_string(),
+                    internal_receiver,
+                    incoming_tx,
+                    connected_tx,
+                )
+                .await;
             }
         });
 
         (
             Self {
-                number_plate: device_metadata.number_plate,
-                ip: device_metadata.ip,
                 connected_rx,
                 outgoing_tx,
                 incoming_tx,
-                aruco_marker_id: device_metadata.aruco_marker_id,
+                metadata: device_metadata,
             },
             connection_handle,
         )
@@ -71,43 +72,28 @@ impl TheBeginnerCarComms {
     }
 
     async fn long_lived_connection(
-        mdns_address: String,
+        ip: String,
         mut internal_receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
         connected_tx: watch::Sender<bool>,
     ) {
         loop {
-            let m_dns = mdns_address.clone();
+            let ip = ip.clone();
+            let ip = format!("{ip}:8080");
 
-            let host = format!("{m_dns}:8080");
-            let Ok(mut addresses) = lookup_host(&host).await else {
-                connected_tx.send(false).unwrap();
-                warn!("Could not find {host}. Trying again in 10 seconds");
-                thread::sleep(Duration::from_secs(10));
-                continue;
-            };
-
-            let addr = addresses
-                .next()
-                .ok_or_else(|| {
-                    std::io::Error::new(std::io::ErrorKind::NotFound, "No socket addresses found")
-                })
-                .unwrap();
-
-            let stream = match timeout(Duration::from_secs(5), TcpStream::connect(addr.clone()))
-                .await
+            let stream = match timeout(Duration::from_secs(5), TcpStream::connect(ip.clone())).await
             {
                 Ok(Ok(stream)) => {
                     connected_tx.send(true).unwrap();
-                    info!("Connected to {host}.");
+                    info!("Connected to {ip}.");
                     stream
                 }
 
                 Ok(Err(error)) => {
                     connected_tx.send(false).unwrap();
-                    let addr = addr.clone();
+                    let ip = ip.clone();
                     eprintln!(
-                        "Failed to connect to {addr} error: {error}. Trying again in 10 seconds"
+                        "Failed to connect to {ip} error: {error}. Trying again in 10 seconds"
                     );
                     thread::sleep(Duration::from_secs(10));
                     continue;

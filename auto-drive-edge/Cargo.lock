@@ -119,6 +119,7 @@ dependencies = [
  "env_logger",
  "futures-util",
  "gilrs",
+ "hardware-config",
  "hex",
  "log",
  "metrics",
@@ -671,6 +672,10 @@ dependencies = [
  "tokio-util",
  "tracing",
 ]
+
+[[package]]
+name = "hardware-config"
+version = "0.1.0"
 
 [[package]]
 name = "hash32"

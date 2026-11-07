@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
+use hardware_config::HardwareConfig;
 use tokio::task::JoinHandle;
 
 use crate::{
-    auto_script_manager::AutoScriptManager, hardware::HardwareConfig,
-    the_beginner_car_comms::TheBeginnerCarComms,
+    auto_script_manager::AutoScriptManager, the_beginner_car_comms::TheBeginnerCarComms,
     vehicle_hardware_telemetry::VehicleHardwareTelemetry,
 };
 
@@ -21,7 +21,7 @@ impl AutoDriveEdgeServer {
             Vec<TheBeginnerCarComms>,
             Vec<JoinHandle<()>>,
         ) = config
-            .hardware
+            .the_beginner_cars
             .iter()
             .map(|d| TheBeginnerCarComms::new(d.clone()))
             .unzip();

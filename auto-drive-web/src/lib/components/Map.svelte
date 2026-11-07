@@ -2,8 +2,6 @@
   import { onMount, onDestroy } from 'svelte';
   import * as PIXI from 'pixi.js';
   import { Compass } from './dashboard/compass';
-  import { createTileLayer } from './dashboard/tiles';
-  import { createMarker } from './dashboard/marker';
   import { createPermanentRoom } from './dashboard/permanentRoom';
 
   let container: HTMLDivElement;
@@ -26,46 +24,50 @@
       container.appendChild(app.canvas);
     }
 
-    const markerXCm = 455;
-    const markerYCm = 254.5;
-
-    const originX = 0;   
-    const originY = heightPixels;  
-    const pixelsPerMeter = 266;
-    
-    const maxMetersX = 3;
-    const maxMetersY = 2;
+    const pixelsPerMeter = 266; // 266
 
     const mapStartBottomLeftXMeters = 3;
     const mapStartBottomLeftYMeters = 1;
-    
-    const mapStartBottomLeftXCm = mapStartBottomLeftXMeters * 100;
-    const mapStartBottomLeftYCm = mapStartBottomLeftYMeters * 100;
 
-    const totalWidthPx = maxMetersX * pixelsPerMeter;
-    const totalHeightPx = maxMetersY * pixelsPerMeter;
+    const bottomLeftXCm = mapStartBottomLeftXMeters * 100;
+    const bottomLeftYCm = mapStartBottomLeftYMeters * 100;
+
+    
+    const worldContainer = new PIXI.Container();
+
+    const scaleFactor = pixelsPerMeter / 100;
+
+    worldContainer.x = -bottomLeftXCm * scaleFactor;
+    worldContainer.y = heightPixels + (bottomLeftYCm * scaleFactor);
+
+    worldContainer.scale.set(
+        scaleFactor, 
+        -scaleFactor
+    );
 
     const permanentRoom = createPermanentRoom();
-    permanentRoom.scale.set(pixelsPerMeter);
+    permanentRoom.x = 0;
+    permanentRoom.y = 0;
 
-    app.stage.addChild(permanentRoom);
+    worldContainer.addChild(permanentRoom);
 
-    // 2. Grid & Axis Lines
+    app.stage.addChild(worldContainer);
+
     const gridLayer = new PIXI.Graphics();
-    gridLayer.moveTo(originX, originY);
-    gridLayer.lineTo(originX + totalWidthPx, originY);
+    gridLayer.moveTo(0, heightPixels);
+    gridLayer.lineTo(0 + widthPixels, heightPixels);
     gridLayer.stroke({ width: 2, color: 0x4b5563 });
 
-    gridLayer.moveTo(originX, originY);
-    gridLayer.lineTo(originX, originY - totalHeightPx);
+    gridLayer.moveTo(0, heightPixels);
+    gridLayer.lineTo(0, heightPixels - heightPixels);
     gridLayer.stroke({ width: 2, color: 0x4b5563 });
 
     // Dynamic X-Axis Labels & Ticks
-    for (let i = 1; i <= maxMetersX; i++) {
-      const xPos = originX + (i * pixelsPerMeter);
+    for (let i = 1; i <= 10; i++) {
+      const xPos = 0 + (i * pixelsPerMeter);
       
-      gridLayer.moveTo(xPos, originY);
-      gridLayer.lineTo(xPos, originY - 8);
+      gridLayer.moveTo(xPos, heightPixels);
+      gridLayer.lineTo(xPos, heightPixels - 8);
       gridLayer.stroke({ width: 1, color: 0x4b5563 });
 
       const label = new PIXI.Text({
@@ -77,16 +79,16 @@
         }
       });
       label.x = xPos - 10;
-      label.y = originY - 24;
+      label.y = heightPixels - 24;
       app.stage.addChild(label);
     }
 
     // Dynamic Y-Axis Labels & Ticks
-    for (let i = 1; i <= maxMetersY; i++) {
-      const yPos = originY - (i * pixelsPerMeter);
+    for (let i = 1; i <= 10; i++) {
+      const yPos = heightPixels - (i * pixelsPerMeter);
       
-      gridLayer.moveTo(originX, yPos);
-      gridLayer.lineTo(originX + 8, yPos);
+      gridLayer.moveTo(0, yPos);
+      gridLayer.lineTo(0 + 8, yPos);
       gridLayer.stroke({ width: 1, color: 0x4b5563 });
 
       const label = new PIXI.Text({
@@ -97,58 +99,15 @@
           fill: 0x4b5563
         }
       });
-      label.x = originX + 12;
+      label.x = 0 + 12;
       label.y = yPos - 8;
       app.stage.addChild(label);
     }
 
     app.stage.addChild(gridLayer);
-    
-    const stepXCm = markerXCm; // Bottom-left X in cm
-    const stepYCm = markerYCm; // Bottom-left Y in cm
-    const stepWidthCm = 112.2;   // 1 meter wide
-    const stepHeightCm = 114;
-
-    const stepWidthPx = (stepWidthCm / 100) * pixelsPerMeter;
-    const stepHeightPx = (stepHeightCm / 100) * pixelsPerMeter;
-
-    const blScreenX = originX + ((stepXCm - mapStartBottomLeftXCm) / 100) * pixelsPerMeter;
-    const blScreenY = originY - ((stepYCm - mapStartBottomLeftYCm) / 100) * pixelsPerMeter;
-
-    // Pixi rect() takes the top-left corner:
-    const rectX = blScreenX;
-    const rectY = blScreenY - stepHeightPx; 
 
     const step = new PIXI.Graphics();
-    
-    step.rect(rectX, rectY, stepWidthPx, stepHeightPx);
-    step.fill({ color: 0x636363, alpha: 0.4 });
-    step.moveTo(rectX, rectY);                                            
-    step.lineTo(rectX, rectY + stepHeightPx);                 
-    step.lineTo(rectX + stepWidthPx, rectY + stepHeightPx);         
-    step.stroke({ 
-      width: 0.128 * pixelsPerMeter, 
-      color: 0xfcba03, 
-      alignment: 0,
-      alpha: 0.7
-    });
 
-    app.stage.addChild(step);
-
-    const marker = createMarker({
-      xCm: markerXCm,
-      yCm: markerYCm,
-      originX,
-      originY,
-      pixelsPerMeter,
-      bottomLeftXCm: mapStartBottomLeftXCm,
-      bottomLeftYCm: mapStartBottomLeftYCm,
-      color: 0x000000,
-      label: `(${markerXCm}cm, ${markerYCm}cm)`
-    });
-    app.stage.addChild(marker);
-
-    // 5. Compass Widget
     const compass = new Compass();
     compass.position.set(50, heightPixels - 50);
     compass.scale.set(0.5);

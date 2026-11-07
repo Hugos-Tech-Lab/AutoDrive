@@ -1,16 +1,17 @@
 import * as PIXI from 'pixi.js';
 
 export interface TileConfig {
-  maxMetersX: number;
-  maxMetersY: number;
+  maxCmX: number;
+  maxCmY: number;
 }
 
 export function createTileLayer(config: TileConfig): PIXI.Graphics {
-  const { maxMetersX, maxMetersY } = config;
+  const { maxCmX, maxCmY } = config;
 
-  const tileWidth = 0.196;  // 196 mm = 0.196 m
-  const tileHeight = 0.297; // 297 mm = 0.297 m
-  const grout = 0.006;      // 6 mm = 0.006 m
+  // Convert dimensions from mm/m to centimeters
+  const tileWidth = 19.6;  // 196 mm = 19.6 cm
+  const tileHeight = 29.7; // 297 mm = 29.7 cm
+  const grout = 0.6;       // 6 mm = 0.6 cm
 
   const stepX = tileWidth + grout;
   const stepY = tileHeight + grout;
@@ -18,11 +19,11 @@ export function createTileLayer(config: TileConfig): PIXI.Graphics {
   const tileLayer = new PIXI.Graphics();
 
   // Background (Grout color)
-  tileLayer.rect(0, 0, maxMetersX, maxMetersY);
+  tileLayer.rect(0, 0, maxCmX, maxCmY);
   tileLayer.fill({ color: 0x9ca3af });
 
-  const cols = Math.ceil(maxMetersX / stepX);
-  const rows = Math.ceil(maxMetersY / stepY);
+  const cols = Math.ceil(maxCmX / stepX);
+  const rows = Math.ceil(maxCmY / stepY);
 
   // Individual tiles
   for (let r = 0; r < rows; r++) {

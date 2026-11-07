@@ -27,12 +27,9 @@
 
     const pixelsPerMeter = 266;
 
-    const mapStartBottomLeftXMeters = 3;
-    const mapStartBottomLeftYMeters = 1;
-
-    const bottomLeftXCm = mapStartBottomLeftXMeters * 100;
-    const bottomLeftYCm = mapStartBottomLeftYMeters * 100;
-
+    // Configured directly in centimeters (e.g., 300cm = 3m, 100cm = 1m)
+    const bottomLeftXCm = 270;
+    const bottomLeftYCm = 100;
     
     const worldContainer = new PIXI.Container();
 
@@ -55,6 +52,8 @@
     app.stage.addChild(worldContainer);
 
     const gridLayer = new PIXI.Graphics();
+    
+    // Axes lines drawn at world coordinates mapped to screen
     gridLayer.moveTo(0, heightPixels);
     gridLayer.lineTo(0 + widthPixels, heightPixels);
     gridLayer.stroke({ width: 2, color: 0x4b5563 });
@@ -63,51 +62,59 @@
     gridLayer.lineTo(0, heightPixels - heightPixels);
     gridLayer.stroke({ width: 2, color: 0x4b5563 });
 
-    // Dynamic X-Axis Labels & Ticks
-    for (let i = 1; i <= 10; i++) {
-      const xPos = 0 + (i * pixelsPerMeter);
-      
-      gridLayer.moveTo(xPos, heightPixels);
-      gridLayer.lineTo(xPos, heightPixels - 8);
-      gridLayer.stroke({ width: 1, color: 0x4b5563 });
+    // --- Dynamic X-Axis Labels & Ticks ---
+    const startMeterX = Math.ceil(bottomLeftXCm / 100);
+    const endMeterX = (bottomLeftXCm / 100) + (widthPixels / pixelsPerMeter);
 
-      const label = new PIXI.Text({
-        text: `${mapStartBottomLeftXMeters + i}m`,
-        style: {
-          fontFamily: 'sans-serif',
-          fontSize: 12,
-          fill: 0x4b5563
-        }
-      });
-      label.x = xPos - 10;
-      label.y = heightPixels - 24;
-      app.stage.addChild(label);
+    for (let m = startMeterX; m <= endMeterX; m++) {
+      const xPos = (m * 100 * scaleFactor) + worldContainer.x;
+      
+      if (xPos >= 0 && xPos <= widthPixels) {
+        gridLayer.moveTo(xPos, heightPixels);
+        gridLayer.lineTo(xPos, heightPixels - 8);
+        gridLayer.stroke({ width: 1, color: 0x4b5563 });
+
+        const label = new PIXI.Text({
+          text: `${m}m`,
+          style: {
+            fontFamily: 'sans-serif',
+            fontSize: 12,
+            fill: 0x4b5563
+          }
+        });
+        label.x = xPos - 10;
+        label.y = heightPixels - 24;
+        app.stage.addChild(label);
+      }
     }
 
-    // Dynamic Y-Axis Labels & Ticks
-    for (let i = 1; i <= 10; i++) {
-      const yPos = heightPixels - (i * pixelsPerMeter);
-      
-      gridLayer.moveTo(0, yPos);
-      gridLayer.lineTo(0 + 8, yPos);
-      gridLayer.stroke({ width: 1, color: 0x4b5563 });
+    // --- Dynamic Y-Axis Labels & Ticks ---
+    const startMeterY = Math.ceil(bottomLeftYCm / 100);
+    const endMeterY = (bottomLeftYCm / 100) + (heightPixels / pixelsPerMeter);
 
-      const label = new PIXI.Text({
-        text: `${mapStartBottomLeftYMeters + i}m`,
-        style: {
-          fontFamily: 'sans-serif',
-          fontSize: 12,
-          fill: 0x4b5563
-        }
-      });
-      label.x = 0 + 12;
-      label.y = yPos - 8;
-      app.stage.addChild(label);
+    for (let m = startMeterY; m <= endMeterY; m++) {
+      const yPos = worldContainer.y - (m * 100 * scaleFactor);
+      
+      if (yPos >= 0 && yPos <= heightPixels) {
+        gridLayer.moveTo(0, yPos);
+        gridLayer.lineTo(0 + 8, yPos);
+        gridLayer.stroke({ width: 1, color: 0x4b5563 });
+
+        const label = new PIXI.Text({
+          text: `${m}m`,
+          style: {
+            fontFamily: 'sans-serif',
+            fontSize: 12,
+            fill: 0x4b5563
+          }
+        });
+        label.x = 12;
+        label.y = yPos - 8;
+        app.stage.addChild(label);
+      }
     }
 
     app.stage.addChild(gridLayer);
-
-    const step = new PIXI.Graphics();
 
     const compass = new Compass();
     compass.position.set(50, heightPixels - 50);

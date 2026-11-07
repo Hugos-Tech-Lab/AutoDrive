@@ -20,8 +20,8 @@ use crate::{
     auto_script::AutoScript,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
-        KalmanFilter, TheBeginnerCarHardware,
-        ir_sensor_array::IrSensorArrayData,
+        KalmanFilter, KalmanFilterIterateState, TheBeginnerCarHardware,
+        ir_sensor_array::{IrSensorArray, IrSensorArrayData},
         led::Led,
         wheel::{Wheel, motor::Motor, tachometer::Tachometer},
     },
@@ -57,13 +57,13 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right_tachometer.clone(),
     );
 
-    // let motor_left = Motor::new(
-    //     peripherals.pins.gpio7.into(),
-    //     peripherals.pins.gpio18.into(),
-    //     peripherals.ledc.channel0,
-    //     peripherals.ledc.timer1,
-    //     wheel_left_tachometer,
-    // );
+    let motor_left = Motor::new(
+        peripherals.pins.gpio7.into(),
+        peripherals.pins.gpio18.into(),
+        peripherals.ledc.channel0,
+        peripherals.ledc.timer1,
+        wheel_left_tachometer.clone(),
+    );
 
     let motor_right = Motor::new(
         peripherals.pins.gpio11.into(),
@@ -73,90 +73,115 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right_tachometer,
     );
 
-    dbg!("{}", kalman_filter.position());
-    motor_right.set_pwm(127);
-    FreeRtos::delay_ms(227 * 9);
-    motor_right.set_rpm(0);
-    dbg!("{}", kalman_filter.position());
+    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 
-    // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
+    let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
+    let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
 
-    // let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
-    // let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
+    if reason == 9 {
+        // pin.set_color(9, 0, 200);
+        FreeRtos::delay_ms(1000);
+    }
 
-    // // let led_left = Led::new(peripherals.pins.gpio13.into());
-    // let led_right = Led::new(peripherals.pins.gpio9.into());
+    let ir_sensor_array = Arc::new(IrSensorArray {}); // TODO construct with new 
 
-    // // pin.set_color(20, 2, 2);
-    // if reason == 9 {
-    //     // pin.set_color(9, 0, 200);
-    //     FreeRtos::delay_ms(1000);
-    // }
+    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
+        wheel_left,
+        wheel_right,
+        // led_right,
+        ir_sensor_array.clone(),
+    )));
 
-    // let ir_sensor_array = Arc::new(IrSensorArrayData::default());
+    let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
-    // let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
-    //     wheel_left,
-    //     wheel_right,
-    //     led_right,
-    //     ir_sensor_array.clone(),
-    // )));
+    let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
+        let events = events.clone();
+        move || {
+            let mut events = events.lock().unwrap();
+            events.push(Event::AutoScriptStopped);
+        }
+    })?);
 
-    // let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
+    std::thread::Builder::new()
+        .name("position".to_string())
+        .spawn({
+            let events = events.clone();
 
-    // let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
-    //     let events = events.clone();
-    //     move || {
-    //         let mut events = events.lock().unwrap();
-    //         events.push(Event::AutoScriptStopped);
-    //     }
-    // })?);
+            move || {
+                let mut kalman_filter_state = kalman_filter.create_iterate_state();
 
-    // std::thread::Builder::new()
-    //     .stack_size(2_000)
-    //     .name("flush_logs".to_string())
-    //     .spawn({
-    //         let events = events.clone();
-    //         move || {
-    //             let mut pending_logs = Vec::new();
-    //             let mut last_flush = std::time::Instant::now();
+                loop {
+                    let position = kalman_filter.iterate(&mut kalman_filter_state);
+                    if let Some(position) = position {
+                        {
+                            let mut event_guard = events.lock().unwrap();
+                            let timestamp_unix_epoch_ms = std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .expect("Time went backwards")
+                                .as_millis()
+                                as u64;
 
-    //             loop {
-    //                 match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
-    //                     Ok(log) => pending_logs.push(log),
-    //                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-    //                     Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-    //                         dbg!();
-    //                         panic!();
-    //                     }
-    //                 }
+                            event_guard.push(Event::Position {
+                                x: position.x,
+                                y: position.y,
+                                rotation_radians: position.rotation_radians,
+                                timestamp_unix_epoch_ms,
+                            });
+                        }
+                        // TODO: check if out of bounds
+                    }
 
-    //                 if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
-    //                     let mut events = events.lock().unwrap();
-    //                     events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
+                    FreeRtos::delay_ms(10);
+                }
+            }
+        })
+        .unwrap();
 
-    //                     last_flush = std::time::Instant::now();
-    //                 }
-    //             }
-    //         }
-    //     })
-    //     .unwrap();
+    std::thread::Builder::new()
+        .stack_size(2_000)
+        .name("flush_logs".to_string())
+        .spawn({
+            let events = events.clone();
+            move || {
+                let mut pending_logs = Vec::new();
+                let mut last_flush = std::time::Instant::now();
 
-    // //
+                loop {
+                    match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
+                        Ok(log) => pending_logs.push(log),
+                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                            dbg!();
+                            panic!();
+                        }
+                    }
 
-    // let spi_hardware = SpiSlaveHardware {
-    //     spi_2: peripherals.spi2,
-    //     a_sclk: peripherals.pins.gpio15,
-    //     b_sdi: peripherals.pins.gpio23,
-    //     c_sdo: peripherals.pins.gpio22,
-    //     d_slave_ready_pin: peripherals.pins.gpio21,
-    //     e_cs: peripherals.pins.gpio20,
-    //     f_master_ready_pin: peripherals.pins.gpio19,
-    // };
+                    if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
+                        let mut events = events.lock().unwrap();
+                        events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
 
-    // let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;
+                        last_flush = std::time::Instant::now();
+                    }
+                }
+            }
+        })
+        .unwrap();
 
-    // server_spi.handle.join().unwrap();
+    //
+
+    let spi_hardware = SpiSlaveHardware {
+        spi_2: peripherals.spi2,
+        a_sclk: peripherals.pins.gpio15,
+        b_sdi: peripherals.pins.gpio23,
+        c_sdo: peripherals.pins.gpio22,
+        d_slave_ready_pin: peripherals.pins.gpio21,
+        e_cs: peripherals.pins.gpio20,
+        f_master_ready_pin: peripherals.pins.gpio19,
+    };
+
+    let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;
+
+    server_spi.handle.join().unwrap();
     // reading.join().unwrap();
     Ok(())
 }

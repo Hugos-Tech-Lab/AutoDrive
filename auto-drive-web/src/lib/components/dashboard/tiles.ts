@@ -32,7 +32,7 @@ export function createTileLayer(config: TileConfig): PIXI.Graphics {
       const y = (r * stepY) + (grout / 2);
 
       tileLayer.rect(x, y, tileWidth, tileHeight);
-      tileLayer.fill({ color: 0xf9fafb });
+      tileLayer.fill({ color: 0xd9d9ff });
     }
   }
 

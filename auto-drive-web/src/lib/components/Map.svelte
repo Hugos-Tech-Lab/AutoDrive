@@ -4,6 +4,7 @@
   import { Compass } from './dashboard/compass';
   import { createPermanentRoom } from './dashboard/permanentRoom';
   import { createBoundaries001 } from './dashboard/boundaries001';
+  import { createHardware001 } from './dashboard/hardware001';
 
   let container: HTMLDivElement;
   let app: PIXI.Application;
@@ -27,7 +28,6 @@
 
     const pixelsPerMeter = 266;
 
-    // Configured directly in centimeters (e.g., 300cm = 3m, 100cm = 1m)
     const bottomLeftXCm = 270;
     const bottomLeftYCm = 100;
     
@@ -45,9 +45,13 @@
 
     const permanentRoom = createPermanentRoom();
     const boundaries = createBoundaries001();
+    const hardware = createHardware001();
+    hardware.x = 400;
+    hardware.y = 200;
 
     worldContainer.addChild(permanentRoom);
     worldContainer.addChild(boundaries);
+    worldContainer.addChild(hardware);
 
     app.stage.addChild(worldContainer);
 

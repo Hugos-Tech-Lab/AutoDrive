@@ -30,15 +30,12 @@ export function createPermanentRoom(): PIXI.Container {
   step.fill({ color: 0x000000, alpha: 0.3 });
   container.addChild(step);
 
-  const entryYellowLeft = new PIXI.Graphics();
-  entryYellowLeft.rect(442.2, 254.5, 12.8, 100);
-  entryYellowLeft.fill({ color: 0xffbf00, alpha: 0.8 });
-  container.addChild(entryYellowLeft);
-
-  const entryYellowBottom = new PIXI.Graphics();
-  entryYellowBottom.rect(442.2, 254.5 - 12.8, 102 + 12.8, 12.8);
-  entryYellowBottom.fill({ color: 0xffbf00, alpha: 0.8 });
-  container.addChild(entryYellowBottom);
+  const entryYellow = new PIXI.Graphics();
+  entryYellow.rect(442.2, 254.5, 12.8, 100);
+  entryYellow.fill({ color: 0xffbf00, alpha: 0.8 });
+  entryYellow.rect(442.2, 254.5 - 12.8, 102 + 12.8, 12.8);
+  entryYellow.fill({ color: 0xffbf00, alpha: 0.8 });
+  container.addChild(entryYellow);
 
   const door = new PIXI.Graphics();
   door.rect(557, 254.5, 50, 100);

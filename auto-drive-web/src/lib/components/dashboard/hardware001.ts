@@ -5,10 +5,12 @@ export function createHardware001(): PIXI.Container {
 
   const graphics = new PIXI.Graphics();
 
-  graphics.rect(-11, 0, 2.5, 6.5);
+  // wheel left
+  graphics.rect(-10.5, 0, 2.5, 6.5);
   graphics.fill({ color: 0x000000 });
 
-  graphics.rect(8.5, 0, 2.5, 6.5);
+  // wheel right
+  graphics.rect(8, 0, 2.5, 6.5);
   graphics.fill({ color: 0x000000 });
 
   graphics.rect(-7, -7, 14, 14);

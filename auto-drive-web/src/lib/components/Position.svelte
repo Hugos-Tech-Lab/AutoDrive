@@ -44,14 +44,13 @@
     const totalWidthPx = maxMetersX * pixelsPerMeter;
     const totalHeightPx = maxMetersY * pixelsPerMeter;
 
-    // 1. Tile Layer
+    // 1. Tile Layer (Using local meter units + client-side scaling & positioning)
     const tileLayer = createTileLayer({
-      originX,
-      originY,
-      pixelsPerMeter,
       maxMetersX,
       maxMetersY,
     });
+    tileLayer.position.set(originX, originY - totalHeightPx);
+    tileLayer.scale.set(pixelsPerMeter);
     app.stage.addChild(tileLayer);
 
     // 2. Grid & Axis Lines
@@ -130,7 +129,7 @@
     step.rect(rectX, rectY, stepWidthPx, stepHeightPx);
     step.fill({ color: 0x636363, alpha: 0.4 });
     step.moveTo(rectX, rectY);                                            
-    step.lineTo(rectX, rectY + stepHeightPx);                     
+    step.lineTo(rectX, rectY + stepHeightPx);                 
     step.lineTo(rectX + stepWidthPx, rectY + stepHeightPx);         
     step.stroke({ 
       width: 0.128 * pixelsPerMeter, 

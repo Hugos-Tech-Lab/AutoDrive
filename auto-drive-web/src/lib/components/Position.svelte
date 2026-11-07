@@ -126,9 +126,19 @@
     const rectY = blScreenY - stepHeightPx; 
 
     const step = new PIXI.Graphics();
+    
     step.rect(rectX, rectY, stepWidthPx, stepHeightPx);
     step.fill({ color: 0x636363, alpha: 0.4 });
-    // step.stroke({ width: 0.128 * pixelsPerMeter, color: 0x818cf8 });
+    step.moveTo(rectX, rectY);                                   
+    step.lineTo(rectX, rectY + stepHeightPx);                     
+    step.lineTo(rectX + stepWidthPx, rectY + stepHeightPx);         
+    step.stroke({ 
+      width: 0.128 * pixelsPerMeter, 
+      color: 0xfcba03, 
+      alignment: 0,
+      alpha: 0.7
+    });
+
     app.stage.addChild(step);
 
     const marker = createMarker({

@@ -3,6 +3,7 @@
   import * as PIXI from 'pixi.js';
   import { Compass } from './dashboard/compass';
   import { createTileLayer } from './dashboard/tiles';
+  import { createMarker } from './dashboard/marker';
 
   let container: HTMLDivElement;
   let app: PIXI.Application;
@@ -95,6 +96,17 @@
 
     app.stage.addChild(gridLayer);
 
+    const marker = createMarker({
+      xCm: 455,
+      yCm: 254.5,
+      originX,
+      originY,
+      pixelsPerMeter,
+      color: 0x3b82f6, // Blue marker
+      label: '(455cm, 254.5cm)'
+    });
+    app.stage.addChild(marker);
+    
     const step = new PIXI.Graphics();
     const rectX = widthPixels - (pixelsPerMeter);
     const rectY = heightPixels - (2 * pixelsPerMeter);

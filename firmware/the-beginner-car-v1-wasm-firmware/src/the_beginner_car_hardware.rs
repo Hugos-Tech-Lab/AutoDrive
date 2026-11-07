@@ -39,9 +39,19 @@ impl Position {
 //     Manual,
 // }
 
+pub struct KalmanFilterIterateState {
+    pub dt: f32,                                     // timestep in ms
+    pub wingspan: f32,                               // = 18.5;
+    pub left_tachometer_total_pulses_previous: u32,  //,  = self.left_tachometer.get_total_pulses();
+    pub right_tachometer_total_pulses_previous: u32, // = self.right_tachometer.get_total_pulses();
+    pub current_rotation: f32, //  = 0.0; // TODO: derived from current position
+}
+
 pub struct KalmanFilter {
     position: Arc<Mutex<Option<Position>>>, // 0.1: rotation, distance moved
-                                            // 0.2: rotation, distance moved
+    // 0.2: rotation, distance moved
+    left_tachometer: Tachometer,
+    right_tachometer: Tachometer,
 }
 
 impl KalmanFilter {
@@ -53,66 +63,59 @@ impl KalmanFilter {
             combined_dist: 0.0,
         })));
 
-        std::thread::Builder::new()
-            .name("kalman_filter".to_string())
-            .spawn({
-                let position = position.clone();
-                || Self::run(left_tachometer, right_tachometer, position)
-            })
-            .unwrap();
-
-        Self { position }
+        Self {
+            position,
+            left_tachometer,
+            right_tachometer,
+        }
     }
 
-    pub fn run(
-        left_tachometer: Tachometer,
-        right_tachometer: Tachometer,
-        position: Arc<Mutex<Option<Position>>>,
-    ) {
-        // let mut state_state = Vec::new(); // dim n x 1
-        // let mut sigma_prev = Vec::new(); // dim n x n
-        // let mut measured_pos = Vec::new(); // dim n x n
-        // let mut process_noise = Vec::new(); // dim n x n
-        // let mut measurement_noise = Vec::new(); // dim n x n
-        let dt: f32; // timestep in ms
-        let wingspan: f32 = 18.5;
-        let mut left_tachometer_total_pulses_previous = left_tachometer.get_total_pulses();
-        let mut right_tachometer_total_pulses_previous = right_tachometer.get_total_pulses();
-        let mut current_rotation = 0.0; // TODO: derived from current position
-
-        loop {
-            let left_tachometer_total_pulses = left_tachometer.get_total_pulses();
-            let right_tachometer_total_pulses = right_tachometer.get_total_pulses();
-            let left_tachometer_pulses =
-                left_tachometer_total_pulses - left_tachometer_total_pulses_previous;
-            let right_tachometer_pulses =
-                right_tachometer_total_pulses - right_tachometer_total_pulses_previous;
-
-            left_tachometer_total_pulses_previous = left_tachometer_total_pulses;
-            right_tachometer_total_pulses_previous = right_tachometer_total_pulses;
-
-            let distance_left_cm = left_tachometer_pulses as f32 * left_tachometer.cm_per_pulse();
-            let distance_right_cm =
-                right_tachometer_pulses as f32 * right_tachometer.cm_per_pulse();
-            let position_delta = Self::predict(
-                distance_left_cm,
-                distance_right_cm,
-                wingspan,
-                current_rotation,
-            );
-
-            current_rotation += position_delta.rotation_radians;
-
-            {
-                let mut position_guard = position.lock().unwrap();
-                if let Some(pos) = position_guard.as_mut() {
-                    // Replace `&other_position` with whatever value you actually need to add
-                    pos.add(position_delta);
-                }
-            }
-
-            FreeRtos::delay_ms(10);
+    pub fn create_iterate_state(&self) -> KalmanFilterIterateState {
+        KalmanFilterIterateState {
+            dt: 0.0,
+            wingspan: 18.5,
+            left_tachometer_total_pulses_previous: self.left_tachometer.get_total_pulses(),
+            right_tachometer_total_pulses_previous: self.right_tachometer.get_total_pulses(),
+            current_rotation: 0.0,
         }
+    }
+
+    pub fn iterate(&self, state: &mut KalmanFilterIterateState) -> Option<Position> {
+        let left_tachometer_total_pulses = self.left_tachometer.get_total_pulses();
+        let right_tachometer_total_pulses = self.right_tachometer.get_total_pulses();
+        let left_tachometer_pulses =
+            left_tachometer_total_pulses - state.left_tachometer_total_pulses_previous;
+        let right_tachometer_pulses =
+            right_tachometer_total_pulses - state.right_tachometer_total_pulses_previous;
+
+        state.left_tachometer_total_pulses_previous = left_tachometer_total_pulses;
+        state.right_tachometer_total_pulses_previous = right_tachometer_total_pulses;
+
+        let distance_left_cm = left_tachometer_pulses as f32 * self.left_tachometer.cm_per_pulse();
+        let distance_right_cm =
+            right_tachometer_pulses as f32 * self.right_tachometer.cm_per_pulse();
+        let position_delta = Self::predict(
+            distance_left_cm,
+            distance_right_cm,
+            state.wingspan,
+            state.current_rotation,
+        );
+
+        state.current_rotation += position_delta.rotation_radians;
+
+        let position;
+        {
+            let mut position_guard = self.position.lock().unwrap();
+            if let Some(pos) = position_guard.as_mut() {
+                // Replace `&other_position` with whatever value you actually need to add
+                pos.add(position_delta);
+                position = Some(pos.clone());
+            } else {
+                position = None;
+            }
+        }
+
+        position
     }
 
     pub fn update(&mut self, position: Position) {

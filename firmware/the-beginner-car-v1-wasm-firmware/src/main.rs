@@ -20,7 +20,7 @@ use crate::{
     auto_script::AutoScript,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
-        KalmanFilter, TheBeginnerCarHardware,
+        KalmanFilter, KalmanFilterIterateState, TheBeginnerCarHardware,
         ir_sensor_array::{IrSensorArray, IrSensorArrayData},
         led::Led,
         wheel::{Wheel, motor::Motor, tachometer::Tachometer},
@@ -73,11 +73,11 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right_tachometer,
     );
 
-    dbg!("{}", kalman_filter.position());
-    motor_right.set_pwm(127);
-    FreeRtos::delay_ms(227 * 9);
-    motor_right.set_rpm(0);
-    dbg!("{}", kalman_filter.position());
+    // dbg!("{}", kalman_filter.position());
+    // motor_right.set_pwm(127);
+    // FreeRtos::delay_ms(227 * 9);
+    // motor_right.set_rpm(0);
+    // dbg!("{}", kalman_filter.position());
 
     let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 
@@ -111,6 +111,41 @@ pub fn main() -> anyhow::Result<()> {
             events.push(Event::AutoScriptStopped);
         }
     })?);
+
+    std::thread::Builder::new()
+        .name("position".to_string())
+        .spawn({
+            let events = events.clone();
+
+            move || {
+                let mut kalman_filter_state = kalman_filter.create_iterate_state();
+
+                loop {
+                    let position = kalman_filter.iterate(&mut kalman_filter_state);
+                    if let Some(position) = position {
+                        {
+                            let mut event_guard = events.lock().unwrap();
+                            let timestamp_unix_epoch_ms = std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .expect("Time went backwards")
+                                .as_millis()
+                                as u64;
+
+                            event_guard.push(Event::Position {
+                                x: position.x,
+                                y: position.y,
+                                rotation_radians: position.rotation_radians,
+                                timestamp_unix_epoch_ms,
+                            });
+                        }
+                        // TODO: check if out of bounds
+                    }
+
+                    FreeRtos::delay_ms(10);
+                }
+            }
+        })
+        .unwrap();
 
     std::thread::Builder::new()
         .stack_size(2_000)

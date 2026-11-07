@@ -45,7 +45,7 @@ export function createPermanentRoom(): PIXI.Container {
   const marker = createMarker({
     x: doorStepCornerX,
     y: doorStepCornerY,
-    color: 0x0000ff
+    color: 0x000000
   });
   container.addChild(marker);
 

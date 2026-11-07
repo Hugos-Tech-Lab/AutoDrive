@@ -33,9 +33,9 @@ export function createMarker(config: MarkerConfig): PIXI.Container {
       fontWeight: 'bold'
     }
   });
-  text.x = radius + 3;
-  text.y = -2;
-  const scale = 0.4;
+  text.x = radius;
+  text.y = 0;
+  const scale = 0.3;
   text.scale.x = scale;
   text.scale.y = -scale;
   container.addChild(text);

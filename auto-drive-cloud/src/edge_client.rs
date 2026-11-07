@@ -23,6 +23,7 @@ use crate::auto_drive_edge_service::v1::{
 };
 
 type HardwareHashMap = HashMap<String, HardwareDeviceState>;
+type HardwarePositions = HashMap<String, Pose>;
 
 pub enum StartAutoScriptResponse {
     Uuid { uuid: String },
@@ -49,6 +50,16 @@ pub enum ToEdgeMessage {
     WatchHardware {
         response_tx: oneshot::Sender<(HardwareHashMap, watch::Receiver<HardwareHashMap>)>,
     },
+    WatchPositions {
+        response_tx: oneshot::Sender<(HardwarePositions, watch::Receiver<HardwarePositions>)>,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Pose {
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,6 +89,7 @@ pub struct Hardware {
     pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
     pub watch_auto_scripts_overview: Sender<AutoScripts>,
     pub hardware_states_tx: watch::Sender<HardwareHashMap>,
+    pub hardware_positions_tx: watch::Sender<HardwarePositions>, // TODO: populate this
 }
 
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
@@ -101,6 +113,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
 
     let (incoming_tx, _) = broadcast::channel::<Event>(100);
     let (hardware_states_tx, _) = watch::channel::<HardwareHashMap>(HashMap::new());
+    let (hardware_positions_tx, _) = watch::channel::<HardwarePositions>(HashMap::new());
 
     let latest_auto_scripts_overview = Arc::new(Mutex::new(AutoScripts {
         running: vec![],
@@ -247,6 +260,8 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
         let the_beginner_car_auto_script_events = the_beginner_car_auto_script_events.clone();
         let hardware_states_tx = hardware_states_tx.clone();
+        let hardware_positions_tx = hardware_positions_tx.clone();
+
         async move {
             while let Some(value) = receiver.recv().await {
                 match value {
@@ -381,6 +396,12 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             hardware_states_tx.subscribe(),
                         ));
                     }
+                    ToEdgeMessage::WatchPositions { response_tx } => {
+                        let _ = response_tx.send((
+                            hardware_positions_tx.borrow().clone(),
+                            hardware_positions_tx.subscribe(),
+                        ));
+                    }
                 };
             }
         }
@@ -393,5 +414,6 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         watch_auto_scripts_overview: incoming_auto_scripts_tx,
         the_beginner_car_auto_script_events,
         hardware_states_tx,
+        hardware_positions_tx,
     })
 }

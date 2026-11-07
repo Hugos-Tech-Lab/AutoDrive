@@ -5,10 +5,13 @@
   import { createPermanentRoom } from './dashboard/permanentRoom';
   import { createBoundaries001 } from './dashboard/boundaries001';
   import { createHardware001 } from './dashboard/hardware001';
-  import { createGridLayer } from './dashboard/uiGridLayer'; // <-- Import the new module
+  import { createGridLayer } from './dashboard/uiGridLayer';
+  import { endpointRoot } from '../../endpoint';
 
   let container: HTMLDivElement;
   let app: PIXI.Application;
+  type Pose = { x: number; y: number; rotation: number };
+  let hardwareList = $state<Pose[]>([]);
 
   onMount(async () => {
     app = new PIXI.Application();
@@ -71,8 +74,26 @@
     app.stage.addChild(compass);
   });
 
+  const sse = new EventSource(`${endpointRoot()}/hardware/positions`);
+
+  sse.addEventListener("overview", (event) => {
+    try {
+      const json = JSON.parse(event.data);
+      const dataObj = json.data || json; 
+      hardwareList = Object.values(dataObj);
+    } catch (err) {
+      console.error("Failed to parse SSE overview data", err);
+    }
+  });
+
+  sse.onerror = (err) => {
+    console.error("SSE Error on hardware overview", err);
+  };
+
+
   onDestroy(() => {
     if (app) {
+      sse.close();
       app.destroy(true, { children: true });
     }
   });

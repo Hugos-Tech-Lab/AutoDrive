@@ -6,7 +6,7 @@ use crate::auto_drive_edge_service::{
     v1::{
         AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent,
         InfraredLedReadingsEvent, LogEvent, LogLevel, LogSystemOrigin, MotorSpeedUpdatedEvent,
-        SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsResponse,
+        PositionEvent, SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsResponse,
         watch_the_beginner_car_events_response::Event,
     },
 };
@@ -104,6 +104,20 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
                     front_far_right: front_far_right as u32,
                     back_center: back_center as u32,
                     back_left: back_left as u32,
+                })),
+            },
+            TheBeginnerCarOutgoingMessages::Position {
+                x,
+                y,
+                rotation_radians,
+                timestamp_unix_epoch_ms,
+            } => WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::PositionEvent(PositionEvent {
+                    number_plate: "TODO".to_string(), // TODO
+                    x,
+                    y,
+                    rotation_radians,
+                    timestamp_unix_epoch_ms,
                 })),
             },
         }

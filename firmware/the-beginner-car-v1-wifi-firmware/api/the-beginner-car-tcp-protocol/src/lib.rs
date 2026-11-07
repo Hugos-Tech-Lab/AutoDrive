@@ -61,6 +61,12 @@ pub enum TheBeginnerCarOutgoingMessages {
         back_center: u16,
         back_left: u16,
     },
+    Position {
+        x: f32,
+        y: f32,
+        rotation_radians: f32,
+        timestamp_unix_epoch_ms: u64,
+    },
 }
 
 /// Serializes a message with a 4-byte big-endian length prefix.

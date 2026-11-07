@@ -209,6 +209,52 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     });
 
     tokio::spawn({
+        let hardware_positions_tx = hardware_positions_tx.clone();
+        let mut client = client.clone();
+
+        async move {
+            loop {
+                match client
+                    .watch_hardware_status(WatchHardwareStatusRequest {})
+                    .await
+                {
+                    Ok(response) => {
+                        let mut stream = response.into_inner();
+                        while let Some(result) = stream.next().await {
+                            match result {
+                                Ok(event) => {
+                                    hardware_states_tx.send_modify(|v| {
+                                        for hardware in event.hardware {
+                                            let entry = v
+                                                .entry(hardware.number_plate.clone())
+                                                .or_insert(HardwareDeviceState {
+                                                    number_plate: hardware.number_plate,
+                                                    category: hardware.category,
+                                                    is_connected: hardware.is_connected,
+                                                });
+                                            entry.is_connected = hardware.is_connected;
+                                        }
+                                    });
+                                }
+                                Err(err) => {
+                                    warn!(
+                                        "Hardware status stream disconnected: {err}. Reconnecting..."
+                                    );
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        warn!("Failed to subscribe to hardware status: {err}. Retrying in 5s...");
+                    }
+                }
+                sleep(Duration::from_secs(5)).await;
+            }
+        }
+    });
+
+    tokio::spawn({
         let hardware_states_tx = hardware_states_tx.clone();
         let mut client = client.clone();
 

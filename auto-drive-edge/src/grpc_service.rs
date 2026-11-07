@@ -1,6 +1,7 @@
 use std::{pin::Pin, sync::Arc};
 
 use futures_util::{Stream, StreamExt};
+use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Position;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
 use tonic::{Request, Response, Status};
@@ -10,9 +11,10 @@ use crate::{
         CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware,
         NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse, RunAutoScriptRequest,
         RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
-        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwareStatusRequest,
-        WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
-        WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
+        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwarePoseRequest,
+        WatchHardwarePoseResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse,
+        WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse,
+        auto_drive_edge_service_server::AutoDriveEdgeService,
     },
     auto_script_manager::AutoScriptManager,
     grpc_service::types::to_grpc_log_message,
@@ -177,6 +179,50 @@ impl AutoDriveEdgeService for GrpcService {
                 }
             },
         );
+
+        Ok(Response::new(Box::pin(stream)))
+    }
+
+    type WatchHardwarePoseStream =
+        Pin<Box<dyn Stream<Item = Result<WatchHardwarePoseResponse, Status>> + Send + 'static>>;
+
+    async fn watch_hardware_pose(
+        &self,
+        _request: Request<WatchHardwarePoseRequest>,
+    ) -> Result<Response<Self::WatchHardwarePoseStream>, Status> {
+        // TODO: find the ID from the request
+        let receiver = self.the_beginner_cars.first().unwrap();
+        let number_plate = receiver.number_plate.clone();
+
+        let stream = BroadcastStream::new(receiver.incoming_tx.subscribe()).filter_map({
+            move |result| {
+                let number_plate = number_plate.clone();
+                async move {
+                    match result {
+                        Ok(message) => match message {
+                            Position {
+                                x,
+                                y,
+                                rotation_radians,
+                                timestamp_unix_epoch_ms,
+                            } => Some(Ok(WatchHardwarePoseResponse {
+                                number_plate,
+                                x,
+                                y,
+                                rotation_radians,
+                                timestamp_unix_epoch_ms,
+                            })),
+                            _ => None,
+                        },
+                        Err(_) => {
+                            // BroadcastStream reports lagged receivers here.
+                            // Skip lost messages and continue streaming.
+                            None
+                        }
+                    }
+                }
+            }
+        });
 
         Ok(Response::new(Box::pin(stream)))
     }

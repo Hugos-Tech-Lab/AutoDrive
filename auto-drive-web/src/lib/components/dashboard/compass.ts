@@ -7,7 +7,8 @@ export class Compass extends PIXI.Container {
 
       const circle = new PIXI.Graphics();
       circle.circle(0, 0, 40);
-      circle.stroke({ width: 2, color: 0x334155 });
+      circle.stroke({ width: 4, color: 0x000000 });
+      circle.alpha = 0.5;
       this.addChild(circle);
 
       const northPointer = new PIXI.Graphics();

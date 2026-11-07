@@ -10,8 +10,8 @@ export function createMarker(config: MarkerConfig): PIXI.Container {
   const {
     x,
     y,
-    color = 0xff0000,
-   
+    color = 0x000000,
+
   } = config;
 
   let radius = 2;

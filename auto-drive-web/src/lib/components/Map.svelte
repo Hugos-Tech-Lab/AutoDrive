@@ -3,6 +3,7 @@
   import * as PIXI from 'pixi.js';
   import { Compass } from './dashboard/compass';
   import { createPermanentRoom } from './dashboard/permanentRoom';
+  import { createBoundaries001 } from './dashboard/boundaries001';
 
   let container: HTMLDivElement;
   let app: PIXI.Application;
@@ -24,7 +25,7 @@
       container.appendChild(app.canvas);
     }
 
-    const pixelsPerMeter = 266; // 266
+    const pixelsPerMeter = 266;
 
     const mapStartBottomLeftXMeters = 3;
     const mapStartBottomLeftYMeters = 1;
@@ -46,10 +47,10 @@
     );
 
     const permanentRoom = createPermanentRoom();
-    permanentRoom.x = 0;
-    permanentRoom.y = 0;
+    const boundaries = createBoundaries001();
 
     worldContainer.addChild(permanentRoom);
+    worldContainer.addChild(boundaries);
 
     app.stage.addChild(worldContainer);
 

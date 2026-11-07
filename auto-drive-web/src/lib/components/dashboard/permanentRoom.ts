@@ -2,6 +2,9 @@ import * as PIXI from "pixi.js";
 import { createTileLayer } from "./tiles";
 import { createMarker } from "./marker";
 
+export const doorStepCornerX = 455; 
+export const doorStepCornerY = 254.5; 
+
 export function createPermanentRoom(): PIXI.Container {
   const container = new PIXI.Container();
 
@@ -15,13 +18,10 @@ export function createPermanentRoom(): PIXI.Container {
   tiles.x = 10.4;
   tiles.y = 12;
 
-  const markerXCm = 455;
-  const markerYCm = 254.5;
-
   container.addChild(tiles);
 
   const bottomRightTableLeg = new PIXI.Graphics();
-  bottomRightTableLeg.rect(markerXCm - 54.2, markerYCm + 40, 3.5, 3.5);
+  bottomRightTableLeg.rect(doorStepCornerX - 54.2, doorStepCornerY + 40, 3.5, 3.5);
   bottomRightTableLeg.fill({ color: 0x000000, alpha: 0.8 });
   container.addChild(bottomRightTableLeg);
 
@@ -46,8 +46,8 @@ export function createPermanentRoom(): PIXI.Container {
   container.addChild(door);
 
   const marker = createMarker({
-    x: markerXCm,
-    y: markerYCm,
+    x: doorStepCornerX,
+    y: doorStepCornerY,
     color: 0x0000ff
   });
   container.addChild(marker);

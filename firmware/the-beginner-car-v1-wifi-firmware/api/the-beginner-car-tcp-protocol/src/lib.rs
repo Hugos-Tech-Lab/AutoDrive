@@ -24,7 +24,7 @@ pub enum TheBeginnerCarIncomingMessages {
         x: f32,
         y: f32,
         rotation_radians: f32,
-        timestamp_unix_epoch_ms: u32,
+        timestamp_unix_epoch_ms: u64,
     },
     CancelAutoScript {
         run_uuid: String,

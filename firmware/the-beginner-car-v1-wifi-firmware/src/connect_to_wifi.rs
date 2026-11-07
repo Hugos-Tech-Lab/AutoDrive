@@ -1,13 +1,25 @@
 use dotenvy_macro::dotenv;
-use esp_idf_svc::{wifi::{BlockingWifi, ClientConfiguration, Configuration, EspWifi}};
+use esp_idf_svc::handle::RawHandle;
+use esp_idf_svc::wifi::{BlockingWifi, ClientConfiguration, Configuration, EspWifi};
+use esp_idf_sys::{esp_netif_set_hostname, esp_wifi_set_ps, wifi_ps_type_t_WIFI_PS_NONE};
 
-use esp_idf_sys::{esp_wifi_set_ps, wifi_ps_type_t_WIFI_PS_NONE};
 use log::info;
+use std::ffi::CString;
 
 const SSID: &str = dotenv!("WIFI_NAME");
-const PASSWORD: &str = dotenv!("WIFI_PASSWORD"); 
+const PASSWORD: &str = dotenv!("WIFI_PASSWORD");
 
 pub fn connect_to_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Result<()> {
+    let netif_sta_ptr = wifi.wifi().sta_netif().handle();
+    let client_name = CString::new("my-custom-esp").unwrap();
+
+    unsafe {
+        let err = esp_netif_set_hostname(netif_sta_ptr, client_name.as_ptr());
+        if err != 0 {
+            log::warn!("Failed to apply DHCP Client Name, error code: {err}");
+        }
+    }
+
     let wifi_configuration: Configuration = Configuration::Client(ClientConfiguration {
         ssid: SSID.try_into().unwrap(),
         password: PASSWORD.try_into().unwrap(),
@@ -28,7 +40,9 @@ pub fn connect_to_wifi(wifi: &mut BlockingWifi<EspWifi<'static>>) -> anyhow::Res
     let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
     info!("Wifi Interface info: {ip_info:?}");
 
-    unsafe { esp_wifi_set_ps(wifi_ps_type_t_WIFI_PS_NONE); }
+    unsafe {
+        esp_wifi_set_ps(wifi_ps_type_t_WIFI_PS_NONE);
+    }
 
     Ok(())
 }

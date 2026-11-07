@@ -3,7 +3,7 @@ pub mod battery_monitor;
 
 use auto_drive_common_types::LogSystemOrigin;
 use common_firmware::{logger::init_logging, spi_master::SpiMaster};
-use esp_idf_hal::adc::oneshot::AdcDriver;
+use esp_idf_hal::{adc::oneshot::AdcDriver, sys};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     hal::gpio::{PinDriver, Pull},
@@ -56,6 +56,22 @@ pub fn main() -> anyhow::Result<()> {
     let peripherals = Peripherals::take()?;
     let sys_loop = EspSystemEventLoop::take()?;
     let nvs = EspDefaultNvsPartition::take()?;
+    let mut mac = [0u8; 6];
+
+    unsafe {
+        sys::esp_read_mac(mac.as_mut_ptr(), sys::esp_mac_type_t_ESP_MAC_WIFI_STA);
+    }
+
+    let mac_string = mac
+        .iter()
+        .map(|b| format!("{b:02X}"))
+        .collect::<Vec<_>>()
+        .join(":");
+
+    // let id = format!("esp32-{:02X}{:02X}", mac[4], mac[5]);
+    dbg!(&mac_string);
+
+    thread::sleep(Duration::from_secs(1));
 
     if reason == 9 {
         thread::sleep(Duration::from_secs(1));

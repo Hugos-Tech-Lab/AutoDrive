@@ -73,21 +73,11 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right_tachometer,
     );
 
-    // dbg!("{}", kalman_filter.position());
-    // motor_right.set_pwm(127);
-    // FreeRtos::delay_ms(227 * 9);
-    // motor_right.set_rpm(0);
-    // dbg!("{}", kalman_filter.position());
-
     let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 
     let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
     let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
 
-    // let led_left = Led::new(peripherals.pins.gpio13.into());
-    // let led_right = Led::new(peripherals.pins.gpio10.into());
-
-    // pin.set_color(20, 2, 2);
     if reason == 9 {
         // pin.set_color(9, 0, 200);
         FreeRtos::delay_ms(1000);

@@ -10,8 +10,11 @@
 
   let container: HTMLDivElement;
   let app: PIXI.Application;
-  type Pose = { x: number; y: number; rotation: number };
+  
+  type Pose = { id?: string; x: number; y: number; rotation: number };
   let hardwareList = $state<Pose[]>([]);
+
+  let hardwareContainer: PIXI.Container;
 
   onMount(async () => {
     app = new PIXI.Application();
@@ -47,13 +50,13 @@
 
     const permanentRoom = createPermanentRoom();
     const boundaries = createBoundaries001();
-    const hardware = createHardware001();
-    hardware.x = 400;
-    hardware.y = 200;
+    
+    // Initialize the hardware container that will hold all dynamic hardware items
+    hardwareContainer = new PIXI.Container();
 
     worldContainer.addChild(permanentRoom);
     worldContainer.addChild(boundaries);
-    worldContainer.addChild(hardware);
+    worldContainer.addChild(hardwareContainer);
 
     app.stage.addChild(worldContainer);
 
@@ -74,6 +77,22 @@
     app.stage.addChild(compass);
   });
 
+  $effect(() => {
+    if (!hardwareContainer) return;
+
+    // TODO: map by ID
+    hardwareContainer.removeChildren();
+
+    hardwareList.forEach((pose) => {
+      const hwItem = createHardware001();
+      hwItem.x = pose.x;
+      hwItem.y = pose.y;
+      hwItem.rotation = pose.rotation;
+      
+      hardwareContainer.addChild(hwItem);
+    });
+  });
+
   const sse = new EventSource(`${endpointRoot()}/hardware/positions`);
 
   sse.addEventListener("overview", (event) => {
@@ -89,7 +108,6 @@
   sse.onerror = (err) => {
     console.error("SSE Error on hardware overview", err);
   };
-
 
   onDestroy(() => {
     if (app) {

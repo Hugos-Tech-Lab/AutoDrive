@@ -13,12 +13,14 @@ msgid "/"
 msgstr "/"
 
 #. /dashboard
+#. /create-account
 #. /profile
 #. /dashboard
 #. /profile
 #. /create-account
 #. /sign-in
 #: src/lib/components/LandingPage.svelte
+#: src/lib/components/SignIn.svelte
 #: src/lib/components/UserAccount.svelte
 #: src/lib/components/UserAccount.svelte
 #: src/lib/components/UserAccountButton.svelte
@@ -1230,4 +1232,8 @@ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 msgid "Position"
+msgstr ""
+
+#: src/lib/components/SignIn.svelte
+msgid "Don't have an account? <0>Create one</0>"
 msgstr ""

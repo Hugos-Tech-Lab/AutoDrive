@@ -1,17 +1,19 @@
 <script lang="ts">
   import { supabase } from "$lib/supabaseClient";
+  import { goto } from "$app/navigation";
 
   let loading = $state(false);
+  let errorMessage = $state("");
 
   let loginEmail = $state("");
   let loginPassword = $state("");
 
-  let signupEmail = $state("");
-  let signupPassword = $state("");
+  let { onSwitchToSignup }: { onSwitchToSignup?: () => void } = $props();
 
   const handlePasswordLogin = async () => {
     try {
       loading = true;
+      errorMessage = ""; // Clear old errors
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
@@ -19,11 +21,8 @@
       });
 
       if (error) throw error;
-
-      // Supabase has authenticated the user.
-      // Add navigation here if required.
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Something went wrong.");
+      errorMessage = error instanceof Error ? error.message : "Something went wrong.";
     } finally {
       loading = false;
     }
@@ -42,6 +41,12 @@
       }}
     >
       <h2 class="description">Sign in via password</h2>
+
+      {#if errorMessage}
+        <div class="error-message" style="color: red; margin-bottom: 1rem;">
+          {errorMessage}
+        </div>
+      {/if}
 
       <div>
         <label for="login-email">Email</label>
@@ -75,6 +80,20 @@
         >
           <span>{loading ? "Loading..." : "Sign in"}</span>
         </button>
+      </div>
+
+      <div style="margin-top: 1rem; text-align: center;">
+        <p>
+          Don't have an account? 
+          <button 
+            type="button" 
+            class="link-button" 
+            onclick={() => goto("/create-account")}
+            style="background: none; border: none; color: blue; text-decoration: underline; cursor: pointer; padding: 0;"
+          >
+            Create one
+          </button>
+        </p>
       </div>
     </form>
   </div>

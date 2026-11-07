@@ -8,9 +8,6 @@ export interface TileConfig {
   maxMetersY: number;
 }
 
-/**
- * Generates and returns a PIXI.Graphics object containing the background and tiles.
- */
 export function createTileLayer(config: TileConfig): PIXI.Graphics {
   const { originX, originY, pixelsPerMeter, maxMetersX, maxMetersY } = config;
 

@@ -25,6 +25,9 @@
       container.appendChild(app.canvas);
     }
 
+    const markerXCm = 455;
+    const markerYCm = 254.5;
+
     const originX = 0;   
     const originY = heightPixels;  
     const pixelsPerMeter = 266;
@@ -32,8 +35,8 @@
     const maxMetersX = 3;
     const maxMetersY = 2;
 
-    const bottomLeftX = 3; // in meters (300 cm)
-    const bottomLeftY = 1; // in meters (100 cm)
+    const bottomLeftX = 3;
+    const bottomLeftY = 1;
     
     const bottomLeftXCm = bottomLeftX * 100;
     const bottomLeftYCm = bottomLeftY * 100;
@@ -47,7 +50,7 @@
       originY,
       pixelsPerMeter,
       maxMetersX,
-      maxMetersY
+      maxMetersY,
     });
     app.stage.addChild(tileLayer);
 
@@ -104,9 +107,6 @@
     }
 
     app.stage.addChild(gridLayer);
-
-    const markerXCm = 455;
-    const markerYCm = 254.5;
     
     // 4. Step Overlay Box (Bottom-Left anchored to marker)
     const stepXCm = markerXCm; // Bottom-left X in cm

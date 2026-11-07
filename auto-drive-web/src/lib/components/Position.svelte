@@ -34,6 +34,9 @@
 
     const bottomLeftX = 3; // in meters (300 cm)
     const bottomLeftY = 1; // in meters (100 cm)
+    
+    const bottomLeftXCm = bottomLeftX * 100;
+    const bottomLeftYCm = bottomLeftY * 100;
 
     const totalWidthPx = maxMetersX * pixelsPerMeter;
     const totalHeightPx = maxMetersY * pixelsPerMeter;
@@ -102,30 +105,44 @@
 
     app.stage.addChild(gridLayer);
 
+    const markerXCm = 455;
+    const markerYCm = 254.5;
+    
+    // 4. Step Overlay Box (Bottom-Left anchored to marker)
+    const stepXCm = markerXCm; // Bottom-left X in cm
+    const stepYCm = markerYCm; // Bottom-left Y in cm
+    const stepWidthCm = 112.2;   // 1 meter wide
+    const stepHeightCm = 114;
+
+    const stepWidthPx = (stepWidthCm / 100) * pixelsPerMeter;
+    const stepHeightPx = (stepHeightCm / 100) * pixelsPerMeter;
+
+    // Convert bottom-left world coordinates to screen pixels
+    const blScreenX = originX + ((stepXCm - bottomLeftXCm) / 100) * pixelsPerMeter;
+    const blScreenY = originY - ((stepYCm - bottomLeftYCm) / 100) * pixelsPerMeter;
+
+    // Pixi rect() takes the top-left corner:
+    const rectX = blScreenX;
+    const rectY = blScreenY - stepHeightPx; 
+
+    const step = new PIXI.Graphics();
+    step.rect(rectX, rectY, stepWidthPx, stepHeightPx);
+    step.fill({ color: 0x636363, alpha: 0.4 });
+    // step.stroke({ width: 0.128 * pixelsPerMeter, color: 0x818cf8 });
+    app.stage.addChild(step);
+
     const marker = createMarker({
-      xCm: 455,
-      yCm: 254.5,
+      xCm: markerXCm,
+      yCm: markerYCm,
       originX,
       originY,
       pixelsPerMeter,
-      bottomLeftXCm: bottomLeftX * 100,
-      bottomLeftYCm: bottomLeftY * 100,
+      bottomLeftXCm,
+      bottomLeftYCm,
       color: 0x000000,
-      label: '(455cm, 254.5cm)'
+      label: `(${markerXCm}cm, ${markerYCm}cm)`
     });
     app.stage.addChild(marker);
-    
-    // 4. Step Overlay Box
-    const step = new PIXI.Graphics();
-    const rectX = widthPixels - pixelsPerMeter;
-    const rectY = heightPixels - (2 * pixelsPerMeter);
-    const rectWidth = 1 * pixelsPerMeter;
-    const rectHeight = 1 * pixelsPerMeter;
-
-    step.rect(rectX, rectY, rectWidth, rectHeight);
-    step.fill({ color: 0x636363, alpha: 0.4 });
-    step.stroke({ width: 4, color: 0x818cf8 });
-    app.stage.addChild(step);
 
     // 5. Compass Widget
     const compass = new Compass();

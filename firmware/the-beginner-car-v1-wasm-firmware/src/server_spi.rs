@@ -73,7 +73,7 @@ impl ServerSpi {
                 x,
                 y,
                 rotation_radians,
-                // time,
+                timestamp_unix_epoch_ms,
             } => {
                 let position = Position {
                     x,

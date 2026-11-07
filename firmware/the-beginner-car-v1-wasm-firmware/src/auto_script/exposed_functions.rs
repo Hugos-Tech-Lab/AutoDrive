@@ -137,7 +137,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.led_left().on().unwrap();
+        // hardware.led_left().on().unwrap();
     }
 
     unsafe extern "C" fn set_led_left_off(exec_env: *mut c_void) {
@@ -151,7 +151,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.led_left().off().unwrap();
+        // hardware.led_left().off().unwrap();
     }
 
     unsafe extern "C" fn set_led_right_on(exec_env: *mut c_void) {
@@ -165,7 +165,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.led_right().on().unwrap();
+        // hardware.led_right().on().unwrap();
     }
 
     unsafe extern "C" fn set_led_right_off(exec_env: *mut c_void) {
@@ -179,7 +179,7 @@ impl WasmExports for TheBeginnerCarExports {
         }
 
         let mut hardware = wasm_data.hardware.lock().unwrap();
-        hardware.led_right().off().unwrap();
+        // hardware.led_right().off().unwrap();
     }
 
     unsafe extern "C" fn get_ir_back_center_value(exec_env: *mut c_void) -> u16 {

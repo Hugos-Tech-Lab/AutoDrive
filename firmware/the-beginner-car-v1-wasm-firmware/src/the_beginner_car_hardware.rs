@@ -170,7 +170,7 @@ pub struct TheBeginnerCarHardware {
     kalman_filter: KalmanFilter,
     emergency_stop: EmergencyStop,
     // led_left: Led,
-    led_right: Led,
+    // led_right: Led,
     battery_voltage: f32,
 }
 
@@ -179,7 +179,7 @@ impl TheBeginnerCarHardware {
         wheel_left: Wheel,
         wheel_right: Wheel,
         // led_left: Led,
-        led_right: Led,
+        // led_right: Led,
         ir_sensor_array: Arc<IrSensorArray>,
     ) -> Self {
         let kalman_filter = KalmanFilter::new(
@@ -191,7 +191,7 @@ impl TheBeginnerCarHardware {
             wheel_left,
             wheel_right,
             // led_left,
-            led_right,
+            // led_right,
             battery_voltage: 0.0,
             ir_sensor_array,
             kalman_filter,
@@ -199,13 +199,13 @@ impl TheBeginnerCarHardware {
         }
     }
 
-    pub fn led_left(&mut self) -> &mut Led {
-        &mut self.led_right // TODO fix this
-    }
+    // pub fn led_left(&mut self) -> &mut Led {
+    //     &mut self.led_right // TODO fix this
+    // }
 
-    pub fn led_right(&mut self) -> &mut Led {
-        &mut self.led_right
-    }
+    // pub fn led_right(&mut self) -> &mut Led {
+    //     &mut self.led_right
+    // }
 
     pub fn wheel_left(&mut self) -> &mut Wheel {
         &mut self.wheel_left
@@ -302,7 +302,7 @@ impl TheBeginnerCarHardware {
         self.wheel_left.motor().stop().unwrap();
         self.wheel_right.motor().stop().unwrap();
         // self.led_left.stop().unwrap();
-        self.led_right.stop().unwrap();
+        // self.led_right.stop().unwrap();
     }
 
     pub fn run_calibration(&mut self) {

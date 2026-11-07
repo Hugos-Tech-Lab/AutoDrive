@@ -20,6 +20,7 @@ pub enum RequestToHardware {
         x: f32, // in meters
         y: f32,
         rotation_radians: f32,
+        timestamp_unix_epoch_ms: u64,
     },
     NotifyBatteryReadings {
         voltage: f32,
@@ -46,13 +47,32 @@ pub enum Event {
         back_center: u16,
     },
     AutoScriptStopped,
+    Position {
+        x: f32,
+        y: f32,
+        rotation_radians: f32,
+        timestamp_unix_epoch_ms: u64,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ResponseFromHardware {
     Ok,
-    Status { light_on: bool, motor_speed: i32 },
-    Events { events: Vec<Event> },
-    AutoScriptStarted { id: i32 },
+    Status {
+        light_on: bool,
+        motor_speed: i32,
+    },
+    Events {
+        events: Vec<Event>,
+    },
+    AutoScriptStarted {
+        id: i32,
+    },
     CalibrationReadings {},
+    Position {
+        x: f32,
+        y: f32,
+        rotation_radians: f32,
+        timestamp_unix_epoch_ms: u64,
+    },
 }

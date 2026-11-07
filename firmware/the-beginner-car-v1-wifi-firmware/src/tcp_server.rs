@@ -73,18 +73,37 @@ where
             postcard::from_bytes(&bytes).context("decoding incoming message")?;
 
         match message {
-            TheBeginnerCarIncomingMessages::SetMotorASpeed { speed } => {
+            TheBeginnerCarIncomingMessages::SetMotorLeftSpeed { speed } => {
                 set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed)
                     .map_err(|err| anyhow::anyhow!("{err:?}"))?;
             }
 
-            TheBeginnerCarIncomingMessages::SetMotorBSpeed { speed } => {
+            TheBeginnerCarIncomingMessages::SetMotorRightSpeed { speed } => {
                 set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed)
                     .map_err(|err| anyhow::anyhow!("{err:?}"))?;
             }
 
-            TheBeginnerCarIncomingMessages::InformPositionFromCamera { x, y } => {
-                println!("InformPositionFromCamera: {:?} {:?}", x, y);
+            TheBeginnerCarIncomingMessages::NotifyPositionFromCamera {
+                x,
+                y,
+                rotation_radians,
+                timestamp_unix_epoch_ms,
+            } => {
+                let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+
+                hardware_sender
+                    .send(HardwareMessage {
+                        request: RequestToHardware::NotifyPositionFromCamera {
+                            x,
+                            y,
+                            rotation_radians,
+                            timestamp_unix_epoch_ms,
+                        },
+                        response_tx: sender,
+                    })
+                    .context("sending RunAutoScript to hardware")?;
+
+                let _ = wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
             }
 
             TheBeginnerCarIncomingMessages::RunAutoScript { script } => {

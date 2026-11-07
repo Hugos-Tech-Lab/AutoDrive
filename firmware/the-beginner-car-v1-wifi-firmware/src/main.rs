@@ -180,7 +180,7 @@ pub fn main() -> anyhow::Result<()> {
                                     the_beginner_car_spi_protocol::Event::InfraredLedReadings { back_center, front_left, front_center, front_right, front_far_left, front_far_right, back_left  } => {
                                         // dbg!(value);
                                         sender_tx
-                                            .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { back_center, front_left, front_center, front_right })
+                                            .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { front_far_left, front_left, front_center, front_right, front_far_right, back_center, back_left  })
                                             .unwrap()
                                     }
                                     the_beginner_car_spi_protocol::Event::AutoScriptStopped => {
@@ -188,6 +188,11 @@ pub fn main() -> anyhow::Result<()> {
                                             .send(TheBeginnerCarOutgoingMessages::AutoScriptStopped)
                                             .unwrap()
                                     }
+                                    the_beginner_car_spi_protocol::Event::Position { x, y, rotation_radians, timestamp_unix_epoch_ms } => {
+                                        sender_tx
+                                            .send(TheBeginnerCarOutgoingMessages::Position { x, y, rotation_radians, timestamp_unix_epoch_ms })
+                                            .unwrap()
+                                    },
                                 }
                             }
                         }

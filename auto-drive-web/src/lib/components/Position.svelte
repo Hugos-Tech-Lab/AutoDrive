@@ -79,10 +79,10 @@
     app.stage.addChild(gridLayer);
 
     const rectangle = new PIXI.Graphics();
-    const rectX = originX + (0.5 * pixelsPerMeter);
-    const rectY = originY - (2.5 * pixelsPerMeter);
-    const rectWidth = 1.8 * pixelsPerMeter;
-    const rectHeight = 1.5 * pixelsPerMeter;
+    const rectX = originX + (3 * pixelsPerMeter);
+    const rectY = originY - (3 * pixelsPerMeter);
+    const rectWidth = pixelsPerMeter;
+    const rectHeight = pixelsPerMeter;
 
     rectangle.rect(rectX, rectY, rectWidth, rectHeight);
     rectangle.fill({ color: 0x4f46e5 }); 

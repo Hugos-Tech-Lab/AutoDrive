@@ -641,6 +641,7 @@ msgstr "Algorithms"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
@@ -1264,6 +1265,7 @@ msgid "Calibration"
 msgstr "Calibration"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Position"
 msgstr "Position"
 
@@ -1314,3 +1316,6 @@ msgstr "Wifi MCU. Uptime: 00:00:00. Software: #1233987."
 #: src/lib/components/hardware/Status.svelte
 msgid "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
 msgstr "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
+
+#~ msgid "PixiJS + Svelte Headstart"
+#~ msgstr "PixiJS + Svelte Headstart"

@@ -641,6 +641,7 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
 #: src/lib/components/LiveHardwareBanner.svelte
@@ -1264,6 +1265,7 @@ msgid "Calibration"
 msgstr ""
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Position"
 msgstr ""
 
@@ -1314,3 +1316,6 @@ msgstr ""
 #: src/lib/components/hardware/Status.svelte
 msgid "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
 msgstr ""
+
+#~ msgid "PixiJS + Svelte Headstart"
+#~ msgstr ""

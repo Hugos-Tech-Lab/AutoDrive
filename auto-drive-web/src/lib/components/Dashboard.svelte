@@ -7,6 +7,7 @@
   import UserAccountButton from "./UserAccountButton.svelte";
   import type { AuthState } from "$lib/auth.svelte";
   import Status from "./hardware/Status.svelte";
+  import Position from "./Position.svelte";
 
   interface Props {
     session: AuthState;
@@ -105,6 +106,10 @@ live overview of car position in room
 
 {#if selectedBuild !== "Time Trials" && selectedBuildOption === "Status"}
   <Status />
+{/if}
+
+{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Position"}
+  <Position />
 {/if}
 
 {#if selectedBuild === "Time Trials" && selectedPlayOption === "Leaderboard"}

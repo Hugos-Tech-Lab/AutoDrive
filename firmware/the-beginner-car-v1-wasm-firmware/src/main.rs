@@ -5,24 +5,19 @@ use std::{
 
 use auto_drive_common_types::LogSystemOrigin;
 use common_firmware::{logger::init_logging, spi_slave::SpiSlaveHardware};
+use esp_idf_svc::hal::delay::FreeRtos;
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
-use esp_idf_svc::hal::{
-    adc::{
-        attenuation::DB_12,
-        oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
-    },
-    delay::FreeRtos,
-};
 use the_beginner_car_spi_protocol::Event;
 
 use crate::{
     auto_script::AutoScript,
+    hardware_config::load_hardware_config,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
-        KalmanFilter, KalmanFilterIterateState, TheBeginnerCarHardware,
-        ir_sensor_array::{IrSensorArray, IrSensorArrayData},
-        led::Led,
+        TheBeginnerCarHardware,
+        ir_sensor_array::IrSensorArray,
+        kalman_filter::KalmanFilter,
         wheel::{Wheel, motor::Motor, tachometer::Tachometer},
     },
 };
@@ -30,6 +25,7 @@ use crate::{
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod auto_script;
+pub mod hardware_config;
 pub mod server_spi;
 pub mod the_beginner_car_hardware;
 
@@ -49,13 +45,15 @@ pub fn main() -> anyhow::Result<()> {
     info!("starting");
     let peripherals = Peripherals::take()?;
 
-    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio9.into());
-    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio0.into());
+    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio16.into());
+    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio17.into());
 
-    let mut kalman_filter = KalmanFilter::new(
+    let kalman_filter = KalmanFilter::new(
         wheel_left_tachometer.clone(),
         wheel_right_tachometer.clone(),
     );
+
+    let hardware_config = load_hardware_config()?.unwrap_or_default();
 
     let motor_left = Motor::new(
         peripherals.pins.gpio7.into(),
@@ -63,6 +61,7 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.channel0,
         peripherals.ledc.timer1,
         wheel_left_tachometer.clone(),
+        hardware_config.left_motor.clone(),
     );
 
     let motor_right = Motor::new(
@@ -70,10 +69,11 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.pins.gpio10.into(),
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
-        wheel_right_tachometer,
+        wheel_right_tachometer.clone(),
+        hardware_config.right_motor.clone(),
     );
 
-    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
+    // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 
     let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
     let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
@@ -90,8 +90,11 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right,
         // led_right,
         ir_sensor_array.clone(),
+        kalman_filter.clone(),
+        hardware_config,
     )));
 
+    // let latest_position: Arc<Mutex<Option<Position>>> = Arc::new(Mutex::new(None));
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
     let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
@@ -111,27 +114,36 @@ pub fn main() -> anyhow::Result<()> {
                 let mut kalman_filter_state = kalman_filter.create_iterate_state();
 
                 loop {
-                    let position = kalman_filter.iterate(&mut kalman_filter_state);
-                    if let Some(position) = position {
-                        {
-                            let mut event_guard = events.lock().unwrap();
-                            let timestamp_unix_epoch_ms = std::time::SystemTime::now()
-                                .duration_since(std::time::UNIX_EPOCH)
-                                .expect("Time went backwards")
-                                .as_millis()
-                                as u64;
+                    let _ = kalman_filter.iterate(&mut kalman_filter_state);
+                    // TODO: SAFETY?? check position isn't out of bounds or anything like that.
+                    // {
 
-                            event_guard.push(Event::Position {
-                                x: position.x,
-                                y: position.y,
-                                rotation_radians: position.rotation_radians,
-                                timestamp_unix_epoch_ms,
-                            });
-                        }
-                        // TODO: check if out of bounds
-                    }
+                    // let latest_position =
+                    // }
+                    // let Some(position) {
+                    //     //
+                    // }
 
-                    FreeRtos::delay_ms(10);
+                    // if let Some(position) = position {
+                    //     {
+                    //         let mut event_guard = events.lock().unwrap();
+                    //         let timestamp_unix_epoch_ms = std::time::SystemTime::now()
+                    //             .duration_since(std::time::UNIX_EPOCH)
+                    //             .expect("Time went backwards")
+                    //             .as_millis()
+                    //             as u64;
+
+                    //         // event_guard.push(Position {
+                    //         //     x: position.x,
+                    //         //     y: position.y,
+                    //         //     rotation_radians: position.rotation_radians,
+                    //         //     timestamp_unix_epoch_ms,
+                    //         // });
+                    //     }
+                    //     // TODO: check if out of bounds
+                    // }
+
+                    FreeRtos::delay_ms(100);
                 }
             }
         })

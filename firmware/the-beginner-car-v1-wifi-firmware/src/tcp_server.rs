@@ -18,7 +18,7 @@ use log::error;
 use log::info;
 use std::io;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
+use the_beginner_car_spi_protocol::{Position, RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{
     TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
@@ -94,10 +94,12 @@ where
                 hardware_sender
                     .send(HardwareMessage {
                         request: RequestToHardware::NotifyPositionFromCamera {
-                            x,
-                            y,
-                            rotation_radians,
-                            timestamp_unix_epoch_ms,
+                            position: Position {
+                                x,
+                                y,
+                                rotation_radians,
+                                timestamp_unix_epoch_ms,
+                            },
                         },
                         response_tx: sender,
                     })

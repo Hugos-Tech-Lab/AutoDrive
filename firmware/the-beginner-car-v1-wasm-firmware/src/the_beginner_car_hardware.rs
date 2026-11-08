@@ -1,36 +1,19 @@
-use std::sync::{Arc, Mutex, atomic::Ordering};
+use std::sync::Arc;
 
-use esp_idf_svc::hal::delay::FreeRtos;
+use the_beginner_car_spi_protocol::Position;
 
 use crate::{
     auto_script::cancellation_token::CancellationToken,
+    hardware_config::HardwareConfig,
     the_beginner_car_hardware::{
-        ir_sensor_array::IrSensorArray,
-        led::Led,
-        wheel::{Wheel, tachometer::Tachometer},
+        ir_sensor_array::IrSensorArray, kalman_filter::KalmanFilter, wheel::Wheel,
     },
 };
 
 pub mod ir_sensor_array;
+pub mod kalman_filter;
 pub mod led;
 pub mod wheel;
-
-#[derive(Debug, Clone)]
-pub struct Position {
-    pub x: f32,
-    pub y: f32,
-    pub rotation_radians: f32,
-    pub combined_dist: f32,
-}
-
-impl Position {
-    pub fn add(&mut self, other: Self) {
-        self.x += other.x;
-        self.y += other.y;
-        self.rotation_radians += other.rotation_radians;
-        self.combined_dist += other.combined_dist;
-    }
-}
 
 // #[derive(Debug, PartialEq)]
 // pub enum RequestOrigin {
@@ -38,128 +21,6 @@ impl Position {
 //     Calibration,
 //     Manual,
 // }
-
-pub struct KalmanFilterIterateState {
-    pub dt: f32,                                     // timestep in ms
-    pub wingspan: f32,                               // = 18.5;
-    pub left_tachometer_total_pulses_previous: u32,  //,  = self.left_tachometer.get_total_pulses();
-    pub right_tachometer_total_pulses_previous: u32, // = self.right_tachometer.get_total_pulses();
-    pub current_rotation: f32, //  = 0.0; // TODO: derived from current position
-}
-
-pub struct KalmanFilter {
-    position: Arc<Mutex<Option<Position>>>, // 0.1: rotation, distance moved
-    // 0.2: rotation, distance moved
-    left_tachometer: Tachometer,
-    right_tachometer: Tachometer,
-}
-
-impl KalmanFilter {
-    pub fn new(left_tachometer: Tachometer, right_tachometer: Tachometer) -> Self {
-        let position = Arc::new(Mutex::new(Some(Position {
-            x: 0.0,
-            y: 0.0,
-            rotation_radians: 0.0,
-            combined_dist: 0.0,
-        })));
-
-        Self {
-            position,
-            left_tachometer,
-            right_tachometer,
-        }
-    }
-
-    pub fn create_iterate_state(&self) -> KalmanFilterIterateState {
-        KalmanFilterIterateState {
-            dt: 0.0,
-            wingspan: 18.5,
-            left_tachometer_total_pulses_previous: self.left_tachometer.get_total_pulses(),
-            right_tachometer_total_pulses_previous: self.right_tachometer.get_total_pulses(),
-            current_rotation: 0.0,
-        }
-    }
-
-    pub fn iterate(&self, state: &mut KalmanFilterIterateState) -> Option<Position> {
-        let left_tachometer_total_pulses = self.left_tachometer.get_total_pulses();
-        let right_tachometer_total_pulses = self.right_tachometer.get_total_pulses();
-        let left_tachometer_pulses =
-            left_tachometer_total_pulses - state.left_tachometer_total_pulses_previous;
-        let right_tachometer_pulses =
-            right_tachometer_total_pulses - state.right_tachometer_total_pulses_previous;
-
-        state.left_tachometer_total_pulses_previous = left_tachometer_total_pulses;
-        state.right_tachometer_total_pulses_previous = right_tachometer_total_pulses;
-
-        let distance_left_cm = left_tachometer_pulses as f32 * self.left_tachometer.cm_per_pulse();
-        let distance_right_cm =
-            right_tachometer_pulses as f32 * self.right_tachometer.cm_per_pulse();
-        let position_delta = Self::predict(
-            distance_left_cm,
-            distance_right_cm,
-            state.wingspan,
-            state.current_rotation,
-        );
-
-        state.current_rotation += position_delta.rotation_radians;
-
-        let position;
-        {
-            let mut position_guard = self.position.lock().unwrap();
-            if let Some(pos) = position_guard.as_mut() {
-                // Replace `&other_position` with whatever value you actually need to add
-                pos.add(position_delta);
-                position = Some(pos.clone());
-            } else {
-                position = None;
-            }
-        }
-
-        position
-    }
-
-    pub fn update(&mut self, position: Position) {
-        let mut position_guard = self.position.lock().unwrap();
-        position_guard.replace(position);
-    }
-
-    pub fn predict(
-        distance_left_cm: f32,
-        distance_right_cm: f32,
-        wingspan: f32,
-        current_rotation: f32,
-    ) -> Position {
-        let distance = (distance_left_cm + distance_right_cm) / 2.0;
-        let delta_theta = (distance_right_cm - distance_left_cm) / wingspan;
-
-        let (dx, dy) = if delta_theta.abs() < 1e-6 {
-            (
-                distance * current_rotation.cos(),
-                distance * current_rotation.sin(),
-            )
-        } else {
-            let radius = distance / delta_theta;
-
-            (
-                radius * ((current_rotation + delta_theta).sin() - current_rotation.sin()),
-                -radius * ((current_rotation + delta_theta).cos() - current_rotation.cos()),
-            )
-        };
-
-        Position {
-            x: dx,
-            y: dy,
-            rotation_radians: delta_theta,
-            combined_dist: distance,
-        }
-    }
-
-    // expected to be called, i.e. every 100ms
-    pub fn position(&mut self) -> Option<Position> {
-        let position = self.position.lock().unwrap();
-        position.clone()
-    }
-}
 
 // Checks the position and stops if out of bounds
 pub struct EmergencyStop {
@@ -175,6 +36,7 @@ pub struct TheBeginnerCarHardware {
     // led_left: Led,
     // led_right: Led,
     battery_voltage: f32,
+    hardware_config: HardwareConfig,
 }
 
 impl TheBeginnerCarHardware {
@@ -184,12 +46,9 @@ impl TheBeginnerCarHardware {
         // led_left: Led,
         // led_right: Led,
         ir_sensor_array: Arc<IrSensorArray>,
+        kalman_filter: KalmanFilter,
+        hardware_config: HardwareConfig,
     ) -> Self {
-        let kalman_filter = KalmanFilter::new(
-            wheel_left.tachometer().clone(),
-            wheel_right.tachometer().clone(),
-        );
-
         Self {
             wheel_left,
             wheel_right,
@@ -199,6 +58,7 @@ impl TheBeginnerCarHardware {
             ir_sensor_array,
             kalman_filter,
             emergency_stop: EmergencyStop {},
+            hardware_config,
         }
     }
 
@@ -209,14 +69,6 @@ impl TheBeginnerCarHardware {
     // pub fn led_right(&mut self) -> &mut Led {
     //     &mut self.led_right
     // }
-
-    pub fn wheel_left(&mut self) -> &mut Wheel {
-        &mut self.wheel_left
-    }
-
-    pub fn wheel_right(&mut self) -> &mut Wheel {
-        &mut self.wheel_right
-    }
 
     // pub fn move_forward_by_cm(&mut self, cm: i8) {
     // self.wheel_left.
@@ -257,7 +109,12 @@ impl TheBeginnerCarHardware {
     }
 
     pub fn notify_position_from_camera(&mut self, position: Position) {
-        self.kalman_filter.update(position);
+        self.kalman_filter.update(Position {
+            x: position.x,
+            y: position.y,
+            rotation_radians: position.rotation_radians,
+            timestamp_unix_epoch_ms: 0,
+        });
     }
 
     pub fn notify_battery_reading(&mut self, battery_voltage: f32) {
@@ -299,6 +156,10 @@ impl TheBeginnerCarHardware {
     pub fn get_ir_back_left_value(&self) -> u16 {
         // self.ir_back_left_latest_reading.load(Ordering::Relaxed)
         0
+    }
+
+    pub fn get_position(&self) -> Option<Position> {
+        self.kalman_filter.position()
     }
 
     pub fn stop_all(&mut self) {

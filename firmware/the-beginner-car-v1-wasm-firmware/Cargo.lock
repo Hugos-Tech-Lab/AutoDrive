@@ -78,6 +78,8 @@ dependencies = [
  "esp-idf-svc",
  "esp-idf-sys",
  "log",
+ "postcard",
+ "serde",
  "the-beginner-car-spi-protocol",
  "the-beginner-car-wasm-sdk",
  "wamr-rust-sdk",

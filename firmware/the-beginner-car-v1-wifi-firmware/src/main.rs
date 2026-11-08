@@ -224,11 +224,6 @@ pub fn main() -> anyhow::Result<()> {
                                             .send(TheBeginnerCarOutgoingMessages::AutoScriptStopped)
                                             .unwrap()
                                     }
-                                    the_beginner_car_spi_protocol::Event::Position { x, y, rotation_radians, timestamp_unix_epoch_ms } => {
-                                        sender_tx
-                                            .send(TheBeginnerCarOutgoingMessages::Position { x, y, rotation_radians, timestamp_unix_epoch_ms })
-                                            .unwrap()
-                                    },
                                 }
                             }
                         }
@@ -242,6 +237,59 @@ pub fn main() -> anyhow::Result<()> {
             }
         })
         .unwrap();
+
+    let position_poll_handle = std::thread::Builder::new()
+        .name("position_poll_handle".to_string())
+        .stack_size(4 * 1000)
+        .spawn({
+            let hardware_sender = hardware_sender.clone();
+            let sender_tx = sender_tx.clone();
+            move || {
+                loop {
+                    let (sender, receiver) = std::sync::mpsc::sync_channel::<
+                        Result<ResponseFromHardware, anyhow::Error>,
+                    >(1);
+
+                    hardware_sender
+                        .send(HardwareMessage {
+                            request: RequestToHardware::GetPosition {},
+                            response_tx: sender,
+                        })
+                        .unwrap();
+
+                    let receive = match receiver.recv_timeout(Duration::from_secs(2)) {
+                        Ok(Ok(response)) => response,
+                        Ok(Err(e)) => {
+                            log::error!("{e}");
+                            thread::sleep(Duration::from_secs(1));
+                            continue;
+                        }
+                        Err(e) => {
+                            log::error!("{e}");
+                            continue;
+                        }
+                    };
+
+                    match receive {
+                        ResponseFromHardware::Position { position } => {
+                            if let Some(position) = position {
+                                sender_tx
+                                    .send(TheBeginnerCarOutgoingMessages::Position {
+                                        x: position.x,
+                                        y: position.y,
+                                        rotation_radians: position.rotation_radians,
+                                        timestamp_unix_epoch_ms: position.timestamp_unix_epoch_ms,
+                                    })
+                                    .unwrap();
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    thread::sleep(Duration::from_millis(100));
+                }
+            }
+        });
 
     let battery_poll_handle = std::thread::Builder::new()
         .name("battery_poll_handle".to_string())

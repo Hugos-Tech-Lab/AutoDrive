@@ -13,7 +13,7 @@ use esp_idf_svc::hal::{
 };
 use log::info;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Tachometer {
     rpm: Arc<AtomicU32>,
     pulses: Arc<AtomicU32>,

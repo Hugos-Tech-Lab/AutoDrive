@@ -8,10 +8,7 @@ use esp_idf_svc::hal::gpio::{InputPin, OutputPin};
 use log::info;
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
-use crate::{
-    auto_script::AutoScript,
-    the_beginner_car_hardware::{Position, TheBeginnerCarHardware},
-};
+use crate::{auto_script::AutoScript, the_beginner_car_hardware::TheBeginnerCarHardware};
 
 pub struct ServerSpi {
     pub handle: JoinHandle<()>,
@@ -69,19 +66,7 @@ impl ServerSpi {
 
                 return ResponseFromHardware::Events { events };
             }
-            RequestToHardware::NotifyPositionFromCamera {
-                x,
-                y,
-                rotation_radians,
-                timestamp_unix_epoch_ms,
-            } => {
-                let position = Position {
-                    x,
-                    y,
-                    rotation_radians,
-                    combined_dist: 0.0,
-                };
-
+            RequestToHardware::NotifyPositionFromCamera { position } => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
                 the_beginner_car.notify_position_from_camera(position);
             }
@@ -108,6 +93,12 @@ impl ServerSpi {
             RequestToHardware::RunCalibration => {
                 let mut the_beginner_car = the_beginner_car.lock().unwrap();
                 the_beginner_car.run_calibration();
+            }
+            RequestToHardware::GetPosition => {
+                let the_beginner_car = the_beginner_car.lock().unwrap();
+                let position = the_beginner_car.get_position();
+
+                return ResponseFromHardware::Position { position };
             }
         }
 

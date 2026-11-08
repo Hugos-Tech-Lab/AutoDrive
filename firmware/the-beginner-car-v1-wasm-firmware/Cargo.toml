@@ -30,6 +30,8 @@ esp-idf-svc = { version = "0.53.0", features = [
 esp-idf-sys = "0.38.1"
 # KEEP THIS DEPENDENCY EVEN THOUGH IT'S NOT EXPLICITLY USED OTHERWISE COMPILER ERROR MISSING "__embassy_time_queue_item_from_waker"
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }
+serde = { version = "1.0.229", features = ["derive"] }
+postcard = "1.1.3"
 
 
 [build-dependencies]

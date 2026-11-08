@@ -7,18 +7,22 @@ use std::{
 
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use tokio::sync::{
-    RwLock,
-    broadcast::{self, Receiver, Sender},
-    mpsc, oneshot, watch,
-};
 use tokio::time::sleep;
+use tokio::{
+    sync::{
+        RwLock,
+        broadcast::{self, Receiver, Sender},
+        mpsc, oneshot, watch,
+    },
+    time::timeout,
+};
 use tokio_stream::StreamExt;
 
 use crate::auto_drive_edge_service::v1::{
     AutoScripts, CancelAutoScriptRequest, LogMessage, RunAutoScriptRequest,
-    WatchAutoScriptOverviewRequest, WatchAutoScriptRequest, WatchHardwareStatusRequest,
-    WatchTheBeginnerCarEventsRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+    WatchAutoScriptOverviewRequest, WatchAutoScriptRequest, WatchHardwarePoseRequest,
+    WatchHardwareStatusRequest, WatchTheBeginnerCarEventsRequest,
+    auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
     watch_the_beginner_car_events_response::Event,
 };
 
@@ -57,6 +61,7 @@ pub enum ToEdgeMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pose {
+    pub number_plate: String,
     pub x: f32,
     pub y: f32,
     pub rotation: f32,
@@ -95,7 +100,7 @@ pub struct Hardware {
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     let mut client = loop {
         #[cfg(feature = "development")]
-        let auto_drive_edge_ip = "http://127.0.0.1:50051";
+        let auto_drive_edge_ip = "http://192.168.0.173:50051";
         #[cfg(feature = "production")]
         let auto_drive_edge_ip = "http://100.96.0.1:50051";
 
@@ -171,10 +176,21 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
 
         async move {
             loop {
-                match client
-                    .watch_auto_script_overview(WatchAutoScriptOverviewRequest {})
-                    .await
-                {
+                let result = timeout(
+                    Duration::from_secs(5), // Set your desired timeout duration here
+                    client.watch_auto_script_overview(WatchAutoScriptOverviewRequest {}),
+                )
+                .await;
+
+                let result = match result {
+                    Ok(result) => result,
+                    Err(_) => {
+                        warn!("Timed out");
+                        continue;
+                    }
+                };
+
+                match result {
                     Ok(response) => {
                         let mut stream = response.into_inner();
                         while let Some(result) = stream.next().await {
@@ -211,29 +227,30 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
     tokio::spawn({
         let hardware_positions_tx = hardware_positions_tx.clone();
         let mut client = client.clone();
-
         async move {
             loop {
                 match client
-                    .watch_hardware_status(WatchHardwareStatusRequest {})
+                    .watch_hardware_pose(WatchHardwarePoseRequest {})
                     .await
                 {
                     Ok(response) => {
                         let mut stream = response.into_inner();
                         while let Some(result) = stream.next().await {
                             match result {
-                                Ok(event) => {
-                                    hardware_states_tx.send_modify(|v| {
-                                        for hardware in event.hardware {
-                                            let entry = v
-                                                .entry(hardware.number_plate.clone())
-                                                .or_insert(HardwareDeviceState {
-                                                    number_plate: hardware.number_plate,
-                                                    category: hardware.category,
-                                                    is_connected: hardware.is_connected,
-                                                });
-                                            entry.is_connected = hardware.is_connected;
-                                        }
+                                Ok(pose) => {
+                                    hardware_positions_tx.send_modify(|v| {
+                                        let entry =
+                                            v.entry(pose.number_plate.clone()).or_insert(Pose {
+                                                x: pose.x,
+                                                y: pose.y,
+                                                rotation: pose.rotation_radians,
+                                                number_plate: pose.number_plate.clone(),
+                                            });
+
+                                        entry.x = pose.x;
+                                        entry.y = pose.y;
+                                        entry.rotation = pose.rotation_radians;
+                                        entry.number_plate = pose.number_plate.clone();
                                     });
                                 }
                                 Err(err) => {

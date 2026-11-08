@@ -11,7 +11,7 @@
   let container: HTMLDivElement;
   let app: PIXI.Application;
   
-  type Pose = { id?: string; x: number; y: number; rotation: number };
+  type Pose = { number_plate: string; x: number; y: number; rotation: number };
   let hardwareList = $state<Pose[]>([]);
 
   let hardwareContainer: PIXI.Container;
@@ -78,12 +78,16 @@
   });
 
   $effect(() => {
+    console.log("hi");
     if (!hardwareContainer) return;
 
     // TODO: map by ID
     hardwareContainer.removeChildren();
-
+    // console.log(hardwareList.length)
     hardwareList.forEach((pose) => {
+      // console.log(pose);
+
+
       const hwItem = createHardware001();
       hwItem.x = pose.x;
       hwItem.y = pose.y;
@@ -95,11 +99,21 @@
 
   const sse = new EventSource(`${endpointRoot()}/hardware/positions`);
 
-  sse.addEventListener("overview", (event) => {
+  sse.addEventListener("positions", (event) => {
     try {
+
       const json = JSON.parse(event.data);
       const dataObj = json.data || json; 
-      hardwareList = Object.values(dataObj);
+      const poses: Pose[] = Object.values(dataObj);
+      console.log(poses);
+      poses.forEach((pose) => { 
+        const hwItem = createHardware001();
+        hwItem.x = pose.x;
+        hwItem.y = pose.y;
+        hwItem.rotation = pose.rotation;
+        
+        hardwareContainer.addChild(hwItem);
+      });
     } catch (err) {
       console.error("Failed to parse SSE overview data", err);
     }

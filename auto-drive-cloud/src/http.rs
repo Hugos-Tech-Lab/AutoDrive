@@ -2,6 +2,7 @@ use log::info;
 use warp::Filter;
 
 use crate::http::hardware::overview::hardware_overview;
+use crate::http::hardware::positions::hardware_positions;
 use crate::http::hardware_telemetry::hardware_telemetry;
 use crate::{
     edge_client::Hardware,
@@ -25,6 +26,7 @@ pub async fn http_server(receiver: Hardware) {
         let autoscript_watch = autoscript_watch(receiver.clone());
         let autoscript_overview = autoscript_overview(receiver.clone());
         let hardware_overview = hardware_overview(receiver.clone());
+        let hardware_positions = hardware_positions(receiver.clone());
         let hardware_telemetry = hardware_telemetry(receiver.logs);
 
         let cors = warp::cors()
@@ -43,6 +45,7 @@ pub async fn http_server(receiver: Hardware) {
             .or(autoscript_watch)
             .or(autoscript_overview)
             .or(hardware_overview)
+            .or(hardware_positions)
             .with(cors);
 
         let address = ([0, 0, 0, 0], 3030);

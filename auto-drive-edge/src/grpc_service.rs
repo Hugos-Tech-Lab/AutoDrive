@@ -190,6 +190,8 @@ impl AutoDriveEdgeService for GrpcService {
         &self,
         _request: Request<WatchHardwarePoseRequest>,
     ) -> Result<Response<Self::WatchHardwarePoseStream>, Status> {
+        dbg!("watch pose");
+
         // TODO: find the ID from the request
         let receiver = self.the_beginner_cars.first().unwrap();
         let number_plate = receiver.metadata.number_plate.to_string();
@@ -237,7 +239,6 @@ impl AutoDriveEdgeService for GrpcService {
 
         for car_entry in self.the_beginner_cars.iter() {
             let comms = car_entry;
-
             initial_hardware.push(Hardware {
                 number_plate: comms.metadata.number_plate.to_string(),
                 category: "TheBeginnerCar".to_string(),

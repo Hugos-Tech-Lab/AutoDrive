@@ -138,22 +138,21 @@ impl TheBeginnerCarComms {
                                 let message: TheBeginnerCarOutgoingMessages = match postcard::from_bytes(&message_buf) {
                                     Ok(message) => message,
                                     Err(err) => {
-                                        eprintln!("Failed to deserialize message: {:?}", err);
+                                        warn!("Failed to deserialize message: {:?}", err);
                                         continue;
                                     }
                                 };
-
                                 if let Err(_) = broadcast_sender.send(message) {
                                     warn!("Did not send broadcast message, assuming all receivers dropped, that's strange?")
                                 };
                             }
                             Ok(Err(e)) => {
-                                eprintln!("Error reading from car: {e}");
+                                warn!("Error reading from car: {e}");
                                 connected_tx.send(false).unwrap();
                                 break;
                             }
                             Err(_) => {
-                                eprintln!("Read timeout: Car silently disconnected or lost power.");
+                                warn!("Read timeout: Car silently disconnected or lost power.");
                                 connected_tx.send(false).unwrap();
                                 break;
                             }

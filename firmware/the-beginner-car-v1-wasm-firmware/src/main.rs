@@ -30,6 +30,7 @@ use crate::{
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod auto_script;
+pub mod calibration;
 pub mod server_spi;
 pub mod the_beginner_car_hardware;
 

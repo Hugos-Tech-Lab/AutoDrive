@@ -192,7 +192,6 @@ impl Motor {
     }
 
     pub fn set_rpm(&self, rpm: i32) {
-        info!("{}", rpm);
         self.target_pwm.store(0, Ordering::Relaxed);
         self.target_rpm.store(rpm, Ordering::Relaxed);
     }

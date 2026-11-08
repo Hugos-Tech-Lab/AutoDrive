@@ -14,6 +14,7 @@ use esp_idf_svc::hal::{
     },
     delay::FreeRtos,
 };
+use serde::{Deserialize, Serialize};
 use the_beginner_car_spi_protocol::{Event, Position};
 
 use crate::{
@@ -30,9 +31,40 @@ use crate::{
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod auto_script;
-pub mod calibration;
+pub mod hardware_config;
 pub mod server_spi;
 pub mod the_beginner_car_hardware;
+
+// #[derive(Serialize, Deserialize, Clone)]
+// pub struct Config {
+//     pub left_motor: MotorCalibration,
+//     pub right_motor: MotorCalibration,
+// }
+
+// const motor_config: Config = Config {
+//     left_motor: MotorCalibration {
+//         min_rpm: 0,
+//         max_rpm: 125,
+//         pwm_to_rpm: vec![
+//             PwmToRpm { pwm: 0, rpm: 0 },
+//             PwmToRpm { pwm: 10, rpm: 20 },
+//             PwmToRpm { pwm: 50, rpm: 50 },
+//             PwmToRpm { pwm: 100, rpm: 200 },
+//             PwmToRpm { pwm: 127, rpm: 300 },
+//         ],
+//     },
+//     right_motor: MotorCalibration {
+//         min_rpm: 0,
+//         max_rpm: 125,
+//         pwm_to_rpm: vec![
+//             PwmToRpm { pwm: 0, rpm: 0 },
+//             PwmToRpm { pwm: 10, rpm: 20 },
+//             PwmToRpm { pwm: 50, rpm: 50 },
+//             PwmToRpm { pwm: 100, rpm: 200 },
+//             PwmToRpm { pwm: 127, rpm: 300 },
+//         ],
+//     },
+// };
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();

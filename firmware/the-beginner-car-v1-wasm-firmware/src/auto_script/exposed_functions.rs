@@ -337,6 +337,10 @@ impl WasmExports for TheBeginnerCarExports {
     ) -> u32 {
         todo!()
     }
+
+    unsafe extern "C" fn set_motor_left_rpm(exec_env: *mut c_void, pwm: i8) {
+        todo!()
+    }
 }
 
 unsafe fn terminate(exec_env: *mut WASMExecEnv) {

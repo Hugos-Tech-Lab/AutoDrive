@@ -12,9 +12,9 @@
   let app: PIXI.Application;
   
   type Pose = { number_plate: string; x: number; y: number; rotation: number };
-  let hardwareList = $state<Pose[]>([]);
 
   let hardwareContainer: PIXI.Container;
+  let hardwareMap = new Map<string, PIXI.Container>();
 
   onMount(async () => {
     app = new PIXI.Application();
@@ -77,42 +77,38 @@
     app.stage.addChild(compass);
   });
 
-  $effect(() => {
-    console.log("hi");
-    if (!hardwareContainer) return;
-
-    // TODO: map by ID
-    hardwareContainer.removeChildren();
-    // console.log(hardwareList.length)
-    hardwareList.forEach((pose) => {
-      // console.log(pose);
-
-
-      const hwItem = createHardware001();
-      hwItem.x = pose.x;
-      hwItem.y = pose.y;
-      hwItem.rotation = pose.rotation;
-      
-      hardwareContainer.addChild(hwItem);
-    });
-  });
-
   const sse = new EventSource(`${endpointRoot()}/hardware/positions`);
 
   sse.addEventListener("positions", (event) => {
-    try {
+    if (!hardwareContainer) return;
 
+    try {
       const json = JSON.parse(event.data);
       const dataObj = json.data || json; 
       const poses: Pose[] = Object.values(dataObj);
-      console.log(poses);
-      poses.forEach((pose) => { 
-        const hwItem = createHardware001();
+
+      const incomingPlates = new Set(poses.map(p => p.number_plate));
+
+      for (const [plate, item] of hardwareMap.entries()) {
+        if (!incomingPlates.has(plate)) {
+          hardwareContainer.removeChild(item);
+          item.destroy({ children: true });
+          hardwareMap.delete(plate);
+        }
+      }
+
+      poses.forEach((pose) => {
+        let hwItem = hardwareMap.get(pose.number_plate);
+
+        if (!hwItem) {
+          hwItem = createHardware001();
+          hardwareContainer.addChild(hwItem);
+          hardwareMap.set(pose.number_plate, hwItem);
+        }
+
         hwItem.x = pose.x;
         hwItem.y = pose.y;
         hwItem.rotation = pose.rotation;
-        
-        hardwareContainer.addChild(hwItem);
       });
     } catch (err) {
       console.error("Failed to parse SSE overview data", err);
@@ -124,8 +120,8 @@
   };
 
   onDestroy(() => {
+    sse.close();
     if (app) {
-      sse.close();
       app.destroy(true, { children: true });
     }
   });

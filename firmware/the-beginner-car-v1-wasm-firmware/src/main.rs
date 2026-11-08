@@ -19,10 +19,12 @@ use the_beginner_car_spi_protocol::{Event, Position};
 
 use crate::{
     auto_script::AutoScript,
+    hardware_config::HardwareConfig,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
-        KalmanFilter, KalmanFilterIterateState, TheBeginnerCarHardware,
+        TheBeginnerCarHardware,
         ir_sensor_array::{IrSensorArray, IrSensorArrayData},
+        kalman_filter::KalmanFilter,
         led::Led,
         wheel::{Wheel, motor::Motor, tachometer::Tachometer},
     },
@@ -34,37 +36,6 @@ pub mod auto_script;
 pub mod hardware_config;
 pub mod server_spi;
 pub mod the_beginner_car_hardware;
-
-// #[derive(Serialize, Deserialize, Clone)]
-// pub struct Config {
-//     pub left_motor: MotorCalibration,
-//     pub right_motor: MotorCalibration,
-// }
-
-// const motor_config: Config = Config {
-//     left_motor: MotorCalibration {
-//         min_rpm: 0,
-//         max_rpm: 125,
-//         pwm_to_rpm: vec![
-//             PwmToRpm { pwm: 0, rpm: 0 },
-//             PwmToRpm { pwm: 10, rpm: 20 },
-//             PwmToRpm { pwm: 50, rpm: 50 },
-//             PwmToRpm { pwm: 100, rpm: 200 },
-//             PwmToRpm { pwm: 127, rpm: 300 },
-//         ],
-//     },
-//     right_motor: MotorCalibration {
-//         min_rpm: 0,
-//         max_rpm: 125,
-//         pwm_to_rpm: vec![
-//             PwmToRpm { pwm: 0, rpm: 0 },
-//             PwmToRpm { pwm: 10, rpm: 20 },
-//             PwmToRpm { pwm: 50, rpm: 50 },
-//             PwmToRpm { pwm: 100, rpm: 200 },
-//             PwmToRpm { pwm: 127, rpm: 300 },
-//         ],
-//     },
-// };
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -85,10 +56,12 @@ pub fn main() -> anyhow::Result<()> {
     let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio5.into());
     let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio6.into());
 
-    let mut kalman_filter = KalmanFilter::new(
+    let kalman_filter = KalmanFilter::new(
         wheel_left_tachometer.clone(),
         wheel_right_tachometer.clone(),
     );
+
+    let hardware_config = HardwareConfig::default();
 
     let motor_left = Motor::new(
         peripherals.pins.gpio7.into(),
@@ -96,6 +69,7 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.channel0,
         peripherals.ledc.timer1,
         wheel_left_tachometer.clone(),
+        hardware_config.left_motor.clone(),
     );
 
     let motor_right = Motor::new(
@@ -104,6 +78,7 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
         wheel_right_tachometer.clone(),
+        hardware_config.right_motor.clone(),
     );
 
     // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
@@ -124,6 +99,7 @@ pub fn main() -> anyhow::Result<()> {
         // led_right,
         ir_sensor_array.clone(),
         kalman_filter.clone(),
+        hardware_config,
     )));
 
     // let latest_position: Arc<Mutex<Option<Position>>> = Arc::new(Mutex::new(None));

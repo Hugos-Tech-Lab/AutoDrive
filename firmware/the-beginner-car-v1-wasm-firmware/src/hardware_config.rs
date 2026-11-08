@@ -6,7 +6,7 @@ pub struct PwmToRpm {
     pub rpm: i32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct MotorConfig {
     /// ranged from 1 - 2,147,483,647
     pub min_pos_rpm: i32,
@@ -66,7 +66,7 @@ impl MotorConfig {
     }
 
     /// Converts a PWM value to RPM using linear interpolation.
-    pub fn speed_to_rpm(&self, pwm: i8) -> i32 {
+    pub fn pwm_to_rpm(&self, pwm: i8) -> i32 {
         if self.pwm_to_rpm.is_empty() {
             return 0;
         }
@@ -137,7 +137,7 @@ impl MotorConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HardwareConfig {
     pub left_motor: MotorConfig,
     pub right_motor: MotorConfig,

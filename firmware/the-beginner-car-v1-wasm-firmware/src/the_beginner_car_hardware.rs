@@ -1,12 +1,12 @@
 use std::sync::{Arc, Mutex, atomic::Ordering};
 
 use esp_idf_svc::hal::delay::FreeRtos;
+use the_beginner_car_spi_protocol::Position;
 
 use crate::{
     auto_script::cancellation_token::CancellationToken,
     the_beginner_car_hardware::{
         ir_sensor_array::IrSensorArray,
-        led::Led,
         wheel::{Wheel, tachometer::Tachometer},
     },
 };
@@ -14,23 +14,6 @@ use crate::{
 pub mod ir_sensor_array;
 pub mod led;
 pub mod wheel;
-
-#[derive(Debug, Clone)]
-pub struct Position {
-    pub x: f32,
-    pub y: f32,
-    pub rotation_radians: f32,
-    pub combined_dist: f32,
-}
-
-impl Position {
-    pub fn add(&mut self, other: Self) {
-        self.x += other.x;
-        self.y += other.y;
-        self.rotation_radians += other.rotation_radians;
-        self.combined_dist += other.combined_dist;
-    }
-}
 
 // #[derive(Debug, PartialEq)]
 // pub enum RequestOrigin {
@@ -47,6 +30,7 @@ pub struct KalmanFilterIterateState {
     pub current_rotation: f32, //  = 0.0; // TODO: derived from current position
 }
 
+#[derive(Debug, Clone)]
 pub struct KalmanFilter {
     position: Arc<Mutex<Option<Position>>>, // 0.1: rotation, distance moved
     // 0.2: rotation, distance moved
@@ -60,7 +44,7 @@ impl KalmanFilter {
             x: 0.0,
             y: 0.0,
             rotation_radians: 0.0,
-            combined_dist: 0.0,
+            timestamp_unix_epoch_ms: 0,
         })));
 
         Self {
@@ -107,7 +91,6 @@ impl KalmanFilter {
         {
             let mut position_guard = self.position.lock().unwrap();
             if let Some(pos) = position_guard.as_mut() {
-                // Replace `&other_position` with whatever value you actually need to add
                 pos.add(position_delta);
                 position = Some(pos.clone());
             } else {
@@ -150,12 +133,12 @@ impl KalmanFilter {
             x: dx,
             y: dy,
             rotation_radians: delta_theta,
-            combined_dist: distance,
+            timestamp_unix_epoch_ms: 0,
         }
     }
 
     // expected to be called, i.e. every 100ms
-    pub fn position(&mut self) -> Option<Position> {
+    pub fn position(&self) -> Option<Position> {
         let position = self.position.lock().unwrap();
         position.clone()
     }
@@ -184,12 +167,8 @@ impl TheBeginnerCarHardware {
         // led_left: Led,
         // led_right: Led,
         ir_sensor_array: Arc<IrSensorArray>,
+        kalman_filter: KalmanFilter,
     ) -> Self {
-        let kalman_filter = KalmanFilter::new(
-            wheel_left.tachometer().clone(),
-            wheel_right.tachometer().clone(),
-        );
-
         Self {
             wheel_left,
             wheel_right,
@@ -257,7 +236,12 @@ impl TheBeginnerCarHardware {
     }
 
     pub fn notify_position_from_camera(&mut self, position: Position) {
-        self.kalman_filter.update(position);
+        self.kalman_filter.update(Position {
+            x: position.x,
+            y: position.y,
+            rotation_radians: position.rotation_radians,
+            timestamp_unix_epoch_ms: 0,
+        });
     }
 
     pub fn notify_battery_reading(&mut self, battery_voltage: f32) {
@@ -299,6 +283,10 @@ impl TheBeginnerCarHardware {
     pub fn get_ir_back_left_value(&self) -> u16 {
         // self.ir_back_left_latest_reading.load(Ordering::Relaxed)
         0
+    }
+
+    pub fn get_position(&self) -> Option<Position> {
+        self.kalman_filter.position()
     }
 
     pub fn stop_all(&mut self) {

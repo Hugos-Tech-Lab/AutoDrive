@@ -14,7 +14,7 @@ use esp_idf_svc::hal::{
     },
     delay::FreeRtos,
 };
-use the_beginner_car_spi_protocol::Event;
+use the_beginner_car_spi_protocol::{Event, Position};
 
 use crate::{
     auto_script::AutoScript,
@@ -49,8 +49,8 @@ pub fn main() -> anyhow::Result<()> {
     info!("starting");
     let peripherals = Peripherals::take()?;
 
-    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio9.into());
-    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio0.into());
+    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio5.into());
+    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio6.into());
 
     let mut kalman_filter = KalmanFilter::new(
         wheel_left_tachometer.clone(),
@@ -70,10 +70,10 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.pins.gpio10.into(),
         peripherals.ledc.channel1,
         peripherals.ledc.timer2,
-        wheel_right_tachometer,
+        wheel_right_tachometer.clone(),
     );
 
-    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
+    // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());
 
     let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
     let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
@@ -90,8 +90,10 @@ pub fn main() -> anyhow::Result<()> {
         wheel_right,
         // led_right,
         ir_sensor_array.clone(),
+        kalman_filter.clone(),
     )));
 
+    // let latest_position: Arc<Mutex<Option<Position>>> = Arc::new(Mutex::new(None));
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
 
     let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
@@ -111,27 +113,36 @@ pub fn main() -> anyhow::Result<()> {
                 let mut kalman_filter_state = kalman_filter.create_iterate_state();
 
                 loop {
-                    let position = kalman_filter.iterate(&mut kalman_filter_state);
-                    if let Some(position) = position {
-                        {
-                            let mut event_guard = events.lock().unwrap();
-                            let timestamp_unix_epoch_ms = std::time::SystemTime::now()
-                                .duration_since(std::time::UNIX_EPOCH)
-                                .expect("Time went backwards")
-                                .as_millis()
-                                as u64;
+                    let _ = kalman_filter.iterate(&mut kalman_filter_state);
+                    // TODO: SAFETY?? check position isn't out of bounds or anything like that.
+                    // {
 
-                            event_guard.push(Event::Position {
-                                x: position.x,
-                                y: position.y,
-                                rotation_radians: position.rotation_radians,
-                                timestamp_unix_epoch_ms,
-                            });
-                        }
-                        // TODO: check if out of bounds
-                    }
+                    // let latest_position =
+                    // }
+                    // let Some(position) {
+                    //     //
+                    // }
 
-                    FreeRtos::delay_ms(10);
+                    // if let Some(position) = position {
+                    //     {
+                    //         let mut event_guard = events.lock().unwrap();
+                    //         let timestamp_unix_epoch_ms = std::time::SystemTime::now()
+                    //             .duration_since(std::time::UNIX_EPOCH)
+                    //             .expect("Time went backwards")
+                    //             .as_millis()
+                    //             as u64;
+
+                    //         // event_guard.push(Position {
+                    //         //     x: position.x,
+                    //         //     y: position.y,
+                    //         //     rotation_radians: position.rotation_radians,
+                    //         //     timestamp_unix_epoch_ms,
+                    //         // });
+                    //     }
+                    //     // TODO: check if out of bounds
+                    // }
+
+                    FreeRtos::delay_ms(100);
                 }
             }
         })

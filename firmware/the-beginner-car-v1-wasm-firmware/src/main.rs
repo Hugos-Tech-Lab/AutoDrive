@@ -5,27 +5,19 @@ use std::{
 
 use auto_drive_common_types::LogSystemOrigin;
 use common_firmware::{logger::init_logging, spi_slave::SpiSlaveHardware};
+use esp_idf_svc::hal::delay::FreeRtos;
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
-use esp_idf_svc::hal::{
-    adc::{
-        attenuation::DB_12,
-        oneshot::{AdcChannelDriver, AdcDriver, config::AdcChannelConfig},
-    },
-    delay::FreeRtos,
-};
-use serde::{Deserialize, Serialize};
-use the_beginner_car_spi_protocol::{Event, Position};
+use the_beginner_car_spi_protocol::Event;
 
 use crate::{
     auto_script::AutoScript,
-    hardware_config::HardwareConfig,
+    hardware_config::load_hardware_config,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
         TheBeginnerCarHardware,
-        ir_sensor_array::{IrSensorArray, IrSensorArrayData},
+        ir_sensor_array::IrSensorArray,
         kalman_filter::KalmanFilter,
-        led::Led,
         wheel::{Wheel, motor::Motor, tachometer::Tachometer},
     },
 };
@@ -53,15 +45,15 @@ pub fn main() -> anyhow::Result<()> {
     info!("starting");
     let peripherals = Peripherals::take()?;
 
-    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio5.into());
-    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio6.into());
+    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio16.into());
+    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio17.into());
 
     let kalman_filter = KalmanFilter::new(
         wheel_left_tachometer.clone(),
         wheel_right_tachometer.clone(),
     );
 
-    let hardware_config = HardwareConfig::default();
+    let hardware_config = load_hardware_config()?.unwrap_or_default();
 
     let motor_left = Motor::new(
         peripherals.pins.gpio7.into(),

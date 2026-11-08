@@ -1,3 +1,5 @@
+use esp_idf_svc::nvs::{EspNvs, EspNvsPartition, NvsDefault};
+use log::info;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -234,5 +236,27 @@ impl HardwareConfig {
             let magnitude = min_neg_magnitude + ((clamped_speed - 1) * range) / 99;
             -magnitude
         }
+    }
+}
+
+pub fn save_hardware_config(config: &HardwareConfig) -> anyhow::Result<()> {
+    let partition = EspNvsPartition::<NvsDefault>::take()?;
+    let nvs = EspNvs::new(partition, "storage", true)?;
+    let bytes = postcard::to_allocvec(config)?;
+    let len = bytes.len();
+    nvs.set_blob("hw_config", &bytes)?;
+    info!("Saved {} bytes into flash memory for hardware config.", len);
+    Ok(())
+}
+
+pub fn load_hardware_config() -> anyhow::Result<Option<HardwareConfig>> {
+    let partition = EspNvsPartition::<NvsDefault>::take()?;
+    let nvs = EspNvs::new(partition, "storage", true)?;
+    let mut buf = [0u8; 128];
+    if let Some(bytes) = nvs.get_blob("hw_config", &mut buf)? {
+        let config: HardwareConfig = postcard::from_bytes(bytes)?;
+        Ok(Some(config))
+    } else {
+        Ok(None)
     }
 }

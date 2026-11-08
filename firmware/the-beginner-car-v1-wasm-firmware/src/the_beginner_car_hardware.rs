@@ -70,14 +70,6 @@ impl TheBeginnerCarHardware {
     //     &mut self.led_right
     // }
 
-    pub fn wheel_left(&mut self) -> &mut Wheel {
-        &mut self.wheel_left
-    }
-
-    pub fn wheel_right(&mut self) -> &mut Wheel {
-        &mut self.wheel_right
-    }
-
     // pub fn move_forward_by_cm(&mut self, cm: i8) {
     // self.wheel_left.
     // }

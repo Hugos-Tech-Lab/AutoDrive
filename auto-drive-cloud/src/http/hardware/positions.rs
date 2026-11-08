@@ -15,7 +15,6 @@ pub fn hardware_positions(
     warp::path!("hardware" / "positions")
         .and(warp::get())
         .and_then(move || {
-            dbg!("positions");
             let sender = sender.clone();
             async move {
                 let (response_tx, response_rx) = oneshot::channel();

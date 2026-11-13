@@ -7,12 +7,12 @@ use crate::the_beginner_car_hardware::wheel::tachometer::Tachometer;
 pub struct KalmanFilterIterateState {
     pub dt: f32,                                     // timestep in ms
     pub wingspan: f32,                               // = 18.5;
-    pub left_tachometer_total_pulses_previous: u32,  //,  = self.left_tachometer.get_total_pulses();
-    pub right_tachometer_total_pulses_previous: u32, // = self.right_tachometer.get_total_pulses();
+    pub left_tachometer_total_pulses_previous: i32,  //,  = self.left_tachometer.get_total_pulses();
+    pub right_tachometer_total_pulses_previous: i32, // = self.right_tachometer.get_total_pulses();
     pub current_rotation: f32, //  = 0.0; // TODO: derived from current position
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct KalmanFilter {
     position: Arc<Mutex<Option<Position>>>, // 0.1: rotation, distance moved
     // 0.2: rotation, distance moved

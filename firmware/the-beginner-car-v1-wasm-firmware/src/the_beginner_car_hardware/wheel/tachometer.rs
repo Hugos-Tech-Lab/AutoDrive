@@ -1,10 +1,4 @@
-use std::{
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicU32, Ordering},
-    },
-    time::{Duration, Instant},
-};
+use std::sync::Arc;
 
 use esp_idf_svc::hal::{
     gpio::AnyIOPin,
@@ -16,7 +10,6 @@ use esp_idf_svc::hal::{
 
 #[derive(Clone)]
 pub struct Tachometer {
-    rpm: Arc<AtomicU32>,
     pcnt_unit: Arc<PcntUnitDriver<'static>>,
     pulses_per_rotation: u32,
     wheel_circumference_cm: f32,
@@ -30,8 +23,6 @@ impl Tachometer {
         pulses_per_rotation: u32,
     ) -> Self {
         let pulses_per_rotation = pulses_per_rotation * 4;
-
-        let rpm = Arc::new(AtomicU32::new(0));
 
         let mut pcnt_unit: PcntUnitDriver<'static> = PcntUnitDriver::new(&UnitConfig {
             low_limit: -32768,
@@ -73,54 +64,12 @@ impl Tachometer {
 
         let pcnt_unit = Arc::new(pcnt_unit);
 
-        std::thread::Builder::new()
-            .name("tachometer".to_string())
-            .stack_size(4096)
-            .spawn({
-                let pcnt_unit = pcnt_unit.clone();
-                let rpm = rpm.clone();
-
-                move || {
-                    let mut last_count = pcnt_unit.get_count().unwrap_or(0) as i16;
-                    let mut last_time = Instant::now();
-
-                    loop {
-                        std::thread::sleep(Duration::from_millis(100));
-
-                        let now = Instant::now();
-                        let current_count = pcnt_unit.get_count().unwrap_or(0) as i16;
-                        let elapsed = now.duration_since(last_time).as_secs_f32();
-
-                        // Cast to i16 so wrapping_sub cleanly handles the [-32768, 32767] hardware rollover
-                        let delta = current_count.wrapping_sub(last_count);
-                        let abs_delta = delta.unsigned_abs() as u32;
-
-                        let current_rpm = if elapsed > 0.0 {
-                            ((abs_delta as f32 / pulses_per_rotation as f32) / (elapsed / 60.0))
-                                as u32
-                        } else {
-                            0
-                        };
-
-                        rpm.store(current_rpm, Ordering::Relaxed);
-
-                        last_count = current_count;
-                        last_time = now;
-                    }
-                }
-            })
-            .unwrap();
-
         Self {
-            rpm,
+            // rpm,
             pulses_per_rotation,
             pcnt_unit,
             wheel_circumference_cm,
         }
-    }
-
-    pub fn get_rpm(&self) -> u32 {
-        self.rpm.load(Ordering::Relaxed)
     }
 
     pub fn get_total_pulses(&self) -> i32 {

@@ -76,7 +76,7 @@ impl Motor {
                             if control_counter >= 50 {
                                 control_counter = 0;
 
-                                let actual = tachometer.get_rpm() as i32;
+                                // let actual = tachometer.get_rpm() as i32;
                                 let is_forward_target = target > 0;
 
                                 if grace_cycles > 0 {
@@ -85,34 +85,34 @@ impl Motor {
                                     continue;
                                 }
 
-                                let effective_actual =
-                                    if is_forward_target { actual } else { -actual };
+                                // let effective_actual =
+                                //     if is_forward_target { actual } else { -actual };
 
-                                let error = target - effective_actual;
+                                // let error = target - effective_actual;
 
-                                let kp = 0.10_f32;
-                                let adjustment = (error as f32 * kp) as i32;
+                                // let kp = 0.10_f32;
+                                // let adjustment = (error as f32 * kp) as i32;
 
-                                currently_set_pwm += adjustment;
+                                // currently_set_pwm += adjustment;
 
-                                // Dynamically clamp PWM using limits derived from config bounds
-                                if is_forward_target {
-                                    let min_pwm =
-                                        motor_config.rpm_to_pwm(motor_config.min_pos_rpm()) as i32;
-                                    let max_pwm =
-                                        motor_config.rpm_to_pwm(motor_config.max_pos_rpm()) as i32;
-                                    currently_set_pwm = currently_set_pwm.clamp(min_pwm, max_pwm);
-                                } else {
-                                    let min_pwm =
-                                        motor_config.rpm_to_pwm(motor_config.min_neg_rpm()) as i32;
-                                    let max_pwm =
-                                        motor_config.rpm_to_pwm(motor_config.max_neg_rpm()) as i32;
-                                    // Reverse limits will have negative PWM values
-                                    currently_set_pwm = currently_set_pwm.clamp(
-                                        std::cmp::min(min_pwm, max_pwm),
-                                        std::cmp::max(min_pwm, max_pwm),
-                                    );
-                                }
+                                // // Dynamically clamp PWM using limits derived from config bounds
+                                // if is_forward_target {
+                                //     let min_pwm =
+                                //         motor_config.rpm_to_pwm(motor_config.min_pos_rpm()) as i32;
+                                //     let max_pwm =
+                                //         motor_config.rpm_to_pwm(motor_config.max_pos_rpm()) as i32;
+                                //     currently_set_pwm = currently_set_pwm.clamp(min_pwm, max_pwm);
+                                // } else {
+                                //     let min_pwm =
+                                //         motor_config.rpm_to_pwm(motor_config.min_neg_rpm()) as i32;
+                                //     let max_pwm =
+                                //         motor_config.rpm_to_pwm(motor_config.max_neg_rpm()) as i32;
+                                //     // Reverse limits will have negative PWM values
+                                //     currently_set_pwm = currently_set_pwm.clamp(
+                                //         std::cmp::min(min_pwm, max_pwm),
+                                //         std::cmp::max(min_pwm, max_pwm),
+                                //     );
+                                // }
 
                                 let _ = motor_hardware.set_pwm(currently_set_pwm as i8);
                             }

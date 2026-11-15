@@ -3,6 +3,7 @@ use std::{
     rc::Rc,
     sync::{
         Arc, Mutex,
+        atomic::{AtomicU32, AtomicUsize, Ordering},
         mpsc::{Receiver, SyncSender},
     },
 };
@@ -14,6 +15,7 @@ use crate::{
     the_beginner_car_hardware::TheBeginnerCarHardware,
 };
 use anyhow::{Result, anyhow};
+use esp_idf_sys::xTaskGetTickCount;
 use log::{error, info};
 use the_beginner_car_wasm_sdk::host::host_functions;
 use wamr_rust_sdk::{
@@ -28,6 +30,7 @@ pub enum WasmThreadCommand {
 pub struct WasmData {
     pub ct: CancellationToken,
     pub hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+    pub last_host_fn_call_ticks_ms: Arc<AtomicU32>,
 }
 
 impl Drop for WasmData {
@@ -41,12 +44,16 @@ pub struct WasmThread {
     runtime: Rc<Runtime>,
     on_stopped_running: Box<dyn Fn() + Send + 'static>,
     ct: CancellationToken,
+    active_wasm_instance: Arc<AtomicUsize>,
+    last_host_fn_call_ticks_ms: Arc<AtomicU32>,
 }
 
 impl WasmThread {
     pub fn new(
         hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+        active_wasm_instance: Arc<AtomicUsize>,
         on_stopped_running: impl Fn() + Send + 'static,
+        last_host_fn_call_ticks_ms: Arc<AtomicU32>,
         ct: CancellationToken,
     ) -> Result<Self> {
         let runtime_pool = vec![0u8; 32 * 1024].into_boxed_slice();
@@ -67,6 +74,8 @@ impl WasmThread {
             runtime: Rc::new(runtime),
             ct,
             on_stopped_running: Box::new(on_stopped_running),
+            last_host_fn_call_ticks_ms,
+            active_wasm_instance,
         })
     }
 
@@ -110,9 +119,17 @@ impl WasmThread {
                 .unwrap(),
         );
 
+        info!("running wasm");
+        self.active_wasm_instance
+            .store(instance.get_inner_instance() as usize, Ordering::Relaxed);
+
+        self.last_host_fn_call_ticks_ms
+            .store(unsafe { xTaskGetTickCount() }, Ordering::Relaxed);
+
         let mut wasm_data = Box::new(WasmData {
             ct,
             hardware: self.hardware.clone(),
+            last_host_fn_call_ticks_ms: self.last_host_fn_call_ticks_ms.clone(),
         });
 
         unsafe {
@@ -131,6 +148,7 @@ impl WasmThread {
         sender.send(anyhow::Ok(())).unwrap();
         let res = main_function.call(&vec![]);
         log::info!("{:?}", res);
+        self.active_wasm_instance.store(0, Ordering::Relaxed);
 
         // cleanup after cancellation
         if wasm_data.ct.is_cancelled() {

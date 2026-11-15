@@ -45,31 +45,21 @@ pub fn main() -> anyhow::Result<()> {
     info!("starting");
     let peripherals = Peripherals::take()?;
 
-    let wheel_right_tachometer = Tachometer::new(
+    let hardware_config = load_hardware_config()?.unwrap_or_default();
+
+    let wheel_left_tachometer = Tachometer::new(
         peripherals.pins.gpio5.into(),
         peripherals.pins.gpio4.into(),
         19.478,
         12,
     );
 
-    let hardware_config = load_hardware_config()?.unwrap_or_default();
-
-    let motor_right = Motor::new(
-        peripherals.pins.gpio11.into(),
-        peripherals.pins.gpio10.into(),
-        peripherals.ledc.channel1,
-        peripherals.ledc.timer2,
-        wheel_right_tachometer.clone(),
-        hardware_config.right_motor.clone(),
+    let wheel_right_tachometer = Tachometer::new(
+        peripherals.pins.gpio8.into(),
+        peripherals.pins.gpio1.into(),
+        19.478,
+        12,
     );
-
-    motor_right.set_pwm(0);
-    loop {
-        FreeRtos::delay_ms(10);
-        dbg!(wheel_right_tachometer.get_total_pulses());
-    }
-
-    let wheel_left_tachometer = Tachometer::new(todo!(), todo!(), 19.478, 12);
 
     let kalman_filter = KalmanFilter::new(
         wheel_left_tachometer.clone(),
@@ -83,6 +73,15 @@ pub fn main() -> anyhow::Result<()> {
         peripherals.ledc.timer1,
         wheel_left_tachometer.clone(),
         hardware_config.left_motor.clone(),
+    );
+
+    let motor_right = Motor::new(
+        peripherals.pins.gpio11.into(),
+        peripherals.pins.gpio10.into(),
+        peripherals.ledc.channel1,
+        peripherals.ledc.timer2,
+        wheel_right_tachometer.clone(),
+        hardware_config.right_motor.clone(),
     );
 
     // let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio13.into());

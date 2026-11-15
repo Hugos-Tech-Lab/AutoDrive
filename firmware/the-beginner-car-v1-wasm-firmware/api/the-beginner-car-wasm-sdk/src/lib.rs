@@ -4,12 +4,16 @@ pub mod macros;
 
 // Invoke the macro to generate the guest module and host trait
 define_wasm_api! {
+    // ==================
+    // ===== UTILS ======
+    // ==================
+    //
     /// takes u8 so we don't wait too long (i.e. 255ms max) between cancellation checks
     fn delay(milliseconds: u8);
 
-    fn delay_for_motor_left_rotations(count: u32, timeout: u32) -> u32;
+    // fn delay_for_motor_left_rotations(count: u32, timeout: u32) -> u32;
 
-    fn delay_for_motor_right_rotations(count: u32, timeout: u32) -> u32;
+    // fn delay_for_motor_right_rotations(count: u32, timeout: u32) -> u32;
 
     /// prints from memory
     fn print(ptr: u32, len: u32);
@@ -17,6 +21,10 @@ define_wasm_api! {
     /// Sets the onboard LED color
     fn set_onboard_led_color(r: u8, g: u8, b: u8);
 
+    // ==================
+    // === WHEEL LEFT ===
+    // ==================
+    //
     // This is a % from -100 to 100
     fn set_motor_left_speed(speed: i8);
 
@@ -24,6 +32,10 @@ define_wasm_api! {
 
     fn set_motor_left_rpm(pwm: i8);
 
+    // ==================
+    // === WHEEL RIGHT ==
+    // ==================
+    //
     // This is a % from -100 to 100
     fn set_motor_right_speed(speed: i8);
 
@@ -37,6 +49,18 @@ define_wasm_api! {
     fn set_led_right_on();
 
     fn set_led_right_off();
+
+    fn get_wheel_left_circumference_cm() -> f32;
+
+    fn get_wheel_left_pulses_per_rotation() -> i32;
+
+    fn get_wheel_left_total_pulses() -> i32;
+
+    fn get_wheel_right_circumference_cm() -> f32;
+
+    fn get_wheel_right_pulses_per_rotation() -> i32;
+
+    fn get_wheel_right_total_pulses() -> i32;
 
     fn get_ir_front_far_left_value() -> u16;
 

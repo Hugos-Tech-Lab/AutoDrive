@@ -18,7 +18,8 @@ use esp_idf_svc::hal::{
 pub struct Tachometer {
     rpm: Arc<AtomicU32>,
     pcnt_unit: Arc<PcntUnitDriver<'static>>,
-    cm_per_pulse: f32,
+    pulses_per_rotation: u32,
+    wheel_circumference_cm: f32,
 }
 
 impl Tachometer {
@@ -26,12 +27,11 @@ impl Tachometer {
         hall_sensor_a: AnyIOPin<'static>,
         hall_sensor_b: AnyIOPin<'static>,
         wheel_circumference_cm: f32,
-        pulses_per_rotation: i32,
+        pulses_per_rotation: u32,
     ) -> Self {
-        let pulses_per_rotation_4x = (pulses_per_rotation as f32) * 4.0;
+        let pulses_per_rotation = pulses_per_rotation * 4;
 
         let rpm = Arc::new(AtomicU32::new(0));
-        let pulses = Arc::new(AtomicU32::new(0));
 
         let mut pcnt_unit: PcntUnitDriver<'static> = PcntUnitDriver::new(&UnitConfig {
             low_limit: -32768,
@@ -96,7 +96,8 @@ impl Tachometer {
                         let abs_delta = delta.unsigned_abs() as u32;
 
                         let current_rpm = if elapsed > 0.0 {
-                            ((abs_delta as f32 / pulses_per_rotation_4x) / (elapsed / 60.0)) as u32
+                            ((abs_delta as f32 / pulses_per_rotation as f32) / (elapsed / 60.0))
+                                as u32
                         } else {
                             0
                         };
@@ -112,8 +113,9 @@ impl Tachometer {
 
         Self {
             rpm,
-            cm_per_pulse: wheel_circumference_cm / pulses_per_rotation_4x,
+            pulses_per_rotation,
             pcnt_unit,
+            wheel_circumference_cm,
         }
     }
 
@@ -125,7 +127,11 @@ impl Tachometer {
         self.pcnt_unit.get_count().unwrap()
     }
 
-    pub fn cm_per_pulse(&self) -> f32 {
-        self.cm_per_pulse
+    pub fn get_pulses_per_rotation(&self) -> u32 {
+        self.pulses_per_rotation
+    }
+
+    pub fn get_wheel_circumference_cm(&self) -> f32 {
+        self.wheel_circumference_cm
     }
 }

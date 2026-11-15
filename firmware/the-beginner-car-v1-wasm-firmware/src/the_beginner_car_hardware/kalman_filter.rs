@@ -57,9 +57,12 @@ impl KalmanFilter {
         state.left_tachometer_total_pulses_previous = left_tachometer_total_pulses;
         state.right_tachometer_total_pulses_previous = right_tachometer_total_pulses;
 
-        let distance_left_cm = left_tachometer_pulses as f32 * self.left_tachometer.cm_per_pulse();
-        let distance_right_cm =
-            right_tachometer_pulses as f32 * self.right_tachometer.cm_per_pulse();
+        let distance_left_cm = left_tachometer_pulses as f32
+            * (self.left_tachometer.get_wheel_circumference_cm() as f32
+                / self.left_tachometer.get_pulses_per_rotation() as f32);
+        let distance_right_cm = right_tachometer_pulses as f32
+            * (self.left_tachometer.get_wheel_circumference_cm() as f32
+                / self.left_tachometer.get_pulses_per_rotation() as f32);
         let position_delta = Self::predict(
             distance_left_cm,
             distance_right_cm,

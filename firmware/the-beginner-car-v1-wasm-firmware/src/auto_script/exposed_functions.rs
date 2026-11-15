@@ -13,7 +13,7 @@ use crate::auto_script::wasm_thread::WasmData;
 macro_rules! wasm_hardware_lock {
     ($exec_env:expr) => {{
         if $exec_env.is_null() {
-            log::error!("exec_env is null, we're about to crash!");
+            panic!("exec_env is null, we're about to crash!");
         }
         let exec_env = $exec_env.cast::<WASMExecEnv>();
         let wasm_data: &mut WasmData = get_wasm_data(exec_env);
@@ -175,24 +175,24 @@ impl WasmExports for TheBeginnerCarExports {
         let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
     }
 
-    unsafe extern "C" fn delay_for_motor_left_rotations(
-        exec_env: *mut c_void,
-        count: u32,
-        timeout: u32,
-    ) -> u32 {
-        let wasm_data = wasm_hardware_lock!(exec_env);
-        let mut hardware = wasm_data.hardware.lock().unwrap();
-        let delay_ms = hardware.wheel_left_wait_for_rotations(count, timeout, wasm_data.ct.clone());
-        delay_ms
-    }
+    // unsafe extern "C" fn delay_for_motor_left_rotations(
+    //     exec_env: *mut c_void,
+    //     count: u32,
+    //     timeout: u32,
+    // ) -> u32 {
+    //     let wasm_data = wasm_hardware_lock!(exec_env);
+    //     let mut hardware = wasm_data.hardware.lock().unwrap();
+    //     let delay_ms = hardware.wheel_left_wait_for_rotations(count, timeout, wasm_data.ct.clone());
+    //     delay_ms
+    // }
 
-    unsafe extern "C" fn delay_for_motor_right_rotations(
-        exec_env: *mut c_void,
-        count: u32,
-        timeout: u32,
-    ) -> u32 {
-        todo!()
-    }
+    // unsafe extern "C" fn delay_for_motor_right_rotations(
+    //     exec_env: *mut c_void,
+    //     count: u32,
+    //     timeout: u32,
+    // ) -> u32 {
+    //     todo!()
+    // }
 
     unsafe extern "C" fn set_motor_left_rpm(exec_env: *mut c_void, pwm: i8) {
         todo!()

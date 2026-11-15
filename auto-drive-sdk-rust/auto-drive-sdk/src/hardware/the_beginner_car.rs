@@ -27,7 +27,7 @@ impl TheBeginnerCar {
             return;
         }
 
-        let track_width_cm = 19.4; // TODO: expose this in the car 
+        let track_width_cm = 16.4; // TODO: expose this in the car 
 
         let wheel_left_circumference = self.wheel_left.circumference_cm();
         let wheel_right_circumference = self.wheel_right.circumference_cm();
@@ -53,8 +53,8 @@ impl TheBeginnerCar {
 
         let direction = if radians > 0.0 { 1 } else { -1 };
 
-        self.wheel_left.motor.set_pwm(-100 * direction); // TODO: replace with set_rpm
-        self.wheel_right.motor.set_pwm(100 * direction);
+        self.wheel_left.motor.set_pwm(-70 * direction); // TODO: replace with set_rpm
+        self.wheel_right.motor.set_pwm(70 * direction);
 
         loop {
             let left_elapsed = self
@@ -83,17 +83,19 @@ impl TheBeginnerCar {
         }
     }
 
+    // Positive angle = counter-clockwise (Left)
+    // Negative angle = clockwise (Right)
     pub fn rotate_by_degrees(&self, degrees: f32) {
         let radians = degrees * (core::f32::consts::PI / 180.0);
         self.rotate_by_radians(radians);
     }
 
     pub fn rotate_left(&self) {
-        self.rotate_by_degrees(-90.0);
+        self.rotate_by_degrees(90.0);
     }
 
     pub fn rotate_right(&self) {
-        self.rotate_by_degrees(90.0);
+        self.rotate_by_degrees(-90.0);
     }
 
     pub fn set_speed(left_amount: i8, right_amount: i8) {

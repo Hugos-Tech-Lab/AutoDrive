@@ -1,22 +1,23 @@
 use the_beginner_car_wasm_sdk::guest;
 
-use crate::hardware::the_beginner_car::wheel_left::{
-    motor_left::MotorLeft, tachometer_left::TachometerLeft,
+use crate::hardware::the_beginner_car::{
+    wheel_left::{motor_left::MotorLeft, tachometer_left::TachometerLeft},
+    wheel_right::{motor_right::MotorRight, tachometer_right::TachometerRight},
 };
 
 pub mod motor_right;
 pub mod tachometer_right;
 
 pub struct WheelRight {
-    pub motor: MotorLeft,
-    pub tachometer: TachometerLeft,
+    pub motor: MotorRight,
+    pub tachometer: TachometerRight,
 }
 
 impl WheelRight {
     pub fn new() -> Self {
         Self {
-            motor: todo!(),
-            tachometer: todo!(),
+            motor: MotorRight::new(),
+            tachometer: TachometerRight::new(),
         }
     }
 

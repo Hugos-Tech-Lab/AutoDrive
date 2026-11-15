@@ -5,6 +5,10 @@ pub struct TachometerRight {
 }
 
 impl TachometerRight {
+    pub(crate) fn new() -> Self {
+        Self {}
+    }
+
     pub fn pulses_per_rotation(&self) -> u32 {
         unsafe { guest::get_wheel_right_pulses_per_rotation() }
     }

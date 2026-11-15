@@ -1,7 +1,10 @@
 #![no_main]
 #![no_std]
 
-use auto_drive_sdk::{hardware::the_beginner_car::TheBeginnerCar, utils::delay};
+use auto_drive_sdk::{
+    hardware::the_beginner_car::TheBeginnerCar,
+    utils::{delay, print},
+};
 
 // pub fn is_far_left_on_line(the_beginner_car: &TheBeginnerCar) -> bool {
 //     the_beginner_car.get_ir_front_far_left_value() > 25_000
@@ -47,6 +50,17 @@ use auto_drive_sdk::{hardware::the_beginner_car::TheBeginnerCar, utils::delay};
 
 #[auto_drive_sdk::main]
 fn main(the_beginner_car: TheBeginnerCar) {
+    panic!();
+    // delay(1000);
+    // print("hi");
+    // delay(1000);
+
+    // the_beginner_car.wheel_left.motor.set_pwm(125);
+    // the_beginner_car.wheel_right.motor.set_pwm(15);
+    // delay(1000);
+    the_beginner_car.rotate_left();
+    the_beginner_car.rotate_left();
+    the_beginner_car.rotate_left();
     the_beginner_car.rotate_left();
     // the_beginner_car.set_motor_right_speed(50);
 

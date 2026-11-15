@@ -1,104 +1,86 @@
-use std::{
-    num::NonZeroU32,
-    sync::{
-        Arc,
-        atomic::{AtomicU32, Ordering},
-    },
-    time::{Duration, Instant},
-};
+use std::sync::Arc;
 
 use esp_idf_svc::hal::{
-    gpio::{AnyIOPin, InterruptType, PinDriver, Pull},
-    task::notification::Notification,
+    gpio::AnyIOPin,
+    pcnt::{
+        PcntUnitDriver,
+        config::{ChannelConfig, ChannelEdgeAction, ChannelLevelAction, UnitConfig},
+    },
 };
-use log::info;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Tachometer {
-    rpm: Arc<AtomicU32>,
-    pulses: Arc<AtomicU32>,
-    cm_per_pulse: f32,
+    pcnt_unit: Arc<PcntUnitDriver<'static>>,
+    pulses_per_rotation: u32,
+    wheel_circumference_cm: f32,
 }
 
 impl Tachometer {
-    pub fn new(hall_sensor: AnyIOPin<'static>) -> Self {
-        let circumference: f32 = 19.478;
-        let pulses_per_rotation = 2 as f32;
+    pub fn new(
+        hall_sensor_a: AnyIOPin<'static>,
+        hall_sensor_b: AnyIOPin<'static>,
+        wheel_circumference_cm: f32,
+        pulses_per_rotation: u32,
+    ) -> Self {
+        let pulses_per_rotation = pulses_per_rotation * 4;
 
-        let rpm = Arc::new(AtomicU32::new(0));
-        let pulses = Arc::new(AtomicU32::new(0));
+        let mut pcnt_unit: PcntUnitDriver<'static> = PcntUnitDriver::new(&UnitConfig {
+            low_limit: -32768,
+            high_limit: 32767,
+            ..Default::default()
+        })
+        .unwrap();
 
-        std::thread::Builder::new()
-            .name("tachometer".to_string())
-            .stack_size(4096)
-            .spawn({
-                let rpm = rpm.clone();
-                let pulses = pulses.clone();
+        // Bitwise copy to route the same physical pins to both channels in the GPIO matrix
+        let pin_a_ch0 = unsafe { core::ptr::read(&hall_sensor_a) };
+        let pin_b_ch0 = unsafe { core::ptr::read(&hall_sensor_b) };
+        let pin_a_ch1 = hall_sensor_a;
+        let pin_b_ch1 = hall_sensor_b;
 
-                move || {
-                    let notification = Arc::new(Notification::new());
-                    let notifier = notification.notifier();
-                    let mut hall_sensor = PinDriver::input(hall_sensor, Pull::Up).unwrap();
+        // Scope the channels so their `&mut pcnt_unit` borrows are released before enable/start
+        {
+            // Channel 0: Phase A signal, Phase B control
+            let ch0 = pcnt_unit
+                .add_channel(Some(pin_a_ch0), Some(pin_b_ch0), &ChannelConfig::default())
+                .unwrap();
+            ch0.set_edge_action(ChannelEdgeAction::Decrease, ChannelEdgeAction::Increase)
+                .unwrap();
+            ch0.set_level_action(ChannelLevelAction::Keep, ChannelLevelAction::Inverse)
+                .unwrap();
 
-                    hall_sensor
-                        .set_interrupt_type(InterruptType::NegEdge)
-                        .unwrap();
+            // Channel 1: Phase B signal, Phase A control
+            let ch1 = pcnt_unit
+                .add_channel(Some(pin_b_ch1), Some(pin_a_ch1), &ChannelConfig::default())
+                .unwrap();
+            ch1.set_edge_action(ChannelEdgeAction::Decrease, ChannelEdgeAction::Increase)
+                .unwrap();
+            ch1.set_level_action(ChannelLevelAction::Inverse, ChannelLevelAction::Keep)
+                .unwrap();
+        }
 
-                    unsafe {
-                        hall_sensor
-                            .subscribe({
-                                let notifier = notifier.clone();
-                                move || {
-                                    notifier.notify(NonZeroU32::new(1).unwrap());
-                                }
-                            })
-                            .unwrap();
-                    }
+        pcnt_unit.enable().unwrap();
+        pcnt_unit.clear_count().unwrap();
+        pcnt_unit.start().unwrap();
 
-                    let mut last_edge = None;
-
-                    loop {
-                        hall_sensor.enable_interrupt().unwrap();
-                        if let Some(_) = notification.wait(10000) {
-                            pulses.fetch_add(1, Ordering::Relaxed);
-                            info!("detected");
-                            let now = Instant::now();
-                            if let Some(last_edge_time) = last_edge {
-                                let elapsed = now.duration_since(last_edge_time);
-                                if elapsed > Duration::from_millis(2) {
-                                    let elapsed_secs = elapsed.as_secs_f32();
-                                    let current_rpm =
-                                        ((60.0 / elapsed_secs) / pulses_per_rotation) as u32;
-                                    rpm.store(current_rpm, Ordering::Relaxed);
-                                    info!("{}", current_rpm);
-                                }
-                            }
-                            last_edge = Some(now);
-                        } else {
-                            rpm.store(0, Ordering::Relaxed);
-                            last_edge = None;
-                        }
-                    }
-                }
-            })
-            .unwrap();
+        let pcnt_unit = Arc::new(pcnt_unit);
 
         Self {
-            rpm,
-            pulses,
-            cm_per_pulse: circumference / pulses_per_rotation,
+            // rpm,
+            pulses_per_rotation,
+            pcnt_unit,
+            wheel_circumference_cm,
         }
     }
 
-    pub fn get_rpm(&self) -> u32 {
-        self.rpm.load(Ordering::Relaxed)
+    pub fn get_total_pulses(&self) -> i32 {
+        self.pcnt_unit.get_count().unwrap()
     }
 
-    pub fn get_total_pulses(&self) -> u32 {
-        self.pulses.load(Ordering::Relaxed)
+    pub fn get_pulses_per_rotation(&self) -> u32 {
+        self.pulses_per_rotation
     }
 
-    pub fn cm_per_pulse(&self) -> f32 {
-        self.cm_per_pulse
+    pub fn get_wheel_circumference_cm(&self) -> f32 {
+        self.wheel_circumference_cm
     }
 }

@@ -45,15 +45,26 @@ pub fn main() -> anyhow::Result<()> {
     info!("starting");
     let peripherals = Peripherals::take()?;
 
-    let wheel_left_tachometer = Tachometer::new(peripherals.pins.gpio16.into());
-    let wheel_right_tachometer = Tachometer::new(peripherals.pins.gpio17.into());
+    let hardware_config = load_hardware_config()?.unwrap_or_default();
+
+    let wheel_left_tachometer = Tachometer::new(
+        peripherals.pins.gpio5.into(),
+        peripherals.pins.gpio4.into(),
+        19.478,
+        12,
+    );
+
+    let wheel_right_tachometer = Tachometer::new(
+        peripherals.pins.gpio0.into(),
+        peripherals.pins.gpio1.into(),
+        19.478,
+        12,
+    );
 
     let kalman_filter = KalmanFilter::new(
         wheel_left_tachometer.clone(),
         wheel_right_tachometer.clone(),
     );
-
-    let hardware_config = load_hardware_config()?.unwrap_or_default();
 
     let motor_left = Motor::new(
         peripherals.pins.gpio7.into(),

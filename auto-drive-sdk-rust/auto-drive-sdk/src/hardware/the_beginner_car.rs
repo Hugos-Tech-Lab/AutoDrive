@@ -1,10 +1,34 @@
 use the_beginner_car_wasm_sdk::guest;
 
-pub struct TheBeginnerCar;
+use crate::hardware::the_beginner_car::{
+    ir_sensor_array::IrSensorArray,
+    wheel_left::{__auto_drive_create_wheel_left, WheelLeft},
+};
+pub mod ir_sensor_array;
+pub mod wheel_left;
+
+pub struct TheBeginnerCar {
+    pub wheel_left: WheelLeft,
+    pub ir_sensor_array: IrSensorArray,
+}
 
 impl TheBeginnerCar {
     fn new() -> Self {
-        Self {}
+        Self {
+            wheel_left: __auto_drive_create_wheel_left(),
+        }
+    }
+
+    pub fn turn_left(&self) {
+        // self.wheel_left.
+    }
+
+    pub fn turn_right(&self) {
+        //
+    }
+
+    pub fn set_speed(left_amount: i8, right_amount: i8) {
+        //
     }
 
     pub fn set_onboard_led_color(r: u8, g: u8, b: u8) {
@@ -15,11 +39,11 @@ impl TheBeginnerCar {
 
     /// Sets the motor speed
     pub fn set_motor_left_speed(&self, speed: i8) {
-        unsafe { guest::set_motor_a_speed(speed) }
+        unsafe { guest::set_motor_left_speed(speed) }
     }
 
     pub fn set_motor_right_speed(&self, speed: i8) {
-        unsafe { guest::set_motor_b_speed(speed) }
+        unsafe { guest::set_motor_right_speed(speed) }
     }
 
     pub fn set_led_left_on(&self) {

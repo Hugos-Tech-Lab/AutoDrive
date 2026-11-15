@@ -167,35 +167,62 @@ impl WasmExports for TheBeginnerCarExports {
     }
 
     unsafe extern "C" fn set_motor_left_pwm(exec_env: *mut c_void, pwm: i8) {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
-        // let _ = hardware.wheel_left().set_pwm(pwm);
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let _ = hardware.wheel_left().motor().set_pwm(pwm);
+    }
+
+    unsafe extern "C" fn set_motor_left_rpm(exec_env: *mut c_void, rpm: i32) {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware.wheel_left().motor().set_rpm(rpm);
+    }
+
+    unsafe extern "C" fn get_wheel_left_circumference_cm(exec_env: *mut c_void) -> f32 {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware
+            .wheel_left()
+            .tachometer()
+            .get_wheel_circumference_cm()
+    }
+
+    unsafe extern "C" fn get_wheel_left_pulses_per_rotation(exec_env: *mut c_void) -> u32 {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware.wheel_left().tachometer().get_pulses_per_rotation()
+    }
+
+    unsafe extern "C" fn get_wheel_left_total_pulses(exec_env: *mut c_void) -> i32 {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware.wheel_left().tachometer().get_total_pulses()
     }
 
     unsafe extern "C" fn set_motor_right_pwm(exec_env: *mut c_void, pwm: i8) {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware.wheel_right().motor().set_pwm(pwm);
     }
 
-    // unsafe extern "C" fn delay_for_motor_left_rotations(
-    //     exec_env: *mut c_void,
-    //     count: u32,
-    //     timeout: u32,
-    // ) -> u32 {
-    //     let wasm_data = wasm_hardware_lock!(exec_env);
-    //     let mut hardware = wasm_data.hardware.lock().unwrap();
-    //     let delay_ms = hardware.wheel_left_wait_for_rotations(count, timeout, wasm_data.ct.clone());
-    //     delay_ms
-    // }
+    unsafe extern "C" fn set_motor_right_rpm(exec_env: *mut c_void, rpm: i32) {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware.wheel_right().motor().set_rpm(rpm);
+    }
 
-    // unsafe extern "C" fn delay_for_motor_right_rotations(
-    //     exec_env: *mut c_void,
-    //     count: u32,
-    //     timeout: u32,
-    // ) -> u32 {
-    //     todo!()
-    // }
+    unsafe extern "C" fn get_wheel_right_circumference_cm(exec_env: *mut c_void) -> f32 {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware
+            .wheel_right()
+            .tachometer()
+            .get_wheel_circumference_cm()
+    }
 
-    unsafe extern "C" fn set_motor_left_rpm(exec_env: *mut c_void, pwm: i8) {
-        todo!()
+    unsafe extern "C" fn get_wheel_right_pulses_per_rotation(exec_env: *mut c_void) -> u32 {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware
+            .wheel_right()
+            .tachometer()
+            .get_pulses_per_rotation()
+    }
+
+    unsafe extern "C" fn get_wheel_right_total_pulses(exec_env: *mut c_void) -> i32 {
+        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        hardware.wheel_right().tachometer().get_total_pulses()
     }
 }
 

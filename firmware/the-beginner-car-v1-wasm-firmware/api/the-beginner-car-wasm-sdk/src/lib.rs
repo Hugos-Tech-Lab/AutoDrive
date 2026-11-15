@@ -18,9 +18,6 @@ define_wasm_api! {
     /// prints from memory
     fn print(ptr: u32, len: u32);
 
-    /// Sets the onboard LED color
-    fn set_onboard_led_color(r: u8, g: u8, b: u8);
-
     // ==================
     // === WHEEL LEFT ===
     // ==================
@@ -30,17 +27,35 @@ define_wasm_api! {
 
     fn set_motor_left_pwm(pwm: i8);
 
-    fn set_motor_left_rpm(pwm: i8);
+    fn set_motor_left_rpm(rpm: i32);
 
-    // ==================
-    // === WHEEL RIGHT ==
-    // ==================
+    fn get_wheel_left_circumference_cm() -> f32;
+
+    fn get_wheel_left_pulses_per_rotation() -> u32;
+
+    fn get_wheel_left_total_pulses() -> i32;
+
+    // ===================
+    // === WHEEL RIGHT ===
+    // ===================
     //
     // This is a % from -100 to 100
     fn set_motor_right_speed(speed: i8);
 
     // From -128 to 127
     fn set_motor_right_pwm(pwm: i8);
+
+    // From -128 to 127
+    fn set_motor_right_rpm(rpm: i32);
+
+    fn get_wheel_right_circumference_cm() -> f32;
+
+    fn get_wheel_right_pulses_per_rotation() -> u32;
+
+    fn get_wheel_right_total_pulses() -> i32;
+
+    /// Sets the onboard LED color
+    fn set_onboard_led_color(r: u8, g: u8, b: u8);
 
     fn set_led_left_on();
 
@@ -50,17 +65,9 @@ define_wasm_api! {
 
     fn set_led_right_off();
 
-    fn get_wheel_left_circumference_cm() -> f32;
-
-    fn get_wheel_left_pulses_per_rotation() -> i32;
-
-    fn get_wheel_left_total_pulses() -> i32;
-
-    fn get_wheel_right_circumference_cm() -> f32;
-
-    fn get_wheel_right_pulses_per_rotation() -> i32;
-
-    fn get_wheel_right_total_pulses() -> i32;
+    // ===================
+    // = IR SENSOR ARRAY =
+    // ===================
 
     fn get_ir_front_far_left_value() -> u16;
 

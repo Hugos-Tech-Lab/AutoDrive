@@ -55,7 +55,7 @@ pub fn main() -> anyhow::Result<()> {
     );
 
     let wheel_right_tachometer = Tachometer::new(
-        peripherals.pins.gpio8.into(),
+        peripherals.pins.gpio0.into(),
         peripherals.pins.gpio1.into(),
         19.478,
         12,
@@ -88,6 +88,15 @@ pub fn main() -> anyhow::Result<()> {
 
     let wheel_left = Wheel::new(motor_left, wheel_left_tachometer);
     let wheel_right = Wheel::new(motor_right, wheel_right_tachometer);
+
+    // wheel_left.motor().set_pwm(0);
+    // wheel_right.motor().set_pwm(0);
+
+    // loop {
+    //     // dbg!(wheel_left.tachometer().get_total_pulses());
+    //     dbg!(wheel_right.tachometer().get_total_pulses());
+    //     FreeRtos::delay_ms(1);
+    // }
 
     if reason == 9 {
         // pin.set_color(9, 0, 200);

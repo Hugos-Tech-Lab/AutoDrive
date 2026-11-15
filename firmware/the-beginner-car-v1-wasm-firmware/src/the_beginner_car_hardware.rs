@@ -62,6 +62,14 @@ impl TheBeginnerCarHardware {
         }
     }
 
+    pub fn wheel_left(&mut self) -> &mut Wheel {
+        &mut self.wheel_left
+    }
+
+    pub fn wheel_right(&mut self) -> &mut Wheel {
+        &mut self.wheel_right
+    }
+
     // pub fn led_left(&mut self) -> &mut Led {
     //     &mut self.led_right // TODO fix this
     // }

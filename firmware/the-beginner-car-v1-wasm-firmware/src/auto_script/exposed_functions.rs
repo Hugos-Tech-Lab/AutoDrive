@@ -1,7 +1,9 @@
 use std::ffi::c_void;
 
 use esp_idf_svc::hal::delay::FreeRtos;
+use esp_idf_sys::xTaskGetTickCount;
 use log::info;
+use std::sync::atomic::Ordering;
 use the_beginner_car_wasm_sdk::host::WasmExports;
 use wamr_rust_sdk::sys::{
     WASMExecEnv, wasm_runtime_addr_app_to_native, wasm_runtime_get_custom_data,
@@ -17,9 +19,14 @@ macro_rules! wasm_hardware_lock {
         }
         let exec_env = $exec_env.cast::<WASMExecEnv>();
         let wasm_data: &mut WasmData = get_wasm_data(exec_env);
+        wasm_data
+            .last_host_fn_call_ticks_ms
+            .store(unsafe { xTaskGetTickCount() }, Ordering::Relaxed);
+
         if wasm_data.ct.is_cancelled() {
             unsafe { terminate(exec_env) };
         }
+
         wasm_data
     }};
 }
@@ -32,16 +39,7 @@ impl WasmExports for TheBeginnerCarExports {
     /// Must be called from within a WASM runtime with a valid exec_env.
     #[unsafe(no_mangle)]
     unsafe extern "C" fn delay(exec_env: *mut c_void, milliseconds: u8) {
-        if exec_env.is_null() {
-            return;
-        }
-        let exec_env = exec_env.cast::<WASMExecEnv>();
-
-        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-        if wasm_data.ct.is_cancelled() {
-            unsafe { terminate(exec_env) };
-        }
-
+        let _ = wasm_hardware_lock!(exec_env);
         FreeRtos::delay_ms(milliseconds as u32);
     }
 
@@ -50,15 +48,8 @@ impl WasmExports for TheBeginnerCarExports {
     /// Must be called from within a WASM runtime with a valid exec_env.
     #[unsafe(no_mangle)]
     unsafe extern "C" fn print(exec_env: *mut c_void, ptr: u32, len: u32) {
-        if exec_env.is_null() {
-            return;
-        }
+        let _ = wasm_hardware_lock!(exec_env);
         let exec_env = exec_env.cast::<WASMExecEnv>();
-
-        let wasm_data: &mut WasmData = get_wasm_data(exec_env);
-        if wasm_data.ct.is_cancelled() {
-            unsafe { terminate(exec_env) };
-        }
 
         let mut value = "";
         unsafe {

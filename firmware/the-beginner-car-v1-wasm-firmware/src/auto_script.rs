@@ -1,6 +1,7 @@
 use std::{
     sync::{
         Arc, Mutex,
+        atomic::{AtomicU32, AtomicUsize, Ordering},
         mpsc::{self, SyncSender},
     },
     thread::{self, JoinHandle},
@@ -15,7 +16,10 @@ use crate::{
     the_beginner_car_hardware::TheBeginnerCarHardware,
 };
 use anyhow::{Result, bail};
-use log::info;
+use esp_idf_svc::hal::delay::FreeRtos;
+use esp_idf_sys::xTaskGetTickCount;
+use log::{info, warn};
+use wamr_rust_sdk::sys::{WASMModuleInstanceCommon, wasm_runtime_terminate};
 pub mod cancellation_token;
 pub mod exposed_functions;
 pub mod wasm_thread;
@@ -44,6 +48,41 @@ impl AutoScript {
         let (sender, receiver) = mpsc::sync_channel(1);
         let ct = CancellationToken::new();
         let running = Arc::new(Mutex::new(false));
+        let last_host_fn_call_ticks_ms = Arc::new(AtomicU32::new(unsafe { xTaskGetTickCount() }));
+        let active_wasm_instance = Arc::new(AtomicUsize::new(0));
+
+        std::thread::Builder::new()
+            .name("wasm_supervisor".to_string())
+            .spawn({
+                unsafe { esp_idf_sys::vTaskPrioritySet(std::ptr::null_mut(), 6) };
+
+                let last_host_fn_call_ticks_ms = last_host_fn_call_ticks_ms.clone();
+                let active_wasm_instance = active_wasm_instance.clone();
+                move || {
+                    loop {
+                        let current_ticks_ms = unsafe { xTaskGetTickCount() };
+                        let last_host_fn_call_ticks_ms =
+                            last_host_fn_call_ticks_ms.load(Ordering::Relaxed);
+                        let time_since_last_host_fn_call_ms =
+                            current_ticks_ms.wrapping_sub(last_host_fn_call_ticks_ms);
+
+                        if time_since_last_host_fn_call_ms > 2000 {
+                            let inst_ptr = active_wasm_instance.load(Ordering::Relaxed);
+                            if inst_ptr != 0 {
+                                warn!("Timeout! Terminate runtime");
+                                unsafe {
+                                    wasm_runtime_terminate(
+                                        inst_ptr as *mut WASMModuleInstanceCommon,
+                                    )
+                                };
+                            }
+                        }
+                        FreeRtos::delay_ms(1000);
+                    }
+                }
+            })
+            .unwrap();
+
         let wasm_thread = thread::Builder::new()
             .name("wasm".to_owned())
             .stack_size(8 * 1024)
@@ -54,6 +93,7 @@ impl AutoScript {
                 move || {
                     let mut auto_script_wasm = WasmThread::new(
                         the_beginner_car,
+                        active_wasm_instance,
                         move || {
                             {
                                 let mut running_guard = running.lock().unwrap();
@@ -62,6 +102,7 @@ impl AutoScript {
 
                             on_stopped_running();
                         },
+                        last_host_fn_call_ticks_ms,
                         ct,
                     )
                     .expect("Failed to init WasmThread");

@@ -9,8 +9,8 @@ use log::info;
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
 use crate::{
-    auto_script::AutoScript, the_beginner_car_hardware::TheBeginnerCarHardware,
-    uptime_in_ms::uptime_in_ms,
+    auto_script::AutoScript, spawn_thread::spawn_thread,
+    the_beginner_car_hardware::TheBeginnerCarHardware, uptime_in_ms::uptime_in_ms,
 };
 
 pub struct ServerSpi {
@@ -31,15 +31,12 @@ impl ServerSpi {
         auto_script: Arc<AutoScript>,
         events: Arc<Mutex<Vec<Event>>>,
     ) -> anyhow::Result<Self> {
-        let handle = std::thread::Builder::new()
-            .stack_size(12_000)
-            .name("read_incoming_messages".to_string())
-            .spawn(move || {
-                let mut spi = SpiSlave::new(hardware).unwrap();
-                spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                    Self::handle_request(request, &the_beginner_car, &auto_script, &events)
-                });
-            })?;
+        let handle = spawn_thread(c"server_spi_incoming_messages", 5, 12_000, move || {
+            let mut spi = SpiSlave::new(hardware).unwrap();
+            spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
+                Self::handle_request(request, &the_beginner_car, &auto_script, &events)
+            });
+        })?;
 
         Ok(Self { handle })
     }

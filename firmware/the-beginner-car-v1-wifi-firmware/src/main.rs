@@ -8,7 +8,6 @@ use esp_idf_hal::{adc::oneshot::AdcDriver, sys};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
     hal::gpio::{PinDriver, Pull},
-    mdns::EspMdns,
     wifi::{BlockingWifi, EspWifi},
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
@@ -213,12 +212,12 @@ pub fn main() -> anyhow::Result<()> {
                                             })
                                             .unwrap()
                                     } // TODO: this should send vec
-                                    the_beginner_car_spi_protocol::Event::InfraredLedReadings { back_center, front_left, front_center, front_right, front_far_left, front_far_right, back_left  } => {
-                                        // dbg!(value);
-                                        sender_tx
-                                            .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { front_far_left, front_left, front_center, front_right, front_far_right, back_center, back_left  })
-                                            .unwrap()
-                                    }
+                                    // the_beginner_car_spi_protocol::Event::InfraredLedReadings { back_center, front_left, front_center, front_right, front_far_left, front_far_right, back_left  } => {
+                                    //     // dbg!(value);
+                                    //     sender_tx
+                                    //         .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { front_far_left, front_left, front_center, front_right, front_far_right, back_center, back_left  })
+                                    //         .unwrap()
+                                    // }
                                     the_beginner_car_spi_protocol::Event::AutoScriptStopped => {
                                         sender_tx
                                             .send(TheBeginnerCarOutgoingMessages::AutoScriptStopped)

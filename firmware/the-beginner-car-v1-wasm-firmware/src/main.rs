@@ -1,14 +1,18 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    ffi::CStr,
+    sync::{Arc, Mutex},
+};
 
 use auto_drive_common_types::LogSystemOrigin;
 use common_firmware::{logger::init_logging, spi_slave::SpiSlaveHardware};
-use esp_idf_svc::hal::delay::FreeRtos;
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
+use esp_idf_svc::hal::{delay::FreeRtos, task::thread::ThreadSpawnConfiguration};
 use the_beginner_car_spi_protocol::Event;
 
 use crate::{
     auto_script::AutoScript,
+    get_fw_sha256::{get_fw_sha256, print_task_stats, print_unallocated_memory, sample_cpu_usage},
     hardware_config::load_hardware_config,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
@@ -22,13 +26,17 @@ use crate::{
 use esp_idf_sys::esp_reset_reason;
 use log::info;
 pub mod auto_script;
+pub mod get_fw_sha256;
 pub mod hardware_config;
 pub mod server_spi;
+pub mod spawn_thread;
 pub mod the_beginner_car_hardware;
 pub mod uptime_in_ms;
+use crate::spawn_thread::spawn_thread;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();
+    // let fw_sha256 = get_fw_sha256().unwrap();
 
     unsafe {
         let config = esp_idf_sys::esp_vfs_eventfd_config_t { max_fds: 5 };
@@ -114,81 +122,90 @@ pub fn main() -> anyhow::Result<()> {
         }
     })?);
 
-    std::thread::Builder::new()
-        .name("position".to_string())
-        .spawn({
-            let events = events.clone();
+    ThreadSpawnConfiguration {
+        name: Some(c"position"),
+        priority: 5,
+        ..Default::default()
+    }
+    .set()
+    .unwrap();
 
-            move || {
-                let mut kalman_filter_state = kalman_filter.create_iterate_state();
+    spawn_thread(c"position", 5, 2_000, {
+        let events = events.clone();
 
-                loop {
-                    let _ = kalman_filter.iterate(&mut kalman_filter_state);
-                    // TODO: SAFETY?? check position isn't out of bounds or anything like that.
-                    // {
+        move || {
+            let mut kalman_filter_state = kalman_filter.create_iterate_state();
 
-                    // let latest_position =
-                    // }
-                    // let Some(position) {
-                    //     //
-                    // }
+            loop {
+                let _ = kalman_filter.iterate(&mut kalman_filter_state);
+                // TODO: SAFETY?? check position isn't out of bounds or anything like that.
+                // {
 
-                    // if let Some(position) = position {
-                    //     {
-                    //         let mut event_guard = events.lock().unwrap();
-                    //         let timestamp_unix_epoch_ms = std::time::SystemTime::now()
-                    //             .duration_since(std::time::UNIX_EPOCH)
-                    //             .expect("Time went backwards")
-                    //             .as_millis()
-                    //             as u64;
+                // let latest_position =
+                // }
+                // let Some(position) {
+                //     //
+                // }
 
-                    //         // event_guard.push(Position {
-                    //         //     x: position.x,
-                    //         //     y: position.y,
-                    //         //     rotation_radians: position.rotation_radians,
-                    //         //     timestamp_unix_epoch_ms,
-                    //         // });
-                    //     }
-                    //     // TODO: check if out of bounds
-                    // }
+                // if let Some(position) = position {
+                //     {
+                //         let mut event_guard = events.lock().unwrap();
+                //         let timestamp_unix_epoch_ms = std::time::SystemTime::now()
+                //             .duration_since(std::time::UNIX_EPOCH)
+                //             .expect("Time went backwards")
+                //             .as_millis()
+                //             as u64;
 
-                    FreeRtos::delay_ms(100);
-                }
+                //         // event_guard.push(Position {
+                //         //     x: position.x,
+                //         //     y: position.y,
+                //         //     rotation_radians: position.rotation_radians,
+                //         //     timestamp_unix_epoch_ms,
+                //         // });
+                //     }
+                //     // TODO: check if out of bounds
+                // }
+
+                FreeRtos::delay_ms(100);
             }
-        })
-        .unwrap();
+        }
+    })
+    .unwrap();
 
-    std::thread::Builder::new()
-        .stack_size(2_000)
-        .name("flush_logs".to_string())
-        .spawn({
-            let events = events.clone();
-            move || {
-                let mut pending_logs = Vec::new();
-                let mut last_flush = std::time::Instant::now();
+    spawn_thread(c"flush_logs", 4, 2_000, {
+        let events = events.clone();
+        move || {
+            let mut pending_logs = Vec::new();
+            let mut last_flush = std::time::Instant::now();
 
-                loop {
-                    match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
-                        Ok(log) => pending_logs.push(log),
-                        Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-                        Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                            dbg!();
-                            panic!();
-                        }
-                    }
-
-                    if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
-                        let mut events = events.lock().unwrap();
-                        events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
-
-                        last_flush = std::time::Instant::now();
+            loop {
+                match log_receiver.recv_timeout(std::time::Duration::from_millis(100)) {
+                    Ok(log) => pending_logs.push(log),
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        dbg!();
+                        panic!();
                     }
                 }
-            }
-        })
-        .unwrap();
 
-    //
+                if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
+                    let mut events = events.lock().unwrap();
+                    events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
+
+                    last_flush = std::time::Instant::now();
+                }
+            }
+        }
+    })
+    .unwrap();
+
+    // loop {
+    //     sample_cpu_usage();
+    //     print_task_stats();
+    //     print_unallocated_memory();
+    //     FreeRtos::delay_ms(1000);
+    // }
+    // //
 
     let spi_hardware = SpiSlaveHardware {
         spi_2: peripherals.spi2,

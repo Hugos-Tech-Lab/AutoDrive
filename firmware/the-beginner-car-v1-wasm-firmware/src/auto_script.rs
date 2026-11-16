@@ -4,7 +4,7 @@ use std::{
         atomic::{AtomicU32, AtomicUsize, Ordering},
         mpsc::{self, SyncSender},
     },
-    thread::{self, JoinHandle},
+    thread::JoinHandle,
     time::Duration,
 };
 
@@ -13,6 +13,7 @@ use crate::{
         cancellation_token::CancellationToken,
         wasm_thread::{WasmThread, WasmThreadCommand},
     },
+    spawn_thread::spawn_thread,
     the_beginner_car_hardware::TheBeginnerCarHardware,
     uptime_in_ms::uptime_in_ms,
 };
@@ -51,74 +52,65 @@ impl AutoScript {
         let last_host_fn_call_ticks_ms = Arc::new(AtomicU32::new(uptime_in_ms()));
         let active_wasm_instance = Arc::new(AtomicUsize::new(0));
 
-        std::thread::Builder::new()
-            .name("wasm_supervisor".to_string())
-            .spawn({
-                unsafe { esp_idf_sys::vTaskPrioritySet(std::ptr::null_mut(), 6) };
+        spawn_thread(c"wasm_supervisor", 6, 2_000, {
+            let last_host_fn_call_ticks_ms = last_host_fn_call_ticks_ms.clone();
+            let active_wasm_instance = active_wasm_instance.clone();
+            move || {
+                loop {
+                    let current_ticks_ms = uptime_in_ms();
+                    let last_host_fn_call_ticks_ms =
+                        last_host_fn_call_ticks_ms.load(Ordering::Relaxed);
+                    let time_since_last_host_fn_call_ms =
+                        current_ticks_ms.wrapping_sub(last_host_fn_call_ticks_ms);
 
-                let last_host_fn_call_ticks_ms = last_host_fn_call_ticks_ms.clone();
-                let active_wasm_instance = active_wasm_instance.clone();
-                move || {
-                    loop {
-                        let current_ticks_ms = uptime_in_ms();
-                        let last_host_fn_call_ticks_ms =
-                            last_host_fn_call_ticks_ms.load(Ordering::Relaxed);
-                        let time_since_last_host_fn_call_ms =
-                            current_ticks_ms.wrapping_sub(last_host_fn_call_ticks_ms);
-
-                        if time_since_last_host_fn_call_ms > 2000 {
-                            let inst_ptr = active_wasm_instance.load(Ordering::Relaxed);
-                            if inst_ptr != 0 {
-                                warn!("Timeout! Terminate runtime");
-                                unsafe {
-                                    wasm_runtime_terminate(
-                                        inst_ptr as *mut WASMModuleInstanceCommon,
-                                    )
-                                };
-                            }
+                    if time_since_last_host_fn_call_ms > 2000 {
+                        let inst_ptr = active_wasm_instance.load(Ordering::Relaxed);
+                        if inst_ptr != 0 {
+                            warn!("Timeout! Terminate runtime");
+                            unsafe {
+                                wasm_runtime_terminate(inst_ptr as *mut WASMModuleInstanceCommon)
+                            };
                         }
-                        FreeRtos::delay_ms(1000);
                     }
+                    FreeRtos::delay_ms(1000);
                 }
-            })
-            .unwrap();
+            }
+        })
+        .unwrap();
 
-        let wasm_thread = thread::Builder::new()
-            .name("wasm".to_owned())
-            .stack_size(8 * 1024)
-            .spawn({
-                let ct = ct.clone();
-                let running = running.clone();
+        let wasm_thread = spawn_thread(c"wasm", 5, 8 * 1024, {
+            let ct = ct.clone();
+            let running = running.clone();
 
-                move || {
-                    let mut auto_script_wasm = WasmThread::new(
-                        the_beginner_car,
-                        active_wasm_instance,
-                        move || {
-                            {
-                                let mut running_guard = running.lock().unwrap();
-                                *running_guard = false;
-                            }
+            move || {
+                let mut auto_script_wasm = WasmThread::new(
+                    the_beginner_car,
+                    active_wasm_instance,
+                    move || {
+                        {
+                            let mut running_guard = running.lock().unwrap();
+                            *running_guard = false;
+                        }
 
-                            on_stopped_running();
-                        },
-                        last_host_fn_call_ticks_ms,
-                        ct,
-                    )
-                    .expect("Failed to init WasmThread");
+                        on_stopped_running();
+                    },
+                    last_host_fn_call_ticks_ms,
+                    ct,
+                )
+                .expect("Failed to init WasmThread");
 
-                    loop {
-                        match auto_script_wasm.listen(&receiver) {
-                            Ok(_) => {
-                                info!("wasm thread processed command successfully");
-                            }
-                            Err(err) => {
-                                panic!("wasm thread crashed: '{:?}'", err);
-                            }
+                loop {
+                    match auto_script_wasm.listen(&receiver) {
+                        Ok(_) => {
+                            info!("wasm thread processed command successfully");
+                        }
+                        Err(err) => {
+                            panic!("wasm thread crashed: '{:?}'", err);
                         }
                     }
                 }
-            })?;
+            }
+        })?;
 
         Ok(Self {
             sender,

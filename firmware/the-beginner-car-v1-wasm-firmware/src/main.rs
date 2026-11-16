@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex, atomic::Ordering},
-    time::Duration,
-};
+use std::sync::{Arc, Mutex};
 
 use auto_drive_common_types::LogSystemOrigin;
 use common_firmware::{logger::init_logging, spi_slave::SpiSlaveHardware};
@@ -96,14 +93,14 @@ pub fn main() -> anyhow::Result<()> {
 
     let ir_sensor_array = Arc::new(IrSensorArray {}); // TODO construct with new 
 
-    let the_beginner_car = Arc::new(Mutex::new(TheBeginnerCarHardware::new(
+    let the_beginner_car = Arc::new(TheBeginnerCarHardware::new(
         wheel_left,
         wheel_right,
         // led_right,
         ir_sensor_array.clone(),
         kalman_filter.clone(),
         hardware_config,
-    )));
+    ));
 
     // let latest_position: Arc<Mutex<Option<Position>>> = Arc::new(Mutex::new(None));
     let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));

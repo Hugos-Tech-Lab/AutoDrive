@@ -29,7 +29,7 @@ pub enum WasmThreadCommand {
 
 pub struct WasmData {
     pub ct: CancellationToken,
-    pub hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+    pub hardware: Arc<TheBeginnerCarHardware>,
     pub last_host_fn_call_ticks_ms: Arc<AtomicU32>,
 }
 
@@ -40,7 +40,7 @@ impl Drop for WasmData {
 }
 
 pub struct WasmThread {
-    hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+    hardware: Arc<TheBeginnerCarHardware>,
     runtime: Rc<Runtime>,
     on_stopped_running: Box<dyn Fn() + Send + 'static>,
     ct: CancellationToken,
@@ -50,7 +50,7 @@ pub struct WasmThread {
 
 impl WasmThread {
     pub fn new(
-        hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+        hardware: Arc<TheBeginnerCarHardware>,
         active_wasm_instance: Arc<AtomicUsize>,
         on_stopped_running: impl Fn() + Send + 'static,
         last_host_fn_call_ticks_ms: Arc<AtomicU32>,
@@ -156,8 +156,7 @@ impl WasmThread {
         }
 
         {
-            let mut hardware = wasm_data.hardware.lock().unwrap();
-            hardware.stop_all();
+            wasm_data.hardware.stop_all();
         }
 
         log::info!("done");

@@ -1,7 +1,5 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicI8, AtomicI32, Ordering};
+use std::sync::{Arc, Mutex};
 
-use esp_idf_svc::hal::delay::FreeRtos;
 use esp_idf_svc::hal::units::*;
 use esp_idf_svc::hal::{
     gpio::{AnyIOPin, Output, PinDriver},
@@ -13,10 +11,8 @@ use crate::the_beginner_car_hardware::wheel::tachometer::Tachometer;
 
 pub struct Motor {
     tachometer: Tachometer,
-    // target_rpm: Arc<AtomicI32>,
-    // target_pwm: Arc<AtomicI8>,
     motor_config: MotorConfig,
-    motor_hardware: MotorHardware,
+    motor_hardware: Arc<Mutex<MotorHardware>>,
 }
 
 impl Motor {
@@ -33,120 +29,28 @@ impl Motor {
         S: SpeedMode,
         T: LedcTimer<SpeedMode = S> + 'static,
     {
-        let motor_hardware = MotorHardware::new(directional_pin, power_pin, channel, timer);
-
-        // let target_rpm = Arc::new(AtomicI32::new(0));
-        // let target_pwm = Arc::new(AtomicI8::new(0));
-
-        // std::thread::Builder::new()
-        //     .name("motor".to_string())
-        //     .stack_size(4096)
-        //     .spawn({
-        //         let target_pwm = target_pwm.clone();
-        //         let target_rpm = target_rpm.clone();
-        //         let tachometer = tachometer.clone();
-        //         let motor_config = motor_config.clone();
-        //         move || {
-        //             let mut currently_set_pwm: i32 = 0;
-        //             let mut control_counter = 0;
-        //             let mut last_rpm_target: i32 = 0;
-        //             let mut grace_cycles: i32 = 0;
-
-        //             loop {
-        //                 FreeRtos::delay_ms(1);
-        //                 let target_pwm_val = target_pwm.load(Ordering::Relaxed);
-        //                 if target_pwm_val != 0 {
-        //                     let _ = motor_hardware.set_pwm(target_pwm_val);
-        //                 } else {
-        //                     let target = target_rpm.load(Ordering::Relaxed);
-        //                     if target != last_rpm_target {
-        //                         last_rpm_target = target;
-        //                         grace_cycles = 4;
-        //                         // Initialize starting guess using the config table lookup
-        //                         currently_set_pwm = motor_config.rpm_to_pwm(target) as i32;
-        //                     }
-
-        //                     if target == 0 {
-        //                         currently_set_pwm = 0;
-        //                         let _ = motor_hardware.set_pwm(0);
-        //                         control_counter = 0;
-        //                         continue;
-        //                     }
-
-        //                     control_counter += 1;
-        //                     if control_counter >= 50 {
-        //                         control_counter = 0;
-
-        //                         // let actual = tachometer.get_rpm() as i32;
-        //                         let is_forward_target = target > 0;
-
-        //                         if grace_cycles > 0 {
-        //                             grace_cycles -= 1;
-        //                             let _ = motor_hardware.set_pwm(currently_set_pwm as i8);
-        //                             continue;
-        //                         }
-
-        //                         // let effective_actual =
-        //                         //     if is_forward_target { actual } else { -actual };
-
-        //                         // let error = target - effective_actual;
-
-        //                         // let kp = 0.10_f32;
-        //                         // let adjustment = (error as f32 * kp) as i32;
-
-        //                         // currently_set_pwm += adjustment;
-
-        //                         // // Dynamically clamp PWM using limits derived from config bounds
-        //                         // if is_forward_target {
-        //                         //     let min_pwm =
-        //                         //         motor_config.rpm_to_pwm(motor_config.min_pos_rpm()) as i32;
-        //                         //     let max_pwm =
-        //                         //         motor_config.rpm_to_pwm(motor_config.max_pos_rpm()) as i32;
-        //                         //     currently_set_pwm = currently_set_pwm.clamp(min_pwm, max_pwm);
-        //                         // } else {
-        //                         //     let min_pwm =
-        //                         //         motor_config.rpm_to_pwm(motor_config.min_neg_rpm()) as i32;
-        //                         //     let max_pwm =
-        //                         //         motor_config.rpm_to_pwm(motor_config.max_neg_rpm()) as i32;
-        //                         //     // Reverse limits will have negative PWM values
-        //                         //     currently_set_pwm = currently_set_pwm.clamp(
-        //                         //         std::cmp::min(min_pwm, max_pwm),
-        //                         //         std::cmp::max(min_pwm, max_pwm),
-        //                         //     );
-        //                         // }
-
-        //                         let _ = motor_hardware.set_pwm(currently_set_pwm as i8);
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     })
-        //     .unwrap();
+        let motor_hardware = Arc::new(Mutex::new(MotorHardware::new(
+            directional_pin,
+            power_pin,
+            channel,
+            timer,
+        )));
 
         Self {
             tachometer,
-            // target_rpm,
-            // target_pwm,
             motor_config,
             motor_hardware,
         }
     }
 
-    // pub fn set_rpm(&self, rpm: i32) {
-    //     self.target_pwm.store(0, Ordering::Relaxed);
-    //     self.target_rpm.store(rpm, Ordering::Relaxed);
-    // }
-
-    pub fn set_pwm(&mut self, pwm: i8) {
-        self.motor_hardware.set_pwm(pwm);
-        // self.target_pwm.store(pwm, Ordering::Relaxed);
+    pub fn set_pwm(&self, pwm: i8) {
+        let mut motor_hardware = self.motor_hardware.lock().unwrap();
+        motor_hardware.set_pwm(pwm);
     }
 
-    pub fn stop(&mut self) -> anyhow::Result<()> {
-        self.motor_hardware.set_pwm(0);
-
-        // self.target_rpm.store(0, Ordering::Relaxed);
-        // self.target_pwm.store(0, Ordering::Relaxed);
+    pub fn stop(&self) -> anyhow::Result<()> {
+        let mut motor_hardware = self.motor_hardware.lock().unwrap();
+        motor_hardware.set_pwm(0);
         Ok(())
     }
 }

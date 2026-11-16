@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicU32, Ordering},
+};
 
 use the_beginner_car_spi_protocol::Position;
 
@@ -35,7 +38,7 @@ pub struct TheBeginnerCarHardware {
     emergency_stop: EmergencyStop,
     // led_left: Led,
     // led_right: Led,
-    battery_voltage: f32,
+    battery_voltage: AtomicU32,
     hardware_config: HardwareConfig,
 }
 
@@ -54,7 +57,7 @@ impl TheBeginnerCarHardware {
             wheel_right,
             // led_left,
             // led_right,
-            battery_voltage: 0.0,
+            battery_voltage: AtomicU32::new(0),
             ir_sensor_array,
             kalman_filter,
             emergency_stop: EmergencyStop {},
@@ -62,12 +65,12 @@ impl TheBeginnerCarHardware {
         }
     }
 
-    pub fn wheel_left(&mut self) -> &mut Wheel {
-        &mut self.wheel_left
+    pub fn wheel_left(&self) -> &Wheel {
+        &self.wheel_left
     }
 
-    pub fn wheel_right(&mut self) -> &mut Wheel {
-        &mut self.wheel_right
+    pub fn wheel_right(&self) -> &Wheel {
+        &self.wheel_right
     }
 
     // pub fn led_left(&mut self) -> &mut Led {
@@ -97,26 +100,26 @@ impl TheBeginnerCarHardware {
         0
     }
 
-    pub fn set_wheel_left_speed(&mut self, speed: i8) {
-        // if self.allowed_controller != origin {
-        // panic!(); // TODO: not authorized
-        // }
+    // pub fn set_wheel_left_speed(&mut self, speed: i8) {
+    //     // if self.allowed_controller != origin {
+    //     // panic!(); // TODO: not authorized
+    //     // }
 
-        // self.wheel_left.set_speed(speed).unwrap();
-    }
+    //     // self.wheel_left.set_speed(speed).unwrap();
+    // }
 
-    pub fn set_wheel_right_speed(&mut self, speed: i8) {
-        // if self.allowed_controller != origin {
-        //     panic!(); // TODO: not allowed
-        // }
-        // self.wheel_right.set_speed(speed).unwrap();
-    }
+    // pub fn set_wheel_right_speed(&mut self, speed: i8) {
+    //     // if self.allowed_controller != origin {
+    //     //     panic!(); // TODO: not allowed
+    //     // }
+    //     // self.wheel_right.set_speed(speed).unwrap();
+    // }
 
     pub fn set_allowed_controller(&mut self) {
         // self.allowed_controller = controller;
     }
 
-    pub fn notify_position_from_camera(&mut self, position: Position) {
+    pub fn notify_position_from_camera(&self, position: Position) {
         self.kalman_filter.update(Position {
             x: position.x,
             y: position.y,
@@ -125,8 +128,11 @@ impl TheBeginnerCarHardware {
         });
     }
 
-    pub fn notify_battery_reading(&mut self, battery_voltage: f32) {
-        self.battery_voltage = battery_voltage;
+    pub fn notify_battery_reading(&self, battery_voltage: f32) {
+        let battery_voltage: u32 = (battery_voltage * 100.0).round() as u32;
+
+        self.battery_voltage
+            .store(battery_voltage, Ordering::Relaxed);
     }
 
     pub fn get_ir_front_far_left_value(&self) -> u16 {
@@ -170,7 +176,7 @@ impl TheBeginnerCarHardware {
         self.kalman_filter.position()
     }
 
-    pub fn stop_all(&mut self) {
+    pub fn stop_all(&self) {
         self.wheel_left.motor().stop().unwrap();
         self.wheel_right.motor().stop().unwrap();
         // self.led_left.stop().unwrap();

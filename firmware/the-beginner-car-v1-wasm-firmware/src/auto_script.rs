@@ -42,7 +42,7 @@ pub struct AutoScript {
 
 impl AutoScript {
     pub fn new(
-        the_beginner_car: Arc<Mutex<TheBeginnerCarHardware>>,
+        the_beginner_car: Arc<TheBeginnerCarHardware>,
         on_stopped_running: impl Fn() + Send + 'static,
     ) -> Result<Self> {
         let (sender, receiver) = mpsc::sync_channel(1);

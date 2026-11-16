@@ -87,25 +87,6 @@ impl WasmExports for TheBeginnerCarExports {
         unimplemented!();
     }
 
-    /// # Safety
-    ///
-    /// Must be called from within a WASM runtime with a valid exec_env.
-    #[unsafe(no_mangle)]
-    unsafe extern "C" fn set_motor_left_speed(exec_env: *mut c_void, speed: i8) {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
-
-        hardware.set_wheel_left_speed(speed);
-    }
-
-    /// # Safety
-    ///
-    /// Must be called from within a WASM runtime with a valid exec_env.
-    #[unsafe(no_mangle)]
-    unsafe extern "C" fn set_motor_right_speed(exec_env: *mut c_void, speed: i8) {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
-        hardware.set_wheel_right_speed(speed);
-    }
-
     unsafe extern "C" fn set_led_left_on(exec_env: *mut c_void) {
         let _ = wasm_hardware_lock!(exec_env);
     }
@@ -123,52 +104,47 @@ impl WasmExports for TheBeginnerCarExports {
     }
 
     unsafe extern "C" fn get_ir_back_center_value(exec_env: *mut c_void) -> u16 {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.get_ir_back_center_value()
     }
 
     unsafe extern "C" fn get_ir_front_left_value(exec_env: *mut c_void) -> u16 {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.get_ir_front_left_value()
     }
 
     unsafe extern "C" fn get_ir_front_center_value(exec_env: *mut c_void) -> u16 {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.get_ir_front_center_value()
     }
 
     unsafe extern "C" fn get_ir_front_right_value(exec_env: *mut c_void) -> u16 {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.get_ir_front_right_value()
     }
 
     unsafe extern "C" fn get_ir_front_far_left_value(exec_env: *mut c_void) -> u16 {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.get_ir_front_far_left_value()
     }
 
     unsafe extern "C" fn get_ir_front_far_right_value(exec_env: *mut c_void) -> u16 {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.get_ir_front_far_right_value()
     }
 
     unsafe extern "C" fn get_ir_back_left_value(exec_env: *mut c_void) -> u16 {
-        let hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.get_ir_back_left_value()
     }
 
     unsafe extern "C" fn set_motor_left_pwm(exec_env: *mut c_void, pwm: i8) {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         let _ = hardware.wheel_left().motor().set_pwm(pwm);
     }
 
-    unsafe extern "C" fn set_motor_left_rpm(exec_env: *mut c_void, rpm: i32) {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
-        // hardware.wheel_left().motor().set_rpm(rpm);
-    }
-
     unsafe extern "C" fn get_wheel_left_circumference_cm(exec_env: *mut c_void) -> f32 {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware
             .wheel_left()
             .tachometer()
@@ -176,27 +152,22 @@ impl WasmExports for TheBeginnerCarExports {
     }
 
     unsafe extern "C" fn get_wheel_left_pulses_per_rotation(exec_env: *mut c_void) -> u32 {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.wheel_left().tachometer().get_pulses_per_rotation()
     }
 
     unsafe extern "C" fn get_wheel_left_total_pulses(exec_env: *mut c_void) -> i32 {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.wheel_left().tachometer().get_total_pulses()
     }
 
     unsafe extern "C" fn set_motor_right_pwm(exec_env: *mut c_void, pwm: i8) {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.wheel_right().motor().set_pwm(pwm);
     }
 
-    unsafe extern "C" fn set_motor_right_rpm(exec_env: *mut c_void, rpm: i32) {
-        let mut _hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
-        // hardware.wheel_right().motor().set_rpm(rpm);
-    }
-
     unsafe extern "C" fn get_wheel_right_circumference_cm(exec_env: *mut c_void) -> f32 {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware
             .wheel_right()
             .tachometer()
@@ -204,7 +175,7 @@ impl WasmExports for TheBeginnerCarExports {
     }
 
     unsafe extern "C" fn get_wheel_right_pulses_per_rotation(exec_env: *mut c_void) -> u32 {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware
             .wheel_right()
             .tachometer()
@@ -212,7 +183,7 @@ impl WasmExports for TheBeginnerCarExports {
     }
 
     unsafe extern "C" fn get_wheel_right_total_pulses(exec_env: *mut c_void) -> i32 {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        let hardware = &wasm_hardware_lock!(exec_env).hardware;
         hardware.wheel_right().tachometer().get_total_pulses()
     }
 

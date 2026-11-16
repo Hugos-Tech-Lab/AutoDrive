@@ -86,7 +86,7 @@ impl KalmanFilter {
         position
     }
 
-    pub fn update(&mut self, position: Position) {
+    pub fn update(&self, position: Position) {
         let mut position_guard = self.position.lock().unwrap();
         position_guard.replace(position);
     }

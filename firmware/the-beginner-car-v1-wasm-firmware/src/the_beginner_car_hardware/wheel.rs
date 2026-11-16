@@ -13,8 +13,8 @@ impl Wheel {
         Self { motor, tachometer }
     }
 
-    pub fn motor(&mut self) -> &mut Motor {
-        &mut self.motor
+    pub fn motor(&self) -> &Motor {
+        &self.motor
     }
 
     pub fn tachometer(&self) -> &Tachometer {

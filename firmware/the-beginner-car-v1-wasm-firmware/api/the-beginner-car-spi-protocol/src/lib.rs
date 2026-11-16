@@ -30,15 +30,12 @@ impl Position {
 pub enum RequestToHardware {
     LightOn,
     LightOff,
-    SetMotorLeftSpeed(i8),
-    SetMotorRightSpeed(i8),
     DrainEvents,
     GetPosition,
     NotifyPositionFromCamera { position: Position },
     NotifyBatteryReadings { voltage: f32 },
     RunAutoScript { data: Vec<u8> },
     StopAutoScript,
-    RunCalibration,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

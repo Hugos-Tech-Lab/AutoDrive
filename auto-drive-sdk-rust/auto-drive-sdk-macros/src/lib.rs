@@ -56,7 +56,7 @@ pub fn main(_attr: TokenStream, item: TokenStream) -> TokenStream {
         fn panic(_info: &core::panic::PanicInfo) -> ! {
             // TODO add info about the panic
             ::auto_drive_sdk::utils::print("Oh no.. the WASM script panicked.");
-            loop {}
+            core::arch::wasm32::unreachable()
         }
     }
     .into()

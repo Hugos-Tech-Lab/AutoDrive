@@ -14,8 +14,12 @@ fn main(the_beginner_car: TheBeginnerCar) {
 
     loop {
         // the_beginner_car.set
-        the_beginner_car.set_motor_left_speed(-50);
-        the_beginner_car.set_motor_right_speed(50);
+        // the_beginner_car.set_motor_left_speed(-50);
+        // the_beginner_car.set_motor_right_speed(50);
+
+        // the_beginner_car.wheel_left.motor.set_pwm(120);
+
+        //
         delay(3000);
     }
 }

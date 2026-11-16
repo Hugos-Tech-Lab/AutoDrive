@@ -11,22 +11,22 @@ pub struct CancelRequest {
     pub run_uuid: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
-struct Claims {
-    sub: String, // User ID in Supabase
-    exp: usize,  // Expiration timestamp
-    aud: String, // Audience ("authenticated")
-}
+// #[derive(Debug, Deserialize)]
+// struct Claims {
+//     sub: String, // User ID in Supabase
+//     exp: usize,  // Expiration timestamp
+//     aud: String, // Audience ("authenticated")
+// }
 
-fn validate_supabase_jwt_offline(token: &str, jwt_secret: &str) -> bool {
-    let key = DecodingKey::from_secret(jwt_secret.as_bytes());
+// fn validate_supabase_jwt_offline(token: &str, jwt_secret: &str) -> bool {
+//     let key = DecodingKey::from_secret(jwt_secret.as_bytes());
 
-    // Supabase Auth tokens use HS256 by default
-    let mut validation = Validation::new(Algorithm::HS256);
-    validation.set_audience(&["authenticated"]);
+//     // Supabase Auth tokens use HS256 by default
+//     let mut validation = Validation::new(Algorithm::HS256);
+//     validation.set_audience(&["authenticated"]);
 
-    decode::<Claims>(token, &key, &validation).is_ok()
-}
+//     decode::<Claims>(token, &key, &validation).is_ok()
+// }
 
 // async fn validate_supabase_jwt(token: &str) -> Result<bool, reqwest::Error> {
 //     let supabase_url = std::env::var("SUPABASE_URL").unwrap_or_default();

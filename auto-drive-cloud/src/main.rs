@@ -3,11 +3,11 @@ use std::error::Error;
 use env_logger::Env;
 use log::info;
 
-use crate::http::http_server;
-
+use crate::{http::http_server, ignore_incomplete_message::IgnoreIncompleteMessage};
 pub mod edge_client;
 pub mod hardware;
 pub mod http;
+pub mod ignore_incomplete_message;
 
 pub mod auto_drive_edge_service {
     pub mod v1 {
@@ -17,9 +17,13 @@ pub mod auto_drive_edge_service {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-        .format_source_path(true) // Enables file and line number
-        .init();
+    let logger = env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .format_source_path(true)
+        .build(); // Enables file and line number
+
+    let max_level = logger.filter();
+    log::set_boxed_logger(Box::new(IgnoreIncompleteMessage(logger))).unwrap();
+    log::set_max_level(max_level);
 
     #[cfg(feature = "development")]
     info!("auto-drive-cloud launched in development mode");

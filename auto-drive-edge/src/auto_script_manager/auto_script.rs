@@ -103,14 +103,14 @@ impl AutoScript {
             match hardware_rx.recv().await {
                 Ok(message) => match message {
                     TheBeginnerCarOutgoingMessages::Log { log } => {
-                        if log.trace_id.as_deref() == Some(&run_uuid) {
-                            let event = AutoScriptEvents::LogMessage {
-                                log_message: log.clone(),
-                            };
-                            let mut hist_lock = events_history.write().await;
-                            hist_lock.push(event.clone());
-                            let _ = events_tx.send(event);
-                        }
+                        // if log.trace_id.as_deref() == Some(&run_uuid) {
+                        let event = AutoScriptEvents::LogMessage {
+                            log_message: log.clone(),
+                        };
+                        let mut hist_lock = events_history.write().await;
+                        hist_lock.push(event.clone());
+                        let _ = events_tx.send(event);
+                        // }
                     }
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
                         let event = AutoScriptEvents::ScriptExited;

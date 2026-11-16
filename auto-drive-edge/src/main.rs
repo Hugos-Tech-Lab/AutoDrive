@@ -5,7 +5,7 @@ use crate::{
 };
 
 use env_logger::Env;
-use hardware_config::{HardwareConfig, config::HARDWARE_CONFIG};
+use hardware_config::config::HARDWARE_CONFIG;
 use log::info;
 use opentelemetry_otlp::{MetricExporter, SpanExporter, WithExportConfig};
 use opentelemetry_sdk::{metrics::SdkMeterProvider, trace::SpanExporter as _};

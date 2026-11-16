@@ -8,6 +8,8 @@ description = "The AutoDrive SDK is a library providing functionality to write p
 
 [dependencies]
 auto-drive-sdk-macros.workspace = true
+# spinning_top = { version = "0.3.1", default-features = false }
+# talc = "5.1.1"
 the-beginner-car-wasm-sdk.workspace = true
 
 [lib]

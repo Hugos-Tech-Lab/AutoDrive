@@ -115,17 +115,6 @@ impl IrSensorArray {
 
                         if last_flush.elapsed() >= Duration::from_millis(100) {
                             let mut events = events.lock().unwrap();
-
-                            events.push(Event::InfraredLedReadings {
-                                front_far_left,
-                                front_left,
-                                front_center,
-                                front_right,
-                                front_far_right,
-                                back_left,
-                                back_center,
-                            });
-
                             last_flush = std::time::Instant::now();
                         }
 

@@ -27,6 +27,19 @@ impl Position {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct IrSensorArray {
+    // front
+    pub front_far_left: u32,
+    pub front_left: u32,
+    pub front_center: u32,
+    pub front_right: u32,
+    pub front_far_right: u32,
+    // back
+    pub back_center: u32,
+    pub back_left: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum RequestToHardware {
     LightOn,
     LightOff,
@@ -34,24 +47,14 @@ pub enum RequestToHardware {
     GetPosition,
     NotifyPositionFromCamera { position: Position },
     NotifyBatteryReadings { voltage: f32 },
+    NotifyIrSensorReadings { readings: IrSensorArray },
     RunAutoScript { data: Vec<u8> },
     StopAutoScript,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
-    Log {
-        message: LogMessage,
-    },
-    InfraredLedReadings {
-        front_far_left: u16,
-        front_left: u16,
-        front_center: u16,
-        front_right: u16,
-        front_far_right: u16,
-        back_left: u16,
-        back_center: u16,
-    },
+    Log { message: LogMessage },
     AutoScriptStopped,
 }
 

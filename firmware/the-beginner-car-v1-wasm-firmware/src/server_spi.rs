@@ -64,6 +64,7 @@ impl ServerSpi {
             RequestToHardware::NotifyBatteryReadings { voltage } => {
                 the_beginner_car.notify_battery_reading(voltage);
             }
+            RequestToHardware::NotifyIrSensorReadings { readings } => todo!(),
             RequestToHardware::RunAutoScript { data } => {
                 info!("run auto script");
                 match auto_script.run(data) {

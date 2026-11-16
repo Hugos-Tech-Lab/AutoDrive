@@ -164,7 +164,7 @@ impl WasmExports for TheBeginnerCarExports {
 
     unsafe extern "C" fn set_motor_left_rpm(exec_env: *mut c_void, rpm: i32) {
         let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
-        hardware.wheel_left().motor().set_rpm(rpm);
+        // hardware.wheel_left().motor().set_rpm(rpm);
     }
 
     unsafe extern "C" fn get_wheel_left_circumference_cm(exec_env: *mut c_void) -> f32 {
@@ -191,8 +191,8 @@ impl WasmExports for TheBeginnerCarExports {
     }
 
     unsafe extern "C" fn set_motor_right_rpm(exec_env: *mut c_void, rpm: i32) {
-        let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
-        hardware.wheel_right().motor().set_rpm(rpm);
+        let mut _hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
+        // hardware.wheel_right().motor().set_rpm(rpm);
     }
 
     unsafe extern "C" fn get_wheel_right_circumference_cm(exec_env: *mut c_void) -> f32 {

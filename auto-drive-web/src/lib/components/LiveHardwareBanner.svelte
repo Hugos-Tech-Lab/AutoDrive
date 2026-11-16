@@ -45,7 +45,6 @@
 </script>
 
 <div class="row">
-  <!-- Static Option -->
   <button
     type="button"
     class="button block"
@@ -54,6 +53,15 @@
     onclick={() => (selectedBuild = "Time Trials")}
   >
     Time Trials
+  </button>
+
+  <button
+    type="button"
+    class="button block"
+    // class:selected={selectedBuild === "Time Trials"}
+    // aria-pressed={selectedBuild === "Time Trials"}
+  >
+    Vehicles
   </button>
 
   {#each hardwareList as hw}

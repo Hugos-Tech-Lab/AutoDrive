@@ -1260,9 +1260,8 @@ msgstr "Stream Live"
 msgid "LIVE IN {0} SECONDS"
 msgstr "LIVE IN {0} SECONDS"
 
-#: src/lib/components/Dashboard.svelte
-msgid "Calibration"
-msgstr "Calibration"
+#~ msgid "Calibration"
+#~ msgstr "Calibration"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
@@ -1319,3 +1318,10 @@ msgstr "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
 
 #~ msgid "PixiJS + Svelte Headstart"
 #~ msgstr "PixiJS + Svelte Headstart"
+
+#~ msgid "Hardware"
+#~ msgstr "Hardware"
+
+#: src/lib/components/LiveHardwareBanner.svelte
+msgid "Vehicles"
+msgstr "Vehicles"

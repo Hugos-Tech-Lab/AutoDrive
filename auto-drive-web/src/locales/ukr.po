@@ -1260,9 +1260,8 @@ msgstr ""
 msgid "LIVE IN {0} SECONDS"
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-msgid "Calibration"
-msgstr ""
+#~ msgid "Calibration"
+#~ msgstr ""
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
@@ -1319,3 +1318,10 @@ msgstr ""
 
 #~ msgid "PixiJS + Svelte Headstart"
 #~ msgstr ""
+
+#~ msgid "Hardware"
+#~ msgstr ""
+
+#: src/lib/components/LiveHardwareBanner.svelte
+msgid "Vehicles"
+msgstr ""

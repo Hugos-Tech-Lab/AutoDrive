@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import * as PIXI from 'pixi.js';
-  import { Compass } from './dashboard/compass';
-  import { createPermanentRoom } from './dashboard/permanentRoom';
-  import { createBoundaries001 } from './dashboard/boundaries001';
-  import { createHardware001 } from './dashboard/hardware001';
-  import { createGridLayer } from './dashboard/uiGridLayer';
-  import { endpointRoot } from '../../endpoint';
+  import { onMount, onDestroy } from "svelte";
+  import * as PIXI from "pixi.js";
+  import { Compass } from "./Vehicles/Map/compass";
+  import { createPermanentRoom } from "./Vehicles/Map/permanentRoom";
+  import { createBoundaries001 } from "./Vehicles/Map/boundaries001";
+  import { createHardware001 } from "./Vehicles/Map/hardware001";
+  import { createGridLayer } from "./Vehicles/Map/uiGridLayer";
+  import { endpointRoot } from "../../endpoint";
 
   let container: HTMLDivElement;
   let app: PIXI.Application;
-  
+
   type Pose = { number_plate: string; x: number; y: number; rotation: number };
 
   let hardwareContainer: PIXI.Container;
@@ -25,8 +25,8 @@
     await app.init({
       width: widthPixels,
       height: heightPixels,
-      background: '#ffffff',
-      antialias: true
+      background: "#ffffff",
+      antialias: true,
     });
 
     if (container) {
@@ -36,21 +36,18 @@
     const pixelsPerMeter = 266;
     const bottomLeftXCm = 270;
     const bottomLeftYCm = 100;
-    
+
     const worldContainer = new PIXI.Container();
     const scaleFactor = pixelsPerMeter / 100;
 
     worldContainer.x = -bottomLeftXCm * scaleFactor;
-    worldContainer.y = heightPixels + (bottomLeftYCm * scaleFactor);
+    worldContainer.y = heightPixels + bottomLeftYCm * scaleFactor;
 
-    worldContainer.scale.set(
-        scaleFactor, 
-        -scaleFactor
-    );
+    worldContainer.scale.set(scaleFactor, -scaleFactor);
 
     const permanentRoom = createPermanentRoom();
     const boundaries = createBoundaries001();
-    
+
     // Initialize the hardware container that will hold all dynamic hardware items
     hardwareContainer = new PIXI.Container();
 
@@ -66,7 +63,7 @@
       pixelsPerMeter,
       bottomLeftXCm,
       bottomLeftYCm,
-      worldContainer
+      worldContainer,
     });
 
     app.stage.addChild(gridLayer);
@@ -84,10 +81,10 @@
 
     try {
       const json = JSON.parse(event.data);
-      const dataObj = json.data || json; 
+      const dataObj = json.data || json;
       const poses: Pose[] = Object.values(dataObj);
 
-      const incomingPlates = new Set(poses.map(p => p.number_plate));
+      const incomingPlates = new Set(poses.map((p) => p.number_plate));
 
       for (const [plate, item] of hardwareMap.entries()) {
         if (!incomingPlates.has(plate)) {

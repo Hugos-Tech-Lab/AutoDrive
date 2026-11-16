@@ -116,7 +116,7 @@ impl WasmThread {
         let instance = Rc::new(
             Instance::new(module.into(), 1024 * 16)
                 .map_err(|e| format!("failed to create instance: {}", e)) // TODO these should be more specific types for wasm and no unwrap AND CLEANUP TOO
-                .unwrap(),
+                .unwrap(), // TODO: Remove this unwrap.
         );
 
         info!("running wasm");

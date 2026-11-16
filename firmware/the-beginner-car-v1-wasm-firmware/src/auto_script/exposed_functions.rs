@@ -215,6 +215,30 @@ impl WasmExports for TheBeginnerCarExports {
         let mut hardware = wasm_hardware_lock!(exec_env).hardware.lock().unwrap();
         hardware.wheel_right().tachometer().get_total_pulses()
     }
+
+    unsafe extern "C" fn set_config_recommended_pwm(exec_env: *mut c_void, rpm: i16, pwm: i8) {
+        todo!()
+    }
+
+    unsafe extern "C" fn get_config_recommended_pwm(exec_env: *mut c_void, rpm: i16) -> i8 {
+        todo!()
+    }
+
+    unsafe extern "C" fn get_config_recommended_pos_min_rpm(exec_env: *mut c_void) -> i16 {
+        todo!()
+    }
+
+    unsafe extern "C" fn get_config_recommended_pos_max_rpm(exec_env: *mut c_void) -> i16 {
+        todo!()
+    }
+
+    unsafe extern "C" fn get_config_recommended_neg_min_rpm(exec_env: *mut c_void) -> i16 {
+        todo!()
+    }
+
+    unsafe extern "C" fn get_config_recommended_neg_max_rpm(exec_env: *mut c_void) -> i16 {
+        todo!()
+    }
 }
 
 unsafe fn terminate(exec_env: *mut WASMExecEnv) {

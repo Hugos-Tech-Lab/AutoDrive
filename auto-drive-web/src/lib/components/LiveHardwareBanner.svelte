@@ -82,7 +82,6 @@
 <style>
   .row {
     display: flex;
-    gap: 0.5rem;
   }
 
   .row .button {

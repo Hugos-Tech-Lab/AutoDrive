@@ -1,8 +1,8 @@
-
 <script lang="ts">
   import { onMount } from "svelte";
   import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
   import { endpointRoot } from "../../../endpoint";
+  import Status from "../Vehicles/Vehicle/Status.svelte";
 
   type Status = {
     utmost_front_utmost_left: number;
@@ -15,29 +15,24 @@
   let telemetryError = $state("");
 
   onMount(() => {
-    const source = new EventSource(
-      `${endpointRoot()}/status`
-    );
+    const source = new EventSource(`${endpointRoot()}/status`);
 
     source.onopen = () => {
       connectionStatus = "Connected";
       telemetryError = "";
     };
 
-    source.addEventListener(
-      "status",
-      (event: MessageEvent<string>) => {
-        try {
-          const parsed: unknown = JSON.parse(event.data);
+    source.addEventListener("status", (event: MessageEvent<string>) => {
+      try {
+        const parsed: unknown = JSON.parse(event.data);
 
-          lastUpdate = new Date();
-          telemetryError = "";
-        } catch (error) {
-          telemetryError = "Failed to parse telemetry data";
-          console.error("[Telemetry] Invalid event:", error);
-        }
+        lastUpdate = new Date();
+        telemetryError = "";
+      } catch (error) {
+        telemetryError = "Failed to parse telemetry data";
+        console.error("[Telemetry] Invalid event:", error);
       }
-    );
+    });
 
     source.onerror = () => {
       connectionStatus =
@@ -68,17 +63,6 @@
   <title>Status</title>
 </svelte:head>
 
-<h2 class="text-2xl mb-4">Status</h2>
+<Status />
 
-
-<div class="flex flex-col gap-4 mb-6">
-  Wifi MCU. Uptime: 00:00:00. Software: #1233987. 
-</div>
-
-<div class="flex flex-col gap-4 mb-6">
-  Wasm MCU. Uptime: 00:00:00. Software: #abcde. 
-</div>
-
-<div class="row">
-
-</div>
+<div class="row"></div>

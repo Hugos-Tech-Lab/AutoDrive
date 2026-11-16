@@ -403,7 +403,6 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/hardware/Status.svelte
-#: src/lib/components/hardware/Status.svelte
 msgid "Status"
 msgstr ""
 
@@ -1302,9 +1301,8 @@ msgstr ""
 #~ msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987"
 #~ msgstr ""
 
-#: src/lib/components/hardware/Status.svelte
-msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987."
-msgstr ""
+#~ msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987."
+#~ msgstr ""
 
 #~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #11111111."
 #~ msgstr ""
@@ -1312,9 +1310,8 @@ msgstr ""
 #~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #1111111."
 #~ msgstr ""
 
-#: src/lib/components/hardware/Status.svelte
-msgid "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
-msgstr ""
+#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
+#~ msgstr ""
 
 #~ msgid "PixiJS + Svelte Headstart"
 #~ msgstr ""
@@ -1324,4 +1321,37 @@ msgstr ""
 
 #: src/lib/components/LiveHardwareBanner.svelte
 msgid "Vehicles"
+msgstr ""
+
+#~ msgid "<0>Wifi MCU</0> Uptime: 00:00:00. Software: #1233987."
+#~ msgstr ""
+
+#~ msgid "<0>WASM MCU</0> Wasm MCU. Uptime: 00:00:00. Software: #abcde."
+#~ msgstr ""
+
+#~ msgid "<0>WASM MCU</0> Uptime: 00:00:00. Software: #abcde."
+#~ msgstr ""
+
+#~ msgid "The STATUS of the chips"
+#~ msgstr ""
+
+#~ msgid "The STATUS of the chips (MCUs) on board the vehicle"
+#~ msgstr ""
+
+#~ msgid "The STATUS of the MCUs on board the vehicle"
+#~ msgstr ""
+
+#~ msgid "The STATUS of the MCUs controlling the vehicle"
+#~ msgstr ""
+
+#: src/lib/components/Vehicles/Vehicle/Status.svelte
+msgid "The STATE of the MCUs controlling the vehicle"
+msgstr ""
+
+#: src/lib/components/Vehicles/Vehicle/Status.svelte
+msgid "<0>Wifi MCU</0> Uptime: 00:00:00. Firmware: #1233987."
+msgstr ""
+
+#: src/lib/components/Vehicles/Vehicle/Status.svelte
+msgid "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
 msgstr ""

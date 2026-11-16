@@ -14,6 +14,7 @@ use crate::{
         wasm_thread::{WasmThread, WasmThreadCommand},
     },
     the_beginner_car_hardware::TheBeginnerCarHardware,
+    uptime_in_ms::uptime_in_ms,
 };
 use anyhow::{Result, bail};
 use esp_idf_svc::hal::delay::FreeRtos;
@@ -48,7 +49,7 @@ impl AutoScript {
         let (sender, receiver) = mpsc::sync_channel(1);
         let ct = CancellationToken::new();
         let running = Arc::new(Mutex::new(false));
-        let last_host_fn_call_ticks_ms = Arc::new(AtomicU32::new(unsafe { xTaskGetTickCount() }));
+        let last_host_fn_call_ticks_ms = Arc::new(AtomicU32::new(uptime_in_ms()));
         let active_wasm_instance = Arc::new(AtomicUsize::new(0));
 
         std::thread::Builder::new()
@@ -60,7 +61,7 @@ impl AutoScript {
                 let active_wasm_instance = active_wasm_instance.clone();
                 move || {
                     loop {
-                        let current_ticks_ms = unsafe { xTaskGetTickCount() };
+                        let current_ticks_ms = uptime_in_ms();
                         let last_host_fn_call_ticks_ms =
                             last_host_fn_call_ticks_ms.load(Ordering::Relaxed);
                         let time_since_last_host_fn_call_ms =

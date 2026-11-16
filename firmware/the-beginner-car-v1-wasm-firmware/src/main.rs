@@ -25,6 +25,7 @@ pub mod auto_script;
 pub mod hardware_config;
 pub mod server_spi;
 pub mod the_beginner_car_hardware;
+pub mod uptime_in_ms;
 
 pub fn main() -> anyhow::Result<()> {
     esp_idf_svc::sys::link_patches();

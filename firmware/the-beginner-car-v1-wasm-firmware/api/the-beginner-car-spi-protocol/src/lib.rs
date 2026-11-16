@@ -50,6 +50,7 @@ pub enum RequestToHardware {
     NotifyIrSensorReadings { readings: IrSensorArray },
     RunAutoScript { data: Vec<u8> },
     StopAutoScript,
+    Uptime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -66,4 +67,5 @@ pub enum ResponseFromHardware {
     AutoScriptStarted { id: i32 },
     CalibrationReadings {},
     Position { position: Option<Position> },
+    Uptime { ms: u32 },
 }

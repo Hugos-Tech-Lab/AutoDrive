@@ -8,7 +8,10 @@ use esp_idf_svc::hal::gpio::{InputPin, OutputPin};
 use log::info;
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
-use crate::{auto_script::AutoScript, the_beginner_car_hardware::TheBeginnerCarHardware};
+use crate::{
+    auto_script::AutoScript, the_beginner_car_hardware::TheBeginnerCarHardware,
+    uptime_in_ms::uptime_in_ms,
+};
 
 pub struct ServerSpi {
     pub handle: JoinHandle<()>,
@@ -85,6 +88,9 @@ impl ServerSpi {
                 let position = the_beginner_car.get_position();
 
                 return ResponseFromHardware::Position { position };
+            }
+            RequestToHardware::Uptime => {
+                return ResponseFromHardware::Uptime { ms: uptime_in_ms() };
             }
         }
 

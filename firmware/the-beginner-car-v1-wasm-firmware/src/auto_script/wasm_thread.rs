@@ -13,6 +13,7 @@ use crate::{
         cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarExports,
     },
     the_beginner_car_hardware::TheBeginnerCarHardware,
+    uptime_in_ms::uptime_in_ms,
 };
 use anyhow::{Result, anyhow};
 use esp_idf_sys::xTaskGetTickCount;
@@ -124,7 +125,7 @@ impl WasmThread {
             .store(instance.get_inner_instance() as usize, Ordering::Relaxed);
 
         self.last_host_fn_call_ticks_ms
-            .store(unsafe { xTaskGetTickCount() }, Ordering::Relaxed);
+            .store(uptime_in_ms(), Ordering::Relaxed);
 
         let mut wasm_data = Box::new(WasmData {
             ct,

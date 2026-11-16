@@ -1,7 +1,8 @@
 use std::ffi::c_void;
 
+use crate::auto_script::wasm_thread::WasmData;
+use crate::uptime_in_ms::uptime_in_ms;
 use esp_idf_svc::hal::delay::FreeRtos;
-use esp_idf_sys::xTaskGetTickCount;
 use log::info;
 use std::sync::atomic::Ordering;
 use the_beginner_car_wasm_sdk::host::WasmExports;
@@ -9,8 +10,6 @@ use wamr_rust_sdk::sys::{
     WASMExecEnv, wasm_runtime_addr_app_to_native, wasm_runtime_get_custom_data,
     wasm_runtime_get_module_inst, wasm_runtime_terminate, wasm_runtime_validate_app_addr,
 };
-
-use crate::auto_script::wasm_thread::WasmData;
 
 macro_rules! wasm_hardware_lock {
     ($exec_env:expr) => {{
@@ -21,7 +20,7 @@ macro_rules! wasm_hardware_lock {
         let wasm_data: &mut WasmData = get_wasm_data(exec_env);
         wasm_data
             .last_host_fn_call_ticks_ms
-            .store(unsafe { xTaskGetTickCount() }, Ordering::Relaxed);
+            .store(uptime_in_ms(), Ordering::Relaxed);
 
         if wasm_data.ct.is_cancelled() {
             unsafe { terminate(exec_env) };

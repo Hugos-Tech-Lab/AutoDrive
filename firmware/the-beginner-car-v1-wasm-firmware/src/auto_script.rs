@@ -18,7 +18,6 @@ use crate::{
 };
 use anyhow::{Result, bail};
 use esp_idf_svc::hal::delay::FreeRtos;
-use esp_idf_sys::xTaskGetTickCount;
 use log::{info, warn};
 use wamr_rust_sdk::sys::{WASMModuleInstanceCommon, wasm_runtime_terminate};
 pub mod cancellation_token;

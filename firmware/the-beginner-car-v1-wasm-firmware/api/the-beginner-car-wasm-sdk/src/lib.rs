@@ -83,6 +83,15 @@ define_wasm_api! {
 
     fn get_ir_back_left_value() -> u16;
 
+    // ==================
+    // ==== POSITION ====
+    // ==================
+
+    fn get_pos_x() -> f32;
+
+    fn get_pos_y() -> f32;
+
+    fn get_rotation_radians() -> f32;
 
     // ==================
     // ===== CONFIG =====

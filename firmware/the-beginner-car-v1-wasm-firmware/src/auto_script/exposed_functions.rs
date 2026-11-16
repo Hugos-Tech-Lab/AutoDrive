@@ -239,6 +239,18 @@ impl WasmExports for TheBeginnerCarExports {
     unsafe extern "C" fn get_config_recommended_neg_max_rpm(exec_env: *mut c_void) -> i16 {
         todo!()
     }
+
+    unsafe extern "C" fn get_pos_x(exec_env: *mut c_void) -> f32 {
+        todo!()
+    }
+
+    unsafe extern "C" fn get_pos_y(exec_env: *mut c_void) -> f32 {
+        todo!()
+    }
+
+    unsafe extern "C" fn get_rotation_radians(exec_env: *mut c_void) -> f32 {
+        todo!()
+    }
 }
 
 unsafe fn terminate(exec_env: *mut WASMExecEnv) {

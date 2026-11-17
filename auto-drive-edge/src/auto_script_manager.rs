@@ -140,6 +140,21 @@ impl AutoScriptManager {
         }
     }
 
+    pub async fn run_auto_script(&self, run_uuid: String, number_plate: String) -> Result<(), ()> {
+        {
+            let mut vehicles_and_scripts_state = self.the_beginner_car_scripts.lock().await;
+            let the_beginner_car = vehicles_and_scripts_state
+                .the_beginner_cars
+                .iter()
+                .find(|the_beginner_car| the_beginner_car.metadata.number_plate == number_plate)
+                .unwrap();
+
+            the_beginner_car.
+        }
+
+        Ok(())
+    }
+
     pub async fn enqueue_auto_script(
         &self,
         owner_name: String,

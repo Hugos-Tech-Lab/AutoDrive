@@ -8,13 +8,13 @@ use tonic::{Request, Response, Status};
 
 use crate::{
     auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, CancelAutoScriptResponse, Hardware,
-        NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse, RunAutoScriptRequest,
-        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
-        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwarePoseRequest,
-        WatchHardwarePoseResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse,
-        WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse,
-        auto_drive_edge_service_server::AutoDriveEdgeService,
+        CancelAutoScriptRequest, CancelAutoScriptResponse, EnqueueAutoScriptRequest,
+        EnqueueAutoScriptResponse, Hardware, NotifyHardwareCoordinatesRequest,
+        NotifyHardwareCoordinatesResponse, RunAutoScriptRequest, RunAutoScriptResponse,
+        WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse, WatchAutoScriptRequest,
+        WatchAutoScriptResponse, WatchHardwarePoseRequest, WatchHardwarePoseResponse,
+        WatchHardwareStatusRequest, WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
+        WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
     },
     auto_script_manager::AutoScriptManager,
     grpc_service::types::to_grpc_log_message,
@@ -42,6 +42,20 @@ impl GrpcService {
 
 #[tonic::async_trait]
 impl AutoDriveEdgeService for GrpcService {
+    async fn enqueue_auto_script(
+        &self,
+        request: Request<EnqueueAutoScriptRequest>,
+    ) -> Result<Response<EnqueueAutoScriptResponse>, Status> {
+        let request = request.into_inner();
+        let run_uuid = self
+            .auto_script_manager
+            .enqueue_auto_script(request.owner_name, request.owner_comment, request.data)
+            .await;
+        dbg!("run request");
+
+        Ok(Response::new(EnqueueAutoScriptResponse { run_uuid }))
+    }
+
     async fn run_auto_script(
         &self,
         request: Request<RunAutoScriptRequest>,

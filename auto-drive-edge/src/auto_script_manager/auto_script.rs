@@ -20,6 +20,13 @@ use crate::{
 };
 
 #[derive(Clone, Debug)]
+pub enum AutoScriptType {
+    TimeTrial,
+    Reposition,
+    ConfigAdjust,
+}
+
+#[derive(Clone, Debug)]
 pub struct AutoScript {
     pub owner_name: String,
     pub owner_comment: String,
@@ -37,6 +44,7 @@ pub struct AutoScript {
     pub vehicle_start_time: Option<DateTime<Utc>>,
     pub vehicle_finish_time: Option<DateTime<Utc>>,
     pub script_stop_time: Option<DateTime<Utc>>,
+    // pub script_type: AutoScriptType,
 }
 
 impl AutoScript {

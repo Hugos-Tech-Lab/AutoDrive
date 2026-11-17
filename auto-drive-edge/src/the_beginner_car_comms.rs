@@ -1,4 +1,8 @@
-use std::{thread, time::Duration};
+use std::{
+    sync::atomic::{AtomicBool, AtomicI32, AtomicU32},
+    thread,
+    time::Duration,
+};
 
 use hardware_config::TheBeginnerCarMetadata;
 use log::{info, warn};
@@ -7,7 +11,7 @@ use the_beginner_car_tcp_protocol::{
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{TcpStream, lookup_host},
+    net::TcpStream,
     select,
     sync::{broadcast, mpsc, watch},
     task::JoinHandle,

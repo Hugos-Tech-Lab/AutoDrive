@@ -14,12 +14,6 @@ pub struct AutoScript {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TheBeginnerCarIncomingMessages {
-    SetMotorLeftSpeed {
-        speed: i8,
-    },
-    SetMotorRightSpeed {
-        speed: i8,
-    },
     NotifyPositionFromCamera {
         x: f32,
         y: f32,
@@ -47,8 +41,16 @@ pub enum TheBeginnerCarOutgoingMessages {
         speed: i8,
     },
     WasmInstalled,
-    AutoScriptRunning,
-    AutoScriptStopped,
+    AutoScriptRunning {
+        run_uuid: String,
+        script_start_time_utc_ms: u64,
+    },
+    AutoScriptStopped {
+        run_uuid: String,
+        script_stop_time_utc_ms: u64,
+        vehicle_start_time_utc_ms: u64,
+        vehicle_finish_time_utc_ms: u64,
+    },
     BatteryReading {
         voltage: f32,
     },

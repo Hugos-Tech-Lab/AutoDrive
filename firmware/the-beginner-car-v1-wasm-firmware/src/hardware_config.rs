@@ -10,10 +10,8 @@ pub struct PwmToRpm {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct MotorConfig {
-    /// ranged from 1 - 2,147,483,647
     pub min_pos_rpm: i32,
     pub max_pos_rpm: i32,
-    /// ranged from -2,147,483,647 to -1
     pub min_neg_rpm: i32,
     pub max_neg_rpm: i32,
     pub pwm_to_rpm: Vec<PwmToRpm>,

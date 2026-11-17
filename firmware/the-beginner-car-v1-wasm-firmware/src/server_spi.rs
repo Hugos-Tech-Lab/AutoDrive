@@ -8,7 +8,10 @@ use esp_idf_svc::hal::gpio::{InputPin, OutputPin};
 use log::info;
 use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
 
-use crate::{auto_script::AutoScript, the_beginner_car_hardware::TheBeginnerCarHardware};
+use crate::{
+    auto_script::AutoScript, spawn_thread::spawn_thread,
+    the_beginner_car_hardware::TheBeginnerCarHardware, uptime_in_ms::uptime_in_ms,
+};
 
 pub struct ServerSpi {
     pub handle: JoinHandle<()>,
@@ -24,40 +27,29 @@ impl ServerSpi {
         MRDY: InputPin + 'static,
     >(
         hardware: SpiSlaveHardware<SCLK, SDI, SDO, SRDY, CS, MRDY>,
-        the_beginner_car: Arc<Mutex<TheBeginnerCarHardware>>,
+        the_beginner_car: Arc<TheBeginnerCarHardware>,
         auto_script: Arc<AutoScript>,
         events: Arc<Mutex<Vec<Event>>>,
     ) -> anyhow::Result<Self> {
-        let handle = std::thread::Builder::new()
-            .stack_size(12_000)
-            .name("read_incoming_messages".to_string())
-            .spawn(move || {
-                let mut spi = SpiSlave::new(hardware).unwrap();
-                spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                    Self::handle_request(request, &the_beginner_car, &auto_script, &events)
-                });
-            })?;
+        let handle = spawn_thread(c"server_spi_incoming_messages", 5, 12_000, move || {
+            let mut spi = SpiSlave::new(hardware).unwrap();
+            spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
+                Self::handle_request(request, &the_beginner_car, &auto_script, &events)
+            });
+        })?;
 
         Ok(Self { handle })
     }
 
     fn handle_request(
         request: RequestToHardware,
-        the_beginner_car: &Arc<Mutex<TheBeginnerCarHardware>>,
+        the_beginner_car: &Arc<TheBeginnerCarHardware>,
         auto_script: &Arc<AutoScript>,
         events: &Arc<Mutex<Vec<Event>>>,
     ) -> ResponseFromHardware {
         match request {
             RequestToHardware::LightOn => println!("LightOn"),
             RequestToHardware::LightOff => println!("LightOff"),
-            RequestToHardware::SetMotorLeftSpeed(speed) => {
-                let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_left_speed(speed);
-            }
-            RequestToHardware::SetMotorRightSpeed(speed) => {
-                let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.set_wheel_right_speed(speed);
-            }
             RequestToHardware::DrainEvents => {
                 let events = {
                     let mut events = events.lock().unwrap();
@@ -67,13 +59,12 @@ impl ServerSpi {
                 return ResponseFromHardware::Events { events };
             }
             RequestToHardware::NotifyPositionFromCamera { position } => {
-                let mut the_beginner_car = the_beginner_car.lock().unwrap();
                 the_beginner_car.notify_position_from_camera(position);
             }
             RequestToHardware::NotifyBatteryReadings { voltage } => {
-                let mut the_beginner_car = the_beginner_car.lock().unwrap();
                 the_beginner_car.notify_battery_reading(voltage);
             }
+            RequestToHardware::NotifyIrSensorReadings { readings } => todo!(),
             RequestToHardware::RunAutoScript { data } => {
                 info!("run auto script");
                 match auto_script.run(data) {
@@ -90,15 +81,13 @@ impl ServerSpi {
                     events.push(Event::AutoScriptStopped);
                 }
             } // TODO: RENAME TO CANCEL AutoScript
-            RequestToHardware::RunCalibration => {
-                let mut the_beginner_car = the_beginner_car.lock().unwrap();
-                the_beginner_car.run_calibration();
-            }
             RequestToHardware::GetPosition => {
-                let the_beginner_car = the_beginner_car.lock().unwrap();
                 let position = the_beginner_car.get_position();
 
                 return ResponseFromHardware::Position { position };
+            }
+            RequestToHardware::Uptime => {
+                return ResponseFromHardware::Uptime { ms: uptime_in_ms() };
             }
         }
 

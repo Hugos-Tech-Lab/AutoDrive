@@ -13,6 +13,7 @@ use crate::{
         cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarExports,
     },
     the_beginner_car_hardware::TheBeginnerCarHardware,
+    uptime_in_ms::uptime_in_ms,
 };
 use anyhow::{Result, anyhow};
 use esp_idf_sys::xTaskGetTickCount;
@@ -29,7 +30,7 @@ pub enum WasmThreadCommand {
 
 pub struct WasmData {
     pub ct: CancellationToken,
-    pub hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+    pub hardware: Arc<TheBeginnerCarHardware>,
     pub last_host_fn_call_ticks_ms: Arc<AtomicU32>,
 }
 
@@ -40,7 +41,7 @@ impl Drop for WasmData {
 }
 
 pub struct WasmThread {
-    hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+    hardware: Arc<TheBeginnerCarHardware>,
     runtime: Rc<Runtime>,
     on_stopped_running: Box<dyn Fn() + Send + 'static>,
     ct: CancellationToken,
@@ -50,7 +51,7 @@ pub struct WasmThread {
 
 impl WasmThread {
     pub fn new(
-        hardware: Arc<Mutex<TheBeginnerCarHardware>>,
+        hardware: Arc<TheBeginnerCarHardware>,
         active_wasm_instance: Arc<AtomicUsize>,
         on_stopped_running: impl Fn() + Send + 'static,
         last_host_fn_call_ticks_ms: Arc<AtomicU32>,
@@ -116,7 +117,7 @@ impl WasmThread {
         let instance = Rc::new(
             Instance::new(module.into(), 1024 * 16)
                 .map_err(|e| format!("failed to create instance: {}", e)) // TODO these should be more specific types for wasm and no unwrap AND CLEANUP TOO
-                .unwrap(),
+                .unwrap(), // TODO: Remove this unwrap.
         );
 
         info!("running wasm");
@@ -124,7 +125,7 @@ impl WasmThread {
             .store(instance.get_inner_instance() as usize, Ordering::Relaxed);
 
         self.last_host_fn_call_ticks_ms
-            .store(unsafe { xTaskGetTickCount() }, Ordering::Relaxed);
+            .store(uptime_in_ms(), Ordering::Relaxed);
 
         let mut wasm_data = Box::new(WasmData {
             ct,
@@ -156,8 +157,7 @@ impl WasmThread {
         }
 
         {
-            let mut hardware = wasm_data.hardware.lock().unwrap();
-            hardware.stop_all();
+            wasm_data.hardware.stop_all();
         }
 
         log::info!("done");

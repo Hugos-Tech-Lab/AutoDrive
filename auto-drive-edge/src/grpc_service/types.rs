@@ -48,36 +48,24 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
             TheBeginnerCarOutgoingMessages::SystemState {} => WatchTheBeginnerCarEventsResponse {
                 event: Some(Event::SystemState(SystemStateEvent {})),
             },
-            TheBeginnerCarOutgoingMessages::MotorASpeedUpdated { speed } => {
-                WatchTheBeginnerCarEventsResponse {
-                    event: Some(Event::MotorASpeedUpdated(MotorSpeedUpdatedEvent {
-                        speed: speed as i32,
-                    })),
-                }
-            }
-            TheBeginnerCarOutgoingMessages::MotorBSpeedUpdated { speed } => {
-                WatchTheBeginnerCarEventsResponse {
-                    event: Some(Event::MotorBSpeedUpdated(MotorSpeedUpdatedEvent {
-                        speed: speed as i32,
-                    })),
-                }
-            }
-
             TheBeginnerCarOutgoingMessages::WasmInstalled => WatchTheBeginnerCarEventsResponse {
                 event: Some(Event::WasmInstalled(WasmInstalledEvent {})),
             },
+            TheBeginnerCarOutgoingMessages::AutoScriptRunning {
+                run_uuid,
+                script_start_time_utc_ms,
+            } => WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
+            },
 
-            TheBeginnerCarOutgoingMessages::AutoScriptRunning => {
-                WatchTheBeginnerCarEventsResponse {
-                    event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
-                }
-            }
-
-            TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
-                WatchTheBeginnerCarEventsResponse {
-                    event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
-                }
-            }
+            TheBeginnerCarOutgoingMessages::AutoScriptStopped {
+                run_uuid,
+                script_stop_time_utc_ms,
+                vehicle_start_time_utc_ms,
+                vehicle_finish_time_utc_ms,
+            } => WatchTheBeginnerCarEventsResponse {
+                event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
+            },
 
             TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
                 WatchTheBeginnerCarEventsResponse {
@@ -120,6 +108,7 @@ impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse 
                     timestamp_unix_epoch_ms,
                 })),
             },
+            TheBeginnerCarOutgoingMessages::AutoScriptRejected { run_uuid } => todo!(),
         }
     }
 }
@@ -139,7 +128,21 @@ impl From<&crate::auto_script_manager::auto_script::AutoScript>
             script_stop_time: value.script_stop_time.map(|v| v.to_string()),
             run_number: value.run_number,
             run_uuid: value.run_uuid.clone(),
-            number_plate: value.hardware.metadata.number_plate.to_string(),
+            number_plate: value
+                .hardware
+                .as_ref()
+                .map(|comms| comms.metadata.number_plate.to_string().clone()),
+            script_type: match value.script_type {
+                crate::auto_script_manager::auto_script::AutoScriptType::TimeTrial => {
+                    auto_drive_edge_service::v1::AutoScriptType::TimeTrials as i32
+                }
+                crate::auto_script_manager::auto_script::AutoScriptType::Reposition => {
+                    auto_drive_edge_service::v1::AutoScriptType::Reposition as i32
+                }
+                crate::auto_script_manager::auto_script::AutoScriptType::ConfigAdjust => {
+                    auto_drive_edge_service::v1::AutoScriptType::ConfigAdjust as i32
+                }
+            },
         }
     }
 }

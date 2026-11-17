@@ -33,12 +33,6 @@ pub enum TheBeginnerCarOutgoingMessages {
         log: LogMessage,
     },
     SystemState {},
-    MotorASpeedUpdated {
-        speed: i8,
-    },
-    MotorBSpeedUpdated {
-        speed: i8,
-    },
     WasmInstalled,
     AutoScriptRunning {
         run_uuid: String,
@@ -49,6 +43,9 @@ pub enum TheBeginnerCarOutgoingMessages {
         script_stop_time_utc_ms: u64,
         vehicle_start_time_utc_ms: u64,
         vehicle_finish_time_utc_ms: u64,
+    },
+    AutoScriptRejected {
+        run_uuid: String,
     },
     BatteryReading {
         voltage: f32,

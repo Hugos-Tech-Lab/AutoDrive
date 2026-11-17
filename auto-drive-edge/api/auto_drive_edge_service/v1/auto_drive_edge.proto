@@ -74,7 +74,7 @@ message AutoScript {
   optional string number_plate = 9;
   uint32 run_number = 10;
   string run_uuid = 11;
-  AutoScriptType type = 12;
+  AutoScriptType script_type = 12;
 }
 
 enum AutoScriptType {
@@ -99,7 +99,7 @@ message EnqueueAutoScriptRequest {
   string owner_name = 1;
   string owner_comment = 2;
   bytes data = 3;
-  AutoScriptType type = 4;
+  AutoScriptType script_type = 4;
 }
 
 message EnqueueAutoScriptResponse {

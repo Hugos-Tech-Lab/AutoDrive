@@ -3,7 +3,7 @@ use std::{pin::Pin, sync::Arc};
 use futures_util::{Stream, StreamExt};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Position;
 use tokio::sync::mpsc;
-use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
+use tokio_stream::wrappers::{BroadcastStream, ReceiverStream, WatchStream};
 use tonic::{Request, Response, Status};
 
 use crate::{
@@ -16,7 +16,7 @@ use crate::{
         WatchHardwareStatusRequest, WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
         WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
     },
-    auto_script_manager::AutoScriptManager,
+    auto_script_manager::{AutoScriptManager, auto_script::AutoScriptType},
     grpc_service::types::to_grpc_log_message,
     the_beginner_car_comms::TheBeginnerCarComms,
 };
@@ -47,11 +47,12 @@ impl AutoDriveEdgeService for GrpcService {
         request: Request<EnqueueAutoScriptRequest>,
     ) -> Result<Response<EnqueueAutoScriptResponse>, Status> {
         let request = request.into_inner();
-        let run_uuid = self
-            .auto_script_manager
-            .enqueue_auto_script(request.owner_name, request.owner_comment, request.data)
-            .await;
-        dbg!("run request");
+        let run_uuid = self.auto_script_manager.enqueue_auto_script(
+            request.owner_name,
+            request.owner_comment,
+            request.data,
+            AutoScriptType::TimeTrial,
+        );
 
         Ok(Response::new(EnqueueAutoScriptResponse { run_uuid }))
     }
@@ -63,11 +64,10 @@ impl AutoDriveEdgeService for GrpcService {
         let request = request.into_inner();
         let run_uuid = self
             .auto_script_manager
-            .enqueue_auto_script(request.owner_name, request.owner_comment, request.data)
+            .run_auto_script(request.run_uuid, request.number_plate)
             .await;
-        dbg!("run request");
-
-        Ok(Response::new(RunAutoScriptResponse { run_uuid }))
+        // TODO: handle result
+        Ok(Response::new(RunAutoScriptResponse {}))
     }
 
     async fn cancel_auto_script(
@@ -146,26 +146,13 @@ impl AutoDriveEdgeService for GrpcService {
         &self,
         _request: Request<WatchAutoScriptOverviewRequest>,
     ) -> Result<Response<Self::WatchAutoScriptOverviewStream>, Status> {
-        let (snapshot, queue_receiver) =
-            self.auto_script_manager.watch_auto_script_overview().await;
+        let (_snapshot, queue_receiver) = self.auto_script_manager.watch_auto_script_overview();
 
-        let current_snapshot = tokio_stream::once(Ok(WatchAutoScriptOverviewResponse {
-            scripts: Some(snapshot.into()),
-        }));
-
-        let live_stream = BroadcastStream::new(queue_receiver).filter_map(|result| async move {
-            match result {
-                Ok(snapshot) => Some(Ok(WatchAutoScriptOverviewResponse {
-                    scripts: Some(snapshot.into()),
-                })),
-                Err(tokio_stream::wrappers::errors::BroadcastStreamRecvError::Lagged(skipped)) => {
-                    eprintln!("Watch stream lagged; skipped {skipped} messages");
-                    None
-                }
-            }
+        let scripts = WatchStream::new(queue_receiver).map(|snapshot| {
+            Ok(WatchAutoScriptOverviewResponse {
+                scripts: Some(snapshot.into()),
+            })
         });
-
-        let scripts = current_snapshot.chain(live_stream);
 
         Ok(Response::new(Box::pin(scripts)))
     }

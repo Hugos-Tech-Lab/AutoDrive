@@ -11,8 +11,8 @@ use crate::{
         CancelAutoScriptRequest, CancelAutoScriptResponse, EnqueueAutoScriptRequest,
         EnqueueAutoScriptResponse, GetVehiclesRequest, GetVehiclesResponse, Hardware,
         NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse, RunAutoScriptRequest,
-        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
-        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwarePoseRequest,
+        RunAutoScriptResponse, WatchAutoScriptLogsRequest, WatchAutoScriptLogsResponse,
+        WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse, WatchHardwarePoseRequest,
         WatchHardwarePoseResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse,
         WatchVehicleLogsRequest, WatchVehicleLogsResponse,
         auto_drive_edge_service_server::AutoDriveEdgeService,
@@ -94,13 +94,13 @@ impl AutoDriveEdgeService for GrpcService {
         Ok(Response::new(CancelAutoScriptResponse {}))
     }
 
-    type WatchAutoScriptStream =
-        Pin<Box<dyn Stream<Item = Result<WatchAutoScriptResponse, Status>> + Send + 'static>>;
+    type WatchAutoScriptLogsStream =
+        Pin<Box<dyn Stream<Item = Result<WatchAutoScriptLogsResponse, Status>> + Send + 'static>>;
 
-    async fn watch_auto_script(
+    async fn watch_auto_script_logs(
         &self,
-        request: Request<WatchAutoScriptRequest>,
-    ) -> Result<Response<Self::WatchAutoScriptStream>, Status> {
+        request: Request<WatchAutoScriptLogsRequest>,
+    ) -> Result<Response<Self::WatchAutoScriptLogsStream>, Status> {
         let run_uuid = request.into_inner().run_uuid;
 
         let (past_events, live_rx) = self

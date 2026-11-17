@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use crate::{
     auto_drive_edge_service::v1::{AutoScriptType, EnqueueAutoScriptRequest},
-    edge_client::{EdgeClient, Script},
+    edge_client::{AutoScript, EdgeClient},
 };
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
@@ -137,7 +137,7 @@ async fn handle_enqueue(
         .lock()
         .unwrap()
         .entry(run_uuid.clone())
-        .or_insert(Script::new())
+        .or_insert(AutoScript::new(edge_client.handle, run_uuid.clone()))
         .clone();
 
     let streamed_response = BroadcastStream::new(script.logs.subscribe());

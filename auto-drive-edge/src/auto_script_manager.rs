@@ -22,10 +22,12 @@ static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Clone, Debug)]
 pub enum HardwareState {
-    HeardNothing,
-    Received,
+    NotReceivedByHardware,
+    ReceivedByHardware,
     CallingMain,
-    Error,
+    StoppedBySelf,
+    CancelledBySafety,
+    CancelledManually,
 }
 
 #[derive(Clone, Debug)]
@@ -159,26 +161,26 @@ impl AutoScriptManager {
         auto_script_run_uuid
     }
 
-    pub async fn watch_auto_script(
+    pub async fn watch_auto_script_logs(
         &self,
         uuid: String,
-    ) -> Option<(Vec<AutoScriptEvents>, Receiver<AutoScriptEvents>)> {
-        let (events_history, live_rx) = {
+    ) -> Option<(Vec<LogMessage>, Receiver<LogMessage>)> {
+        let (logs_history, logs_live_rx) = {
             let state = self.scripts.borrow();
             let auto_script = state
                 .queued
                 .iter()
                 .chain(state.running.iter())
-                .find(|asd| asd.run_uuid == uuid)?;
+                .find(|auto_script| auto_script.run_uuid == uuid)?;
 
             (
-                auto_script.events_history.clone(),
-                auto_script.events_tx.subscribe(),
+                auto_script.logs_history.clone(),
+                auto_script.logs_live_tx.subscribe(),
             )
         };
 
-        let past_events = events_history.read().await.clone();
-        Some((past_events, live_rx))
+        let logs_history = logs_history.read().await.clone();
+        Some((logs_history, logs_live_rx))
     }
 
     pub fn watch_auto_script_overview(&self) -> (AutoScripts, watch::Receiver<AutoScripts>) {

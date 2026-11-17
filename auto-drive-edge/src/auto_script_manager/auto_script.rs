@@ -30,8 +30,8 @@ pub struct AutoScript {
     pub uploaded_script: Arc<[u8]>,
     pub uploaded_script_hash: String,
     // pub long_lived_hardware_listener_handle: Arc<JoinHandle<()>>,
-    pub events_tx: Sender<AutoScriptEvents>,
-    pub events_history: Arc<RwLock<Vec<AutoScriptEvents>>>,
+    pub logs_live_tx: Sender<LogMessage>,
+    pub logs_history: Arc<RwLock<Vec<LogMessage>>>,
     pub hardware: Option<TheBeginnerCarComms>,
     pub hardware_response: HardwareState,
     pub script_queue_time: DateTime<Utc>,
@@ -55,8 +55,8 @@ impl AutoScript {
         let uploaded_script_hash = Sha256::digest(&uploaded_script);
         let uploaded_script_hash = hex::encode(Sha256::digest(uploaded_script_hash));
 
-        let (events_tx, _) = broadcast::channel(100);
-        let events_history = Arc::new(RwLock::new(Vec::new()));
+        let (logs_live_tx, _) = broadcast::channel(100);
+        let logs_history = Arc::new(RwLock::new(Vec::new()));
 
         // TODO: bring this back
         // let long_lived_hardware_listener_handle = tokio::task::spawn({
@@ -84,10 +84,10 @@ impl AutoScript {
             uploaded_script,
             uploaded_script_hash,
             // long_lived_hardware_listener_handle: Arc::from(long_lived_hardware_listener_handle),
-            events_tx,
-            events_history,
+            logs_live_tx,
+            logs_history,
             hardware: None,
-            hardware_response: HardwareState::HeardNothing,
+            hardware_response: HardwareState::NotReceivedByHardware,
             script_queue_time: Utc::now(),
             script_start_time: None,
             script_stop_time: None,

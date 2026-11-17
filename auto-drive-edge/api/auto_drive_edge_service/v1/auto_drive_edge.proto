@@ -14,7 +14,8 @@ service AutoDriveEdgeService {
   rpc EnqueueAutoScript(EnqueueAutoScriptRequest) returns (EnqueueAutoScriptResponse);
   rpc RunAutoScript(RunAutoScriptRequest) returns (RunAutoScriptResponse);
   rpc CancelAutoScript(CancelAutoScriptRequest) returns (CancelAutoScriptResponse);
-  rpc WatchAutoScript(WatchAutoScriptRequest) returns (stream WatchAutoScriptResponse);
+  rpc WatchAutoScriptLogs(WatchAutoScriptLogsRequest) returns (stream WatchAutoScriptLogsResponse);
+  rpc WatchAutoScriptStatus(WatchAutoScriptStatusRequest) returns (stream WatchAutoScriptStatusResponse);
 
   // Vehicle Specific
   rpc WatchVehicleLogs(WatchVehicleLogsRequest) returns (stream WatchVehicleLogsResponse);
@@ -116,15 +117,30 @@ enum AutoScriptType {
   AUTO_SCRIPT_TYPE_CONFIG_ADJUST = 3;
 }
 
-message WatchAutoScriptRequest {
+enum AutoScriptStatus {
+  AUTO_SCRIPT_STATUS_UNSPECIFIED = 0;
+  AUTO_SCRIPT_STATUS_NOT_RECEIVED_BY_HARDWARE = 1;
+  AUTO_SCRIPT_STATUS_RECEIVED_BY_HARDWARE = 2;
+  AUTO_SCRIPT_STATUS_CALLING_MAIN = 3;
+  AUTO_SCRIPT_STATUS_STOPPED_BY_SELF = 4;
+  AUTO_SCRIPT_STATUS_CANCELLED_BY_SAFETY = 5;
+  AUTO_SCRIPT_STATUS_CANCELLED_MANUALLY = 6;
+}
+
+message WatchAutoScriptStatusRequest {
   string run_uuid = 1;
 }
 
-message WatchAutoScriptResponse {
-  oneof event {
-    LogMessage log_message = 1;
-    int32 script_exited = 2;
-  }
+message WatchAutoScriptStatusResponse {
+  AutoScriptStatus status = 1;
+}
+
+message WatchAutoScriptLogsRequest {
+  string run_uuid = 1;
+}
+
+message WatchAutoScriptLogsResponse {
+  LogMessage log_message = 1;
 }
 
 message EnqueueAutoScriptRequest {

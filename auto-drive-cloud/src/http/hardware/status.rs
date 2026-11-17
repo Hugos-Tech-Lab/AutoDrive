@@ -1,14 +1,14 @@
 // use std::convert::Infallible;
 // use std::time::Duration;
 
-// use crate::edge_client::{Hardware, ToEdgeMessage};
+// use crate::edge_client::{EdgeClient, ToEdgeMessage};
 // use futures_util::{StreamExt, stream};
 // use tokio::sync::oneshot;
 // use tokio_stream::wrappers::WatchStream;
 // use warp::{Filter, Reply, http::StatusCode};
 
 // pub fn hardware_status(
-//     hardware: Hardware,
+//     hardware: EdgeClient,
 // ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
 //     let sender = hardware.sender.clone();
 

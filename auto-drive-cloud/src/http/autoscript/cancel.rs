@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::convert::Infallible;
 use warp::{Filter, Reply, http::StatusCode};
 
-use crate::edge_client::{Hardware, ToEdgeMessage};
+use crate::edge_client::{EdgeClient, ToEdgeMessage};
 
 #[derive(Debug, Deserialize)]
 pub struct CancelRequest {
@@ -47,7 +47,7 @@ pub struct CancelRequest {
 // }
 
 pub fn cancel(
-    hardware: Hardware,
+    hardware: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let sender = hardware.sender.clone();
 

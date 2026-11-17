@@ -1,3 +1,3 @@
-pub struct Hardware {
+pub struct EdgeClient {
     //
 }

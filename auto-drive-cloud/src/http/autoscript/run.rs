@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
-use crate::edge_client::{AutoScriptEvent, Hardware, StartAutoScriptResponse, ToEdgeMessage};
+use crate::edge_client::{AutoScriptEvent, EdgeClient, StartAutoScriptResponse, ToEdgeMessage};
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
 use tokio::sync::oneshot;
@@ -9,7 +9,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use warp::{Filter, Rejection, Reply, http::StatusCode};
 
 pub fn run(
-    hardware: Hardware,
+    hardware: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let sender = hardware.sender.clone();
 

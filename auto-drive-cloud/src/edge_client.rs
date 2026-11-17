@@ -11,7 +11,7 @@ use tokio::time::sleep;
 use tokio::{
     sync::{
         RwLock,
-        broadcast::{self, Receiver, Sender},
+        broadcast::{self, Sender},
         mpsc, oneshot, watch,
     },
     time::timeout,
@@ -112,7 +112,7 @@ pub struct Vehicle {
 }
 
 #[derive(Debug, Clone)]
-pub struct Hardware {
+pub struct EdgeClient {
     pub sender: mpsc::Sender<ToEdgeMessage>,
     pub logs: Sender<Event>,
     // pub the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>>, // TODO remove duplicate events
@@ -126,7 +126,7 @@ pub struct Hardware {
     pub hardware_positions_tx: watch::Sender<HardwarePositions>,
 }
 
-pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
+pub async fn edge_client() -> Result<EdgeClient, Box<dyn Error>> {
     let mut client = loop {
         #[cfg(feature = "development")]
         let auto_drive_edge_ip = "http://192.168.0.173:50051";
@@ -289,7 +289,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                 }
                                 Err(err) => {
                                     warn!(
-                                        "Hardware status stream disconnected: {err}. Reconnecting..."
+                                        "EdgeClient status stream disconnected: {err}. Reconnecting..."
                                     );
                                     break;
                                 }
@@ -335,7 +335,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                 }
                                 Err(err) => {
                                     warn!(
-                                        "Hardware status stream disconnected: {err}. Reconnecting..."
+                                        "EdgeClient status stream disconnected: {err}. Reconnecting..."
                                     );
                                     break;
                                 }
@@ -510,7 +510,7 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         }
     });
 
-    Ok(Hardware {
+    Ok(EdgeClient {
         logs: incoming_tx,
         sender,
         latest_auto_scripts_overview,

@@ -1,13 +1,13 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
-use crate::edge_client::Hardware;
+use crate::edge_client::EdgeClient;
 use futures_util::StreamExt;
 use tokio_stream::wrappers::WatchStream;
 use warp::{Filter, Reply};
 
 pub fn hardware_overview(
-    hardware: Hardware,
+    hardware: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let auto_scripts_overview = hardware.auto_scripts_overview.clone();
 

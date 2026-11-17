@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
-use crate::edge_client::Hardware;
+use crate::edge_client::EdgeClient;
 use futures_util::StreamExt;
 use serde::Serialize;
 use tokio::time::interval;
@@ -38,7 +38,7 @@ pub struct TimeTrialData {
 // TODO: fix this and use this.
 // 2. The new GET endpoint for SSE streaming
 pub fn autoscript_watch(
-    hardware: Hardware, // Assuming you need to pass state to fetch real queue data
+    hardware: EdgeClient, // Assuming you need to pass state to fetch real queue data
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     // Note the new endpoint name
     warp::path!("autoscript" / "watch")

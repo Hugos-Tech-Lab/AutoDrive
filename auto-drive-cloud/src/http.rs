@@ -5,7 +5,7 @@ use crate::http::hardware::overview::hardware_overview;
 use crate::http::hardware::positions::hardware_positions;
 use crate::http::hardware_telemetry::hardware_telemetry;
 use crate::{
-    edge_client::Hardware,
+    edge_client::EdgeClient,
     http::{
         autoscript::{
             cancel::cancel, logs::autoscript_watch, overview::autoscript_overview, run::run,
@@ -18,7 +18,7 @@ pub mod hardware;
 pub mod hardware_telemetry;
 pub mod logs;
 
-pub async fn http_server(receiver: Hardware) {
+pub async fn http_server(receiver: EdgeClient) {
     let server = tokio::spawn(async move {
         let watch_logs = logs(receiver.logs.clone());
         let run = run(receiver.clone());

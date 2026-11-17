@@ -1,13 +1,13 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import HardwareTelemetry from "./hardware/HardwareTelemetry.svelte";
-  import LiveTimeTrials from "./LiveTimeTrials.svelte";
-  import LiveHardwareBanner from "./LiveHardwareBanner.svelte";
-  import TheBeginnerCar from "./TheBeginnerCarDrawing.svelte";
-  import UserAccountButton from "./UserAccountButton.svelte";
+  import HardwareTelemetry from "../hardware/HardwareTelemetry.svelte";
+  import LiveTimeTrials from "../LiveTimeTrials.svelte";
+  import LiveHardwareBanner from "../LiveHardwareBanner.svelte";
+  import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
+  import UserAccountButton from "../UserAccountButton.svelte";
   import type { AuthState } from "$lib/auth.svelte";
-  import Status from "./hardware/Status.svelte";
-  import Position from "./Map.svelte";
+  import Status from "../hardware/Status.svelte";
+  import Position from "../Map.svelte";
 
   interface Props {
     session: AuthState;

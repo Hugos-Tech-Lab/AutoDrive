@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
   import Header from "$lib/components/Header.svelte";
   import Footer from "$lib/components/Footer.svelte";
-  import Dashboard from '$lib/components/Dashboard.svelte';
-  import { createAuthState } from '$lib/auth.svelte';
+  import Dashboard from "$lib/components/Dashboard/Dashboard.svelte";
+  import { createAuthState } from "$lib/auth.svelte";
   import type { Locale } from "$lib/Locale";
   import type { PageData } from "./$types";
 

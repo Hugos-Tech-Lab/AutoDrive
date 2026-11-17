@@ -243,6 +243,7 @@ msgstr "Create account"
 #~ msgstr "Sign out"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 #: src/routes/[locale]/create-account/+page.svelte
 #: src/routes/[locale]/profile/+page.svelte
 #: src/routes/[locale]/sign-in/+page.svelte
@@ -271,6 +272,9 @@ msgstr "Auto Drive"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Leaderboard"
 msgstr "Leaderboard"
 
@@ -402,6 +406,9 @@ msgstr "Control a real small machine remotely"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/hardware/Status.svelte
 msgid "Status"
 msgstr "Status"
@@ -594,11 +601,14 @@ msgstr "Sign In / Sign up"
 #~ msgstr "Past"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Logs"
 msgstr "Logs"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Algorithms"
 msgstr "Algorithms"
 
@@ -644,6 +654,18 @@ msgstr "Algorithms"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Time Trials"
 msgstr "Time Trials"
 
@@ -796,6 +818,7 @@ msgstr "Cancel"
 #~ msgstr "Go To Start"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "STOP"
@@ -806,6 +829,8 @@ msgstr "STOP"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Control"
 msgstr "Control"
 
@@ -813,12 +838,14 @@ msgstr "Control"
 #~ msgstr "Cameras"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Run Script"
 msgstr "Run Script"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Navigate To Start"
@@ -835,6 +862,8 @@ msgstr "Navigate To Start"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Telemetry"
@@ -960,6 +989,8 @@ msgstr "Front Right IR"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Live"
 msgstr "Live"
 
@@ -1159,7 +1190,9 @@ msgid "Unknown"
 msgstr "Unknown"
 
 #. 0: selectedView
+#. 0: selectedView
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Car Control: {0}"
 msgstr "Car Control: {0}"
 
@@ -1170,10 +1203,12 @@ msgstr "Car Control: {0}"
 #~ msgstr "No algorithms yet!"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "No leaderboard yet."
 msgstr "No leaderboard yet."
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "No algorithms yet."
 msgstr "No algorithms yet."
 
@@ -1264,6 +1299,8 @@ msgstr "LIVE IN {0} SECONDS"
 
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Position"
 msgstr "Position"
 
@@ -1320,6 +1357,7 @@ msgstr "Don't have an account? <0>Create one</0>"
 #~ msgstr "Hardware"
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Vehicles"
 msgstr "Vehicles"
 
@@ -1357,5 +1395,6 @@ msgid "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
 msgstr "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
 
 #: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Scripts"
 msgstr "Scripts"

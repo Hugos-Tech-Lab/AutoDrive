@@ -7,21 +7,16 @@ use std::{
 
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use tokio::time::sleep;
-use tokio::{
-    sync::{
-        RwLock,
-        broadcast::{self, Sender},
-        mpsc, oneshot, watch,
-    },
-    time::timeout,
+use tokio::sync::{
+    RwLock,
+    broadcast::{self, Sender},
+    mpsc, watch,
 };
-use tokio_stream::StreamExt;
+use tokio::time::sleep;
+use tonic::transport::Channel;
 
 use crate::auto_drive_edge_service::v1::{
-    AutoScripts, CancelAutoScriptRequest, GetVehiclesRequest, LogMessage, RunAutoScriptRequest,
-    WatchAutoScriptOverviewRequest, WatchAutoScriptRequest, WatchHardwarePoseRequest,
-    WatchHardwareStatusRequest, WatchTheBeginnerCarEventsRequest,
+    AutoScripts, GetVehiclesRequest, LogMessage,
     auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
     watch_the_beginner_car_events_response::Event,
 };
@@ -32,35 +27,6 @@ type HardwarePositions = HashMap<String, Pose>;
 pub enum StartAutoScriptResponse {
     Uuid { uuid: String },
     EdgeClientUnavailable,
-}
-
-pub enum ToEdgeMessage {
-    StartAutoScript {
-        owner_name: String,
-        owner_comment: String,
-        data: Vec<u8>,
-        response_tx: oneshot::Sender<StartAutoScriptResponse>,
-    },
-    WatchAutoScript {
-        run_uuid: String,
-        response_tx: oneshot::Sender<mpsc::Receiver<AutoScriptEvent>>,
-    },
-    CancelAutoScript {
-        run_uuid: String,
-    },
-    WatchOverview {
-        response_tx: oneshot::Sender<(AutoScripts, watch::Receiver<AutoScripts>)>,
-    },
-    WatchHardware {
-        response_tx: oneshot::Sender<(HardwareHashMap, watch::Receiver<HardwareHashMap>)>,
-    },
-    WatchPositions {
-        response_tx: oneshot::Sender<(HardwarePositions, watch::Receiver<HardwarePositions>)>,
-    },
-    WatchStatus {
-        number_plate: String,
-        response_tx: oneshot::Sender<(HardwarePositions, watch::Receiver<HardwarePositions>)>,
-    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -108,415 +74,434 @@ pub struct Vehicle {
     events: AutoScriptEvents, // TODO remove duplicate events
     positions: watch::Sender<Pose>,
     status: watch::Sender<Status>,
-    // ...
+}
+
+#[derive(Debug, Clone)]
+pub struct Script {
+    pub logs: broadcast::Sender<Event>,
+}
+
+impl Script {
+    pub fn new() {
+        //
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct EdgeClient {
-    pub sender: mpsc::Sender<ToEdgeMessage>,
-    pub logs: Sender<Event>,
+    pub handle: AutoDriveEdgeServiceClient<Channel>,
     // pub the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>>, // TODO remove duplicate events
     // pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
     pub auto_scripts_overview: watch::Sender<AutoScripts>,
     pub hardware_overview: watch::Sender<HardwareHashMap>,
     pub vehicles: HashMap<String, Vehicle>,
-    // pub vehicles_position: Vec<>
-
-    //
+    pub scripts: Arc<Mutex<HashMap<String, Script>>>,
     pub hardware_positions_tx: watch::Sender<HardwarePositions>,
 }
 
-pub async fn edge_client() -> Result<EdgeClient, Box<dyn Error>> {
-    let mut client = loop {
-        #[cfg(feature = "development")]
-        let auto_drive_edge_ip = "http://192.168.0.173:50051";
-        #[cfg(feature = "production")]
-        let auto_drive_edge_ip = "http://100.96.0.1:50051";
+impl EdgeClient {
+    pub async fn new() -> Result<Self, Box<dyn Error>> {
+        let mut client = loop {
+            #[cfg(feature = "development")]
+            let auto_drive_edge_ip = "http://192.168.0.173:50051";
+            #[cfg(feature = "production")]
+            let auto_drive_edge_ip = "http://100.96.0.1:50051";
 
-        match AutoDriveEdgeServiceClient::connect(auto_drive_edge_ip).await {
-            Ok(c) => {
-                info!("Successfully connected to edge service.");
-                break c;
-            }
-            Err(err) => {
-                warn!("Failed to connect to edge service: {err}. Retrying in 5s...");
-                sleep(Duration::from_secs(5)).await;
-            }
-        }
-    };
-
-    let vehicles = client.get_vehicles(GetVehiclesRequest {}).await?;
-    // vehicles.get_ref().
-
-    let (incoming_tx, _) = broadcast::channel::<Event>(100);
-    let (hardware_states_tx, _) = watch::channel::<HardwareHashMap>(HashMap::new());
-    let (hardware_positions_tx, _) = watch::channel::<HardwarePositions>(HashMap::new());
-
-    let latest_auto_scripts_overview = Arc::new(Mutex::new(AutoScripts {
-        running: vec![],
-        queued: vec![],
-        stopped: vec![],
-    }));
-    let the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>> =
-        Arc::new(Mutex::new(HashMap::new()));
-
-    // The loop catches it, sleeps for 5s, and re-requests the stream (which triggers a reconnect).
-    tokio::spawn({
-        let incoming_tx = incoming_tx.clone();
-        let mut client = client.clone();
-
-        async move {
-            loop {
-                match client
-                    .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest {
-                        number_plate: todo!(),
-                    })
-                    .await
-                {
-                    Ok(response) => {
-                        let mut stream = response.into_inner();
-                        while let Some(result) = stream.next().await {
-                            match result {
-                                Ok(event) => {
-                                    if let Some(event_data) = event.event {
-                                        let _ = incoming_tx.send(event_data.clone());
-                                    }
-                                }
-                                Err(err) => {
-                                    warn!(
-                                        "Beginner car event stream disconnected: {err}. Reconnecting..."
-                                    );
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        warn!(
-                            "Failed to subscribe to beginner car events: {err}. Retrying in 5s..."
-                        );
-                    }
+            match AutoDriveEdgeServiceClient::connect(auto_drive_edge_ip).await {
+                Ok(c) => {
+                    info!("Successfully connected to edge service.");
+                    break c;
                 }
-                sleep(Duration::from_secs(5)).await;
-            }
-        }
-    });
-
-    let (incoming_auto_scripts_tx, _) = broadcast::channel::<AutoScripts>(10);
-    tokio::spawn({
-        let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
-        let mut client = client.clone();
-        let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
-
-        async move {
-            loop {
-                let result = timeout(
-                    Duration::from_secs(5), // Set your desired timeout duration here
-                    client.watch_auto_script_overview(WatchAutoScriptOverviewRequest {}),
-                )
-                .await;
-
-                let result = match result {
-                    Ok(result) => result,
-                    Err(_) => {
-                        warn!("Timed out");
-                        continue;
-                    }
-                };
-
-                match result {
-                    Ok(response) => {
-                        let mut stream = response.into_inner();
-                        while let Some(result) = stream.next().await {
-                            match result {
-                                Ok(event) => {
-                                    if let Some(event_scripts) = event.scripts {
-                                        let _ =
-                                            incoming_auto_scripts_tx.send(event_scripts.clone());
-                                        let mut latest_overview =
-                                            latest_auto_scripts_overview.lock().unwrap();
-                                        *latest_overview = event_scripts;
-                                    }
-                                }
-                                Err(err) => {
-                                    warn!(
-                                        "Auto script overview stream disconnected: {err}. Reconnecting..."
-                                    );
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        warn!(
-                            "Failed to subscribe to auto script overview: {err}. Retrying in 5s..."
-                        );
-                    }
+                Err(err) => {
+                    warn!("Failed to connect to edge service: {err}. Retrying in 5s...");
+                    sleep(Duration::from_secs(5)).await;
                 }
-                sleep(Duration::from_secs(5)).await;
             }
-        }
-    });
+        };
 
-    tokio::spawn({
-        let hardware_positions_tx = hardware_positions_tx.clone();
-        let mut client = client.clone();
-        async move {
-            loop {
-                match client
-                    .watch_hardware_pose(WatchHardwarePoseRequest {})
-                    .await
-                {
-                    Ok(response) => {
-                        let mut stream = response.into_inner();
-                        while let Some(result) = stream.next().await {
-                            match result {
-                                Ok(pose) => {
-                                    hardware_positions_tx.send_modify(|v| {
-                                        let entry =
-                                            v.entry(pose.number_plate.clone()).or_insert(Pose {
-                                                x: pose.x,
-                                                y: pose.y,
-                                                rotation: pose.rotation_radians,
-                                                number_plate: pose.number_plate.clone(),
-                                            });
+        let vehicles = client.get_vehicles(GetVehiclesRequest {}).await?;
+        // vehicles.get_ref().
 
-                                        entry.x = pose.x;
-                                        entry.y = pose.y;
-                                        entry.rotation = pose.rotation_radians;
-                                        entry.number_plate = pose.number_plate.clone();
-                                    });
-                                }
-                                Err(err) => {
-                                    warn!(
-                                        "EdgeClient status stream disconnected: {err}. Reconnecting..."
-                                    );
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        warn!("Failed to subscribe to hardware status: {err}. Retrying in 5s...");
-                    }
-                }
-                sleep(Duration::from_secs(5)).await;
-            }
-        }
-    });
+        let (incoming_tx, _) = broadcast::channel::<Event>(100);
+        let (auto_scripts_overview, _) = watch::channel::<AutoScripts>(AutoScripts {
+            running: vec![],
+            queued: vec![],
+            stopped: vec![],
+        });
+        let (hardware_overview, _) = watch::channel::<HardwareHashMap>(HashMap::new());
+        let (hardware_positions_tx, _) = watch::channel::<HardwarePositions>(HashMap::new());
 
-    tokio::spawn({
-        let hardware_states_tx = hardware_states_tx.clone();
-        let mut client = client.clone();
+        let latest_auto_scripts_overview = Arc::new(Mutex::new(AutoScripts {
+            running: vec![],
+            queued: vec![],
+            stopped: vec![],
+        }));
+        // let the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>> =
+        //     Arc::new(Mutex::new(HashMap::new()));
 
-        async move {
-            loop {
-                match client
-                    .watch_hardware_status(WatchHardwareStatusRequest {})
-                    .await
-                {
-                    Ok(response) => {
-                        let mut stream = response.into_inner();
-                        while let Some(result) = stream.next().await {
-                            match result {
-                                Ok(event) => {
-                                    hardware_states_tx.send_modify(|v| {
-                                        for hardware in event.hardware {
-                                            let entry = v
-                                                .entry(hardware.number_plate.clone())
-                                                .or_insert(HardwareDeviceState {
-                                                    number_plate: hardware.number_plate,
-                                                    category: hardware.category,
-                                                    is_connected: hardware.is_connected,
-                                                });
-                                            entry.is_connected = hardware.is_connected;
-                                        }
-                                    });
-                                }
-                                Err(err) => {
-                                    warn!(
-                                        "EdgeClient status stream disconnected: {err}. Reconnecting..."
-                                    );
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        warn!("Failed to subscribe to hardware status: {err}. Retrying in 5s...");
-                    }
-                }
-                sleep(Duration::from_secs(5)).await;
-            }
-        }
-    });
+        // The loop catches it, sleeps for 5s, and re-requests the stream (which triggers a reconnect).
+        // tokio::spawn({
+        //     let incoming_tx = incoming_tx.clone();
+        //     let mut client = client.clone();
 
-    let (sender, mut receiver) = mpsc::channel::<ToEdgeMessage>(10);
-    tokio::spawn({
-        let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
-        let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
-        let the_beginner_car_auto_script_events = the_beginner_car_auto_script_events.clone();
-        let hardware_states_tx = hardware_states_tx.clone();
-        let hardware_positions_tx = hardware_positions_tx.clone();
+        //     async move {
+        //         loop {
+        //             match client
+        //                 .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest {
+        //                     number_plate: todo!(),
+        //                 })
+        //                 .await
+        //             {
+        //                 Ok(response) => {
+        //                     let mut stream = response.into_inner();
+        //                     while let Some(result) = stream.next().await {
+        //                         match result {
+        //                             Ok(event) => {
+        //                                 if let Some(event_data) = event.event {
+        //                                     let _ = incoming_tx.send(event_data.clone());
+        //                                 }
+        //                             }
+        //                             Err(err) => {
+        //                                 warn!(
+        //                                     "Beginner car event stream disconnected: {err}. Reconnecting..."
+        //                                 );
+        //                                 break;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //                 Err(err) => {
+        //                     warn!(
+        //                         "Failed to subscribe to beginner car events: {err}. Retrying in 5s..."
+        //                     );
+        //                 }
+        //             }
+        //             sleep(Duration::from_secs(5)).await;
+        //         }
+        //     }
+        // });
 
-        async move {
-            while let Some(value) = receiver.recv().await {
-                match value {
-                    ToEdgeMessage::StartAutoScript {
-                        owner_name,
-                        owner_comment,
-                        data,
-                        response_tx,
-                    } => {
-                        if let Ok(response) = client
-                            .run_auto_script(RunAutoScriptRequest {
-                                owner_name,
-                                owner_comment,
-                                build: 1,
-                                data,
-                                run_uuid: todo!(),
-                                number_plate: todo!(),
-                            })
-                            .await
-                        {
-                            let response = response.into_inner();
-                            let run_uuid = response.run_uuid;
+        // let (incoming_auto_scripts_tx, _) = broadcast::channel::<AutoScripts>(10);
+        // tokio::spawn({
+        //     let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
+        //     let mut client = client.clone();
+        //     let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
 
-                            let (sender, _) = broadcast::channel(100);
-                            // sender.subscribe();
+        //     async move {
+        //         loop {
+        //             let result = timeout(
+        //                 Duration::from_secs(5), // Set your desired timeout duration here
+        //                 client.watch_auto_script_overview(WatchAutoScriptOverviewRequest {}),
+        //             )
+        //             .await;
 
-                            let history = Arc::new(RwLock::new(Vec::new()));
+        //             let result = match result {
+        //                 Ok(result) => result,
+        //                 Err(_) => {
+        //                     warn!("Timed out");
+        //                     continue;
+        //                 }
+        //             };
 
-                            the_beginner_car_auto_script_events.lock().unwrap().insert(
-                                run_uuid.clone(),
-                                AutoScriptEvents {
-                                    history: history.clone(),
-                                    live: sender.clone(),
-                                },
-                            );
-                            if let Ok(watch_auto_script) = client
-                                .watch_auto_script(WatchAutoScriptRequest {
-                                    run_uuid: run_uuid.clone(),
-                                })
-                                .await
-                            {
-                                let mut stream = watch_auto_script.into_inner();
+        //             match result {
+        //                 Ok(response) => {
+        //                     let mut stream = response.into_inner();
+        //                     while let Some(result) = stream.next().await {
+        //                         match result {
+        //                             Ok(event) => {
+        //                                 if let Some(event_scripts) = event.scripts {
+        //                                     let _ = incoming_auto_scripts_tx
+        //                                         .send(event_scripts.clone());
+        //                                     let mut latest_overview =
+        //                                         latest_auto_scripts_overview.lock().unwrap();
+        //                                     *latest_overview = event_scripts;
+        //                                 }
+        //                             }
+        //                             Err(err) => {
+        //                                 warn!(
+        //                                     "Auto script overview stream disconnected: {err}. Reconnecting..."
+        //                                 );
+        //                                 break;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //                 Err(err) => {
+        //                     warn!(
+        //                         "Failed to subscribe to auto script overview: {err}. Retrying in 5s..."
+        //                     );
+        //                 }
+        //             }
+        //             sleep(Duration::from_secs(5)).await;
+        //         }
+        //     }
+        // });
 
-                                tokio::spawn(async move {
-                                    while let Ok(Some(update)) = stream.message().await {
-                                        if let Some(event) = update.event {
-                                            let event =
-                                            match event {
-                                                crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(log_message) => {
-                                                    AutoScriptEvent::LogMessage{log_message}
-                                                }
-                                                crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(_) => {
-                                                    AutoScriptEvent::Exited
-                                                }
-                                            };
-                                            let mut history_lock = history.write().await;
-                                            let _ = sender.send(event.clone());
-                                            history_lock.push(event);
-                                        }
-                                    }
-                                });
-                            } else {
-                                warn!("Could not watch script"); // TODO propagate this to user
-                            }
+        // tokio::spawn({
+        //     let hardware_positions_tx = hardware_positions_tx.clone();
+        //     let mut client = client.clone();
+        //     async move {
+        //         loop {
+        //             match client
+        //                 .watch_hardware_pose(WatchHardwarePoseRequest {})
+        //                 .await
+        //             {
+        //                 Ok(response) => {
+        //                     let mut stream = response.into_inner();
+        //                     while let Some(result) = stream.next().await {
+        //                         match result {
+        //                             Ok(pose) => {
+        //                                 hardware_positions_tx.send_modify(|v| {
+        //                                     let entry = v
+        //                                         .entry(pose.number_plate.clone())
+        //                                         .or_insert(Pose {
+        //                                             x: pose.x,
+        //                                             y: pose.y,
+        //                                             rotation: pose.rotation_radians,
+        //                                             number_plate: pose.number_plate.clone(),
+        //                                         });
 
-                            let _ = response_tx.send(StartAutoScriptResponse::Uuid {
-                                uuid: run_uuid.clone(),
-                            });
-                        } else {
-                            let _ =
-                                response_tx.send(StartAutoScriptResponse::EdgeClientUnavailable);
-                        }
-                    }
-                    ToEdgeMessage::CancelAutoScript { run_uuid } => {
-                        let _ = client
-                            .cancel_auto_script(CancelAutoScriptRequest { run_uuid })
-                            .await;
-                    }
-                    ToEdgeMessage::WatchAutoScript {
-                        run_uuid,
-                        response_tx,
-                    } => {
-                        let log_sender_data = {
-                            let map = the_beginner_car_auto_script_events.lock().unwrap();
-                            map.get(&run_uuid)
-                                .map(|sender| (sender.history.clone(), sender.live.clone()))
-                        };
+        //                                     entry.x = pose.x;
+        //                                     entry.y = pose.y;
+        //                                     entry.rotation = pose.rotation_radians;
+        //                                     entry.number_plate = pose.number_plate.clone();
+        //                                 });
+        //                             }
+        //                             Err(err) => {
+        //                                 warn!(
+        //                                     "EdgeClient status stream disconnected: {err}. Reconnecting..."
+        //                                 );
+        //                                 break;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //                 Err(err) => {
+        //                     warn!(
+        //                         "Failed to subscribe to hardware status: {err}. Retrying in 5s..."
+        //                     );
+        //                 }
+        //             }
+        //             sleep(Duration::from_secs(5)).await;
+        //         }
+        //     }
+        // });
 
-                        if let Some((history, live)) = log_sender_data {
-                            let history_lock = history.read().await;
-                            let history_snapshot = history_lock.clone();
-                            let mut grpc_receiver = live.subscribe();
-                            drop(history_lock);
-                            let (domain_sender, domain_receiver) =
-                                mpsc::channel::<AutoScriptEvent>(100);
+        // tokio::spawn({
+        //     let hardware_states_tx = hardware_states_tx.clone();
+        //     let mut client = client.clone();
 
-                            tokio::spawn(async move {
-                                for event in history_snapshot {
-                                    if domain_sender.send(event).await.is_err() {
-                                        return; // Stop if the receiver dropped
-                                    }
-                                }
+        //     async move {
+        //         loop {
+        //             match client
+        //                 .watch_hardware_status(WatchHardwareStatusRequest {})
+        //                 .await
+        //             {
+        //                 Ok(response) => {
+        //                     let mut stream = response.into_inner();
+        //                     while let Some(result) = stream.next().await {
+        //                         match result {
+        //                             Ok(event) => {
+        //                                 hardware_states_tx.send_modify(|v| {
+        //                                     for hardware in event.hardware {
+        //                                         let entry = v
+        //                                             .entry(hardware.number_plate.clone())
+        //                                             .or_insert(HardwareDeviceState {
+        //                                                 number_plate: hardware.number_plate,
+        //                                                 category: hardware.category,
+        //                                                 is_connected: hardware.is_connected,
+        //                                             });
+        //                                         entry.is_connected = hardware.is_connected;
+        //                                     }
+        //                                 });
+        //                             }
+        //                             Err(err) => {
+        //                                 warn!(
+        //                                     "EdgeClient status stream disconnected: {err}. Reconnecting..."
+        //                                 );
+        //                                 break;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //                 Err(err) => {
+        //                     warn!(
+        //                         "Failed to subscribe to hardware status: {err}. Retrying in 5s..."
+        //                     );
+        //                 }
+        //             }
+        //             sleep(Duration::from_secs(5)).await;
+        //         }
+        //     }
+        // });
 
-                                while let Ok(grpc_event) = grpc_receiver.recv().await {
-                                    let domain_event = match grpc_event {
-                                        AutoScriptEvent::LogMessage { log_message } => {
-                                            AutoScriptEvent::LogMessage { log_message }
-                                        }
-                                        AutoScriptEvent::Exited => AutoScriptEvent::Exited,
-                                    };
+        // let (sender, mut receiver) = mpsc::channel::<ToEdgeMessage>(10);
+        // tokio::spawn({
+        //     let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
+        //     let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
+        //     let the_beginner_car_auto_script_events = the_beginner_car_auto_script_events.clone();
+        //     let hardware_states_tx = hardware_states_tx.clone();
+        //     let hardware_positions_tx = hardware_positions_tx.clone();
 
-                                    // Stop forwarding if all receivers drop
-                                    if domain_sender.send(domain_event).await.is_err() {
-                                        break;
-                                    }
-                                }
-                            });
+        //     async move {
+        //         while let Some(value) = receiver.recv().await {
+        //             match value {
+        //                 ToEdgeMessage::StartAutoScript {
+        //                     owner_name,
+        //                     owner_comment,
+        //                     data,
+        //                     response_tx,
+        //                 } => {
+        //                     if let Ok(response) = client
+        //                         .run_auto_script(RunAutoScriptRequest {
+        //                             owner_name,
+        //                             owner_comment,
+        //                             build: 1,
+        //                             data,
+        //                             run_uuid: todo!(),
+        //                             number_plate: todo!(),
+        //                         })
+        //                         .await
+        //                     {
+        //                         let response = response.into_inner();
+        //                         let run_uuid = response.run_uuid;
 
-                            let _ = response_tx.send(domain_receiver);
-                        }
-                    }
-                    ToEdgeMessage::WatchOverview { response_tx } => {
-                        let latest_auto_scripts_overview =
-                            latest_auto_scripts_overview.lock().unwrap().clone();
+        //                         let (sender, _) = broadcast::channel(100);
+        //                         // sender.subscribe();
 
-                        let _ = response_tx.send((
-                            latest_auto_scripts_overview,
-                            incoming_auto_scripts_tx.subscribe(),
-                        ));
-                    }
-                    ToEdgeMessage::WatchHardware { response_tx } => {
-                        let _ = response_tx.send((
-                            hardware_states_tx.borrow().clone(),
-                            hardware_states_tx.subscribe(),
-                        ));
-                    }
-                    ToEdgeMessage::WatchPositions { response_tx } => {
-                        let _ = response_tx.send((
-                            hardware_positions_tx.borrow().clone(),
-                            hardware_positions_tx.subscribe(),
-                        ));
-                    }
-                    ToEdgeMessage::WatchStatus {
-                        number_plate,
-                        response_tx,
-                    } => todo!(),
-                };
-            }
-        }
-    });
+        //                         let history = Arc::new(RwLock::new(Vec::new()));
 
-    Ok(EdgeClient {
-        logs: incoming_tx,
-        sender,
-        latest_auto_scripts_overview,
-        watch_auto_scripts_overview: incoming_auto_scripts_tx,
-        the_beginner_car_auto_script_events,
-        hardware_states_tx,
-        hardware_positions_tx,
-    })
+        //                         the_beginner_car_auto_script_events.lock().unwrap().insert(
+        //                             run_uuid.clone(),
+        //                             AutoScriptEvents {
+        //                                 history: history.clone(),
+        //                                 live: sender.clone(),
+        //                             },
+        //                         );
+        //                         if let Ok(watch_auto_script) = client
+        //                             .watch_auto_script(WatchAutoScriptRequest {
+        //                                 run_uuid: run_uuid.clone(),
+        //                             })
+        //                             .await
+        //                         {
+        //                             let mut stream = watch_auto_script.into_inner();
+
+        //                             tokio::spawn(async move {
+        //                                 while let Ok(Some(update)) = stream.message().await {
+        //                                     if let Some(event) = update.event {
+        //                                         let event =
+        //                                     match event {
+        //                                         crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(log_message) => {
+        //                                             AutoScriptEvent::LogMessage{log_message}
+        //                                         }
+        //                                         crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(_) => {
+        //                                             AutoScriptEvent::Exited
+        //                                         }
+        //                                     };
+        //                                         let mut history_lock = history.write().await;
+        //                                         let _ = sender.send(event.clone());
+        //                                         history_lock.push(event);
+        //                                     }
+        //                                 }
+        //                             });
+        //                         } else {
+        //                             warn!("Could not watch script"); // TODO propagate this to user
+        //                         }
+
+        //                         let _ = response_tx.send(StartAutoScriptResponse::Uuid {
+        //                             uuid: run_uuid.clone(),
+        //                         });
+        //                     } else {
+        //                         let _ = response_tx
+        //                             .send(StartAutoScriptResponse::EdgeClientUnavailable);
+        //                     }
+        //                 }
+        //                 ToEdgeMessage::CancelAutoScript { run_uuid } => {
+        //                     let _ = client
+        //                         .cancel_auto_script(CancelAutoScriptRequest { run_uuid })
+        //                         .await;
+        //                 }
+        //                 ToEdgeMessage::WatchAutoScript {
+        //                     run_uuid,
+        //                     response_tx,
+        //                 } => {
+        //                     let log_sender_data = {
+        //                         let map = the_beginner_car_auto_script_events.lock().unwrap();
+        //                         map.get(&run_uuid)
+        //                             .map(|sender| (sender.history.clone(), sender.live.clone()))
+        //                     };
+
+        //                     if let Some((history, live)) = log_sender_data {
+        //                         let history_lock = history.read().await;
+        //                         let history_snapshot = history_lock.clone();
+        //                         let mut grpc_receiver = live.subscribe();
+        //                         drop(history_lock);
+        //                         let (domain_sender, domain_receiver) =
+        //                             mpsc::channel::<AutoScriptEvent>(100);
+
+        //                         tokio::spawn(async move {
+        //                             for event in history_snapshot {
+        //                                 if domain_sender.send(event).await.is_err() {
+        //                                     return; // Stop if the receiver dropped
+        //                                 }
+        //                             }
+
+        //                             while let Ok(grpc_event) = grpc_receiver.recv().await {
+        //                                 let domain_event = match grpc_event {
+        //                                     AutoScriptEvent::LogMessage { log_message } => {
+        //                                         AutoScriptEvent::LogMessage { log_message }
+        //                                     }
+        //                                     AutoScriptEvent::Exited => AutoScriptEvent::Exited,
+        //                                 };
+
+        //                                 // Stop forwarding if all receivers drop
+        //                                 if domain_sender.send(domain_event).await.is_err() {
+        //                                     break;
+        //                                 }
+        //                             }
+        //                         });
+
+        //                         let _ = response_tx.send(domain_receiver);
+        //                     }
+        //                 }
+        //                 ToEdgeMessage::WatchOverview { response_tx } => {
+        //                     let latest_auto_scripts_overview =
+        //                         latest_auto_scripts_overview.lock().unwrap().clone();
+
+        //                     let _ = response_tx.send((
+        //                         latest_auto_scripts_overview,
+        //                         incoming_auto_scripts_tx.subscribe(),
+        //                     ));
+        //                 }
+        //                 ToEdgeMessage::WatchHardware { response_tx } => {
+        //                     let _ = response_tx.send((
+        //                         hardware_states_tx.borrow().clone(),
+        //                         hardware_states_tx.subscribe(),
+        //                     ));
+        //                 }
+        //                 ToEdgeMessage::WatchPositions { response_tx } => {
+        //                     let _ = response_tx.send((
+        //                         hardware_positions_tx.borrow().clone(),
+        //                         hardware_positions_tx.subscribe(),
+        //                     ));
+        //                 }
+        //                 ToEdgeMessage::WatchStatus {
+        //                     number_plate,
+        //                     response_tx,
+        //                 } => todo!(),
+        //             };
+        //         }
+        //     }
+        // });
+
+        Ok(EdgeClient {
+            logs: incoming_tx,
+            hardware_positions_tx,
+            handle: client,
+            auto_scripts_overview,
+            hardware_overview,
+            vehicles: HashMap::new(),
+            scripts: Arc::new(Mutex::new(HashMap::new())),
+        })
+    }
 }

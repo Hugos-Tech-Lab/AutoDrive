@@ -5,9 +5,8 @@ use crate::auto_drive_edge_service::{
     self,
     v1::{
         AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent,
-        InfraredLedReadingsEvent, LogEvent, LogLevel, LogSystemOrigin, MotorSpeedUpdatedEvent,
-        PositionEvent, SystemStateEvent, WasmInstalledEvent, WatchTheBeginnerCarEventsResponse,
-        watch_the_beginner_car_events_response::Event,
+        InfraredLedReadingsEvent, LogLevel, LogSystemOrigin, MotorSpeedUpdatedEvent,
+        SystemStateEvent, WasmInstalledEvent,
     },
 };
 
@@ -37,81 +36,81 @@ pub fn to_grpc_log_message(
     //
 }
 
-impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse {
-    fn from(message: TheBeginnerCarOutgoingMessages) -> Self {
-        match message {
-            TheBeginnerCarOutgoingMessages::Log { log } => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::Log(LogEvent {
-                    log: Some(to_grpc_log_message(log)),
-                })),
-            },
-            TheBeginnerCarOutgoingMessages::SystemState {} => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::SystemState(SystemStateEvent {})),
-            },
-            TheBeginnerCarOutgoingMessages::WasmInstalled => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::WasmInstalled(WasmInstalledEvent {})),
-            },
-            TheBeginnerCarOutgoingMessages::AutoScriptRunning {
-                run_uuid,
-                script_start_time_utc_ms,
-            } => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
-            },
+// impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse {
+//     fn from(message: TheBeginnerCarOutgoingMessages) -> Self {
+//         match message {
+//             TheBeginnerCarOutgoingMessages::Log { log } => WatchTheBeginnerCarEventsResponse {
+//                 event: Some(Event::Log(LogEvent {
+//                     log: Some(to_grpc_log_message(log)),
+//                 })),
+//             },
+//             TheBeginnerCarOutgoingMessages::SystemState {} => WatchTheBeginnerCarEventsResponse {
+//                 event: Some(Event::SystemState(SystemStateEvent {})),
+//             },
+//             TheBeginnerCarOutgoingMessages::WasmInstalled => WatchTheBeginnerCarEventsResponse {
+//                 event: Some(Event::WasmInstalled(WasmInstalledEvent {})),
+//             },
+//             TheBeginnerCarOutgoingMessages::AutoScriptRunning {
+//                 run_uuid,
+//                 script_start_time_utc_ms,
+//             } => WatchTheBeginnerCarEventsResponse {
+//                 event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
+//             },
 
-            TheBeginnerCarOutgoingMessages::AutoScriptStopped {
-                run_uuid,
-                script_stop_time_utc_ms,
-                vehicle_start_time_utc_ms,
-                vehicle_finish_time_utc_ms,
-            } => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
-            },
+//             TheBeginnerCarOutgoingMessages::AutoScriptStopped {
+//                 run_uuid,
+//                 script_stop_time_utc_ms,
+//                 vehicle_start_time_utc_ms,
+//                 vehicle_finish_time_utc_ms,
+//             } => WatchTheBeginnerCarEventsResponse {
+//                 event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
+//             },
 
-            TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
-                WatchTheBeginnerCarEventsResponse {
-                    event: Some(Event::BatteryReading(BatteryReadingEvent {
-                        battery_voltage: voltage,
-                    })),
-                }
-            }
+//             TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
+//                 WatchTheBeginnerCarEventsResponse {
+//                     event: Some(Event::BatteryReading(BatteryReadingEvent {
+//                         battery_voltage: voltage,
+//                     })),
+//                 }
+//             }
 
-            TheBeginnerCarOutgoingMessages::InfraredLedReadings {
-                front_far_left,
-                front_left,
-                front_center,
-                front_right,
-                front_far_right,
-                back_center,
-                back_left,
-            } => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::InfraredLedReading(InfraredLedReadingsEvent {
-                    front_far_left: front_far_left as u32,
-                    front_left: front_left as u32,
-                    front_center: front_center as u32,
-                    front_right: front_right as u32,
-                    front_far_right: front_far_right as u32,
-                    back_center: back_center as u32,
-                    back_left: back_left as u32,
-                })),
-            },
-            TheBeginnerCarOutgoingMessages::Position {
-                x,
-                y,
-                rotation_radians,
-                timestamp_unix_epoch_ms,
-            } => WatchTheBeginnerCarEventsResponse {
-                event: Some(Event::PositionEvent(PositionEvent {
-                    number_plate: "TODO".to_string(), // TODO
-                    x,
-                    y,
-                    rotation_radians,
-                    timestamp_unix_epoch_ms,
-                })),
-            },
-            TheBeginnerCarOutgoingMessages::AutoScriptRejected { run_uuid } => todo!(),
-        }
-    }
-}
+//             TheBeginnerCarOutgoingMessages::InfraredLedReadings {
+//                 front_far_left,
+//                 front_left,
+//                 front_center,
+//                 front_right,
+//                 front_far_right,
+//                 back_center,
+//                 back_left,
+//             } => WatchTheBeginnerCarEventsResponse {
+//                 event: Some(Event::InfraredLedReading(InfraredLedReadingsEvent {
+//                     front_far_left: front_far_left as u32,
+//                     front_left: front_left as u32,
+//                     front_center: front_center as u32,
+//                     front_right: front_right as u32,
+//                     front_far_right: front_far_right as u32,
+//                     back_center: back_center as u32,
+//                     back_left: back_left as u32,
+//                 })),
+//             },
+//             TheBeginnerCarOutgoingMessages::Position {
+//                 x,
+//                 y,
+//                 rotation_radians,
+//                 timestamp_unix_epoch_ms,
+//             } => WatchTheBeginnerCarEventsResponse {
+//                 event: Some(Event::PositionEvent(PositionEvent {
+//                     number_plate: "TODO".to_string(), // TODO
+//                     x,
+//                     y,
+//                     rotation_radians,
+//                     timestamp_unix_epoch_ms,
+//                 })),
+//             },
+//             TheBeginnerCarOutgoingMessages::AutoScriptRejected { run_uuid } => todo!(),
+//         }
+//     }
+// }
 
 impl From<&crate::auto_script_manager::auto_script::AutoScript>
     for crate::auto_drive_edge_service::v1::AutoScript

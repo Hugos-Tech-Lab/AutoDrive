@@ -3,16 +3,39 @@ syntax = "proto3";
 package auto_drive_edge_service.v1;
 
 service AutoDriveEdgeService {
+  // =======================
+  // ==== FOR THE CLOUD ====
+  // =======================
+  // Non specific target
+  rpc GetVehicles(GetVehiclesRequest) returns (GetVehiclesResponse);
+  rpc WatchAutoScriptOverview(WatchAutoScriptOverviewRequest) returns (stream WatchAutoScriptOverviewResponse);
+
+  // Script specific
   rpc EnqueueAutoScript(EnqueueAutoScriptRequest) returns (EnqueueAutoScriptResponse);
   rpc RunAutoScript(RunAutoScriptRequest) returns (RunAutoScriptResponse);
   rpc CancelAutoScript(CancelAutoScriptRequest) returns (CancelAutoScriptResponse);
   rpc WatchAutoScript(WatchAutoScriptRequest) returns (stream WatchAutoScriptResponse);
-  rpc WatchAutoScriptOverview(WatchAutoScriptOverviewRequest) returns (stream WatchAutoScriptOverviewResponse);
-  rpc WatchTheBeginnerCarEvents(WatchTheBeginnerCarEventsRequest) returns (stream WatchTheBeginnerCarEventsResponse);
+
+  // Vehicle Specific
+  rpc WatchVehicleLogs(WatchVehicleLogsRequest) returns (stream WatchVehicleLogsResponse);
   rpc WatchHardwareStatus(WatchHardwareStatusRequest) returns (stream WatchHardwareStatusResponse);
   rpc WatchHardwarePose(WatchHardwarePoseRequest) returns (stream WatchHardwarePoseResponse);
+
+  // ==============================
+  // ==== FOR THE RASPBERRY PI ====
+  // ==============================
   rpc NotifyHardwareCoordinates(NotifyHardwareCoordinatesRequest) returns (NotifyHardwareCoordinatesResponse);
-  rpc GetVehicles(GetVehiclesRequest) returns (GetVehiclesResponse);
+}
+
+// LogMessage
+
+message WatchVehicleLogsRequest {
+  string number_plates = 1;
+  //
+}
+
+message WatchVehicleLogsResponse {
+  LogMessage log_message = 1;
 }
 
 message GetVehiclesRequest {}
@@ -29,7 +52,9 @@ message HardwareCoordinate {
   uint64 timestamp_unix_epoch_ms = 5;
 }
 
-message WatchHardwarePoseRequest {}
+message WatchHardwarePoseRequest {
+  string number_plate = 1;
+}
 
 message WatchHardwarePoseResponse {
   string number_plate = 1;
@@ -128,33 +153,6 @@ message CancelAutoScriptResponse {}
 
 message WatchTheBeginnerCarEventsRequest {
   string number_plate = 1;
-}
-
-message WatchTheBeginnerCarEventsResponse {
-  oneof event {
-    LogEvent log = 1;
-    SystemStateEvent system_state = 2;
-    MotorSpeedUpdatedEvent motor_a_speed_updated = 3;
-    MotorSpeedUpdatedEvent motor_b_speed_updated = 4;
-    WasmInstalledEvent wasm_installed = 5;
-    AutoScriptRunningEvent auto_script_running = 6;
-    AutoScriptStoppedEvent auto_script_stopped = 7;
-    BatteryReadingEvent battery_reading = 8;
-    InfraredLedReadingsEvent infrared_led_reading = 9;
-    PositionEvent position_event = 10;
-  }
-}
-
-message PositionEvent {
-  string number_plate = 1;
-  float x = 2;
-  float y = 3;
-  float rotation_radians = 4;
-  uint64 timestamp_unix_epoch_ms = 5;
-}
-
-message LogEvent {
-  LogMessage log = 1;
 }
 
 message SystemStateEvent {}

@@ -3,7 +3,9 @@ use std::error::Error;
 use env_logger::Env;
 use log::info;
 
-use crate::{http::http_server, ignore_incomplete_message::IgnoreIncompleteMessage};
+use crate::{
+    edge_client::EdgeClient, http::http_server, ignore_incomplete_message::IgnoreIncompleteMessage,
+};
 pub mod edge_client;
 pub mod hardware;
 pub mod http;
@@ -34,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         info!("Starting auto-drive-edge in production mode at git hash ({GIT_HASH})");
     }
 
-    let edge_client_ = edge_client::edge_client().await?;
+    let edge_client_ = EdgeClient::new().await?;
     http_server(edge_client_).await;
 
     Ok(())

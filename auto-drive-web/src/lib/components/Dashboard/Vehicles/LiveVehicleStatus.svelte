@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
-  import { endpointRoot } from "../../../endpoint";
-  import Status from "../Vehicles/Vehicle/Status.svelte";
+  import TheBeginnerCar from "../../TheBeginnerCarDrawing.svelte";
+  import { endpointRoot } from "../../../../endpoint";
 
   type Status = {
     utmost_front_utmost_left: number;
@@ -13,6 +12,12 @@
   let connectionStatus = $state("Connecting...");
   let lastUpdate = $state<Date | null>(null);
   let telemetryError = $state("");
+
+  interface Props {
+    vehicle_number_plate: string;
+  }
+
+  let { vehicle_number_plate }: Props = $props();
 
   onMount(() => {
     const source = new EventSource(`${endpointRoot()}/status`);
@@ -45,24 +50,24 @@
       source.close();
     };
   });
-
-  function stopTelemetry() {
-    // TODO: Call your hardware stop endpoint.
-  }
-
-  function runScript() {
-    // TODO: Call your script execution endpoint.
-  }
-
-  function navigateToStart() {
-    // TODO: Call your navigation endpoint.
-  }
 </script>
 
 <svelte:head>
   <title>Status</title>
 </svelte:head>
 
-<Status />
+<h2 class="text-2xl mb-4">The STATE of the MCUs controlling the vehicle</h2>
+<div
+  class="w-full flex flex-col md:flex-row gap-4 mb-6 bg-gray-100 p-4 border-2"
+>
+  <div class="flex-1 bg-green-100 p-4 border-2">
+    <h3>Wifi MCU</h3>
 
-<div class="row"></div>
+    Uptime: 00:00:00. Firmware: #1233987.
+  </div>
+
+  <div class="flex-1 bg-green-100 p-4 border-2">
+    <h3>WASM MCU</h3>
+    Uptime: 00:00:00. Firmware: #abcde.
+  </div>
+</div>

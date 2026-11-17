@@ -1,13 +1,8 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import HardwareTelemetry from "../hardware/HardwareTelemetry.svelte";
-  import LiveTimeTrials from "../LiveTimeTrials.svelte";
-  import LiveHardwareBanner from "../LiveHardwareBanner.svelte";
-  import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
   import UserAccountButton from "../UserAccountButton.svelte";
   import type { AuthState } from "$lib/auth.svelte";
-  import Status from "../hardware/Status.svelte";
-  import Position from "../Map.svelte";
+  import TimeTrials from "./TimeTrials/TimeTrials.svelte";
+  import Vehicles from "./Vehicles/Vehicles.svelte";
 
   interface Props {
     session: AuthState;
@@ -15,23 +10,8 @@
 
   let { session }: Props = $props();
   let userName = $state<string | undefined>();
-  let selectedView = $state<string>("Time Trials");
-
-  type PlayOption = "Leaderboard" | "Algorithms" | "Live";
-  let selectedPlayOption = $state<PlayOption>("Leaderboard");
-
-  const playOptions: PlayOption[] = ["Leaderboard", "Algorithms", "Live"];
-
-  type BuildOption = "Status" | "Logs" | "Position" | "Telemetry" | "Control";
-  let selectedBuildOption = $state<BuildOption>("Status");
-
-  const buildOptions: BuildOption[] = [
-    "Status",
-    "Logs",
-    "Position",
-    "Telemetry",
-    "Control",
-  ];
+  type View = "Time Trials" | "Scripts" | "Vehicles";
+  let selectedView = $state<View>("Time Trials");
 </script>
 
 <div class="px-4 pt-4 flex items-start gap-8">
@@ -58,8 +38,9 @@
   <button
     type="button"
     class="button block"
-    // class:selected={selectedView === "Time Trials"}
-    // aria-pressed={selectedView === "Time Trials"}
+    class:selected={selectedView === "Scripts"}
+    aria-pressed={selectedView === "Scripts"}
+    onclick={() => (selectedView = "Scripts")}
   >
     Scripts
   </button>
@@ -67,29 +48,16 @@
   <button
     type="button"
     class="button block"
-    // class:selected={selectedView === "Time Trials"}
-    // aria-pressed={selectedView === "Time Trials"}
+    class:selected={selectedView === "Vehicles"}
+    aria-pressed={selectedView === "Vehicles"}
+    onclick={() => (selectedView = "Vehicles")}
   >
     Vehicles
   </button>
 </div>
 
-<LiveHardwareBanner bind:selectedView />
-
-{#if selectedView === "Time Trials"}
-  <div class="button-container">
-    {#each playOptions as playOption}
-      <button
-        type="button"
-        class="button block"
-        class:selected={selectedPlayOption === playOption}
-        aria-pressed={selectedPlayOption === playOption}
-        onclick={() => (selectedPlayOption = playOption)}
-      >
-        {playOption}
-      </button>
-    {/each}
-  </div>
+<!-- {#if selectedView === "Time Trials"}
+ 
 {:else}
   <div class="button-container">
     {#each buildOptions as buildOption}
@@ -104,9 +72,9 @@
       </button>
     {/each}
   </div>
-{/if}
+{/if} -->
 
-{#if selectedView !== "Time Trials" && selectedBuildOption === "Control"}
+<!-- {#if selectedView !== "Time Trials" && selectedBuildOption === "Control"}
   <h2 class="text-2xl mb-4 min-w-0 flex-1">Car Control: {selectedView}</h2>
 
   <div class="row">
@@ -114,8 +82,8 @@
     <button type="button" class="button block">Run Script</button>
     <button type="button" class="button block">Navigate To Start</button>
   </div>
-{/if}
-
+{/if} -->
+<!-- 
 {#if selectedView !== "Time Trials" && selectedBuildOption === "Status"}
   <Status />
 {/if}
@@ -124,32 +92,27 @@
   <Position />
 {/if}
 
-{#if selectedView === "Time Trials" && selectedPlayOption === "Leaderboard"}
-  <h2 class="text-2xl mb-4 min-w-0 flex-1">No leaderboard yet.</h2>
-{/if}
-
-{#if selectedView === "Time Trials" && selectedPlayOption === "Algorithms"}
-  <h2 class="text-2xl mb-4 min-w-0 flex-1">No algorithms yet.</h2>
-{/if}
-
 {#if selectedView !== "Time Trials" && selectedBuildOption === "Telemetry"}
   <HardwareTelemetry />
+{/if} -->
+
+{#if selectedView === "Time Trials"}
+  <TimeTrials />
 {/if}
 
-{#if selectedView === "Time Trials" && selectedPlayOption === "Live"}
-  <LiveTimeTrials />
+{#if selectedView === "Scripts"}
+  <!-- <Scripts /> -->
 {/if}
+
+{#if selectedView === "Vehicles"}
+  <Vehicles />
+{/if}
+
+<!-- {#if selectedView === "Time Trials" && selectedPlayOption === "Live"}
+  <LiveTimeTrials />
+{/if} -->
 
 <style>
-  .button-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    position: absolute;
-    /* THIS MUST MATCH: THE MAIN WIDTH */
-    right: calc(50% + 30rem);
-  }
-
   .row {
     display: flex;
   }

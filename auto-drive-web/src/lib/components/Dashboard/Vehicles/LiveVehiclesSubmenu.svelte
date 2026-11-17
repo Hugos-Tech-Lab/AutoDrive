@@ -12,19 +12,20 @@
     is_connected: boolean;
   };
 
-  let hardwareList = $state<HardwareData[]>([
-    { number_plate: "ABC 123", category: "", is_connected: false },
-    { number_plate: "ABC 256", category: "", is_connected: false },
-    { number_plate: "ABC 788", category: "", is_connected: false },
-    { number_plate: "ABC 788", category: "", is_connected: false },
-    { number_plate: "ABC 788", category: "", is_connected: false },
-    { number_plate: "ABC 788", category: "", is_connected: false },
-    { number_plate: "ABC 788", category: "", is_connected: false },
-  ]);
+  let hardwareList = $state<HardwareData[]>([]);
   let backendConnected = $state(false);
+  let isRetrying = $state(false);
 
-  onMount(() => {
-    const sse = new EventSource(`${endpointRoot()}/hardware/overview`);
+  let sse: EventSource | null = null;
+
+  function connect() {
+    // Clean up any existing connection before starting a new one
+    if (sse) {
+      sse.close();
+    }
+
+    isRetrying = true;
+    sse = new EventSource(`${endpointRoot()}/hardware/overview`);
 
     sse.addEventListener("overview", (event) => {
       try {
@@ -36,38 +37,55 @@
       }
 
       backendConnected = true;
+      isRetrying = false;
     });
 
     sse.onopen = () => {
       backendConnected = true;
+      isRetrying = false;
     };
 
     sse.onerror = (err) => {
       console.error("SSE Error on hardware overview", err);
       backendConnected = false;
+      isRetrying = false;
     };
+  }
+
+  onMount(() => {
+    connect();
 
     // Cleanup the connection when the component is destroyed
     return () => {
-      sse.close();
+      sse?.close();
     };
   });
 </script>
 
 <div class="row">
-  {#each hardwareList as hw}
+  {#if backendConnected}
+    {#each hardwareList as hw}
+      <button
+        type="button"
+        class="button block"
+        class:selected={selectedVehicleNumberPlate === hw.number_plate}
+        aria-pressed={selectedVehicleNumberPlate === hw.number_plate}
+        onclick={() => (selectedVehicleNumberPlate = hw.number_plate)}
+      >
+        {hw.number_plate}
+        {hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"}
+      </button>
+    {/each}
+  {:else}
     <button
       type="button"
       class="button block"
-      class:selected={selectedVehicleNumberPlate === hw.number_plate}
-      aria-pressed={selectedVehicleNumberPlate === hw.number_plate}
-      onclick={() => (selectedVehicleNumberPlate = hw.number_plate)}
+      disabled={isRetrying}
+      onclick={connect}
     >
-      <!-- TODO: it shows connected even when connection to backend not made? Fix that -->
-      {hw.number_plate}
-      <!-- {backendConnected && hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"} -->
+      {isRetrying ? "Retrying..." : "NETWORK ERROR. Press to retry."}
     </button>
-  {/each}
+  {/if}
 </div>
 
 <style>

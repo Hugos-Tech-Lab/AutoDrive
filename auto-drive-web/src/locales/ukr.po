@@ -659,7 +659,6 @@ msgstr ""
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Time Trials"
 msgstr ""
 
@@ -1348,8 +1347,6 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Vehicles"
 msgstr ""
 
@@ -1391,8 +1388,6 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Scripts"
 msgstr ""
 
@@ -1413,4 +1408,24 @@ msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 msgid "The STATE of the MCUs controlling <0/>"
+msgstr ""
+
+#~ msgid "Uh oh, not able to get the list of vehicles from the backend"
+#~ msgstr ""
+
+#~ msgid "NETWORK ERROR: Not able to get the list of vehicles from the backend"
+#~ msgstr ""
+
+#~ msgid "NETWORK ERROR: Not able to get the list of vehicles from the backend. Tap to retry."
+#~ msgstr ""
+
+#~ msgid "NETWORK ERROR. Tap to retry."
+#~ msgstr ""
+
+#: src/lib/components/Dashboard/Vehicles/LiveVehiclesSubmenu.svelte
+msgid "Retrying..."
+msgstr ""
+
+#: src/lib/components/Dashboard/Vehicles/LiveVehiclesSubmenu.svelte
+msgid "NETWORK ERROR. Press to retry."
 msgstr ""

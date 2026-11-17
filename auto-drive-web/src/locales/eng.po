@@ -659,7 +659,6 @@ msgstr "Algorithms"
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Time Trials"
 msgstr "Time Trials"
 
@@ -1348,8 +1347,6 @@ msgstr "Don't have an account? <0>Create one</0>"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Vehicles"
 msgstr "Vehicles"
 
@@ -1391,8 +1388,6 @@ msgstr "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Scripts"
 msgstr "Scripts"
 
@@ -1414,3 +1409,23 @@ msgstr "Scripts"
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 msgid "The STATE of the MCUs controlling <0/>"
 msgstr "The STATE of the MCUs controlling <0/>"
+
+#~ msgid "Uh oh, not able to get the list of vehicles from the backend"
+#~ msgstr "Uh oh, not able to get the list of vehicles from the backend"
+
+#~ msgid "NETWORK ERROR: Not able to get the list of vehicles from the backend"
+#~ msgstr "NETWORK ERROR: Not able to get the list of vehicles from the backend"
+
+#~ msgid "NETWORK ERROR: Not able to get the list of vehicles from the backend. Tap to retry."
+#~ msgstr "NETWORK ERROR: Not able to get the list of vehicles from the backend. Tap to retry."
+
+#~ msgid "NETWORK ERROR. Tap to retry."
+#~ msgstr "NETWORK ERROR. Tap to retry."
+
+#: src/lib/components/Dashboard/Vehicles/LiveVehiclesSubmenu.svelte
+msgid "Retrying..."
+msgstr "Retrying..."
+
+#: src/lib/components/Dashboard/Vehicles/LiveVehiclesSubmenu.svelte
+msgid "NETWORK ERROR. Press to retry."
+msgstr "NETWORK ERROR. Press to retry."

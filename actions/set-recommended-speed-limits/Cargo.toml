@@ -1,0 +1,13 @@
+[package]
+name = "set-recommended-speed-limits"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+auto-drive-sdk.workspace = true
+
+[[bin]]
+name = "set-recommended-speed-limits"
+path = "main.rs"

@@ -9,9 +9,9 @@ impl MotorLeft {
         Self {}
     }
 
-    pub fn set_rpm(&self, rpm: i32) {
-        unsafe { guest::set_motor_left_rpm(rpm) }
-    }
+    // pub fn set_rpm(&self, rpm: i32) {
+    //     unsafe { guest::set_motor_left_rpm(rpm) }
+    // }
 
     pub fn set_pwm(&self, pwm: i8) {
         unsafe { guest::set_motor_left_pwm(pwm) }

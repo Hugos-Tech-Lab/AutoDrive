@@ -109,13 +109,13 @@ impl TheBeginnerCar {
     }
 
     /// Sets the motor speed
-    pub fn set_motor_left_speed(&self, speed: i8) {
-        unsafe { guest::set_motor_left_speed(speed) }
-    }
+    // pub fn set_motor_left_speed(&self, speed: i8) {
+    //     unsafe { guest::set_motor_left_speed(speed) }
+    // }
 
-    pub fn set_motor_right_speed(&self, speed: i8) {
-        unsafe { guest::set_motor_right_speed(speed) }
-    }
+    // pub fn set_motor_right_speed(&self, speed: i8) {
+    //     unsafe { guest::set_motor_right_speed(speed) }
+    // }
 
     pub fn set_led_left_on(&self) {
         unsafe { guest::set_led_left_on() }

@@ -1,0 +1,13 @@
+[package]
+name = "reposition"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+auto-drive-sdk.workspace = true
+
+[[bin]]
+name = "reposition"
+path = "main.rs"

@@ -33,7 +33,7 @@
       aria-pressed={selectedView === view}
       onclick={() => (selectedView = view)}
     >
-      Time Trials
+      {view}
     </button>
   {/each}
 </div>

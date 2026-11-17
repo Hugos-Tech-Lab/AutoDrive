@@ -217,7 +217,6 @@ msgstr ""
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
-#: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Time Trials"
 msgstr ""
 
@@ -502,3 +501,6 @@ msgstr ""
 #: src/lib/components/Dashboard/Vehicles/LiveVehiclesSubmenu.svelte
 msgid "NETWORK ERROR. Press to retry."
 msgstr ""
+
+#~ msgid "view"
+#~ msgstr ""

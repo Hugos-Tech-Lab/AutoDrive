@@ -57,6 +57,10 @@ pub enum ToEdgeMessage {
     WatchPositions {
         response_tx: oneshot::Sender<(HardwarePositions, watch::Receiver<HardwarePositions>)>,
     },
+    WatchStatus {
+        number_plate: String,
+        response_tx: oneshot::Sender<(HardwarePositions, watch::Receiver<HardwarePositions>)>,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,7 +98,7 @@ pub struct Hardware {
     pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
     pub watch_auto_scripts_overview: Sender<AutoScripts>,
     pub hardware_states_tx: watch::Sender<HardwareHashMap>,
-    pub hardware_positions_tx: watch::Sender<HardwarePositions>, // TODO: populate this
+    pub hardware_positions_tx: watch::Sender<HardwarePositions>,
 }
 
 pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
@@ -465,6 +469,10 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                             hardware_positions_tx.subscribe(),
                         ));
                     }
+                    ToEdgeMessage::WatchStatus {
+                        number_plate,
+                        response_tx,
+                    } => todo!(),
                 };
             }
         }

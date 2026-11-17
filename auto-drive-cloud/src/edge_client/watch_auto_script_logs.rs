@@ -1,7 +1,8 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use log::warn;
 use tokio::{
+    sync::{RwLock, broadcast},
     task::JoinHandle,
     time::{sleep, timeout},
 };
@@ -9,7 +10,8 @@ use tonic::transport::Channel;
 
 use crate::{
     auto_drive_edge_service::v1::{
-        WatchAutoScriptLogsRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+        LogMessage, WatchAutoScriptLogsRequest,
+        auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
     },
     edge_client::Logs,
 };
@@ -18,11 +20,14 @@ pub fn watch_auto_script_logs(
     client: AutoDriveEdgeServiceClient<Channel>,
     run_uuid: String,
 ) -> (Logs, JoinHandle<()>) {
-    let logs = Logs::default();
+    let history: Arc<RwLock<Vec<LogMessage>>> = Default::default();
+
+    let live_tx = broadcast::Sender::<LogMessage>::new(100);
+    let live = live_tx.subscribe();
 
     let join_handle = tokio::spawn({
         let mut client = client.clone();
-        let logs = logs.clone();
+        let history = history.clone();
 
         async move {
             loop {
@@ -49,8 +54,8 @@ pub fn watch_auto_script_logs(
                         // TODO: remove unwrap
                         while let Some(logs_response) = stream.message().await.unwrap() {
                             if let Some(log_message) = logs_response.log_message {
-                                logs.live_tx.send(log_message.clone());
-                                let mut history_lock = logs.history.write().await;
+                                let mut history_lock = history.write().await;
+                                live_tx.send(log_message.clone());
                                 history_lock.push(log_message);
                             };
                         }
@@ -66,5 +71,6 @@ pub fn watch_auto_script_logs(
         }
     });
 
+    let logs = Logs::new(history, live);
     (logs, join_handle)
 }

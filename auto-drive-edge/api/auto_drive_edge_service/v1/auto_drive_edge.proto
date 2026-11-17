@@ -31,7 +31,7 @@ service AutoDriveEdgeService {
 // LogMessage
 
 message WatchVehicleLogsRequest {
-  string number_plates = 1;
+  string number_plate = 1;
   //
 }
 

@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use crate::{
     auto_drive_edge_service::v1::{AutoScriptType, EnqueueAutoScriptRequest},
-    edge_client::{AutoScript, EdgeClient},
+    edge_client::{AutoScript, AutoScriptStatus, EdgeClient},
 };
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
@@ -140,7 +140,20 @@ async fn handle_enqueue(
         .or_insert(AutoScript::new(edge_client.handle, run_uuid.clone()))
         .clone();
 
-    let streamed_response = BroadcastStream::new(script.logs.subscribe());
+    let logs = script.logs.stream_with_history().await;
+    let mut status_rx = script.status.subscribe();
+    let is_finished = async move {
+        let _ = status_rx
+            .wait_for(|status| {
+                matches!(
+                    status,
+                    AutoScriptStatus::StoppedBySelf
+                        | AutoScriptStatus::CancelledBySafety
+                        | AutoScriptStatus::CancelledManually
+                )
+            })
+            .await;
+    };
 
     let confirmation = stream::once(async {
         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(
@@ -161,46 +174,33 @@ async fn handle_enqueue(
         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(run_uuid))
     }));
 
-    let event_stream = run_uuid_stream.chain(
-        streamed_response
-            .take_while(|auto_script_event| {
-                let keep = !matches!(
-                    auto_script_event.clone().unwrap(),
-                    crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(_)
-                );
-                std::future::ready(keep)
-            })
-            .filter_map(|auto_script_event| async move {
-                let log = match auto_script_event.unwrap() {
-                    crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(log_message) => log_message,
-                    crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(_) => {
-                        return None;
-                    }
-                };
+    let event_stream = run_uuid_stream.chain(logs.take_until(is_finished).filter_map(
+        |auto_script_event| async move {
+            let log = auto_script_event.unwrap();
 
-                let level = match log.level() {
-                    crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED",
-                    crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
-                    crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
-                    crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
-                    crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
-                    crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
-                };
+            let level = match log.level() {
+                crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED",
+                crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
+                crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
+                crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
+                crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
+                crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
+            };
 
-                let system_origin = match log.system_origin() {
-                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmUnspecified => {
-                        "UNSPECIFIED"
-                    }
-                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmMcu => "WASM_MCU",
-                    crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
-                };
+            let system_origin = match log.system_origin() {
+                crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmUnspecified => {
+                    "UNSPECIFIED"
+                }
+                crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmMcu => "WASM_MCU",
+                crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
+            };
 
-                let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
-                Some(Ok::<_, Infallible>(
-                    warp::sse::Event::default().event("log").data(formatted_log),
-                ))
-            }),
-    );
+            let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
+            Some(Ok::<_, Infallible>(
+                warp::sse::Event::default().event("log").data(formatted_log),
+            ))
+        },
+    ));
 
     let event_stream = event_stream.chain(exit);
 

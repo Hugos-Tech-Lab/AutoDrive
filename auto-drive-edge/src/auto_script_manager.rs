@@ -21,7 +21,7 @@ use crate::{
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Clone, Debug)]
-pub enum HardwareState {
+pub enum AutoScriptStatus {
     NotReceivedByHardware,
     ReceivedByHardware,
     CallingMain,

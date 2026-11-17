@@ -15,7 +15,7 @@ use crate::auto_drive_edge_service::v1::{
 
 pub fn watch_scripts_overview(
     client: AutoDriveEdgeServiceClient<Channel>,
-) -> (watch::Sender<AutoScripts>, JoinHandle<()>) {
+) -> (watch::Receiver<AutoScripts>, JoinHandle<()>) {
     let (scripts_overview, _) = watch::channel::<AutoScripts>(AutoScripts {
         running: vec![],
         queued: vec![],
@@ -25,7 +25,6 @@ pub fn watch_scripts_overview(
     let join_handle = tokio::spawn({
         let mut client = client.clone();
         let scripts_overview = scripts_overview.clone();
-
         async move {
             loop {
                 let result = timeout(
@@ -61,5 +60,5 @@ pub fn watch_scripts_overview(
         }
     });
 
-    (scripts_overview, join_handle)
+    (scripts_overview.subscribe(), join_handle)
 }

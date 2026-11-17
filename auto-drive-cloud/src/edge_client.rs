@@ -5,14 +5,19 @@ use std::{
     time::Duration,
 };
 
+use futures_util::{
+    Stream, StreamExt,
+    stream::{self},
+};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{
     RwLock,
-    broadcast::{self, Sender},
+    broadcast::{self},
     watch,
 };
 use tokio::time::sleep;
+use tokio_stream::wrappers::{BroadcastStream, errors::BroadcastStreamRecvError};
 use tonic::transport::Channel;
 
 use crate::auto_drive_edge_service::v1::{
@@ -23,6 +28,7 @@ use crate::edge_client::watch_auto_script_logs::watch_auto_script_logs;
 use crate::edge_client::watch_scripts_overview::watch_scripts_overview;
 pub mod watch_auto_script_logs;
 pub mod watch_scripts_overview;
+pub mod watch_vehicle_logs;
 pub mod watch_vehicle_positions;
 
 type HardwareHashMap = HashMap<String, HardwareDeviceState>;
@@ -54,6 +60,16 @@ pub struct Status {
     pub wasm_mcu: McuStatus,
 }
 
+#[derive(Clone, Debug)]
+pub enum AutoScriptStatus {
+    NotReceivedByHardware,
+    ReceivedByHardware,
+    CallingMain,
+    StoppedBySelf,
+    CancelledBySafety,
+    CancelledManually,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDeviceState {
     pub number_plate: String,
@@ -61,40 +77,63 @@ pub struct HardwareDeviceState {
     pub is_connected: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Logs {
     history: Arc<RwLock<Vec<LogMessage>>>,
-    live_tx: Sender<LogMessage>,
+    live: broadcast::Receiver<LogMessage>,
 }
 
-// TODO: remove default here
-impl Default for Logs {
-    fn default() -> Self {
-        let live_tx = broadcast::Sender::new(100);
-
+impl Clone for Logs {
+    fn clone(&self) -> Self {
         Self {
-            history: Default::default(),
-            live_tx,
+            history: self.history.clone(),
+            live: self.live.resubscribe(),
         }
     }
 }
 
-#[derive(Default, Debug, Clone)]
+impl Logs {
+    pub fn new(
+        history: Arc<RwLock<Vec<LogMessage>>>,
+        live: broadcast::Receiver<LogMessage>,
+    ) -> Self {
+        Self { history, live }
+    }
+
+    pub async fn stream_with_history(
+        &self,
+    ) -> Option<
+        impl Stream<Item = Result<LogMessage, BroadcastStreamRecvError>> + Send + Sync + 'static,
+    > {
+        let history_guard = self.history.read().await;
+        let history = history_guard.clone();
+        drop(history_guard);
+
+        let history_stream = stream::iter(history.into_iter().map(Ok));
+        let live_stream = BroadcastStream::new(self.live.resubscribe());
+
+        Some(history_stream.chain(live_stream))
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Vehicle {
     logs: Logs,
-    position: watch::Sender<Option<Pose>>,
-    status: watch::Sender<Option<Status>>,
+    position: watch::Receiver<Option<Pose>>,
+    status: watch::Receiver<Option<Status>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct AutoScript {
-    logs: Logs,
+    pub logs: Logs,
+    pub status: watch::Sender<AutoScriptStatus>,
 }
 
 impl AutoScript {
     pub fn new(handle: AutoDriveEdgeServiceClient<Channel>, run_uuid: String) -> Self {
         let (logs, _) = watch_auto_script_logs(handle, run_uuid);
-        Self { logs }
+        let status = watch::Sender::<AutoScriptStatus>::new(AutoScriptStatus::ReceivedByHardware); // TODO send messages to this
+        Self { logs, status }
     }
 }
 
@@ -132,7 +171,21 @@ impl EdgeClient {
             .get_ref()
             .number_plates
             .iter()
-            .map(|f| (f.clone(), Vehicle::default()))
+            .map(|number_plate| {
+                (number_plate.clone(), {
+                    let (logs, _) = watch_vehicle_logs::watch_vehicle_logs(
+                        client.clone(),
+                        number_plate.clone(),
+                    );
+
+                    Vehicle {
+                        logs,
+                        position: todo!(),
+                        status: todo!(),
+                    }
+                    //
+                })
+            })
             .collect();
 
         let (scripts_overview, _) = watch_scripts_overview(client.clone());

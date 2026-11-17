@@ -10,7 +10,7 @@ use tokio::sync::{
 use uuid::Uuid;
 
 use crate::{
-    auto_script_manager::{AutoScriptEvents, HardwareState},
+    auto_script_manager::{AutoScriptEvents, AutoScriptStatus},
     the_beginner_car_comms::TheBeginnerCarComms,
 };
 
@@ -33,7 +33,7 @@ pub struct AutoScript {
     pub logs_live_tx: Sender<LogMessage>,
     pub logs_history: Arc<RwLock<Vec<LogMessage>>>,
     pub hardware: Option<TheBeginnerCarComms>,
-    pub hardware_response: HardwareState,
+    pub hardware_response: AutoScriptStatus,
     pub script_queue_time: DateTime<Utc>,
     pub script_start_time: Option<DateTime<Utc>>,
     pub vehicle_start_time: Option<DateTime<Utc>>,
@@ -87,7 +87,7 @@ impl AutoScript {
             logs_live_tx,
             logs_history,
             hardware: None,
-            hardware_response: HardwareState::NotReceivedByHardware,
+            hardware_response: AutoScriptStatus::NotReceivedByHardware,
             script_queue_time: Utc::now(),
             script_start_time: None,
             script_stop_time: None,

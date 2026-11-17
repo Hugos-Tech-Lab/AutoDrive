@@ -3,6 +3,7 @@
   import type { AuthState } from "$lib/auth.svelte";
   import TimeTrials from "./TimeTrials/TimeTrials.svelte";
   import Vehicles from "./Vehicles/Vehicles.svelte";
+  import Scripts from "./Scripts/Scripts.svelte";
 
   interface Props {
     session: AuthState;
@@ -43,7 +44,7 @@
 {/if}
 
 {#if selectedView === "Scripts"}
-  <!-- <Scripts /> -->
+  <Scripts />
 {/if}
 
 {#if selectedView === "Vehicles"}

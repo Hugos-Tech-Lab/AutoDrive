@@ -19,7 +19,7 @@ use tokio::{
 use tokio_stream::StreamExt;
 
 use crate::auto_drive_edge_service::v1::{
-    AutoScripts, CancelAutoScriptRequest, LogMessage, RunAutoScriptRequest,
+    AutoScripts, CancelAutoScriptRequest, GetVehiclesRequest, LogMessage, RunAutoScriptRequest,
     WatchAutoScriptOverviewRequest, WatchAutoScriptRequest, WatchHardwarePoseRequest,
     WatchHardwareStatusRequest, WatchTheBeginnerCarEventsRequest,
     auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
@@ -49,7 +49,7 @@ pub enum ToEdgeMessage {
         run_uuid: String,
     },
     WatchOverview {
-        response_tx: oneshot::Sender<(AutoScripts, Receiver<AutoScripts>)>,
+        response_tx: oneshot::Sender<(AutoScripts, watch::Receiver<AutoScripts>)>,
     },
     WatchHardware {
         response_tx: oneshot::Sender<(HardwareHashMap, watch::Receiver<HardwareHashMap>)>,
@@ -71,6 +71,19 @@ pub struct Pose {
     pub rotation: f32,
 }
 
+// TODO FILL THIS
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McuStatus {
+    cpu_perc: f32,
+    // ...
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Status {
+    pub wifi_mcu: McuStatus,
+    pub wasm_mcu: McuStatus,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareDeviceState {
     pub number_plate: String,
@@ -86,18 +99,30 @@ pub enum AutoScriptEvent {
 
 #[derive(Debug, Clone)]
 pub struct AutoScriptEvents {
-    history: Arc<RwLock<Vec<AutoScriptEvent>>>,
+    history: Arc<RwLock<Vec<AutoScriptEvent>>>, // TODO remove duplicate events
     live: Sender<AutoScriptEvent>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Vehicle {
+    events: AutoScriptEvents, // TODO remove duplicate events
+    positions: watch::Sender<Pose>,
+    status: watch::Sender<Status>,
+    // ...
 }
 
 #[derive(Debug, Clone)]
 pub struct Hardware {
     pub sender: mpsc::Sender<ToEdgeMessage>,
     pub logs: Sender<Event>,
-    pub the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>>,
-    pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
-    pub watch_auto_scripts_overview: Sender<AutoScripts>,
-    pub hardware_states_tx: watch::Sender<HardwareHashMap>,
+    // pub the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>>, // TODO remove duplicate events
+    // pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
+    pub auto_scripts_overview: watch::Sender<AutoScripts>,
+    pub hardware_overview: watch::Sender<HardwareHashMap>,
+    pub vehicles: HashMap<String, Vehicle>,
+    // pub vehicles_position: Vec<>
+
+    //
     pub hardware_positions_tx: watch::Sender<HardwarePositions>,
 }
 
@@ -120,6 +145,9 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         }
     };
 
+    let vehicles = client.get_vehicles(GetVehiclesRequest {}).await?;
+    // vehicles.get_ref().
+
     let (incoming_tx, _) = broadcast::channel::<Event>(100);
     let (hardware_states_tx, _) = watch::channel::<HardwareHashMap>(HashMap::new());
     let (hardware_positions_tx, _) = watch::channel::<HardwarePositions>(HashMap::new());
@@ -140,7 +168,9 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
         async move {
             loop {
                 match client
-                    .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest { build: 1 })
+                    .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest {
+                        number_plate: todo!(),
+                    })
                     .await
                 {
                     Ok(response) => {
@@ -344,6 +374,8 @@ pub async fn edge_client() -> Result<Hardware, Box<dyn Error>> {
                                 owner_comment,
                                 build: 1,
                                 data,
+                                run_uuid: todo!(),
+                                number_plate: todo!(),
                             })
                             .await
                         {

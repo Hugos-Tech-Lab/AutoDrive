@@ -220,6 +220,7 @@ msgstr "Algorithms"
 msgid "Time Trials"
 msgstr "Time Trials"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Cancel"
 msgstr "Cancel"
@@ -253,12 +254,15 @@ msgstr "<0/> GPS"
 msgid "<0/> Sensors"
 msgstr "<0/> Sensors"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Connecting..."
 msgstr "Connecting..."
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
@@ -266,24 +270,28 @@ msgstr "Connecting..."
 msgid "Connected"
 msgstr "Connected"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Failed to parse telemetry data"
 msgstr "Failed to parse telemetry data"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Disconnected"
 msgstr "Disconnected"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Reconnecting..."
 msgstr "Reconnecting..."
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Hardware Telemetry"
@@ -321,78 +329,105 @@ msgstr "Front Left IR"
 msgid "Front Right IR"
 msgstr "Front Right IR"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Live Time Trials - On Now"
 msgstr "Live Time Trials - On Now"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Upload Hash"
 msgstr "Upload Hash"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Run #"
 msgstr "Run #"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Run UUID"
 msgstr "Run UUID"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Actions"
 msgstr "Actions"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Restart"
 msgstr "Restart"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Queued Time"
 msgstr "Queued Time"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Action"
 msgstr "Action"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Skip The Queue"
 msgstr "Skip The Queue"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> In The Queue"
 msgstr "<0/> In The Queue"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> Driving"
 msgstr "<0/> Driving"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "No cars currently driving."
 msgstr "No cars currently driving."
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Queue is currently empty."
 msgstr "Queue is currently empty."
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Upload Comment"
 msgstr "Upload Comment"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Never"
 msgstr "Never"
 
 #. 0: lastRefreshTime
+#. 0: lastRefreshTime
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Last Refresh: {0}"
 msgstr "Last Refresh: {0}"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
@@ -407,25 +442,33 @@ msgstr "No leaderboard yet."
 msgid "No algorithms yet."
 msgstr "No algorithms yet."
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Owner"
 msgstr "Owner"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Script Start"
 msgstr "Script Start"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Number Plate"
 msgstr "Number Plate"
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "No recently stopped runs."
 msgstr "No recently stopped runs."
 
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> Stopped"
 msgstr "<0/> Stopped"
@@ -504,3 +547,9 @@ msgstr "NETWORK ERROR. Press to retry."
 
 #~ msgid "view"
 #~ msgstr "view"
+
+#: src/lib/components/Dashboard/Scripts/Scripts.svelte
+#: src/lib/components/Dashboard/Scripts/Scripts.svelte
+#: src/lib/components/Dashboard/Scripts/Scripts.svelte
+msgid "Live"
+msgstr "Live"

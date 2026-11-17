@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { endpointRoot } from "../../endpoint";
+  import { endpointRoot } from "../../../../endpoint";
 
   type AutoScript = {
     owner_name: string;
@@ -32,7 +32,7 @@
 
   // Derive a nicely formatted string for the last refresh time
   let lastRefreshTime = $derived(
-    timeTrialsData ? new Date(lastUpdateMs).toLocaleTimeString() : "Never"
+    timeTrialsData ? new Date(lastUpdateMs).toLocaleTimeString() : "Never",
   );
 
   onMount(() => {
@@ -59,7 +59,8 @@
         }
 
         // Sort all arrays by run_number descending (biggest first)
-        const sortDesc = (a: AutoScript, b: AutoScript) => b.run_number - a.run_number;
+        const sortDesc = (a: AutoScript, b: AutoScript) =>
+          b.run_number - a.run_number;
         if (parsed.running) parsed.running.sort(sortDesc);
         if (parsed.queued) parsed.queued.sort(sortDesc);
         if (parsed.stopped) parsed.stopped.sort(sortDesc);
@@ -89,7 +90,10 @@
   });
 
   // Helper to parse the server's time string (e.g. "5s" or "5") and add the local offset
-  function displayTime(serverTimeStr: string | undefined, offset: number): string {
+  function displayTime(
+    serverTimeStr: string | undefined,
+    offset: number,
+  ): string {
     if (!serverTimeStr) return `${offset}s`;
     const baseTime = parseInt(serverTimeStr.replace(/\D/g, ""), 10) || 0;
     return `${baseTime + offset}s`;
@@ -143,9 +147,15 @@
       Driving
     </h2>
 
-    <div class="w-full overflow-x-auto border-2 border-black shadow-sm bg-white">
-      <table class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]">
-        <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black">
+    <div
+      class="w-full overflow-x-auto border-2 border-black shadow-sm bg-white"
+    >
+      <table
+        class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]"
+      >
+        <thead
+          class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black"
+        >
           <tr>
             <th class="py-3 px-4">Owner</th>
             <th class="py-3 px-4">Script Start</th>
@@ -161,24 +171,36 @@
           {#if timeTrialsData?.running && timeTrialsData.running.length > 0}
             {#each timeTrialsData.running as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
-                <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
-                <td class="py-3 px-4 font-mono text-gray-600">{entry.script_start_time}</td>
-                <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.uploaded_script_hash || '').substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.owner_comment || '').substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.number_plate || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-semibold text-gray-900"
+                  >{entry.owner_name || "Unknown"}</td
+                >
+                <td class="py-3 px-4 font-mono text-gray-600"
+                  >{entry.script_start_time}</td
+                >
+                <td class="py-3 px-4 font-mono">#{entry.run_number ?? "-"}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.run_uuid || "").substring(0, 13)}...</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.uploaded_script_hash || "").substring(0, 10)}</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.owner_comment || "").substring(0, 10)}</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.number_plate || "").substring(0, 10)}</td
+                >
                 <td class="py-3 px-4">
                   <div class="flex items-center justify-center gap-2">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       class="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition rounded"
                       onclick={() => restart(entry.run_uuid)}
                     >
                       Restart
                     </button>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       class="px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 transition rounded"
                       onclick={() => cancel(entry.run_uuid)}
                     >
@@ -190,7 +212,9 @@
             {/each}
           {:else}
             <tr>
-              <td colspan="8" class="py-6 px-4 text-center text-gray-500 italic">No cars currently driving.</td>
+              <td colspan="8" class="py-6 px-4 text-center text-gray-500 italic"
+                >No cars currently driving.</td
+              >
             </tr>
           {/if}
         </tbody>
@@ -205,9 +229,15 @@
       In The Queue
     </h2>
 
-    <div class="w-full overflow-x-auto border-2 border-black shadow-sm bg-white">
-      <table class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]">
-        <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black">
+    <div
+      class="w-full overflow-x-auto border-2 border-black shadow-sm bg-white"
+    >
+      <table
+        class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]"
+      >
+        <thead
+          class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black"
+        >
           <tr>
             <th class="py-3 px-4">Owner</th>
             <th class="py-3 px-4">Queued Time</th>
@@ -221,14 +251,22 @@
           {#if timeTrialsData?.queued && timeTrialsData.queued.length > 0}
             {#each timeTrialsData.queued as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
-                <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
-                <td class="py-3 px-4 font-mono text-gray-600">{displayTime(entry.script_start_time, localTickOffset)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.uploaded_script_hash  || '').substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
+                <td class="py-3 px-4 font-semibold text-gray-900"
+                  >{entry.owner_name || "Unknown"}</td
+                >
+                <td class="py-3 px-4 font-mono text-gray-600"
+                  >{displayTime(entry.script_start_time, localTickOffset)}</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.uploaded_script_hash || "").substring(0, 10)}</td
+                >
+                <td class="py-3 px-4 font-mono">#{entry.run_number ?? "-"}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.run_uuid || "").substring(0, 13)}...</td
+                >
                 <td class="py-3 px-4 text-center">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-300 rounded transition"
                     onclick={() => skipTheQueue(entry.run_uuid)}
                   >
@@ -239,7 +277,9 @@
             {/each}
           {:else}
             <tr>
-              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic">Queue is currently empty.</td>
+              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic"
+                >Queue is currently empty.</td
+              >
             </tr>
           {/if}
         </tbody>
@@ -254,9 +294,15 @@
       Stopped
     </h2>
 
-    <div class="w-full overflow-x-auto border-2 border-black shadow-sm bg-white">
-      <table class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]">
-        <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black">
+    <div
+      class="w-full overflow-x-auto border-2 border-black shadow-sm bg-white"
+    >
+      <table
+        class="w-full text-left text-sm text-gray-700 border-collapse min-w-[700px]"
+      >
+        <thead
+          class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold tracking-wider border-b-2 border-black"
+        >
           <tr>
             <th class="py-3 px-4">Owner</th>
             <th class="py-3 px-4">Run #</th>
@@ -270,17 +316,29 @@
           {#if timeTrialsData?.stopped && timeTrialsData.stopped.length > 0}
             {#each timeTrialsData.stopped as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
-                <td class="py-3 px-4 font-semibold text-gray-900">{entry.owner_name || 'Unknown'}</td>
-                <td class="py-3 px-4 font-mono">#{entry.run_number ?? '-'}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.run_uuid || '').substring(0, 13)}...</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.uploaded_script_hash || '').substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.owner_comment || '').substring(0, 10)}</td>
-                <td class="py-3 px-4 font-mono text-xs text-gray-500">{(entry.number_plate || '').substring(0, 10)}</td>
+                <td class="py-3 px-4 font-semibold text-gray-900"
+                  >{entry.owner_name || "Unknown"}</td
+                >
+                <td class="py-3 px-4 font-mono">#{entry.run_number ?? "-"}</td>
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.run_uuid || "").substring(0, 13)}...</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.uploaded_script_hash || "").substring(0, 10)}</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.owner_comment || "").substring(0, 10)}</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.number_plate || "").substring(0, 10)}</td
+                >
               </tr>
             {/each}
           {:else}
             <tr>
-              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic">No recently stopped runs.</td>
+              <td colspan="6" class="py-6 px-4 text-center text-gray-500 italic"
+                >No recently stopped runs.</td
+              >
             </tr>
           {/if}
         </tbody>
@@ -295,7 +353,11 @@
     Last Refresh: {lastRefreshTime}
   </span>
   <div>
-    <span class="font-medium {connectionStatus === 'Connected' ? 'text-green-600' : 'text-amber-600'}">
+    <span
+      class="font-medium {connectionStatus === 'Connected'
+        ? 'text-green-600'
+        : 'text-amber-600'}"
+    >
       {connectionStatus}
     </span>
     {#if telemetryError}

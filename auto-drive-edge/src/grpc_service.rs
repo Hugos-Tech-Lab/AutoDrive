@@ -9,12 +9,13 @@ use tonic::{Request, Response, Status};
 use crate::{
     auto_drive_edge_service::v1::{
         CancelAutoScriptRequest, CancelAutoScriptResponse, EnqueueAutoScriptRequest,
-        EnqueueAutoScriptResponse, Hardware, NotifyHardwareCoordinatesRequest,
-        NotifyHardwareCoordinatesResponse, RunAutoScriptRequest, RunAutoScriptResponse,
-        WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse, WatchAutoScriptRequest,
-        WatchAutoScriptResponse, WatchHardwarePoseRequest, WatchHardwarePoseResponse,
-        WatchHardwareStatusRequest, WatchHardwareStatusResponse, WatchTheBeginnerCarEventsRequest,
-        WatchTheBeginnerCarEventsResponse, auto_drive_edge_service_server::AutoDriveEdgeService,
+        EnqueueAutoScriptResponse, GetVehiclesRequest, GetVehiclesResponse, Hardware,
+        NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse, RunAutoScriptRequest,
+        RunAutoScriptResponse, WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse,
+        WatchAutoScriptRequest, WatchAutoScriptResponse, WatchHardwarePoseRequest,
+        WatchHardwarePoseResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse,
+        WatchTheBeginnerCarEventsRequest, WatchTheBeginnerCarEventsResponse,
+        auto_drive_edge_service_server::AutoDriveEdgeService,
     },
     auto_script_manager::{AutoScriptManager, auto_script::AutoScriptType},
     grpc_service::types::to_grpc_log_message,
@@ -57,6 +58,18 @@ impl AutoDriveEdgeService for GrpcService {
         Ok(Response::new(EnqueueAutoScriptResponse { run_uuid }))
     }
 
+    async fn get_vehicles(
+        &self,
+        _request: Request<GetVehiclesRequest>,
+    ) -> Result<Response<GetVehiclesResponse>, Status> {
+        let number_plates = self
+            .the_beginner_cars
+            .iter()
+            .map(|vehicle| vehicle.metadata.number_plate.to_string())
+            .collect();
+        Ok(Response::new(GetVehiclesResponse { number_plates }))
+    }
+
     async fn run_auto_script(
         &self,
         request: Request<RunAutoScriptRequest>,
@@ -83,13 +96,6 @@ impl AutoDriveEdgeService for GrpcService {
 
     type WatchAutoScriptStream =
         Pin<Box<dyn Stream<Item = Result<WatchAutoScriptResponse, Status>> + Send + 'static>>;
-
-    type WatchAutoScriptOverviewStream = Pin<
-        Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>,
-    >;
-
-    type WatchHardwareStatusStream =
-        Pin<Box<dyn Stream<Item = Result<WatchHardwareStatusResponse, Status>> + Send + 'static>>;
 
     async fn watch_auto_script(
         &self,
@@ -142,6 +148,10 @@ impl AutoDriveEdgeService for GrpcService {
         Ok(Response::new(Box::pin(combined_stream)))
     }
 
+    type WatchAutoScriptOverviewStream = Pin<
+        Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>,
+    >;
+
     async fn watch_auto_script_overview(
         &self,
         _request: Request<WatchAutoScriptOverviewRequest>,
@@ -184,51 +194,8 @@ impl AutoDriveEdgeService for GrpcService {
         Ok(Response::new(Box::pin(stream)))
     }
 
-    type WatchHardwarePoseStream =
-        Pin<Box<dyn Stream<Item = Result<WatchHardwarePoseResponse, Status>> + Send + 'static>>;
-
-    async fn watch_hardware_pose(
-        &self,
-        _request: Request<WatchHardwarePoseRequest>,
-    ) -> Result<Response<Self::WatchHardwarePoseStream>, Status> {
-        dbg!("watch pose");
-
-        // TODO: find the ID from the request
-        let receiver = self.the_beginner_cars.first().unwrap();
-        let number_plate = receiver.metadata.number_plate.to_string();
-
-        let stream = BroadcastStream::new(receiver.incoming_tx.subscribe()).filter_map({
-            move |result| {
-                let number_plate = number_plate.clone();
-                async move {
-                    match result {
-                        Ok(message) => match message {
-                            Position {
-                                x,
-                                y,
-                                rotation_radians,
-                                timestamp_unix_epoch_ms,
-                            } => Some(Ok(WatchHardwarePoseResponse {
-                                number_plate,
-                                x,
-                                y,
-                                rotation_radians,
-                                timestamp_unix_epoch_ms,
-                            })),
-                            _ => None,
-                        },
-                        Err(_) => {
-                            // BroadcastStream reports lagged receivers here.
-                            // Skip lost messages and continue streaming.
-                            None
-                        }
-                    }
-                }
-            }
-        });
-
-        Ok(Response::new(Box::pin(stream)))
-    }
+    type WatchHardwareStatusStream =
+        Pin<Box<dyn Stream<Item = Result<WatchHardwareStatusResponse, Status>> + Send + 'static>>;
 
     async fn watch_hardware_status(
         &self,
@@ -280,6 +247,52 @@ impl AutoDriveEdgeService for GrpcService {
         }
 
         Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
+    }
+
+    type WatchHardwarePoseStream =
+        Pin<Box<dyn Stream<Item = Result<WatchHardwarePoseResponse, Status>> + Send + 'static>>;
+
+    async fn watch_hardware_pose(
+        &self,
+        _request: Request<WatchHardwarePoseRequest>,
+    ) -> Result<Response<Self::WatchHardwarePoseStream>, Status> {
+        dbg!("watch pose");
+
+        // TODO: find the ID from the request
+        let receiver = self.the_beginner_cars.first().unwrap();
+        let number_plate = receiver.metadata.number_plate.to_string();
+
+        let stream = BroadcastStream::new(receiver.incoming_tx.subscribe()).filter_map({
+            move |result| {
+                let number_plate = number_plate.clone();
+                async move {
+                    match result {
+                        Ok(message) => match message {
+                            Position {
+                                x,
+                                y,
+                                rotation_radians,
+                                timestamp_unix_epoch_ms,
+                            } => Some(Ok(WatchHardwarePoseResponse {
+                                number_plate,
+                                x,
+                                y,
+                                rotation_radians,
+                                timestamp_unix_epoch_ms,
+                            })),
+                            _ => None,
+                        },
+                        Err(_) => {
+                            // BroadcastStream reports lagged receivers here.
+                            // Skip lost messages and continue streaming.
+                            None
+                        }
+                    }
+                }
+            }
+        });
+
+        Ok(Response::new(Box::pin(stream)))
     }
 
     async fn notify_hardware_coordinates(

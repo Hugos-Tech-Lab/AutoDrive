@@ -12,6 +12,13 @@ service AutoDriveEdgeService {
   rpc WatchHardwareStatus(WatchHardwareStatusRequest) returns (stream WatchHardwareStatusResponse);
   rpc WatchHardwarePose(WatchHardwarePoseRequest) returns (stream WatchHardwarePoseResponse);
   rpc NotifyHardwareCoordinates(NotifyHardwareCoordinatesRequest) returns (NotifyHardwareCoordinatesResponse);
+  rpc GetVehicles(GetVehiclesRequest) returns (GetVehiclesResponse);
+}
+
+message GetVehiclesRequest {}
+
+message GetVehiclesResponse {
+  repeated string number_plates = 1;
 }
 
 message HardwareCoordinate {

@@ -20,6 +20,7 @@ use tokio::{
 };
 
 pub mod auto_script;
+pub mod watch_auto_script_on_vehicle;
 
 use crate::{
     auto_script_manager::auto_script::AutoScript, the_beginner_car_comms::TheBeginnerCarComms,
@@ -41,16 +42,6 @@ pub enum AutoScriptEvents {
     ScriptExited,
 }
 
-// #[derive(Debug, Clone)]
-// pub struct AutoScriptSnapshot {
-//     pub owner_name: String,
-//     pub queued_at: DateTime<Utc>,
-//     pub started_at: Option<DateTime<Utc>>,
-//     pub stopped_at: Option<DateTime<Utc>>,
-//     pub run_uuid: String,
-//     pub upload_file_hash: String,
-// }
-
 #[derive(Clone, Debug, Default)]
 pub struct AutoScripts {
     pub running: Vec<AutoScript>,
@@ -66,7 +57,7 @@ pub struct AutoScriptTheBeginnerCars {
 
 pub struct AutoScriptManager {
     the_beginner_car_scripts: Arc<Mutex<AutoScriptTheBeginnerCars>>,
-    connection_handles: Vec<JoinHandle<()>>,
+    watch_vehicle_state_change_tasks: Vec<JoinHandle<()>>,
 }
 
 impl AutoScriptManager {
@@ -79,13 +70,17 @@ impl AutoScriptManager {
             queue_events_sender: sender,
         }));
 
-        let connection_handles = the_beginner_cars
+        let watch_vehicle_state_change_tasks = the_beginner_cars
             .into_iter()
             .map(|the_beginner_car| {
                 tokio::spawn({
                     let the_beginner_car_scripts = the_beginner_car_scripts.clone();
                     async {
-                        Self::long_lived_watcher(the_beginner_car, the_beginner_car_scripts).await;
+                        Self::watch_vehicle_state_change(
+                            the_beginner_car,
+                            the_beginner_car_scripts,
+                        )
+                        .await;
                     }
                 })
             })
@@ -93,7 +88,7 @@ impl AutoScriptManager {
 
         Self {
             the_beginner_car_scripts,
-            connection_handles,
+            watch_vehicle_state_change_tasks,
         }
     }
 
@@ -142,14 +137,27 @@ impl AutoScriptManager {
 
     pub async fn run_auto_script(&self, run_uuid: String, number_plate: String) -> Result<(), ()> {
         {
-            let mut vehicles_and_scripts_state = self.the_beginner_car_scripts.lock().await;
+            let vehicles_and_scripts_state = self.the_beginner_car_scripts.lock().await;
             let the_beginner_car = vehicles_and_scripts_state
                 .the_beginner_cars
                 .iter()
                 .find(|the_beginner_car| the_beginner_car.metadata.number_plate == number_plate)
                 .unwrap();
 
-            the_beginner_car.
+            if let Some(auto_script) = vehicles_and_scripts_state
+                .scripts
+                .queued
+                .iter()
+                .find(|auto_script| auto_script.run_uuid == run_uuid)
+            {
+                let script = the_beginner_car_tcp_protocol::AutoScript {
+                    run_uuid: auto_script.run_uuid.clone(),
+                    preprocessed_file_hash: auto_script.uploaded_script_hash.clone(),
+                    run_number: auto_script.run_number,
+                    script: auto_script.uploaded_script.to_vec(),
+                };
+                the_beginner_car.send(TheBeginnerCarIncomingMessages::RunAutoScript { script });
+            }
         }
 
         Ok(())
@@ -301,7 +309,6 @@ impl AutoScriptManager {
                     run_uuid: script.run_uuid.clone(),
                     preprocessed_file_hash: script.uploaded_script_hash.clone(),
                     run_number: script.run_number,
-                    device_id: "script.device.device_id".to_string(),
                     script: script.uploaded_script.to_vec(),
                 };
 
@@ -356,7 +363,7 @@ impl AutoScriptManager {
 
     // pub fn
 
-    async fn long_lived_watcher(
+    async fn watch_vehicle_state_change(
         the_beginner_car: TheBeginnerCarComms,
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
     ) {
@@ -365,10 +372,25 @@ impl AutoScriptManager {
         loop {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
-                    TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
+                    TheBeginnerCarOutgoingMessages::AutoScriptRunning {
+                        run_uuid,
+                        script_start_time_utc_ms,
+                    } => {
+                        //
+                    }
+                    TheBeginnerCarOutgoingMessages::AutoScriptStopped {
+                        run_uuid,
+                        script_stop_time_utc_ms,
+                        vehicle_start_time_utc_ms,
+                        vehicle_finish_time_utc_ms,
+                    } => {
                         Self::on_hardware_response_auto_script_stopped(
                             state.clone(),
                             the_beginner_car.metadata.number_plate.to_string(),
+                            run_uuid,
+                            script_stop_time_utc_ms,
+                            vehicle_start_time_utc_ms,
+                            vehicle_finish_time_utc_ms,
                         )
                         .await;
                     }
@@ -385,9 +407,14 @@ impl AutoScriptManager {
         }
     }
 
+    // TODO: fill / use these fields
     pub async fn on_hardware_response_auto_script_stopped(
         state: Arc<Mutex<AutoScriptTheBeginnerCars>>,
         number_plate: String,
+        run_uuid: String,
+        script_stop_time_utc_ms: u64,
+        vehicle_start_time_utc_ms: u64,
+        vehicle_finish_time_utc_ms: u64,
     ) {
         let queue_snapshot: AutoScripts;
         let queue_events_sender: Sender<AutoScripts>;
@@ -396,9 +423,7 @@ impl AutoScriptManager {
             let stopped: Vec<AutoScript> = state_mutex_guard
                 .scripts
                 .running
-                .extract_if(.., |auto_script| {
-                    auto_script.hardware.metadata.number_plate == number_plate
-                })
+                .extract_if(.., |auto_script| auto_script.run_uuid == run_uuid)
                 .collect();
             if stopped.len() != 1 {
                 // should only be one.. but ah well maybe we got here somehow..
@@ -418,7 +443,5 @@ impl AutoScriptManager {
         }
 
         queue_events_sender.send(queue_snapshot).unwrap();
-
-        Self::try_start_next_auto_script(state).await;
     }
 }

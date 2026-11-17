@@ -1,8 +1,4 @@
-use std::{
-    sync::atomic::{AtomicBool, AtomicI32, AtomicU32},
-    thread,
-    time::Duration,
-};
+use std::{thread, time::Duration};
 
 use hardware_config::TheBeginnerCarMetadata;
 use log::{info, warn};
@@ -71,7 +67,9 @@ impl TheBeginnerCarComms {
             return false;
         }
 
-        self.outgoing_tx.send(message).await.unwrap();
+        if let Err(_) = self.outgoing_tx.send(message).await {
+            return false;
+        }
         true
     }
 

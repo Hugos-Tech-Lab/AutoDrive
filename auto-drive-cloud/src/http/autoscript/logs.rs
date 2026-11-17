@@ -8,7 +8,6 @@ use tokio::time::interval;
 use tokio_stream::wrappers::IntervalStream;
 use warp::{Filter, Reply};
 
-// 1. Define the Rust structs mapping to your TypeScript types
 #[derive(Serialize, Clone)]
 pub struct TimeTrialDrivingEntry {
     pub name: String,

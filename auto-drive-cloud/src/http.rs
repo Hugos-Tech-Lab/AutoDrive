@@ -3,15 +3,9 @@ use warp::Filter;
 
 use crate::http::hardware::overview::hardware_overview;
 use crate::http::hardware::positions::hardware_positions;
-use crate::http::hardware_telemetry::hardware_telemetry;
 use crate::{
     edge_client::EdgeClient,
-    http::{
-        autoscript::{
-            cancel::cancel, logs::autoscript_watch, overview::autoscript_overview, run::run,
-        },
-        logs::logs,
-    },
+    http::autoscript::{cancel::cancel, logs::autoscript_watch, overview::autoscript_overview},
 };
 pub mod autoscript;
 pub mod hardware;
@@ -21,7 +15,7 @@ pub mod logs;
 pub async fn http_server(receiver: EdgeClient) {
     let server = tokio::spawn(async move {
         let watch_logs = logs(receiver.logs.clone());
-        let run = run(receiver.clone());
+        // let run = run(receiver.clone());
         let cancel = cancel(receiver.clone());
         let autoscript_watch = autoscript_watch(receiver.clone());
         let autoscript_overview = autoscript_overview(receiver.clone());

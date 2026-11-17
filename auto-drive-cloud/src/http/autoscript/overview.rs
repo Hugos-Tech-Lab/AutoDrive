@@ -9,12 +9,12 @@ use warp::{Filter, Reply};
 pub fn autoscript_overview(
     hardware: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
-    let auto_scripts_overview = hardware.auto_scripts_overview.clone();
+    let scripts_overview = hardware.scripts_overview.clone();
 
-    warp::path!("hardware" / "overview")
+    warp::path!("autoscript" / "overview")
         .and(warp::get())
         .and_then(move || {
-            let rx = auto_scripts_overview.subscribe();
+            let rx = scripts_overview.subscribe();
 
             async move {
                 let event_stream = WatchStream::new(rx).map(|state| {

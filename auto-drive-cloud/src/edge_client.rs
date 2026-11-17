@@ -7,18 +7,20 @@ use std::{
 
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use tokio::sync::{
-    RwLock,
-    broadcast::{self, Sender},
-    mpsc, watch,
-};
 use tokio::time::sleep;
+use tokio::{
+    sync::{
+        RwLock,
+        broadcast::{self, Sender},
+        watch,
+    },
+    time::timeout,
+};
 use tonic::transport::Channel;
 
 use crate::auto_drive_edge_service::v1::{
-    AutoScripts, GetVehiclesRequest, LogMessage,
-    auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-    watch_the_beginner_car_events_response::Event,
+    AutoScripts, GetVehiclesRequest, LogMessage, WatchAutoScriptOverviewRequest,
+    auto_drive_edge_service_client::AutoDriveEdgeServiceClient, watch_auto_script_response::Event,
 };
 
 type HardwareHashMap = HashMap<String, HardwareDeviceState>;
@@ -69,11 +71,22 @@ pub struct AutoScriptEvents {
     live: Sender<AutoScriptEvent>,
 }
 
-#[derive(Debug, Clone)]
+impl Default for AutoScriptEvents {
+    fn default() -> Self {
+        let live = broadcast::Sender::new(100);
+
+        Self {
+            history: Default::default(),
+            live,
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct Vehicle {
     events: AutoScriptEvents, // TODO remove duplicate events
-    positions: watch::Sender<Pose>,
-    status: watch::Sender<Status>,
+    position: watch::Sender<Option<Pose>>,
+    status: watch::Sender<Option<Status>>,
 }
 
 #[derive(Debug, Clone)]
@@ -82,21 +95,18 @@ pub struct Script {
 }
 
 impl Script {
-    pub fn new() {
-        //
+    pub fn new() -> Self {
+        let logs = broadcast::Sender::new(100);
+        Self { logs }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct EdgeClient {
     pub handle: AutoDriveEdgeServiceClient<Channel>,
-    // pub the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>>, // TODO remove duplicate events
-    // pub latest_auto_scripts_overview: Arc<Mutex<AutoScripts>>,
-    pub auto_scripts_overview: watch::Sender<AutoScripts>,
-    pub hardware_overview: watch::Sender<HardwareHashMap>,
+    pub scripts_overview: watch::Sender<AutoScripts>,
     pub vehicles: HashMap<String, Vehicle>,
     pub scripts: Arc<Mutex<HashMap<String, Script>>>,
-    pub hardware_positions_tx: watch::Sender<HardwarePositions>,
 }
 
 impl EdgeClient {
@@ -119,23 +129,24 @@ impl EdgeClient {
             }
         };
 
-        let vehicles = client.get_vehicles(GetVehiclesRequest {}).await?;
-        // vehicles.get_ref().
+        let vehicles: HashMap<_, _> = client
+            .get_vehicles(GetVehiclesRequest {})
+            .await?
+            .get_ref()
+            .number_plates
+            .iter()
+            .map(|f| (f.clone(), Vehicle::default()))
+            .collect();
 
-        let (incoming_tx, _) = broadcast::channel::<Event>(100);
-        let (auto_scripts_overview, _) = watch::channel::<AutoScripts>(AutoScripts {
+        let (scripts_overview, _) = watch::channel::<AutoScripts>(AutoScripts {
             running: vec![],
             queued: vec![],
             stopped: vec![],
         });
-        let (hardware_overview, _) = watch::channel::<HardwareHashMap>(HashMap::new());
-        let (hardware_positions_tx, _) = watch::channel::<HardwarePositions>(HashMap::new());
 
-        let latest_auto_scripts_overview = Arc::new(Mutex::new(AutoScripts {
-            running: vec![],
-            queued: vec![],
-            stopped: vec![],
-        }));
+        let (hardware_overview, _) = watch::channel::<HardwareHashMap>(HashMap::new());
+        let (hardware_positions, _) = watch::channel::<HardwarePositions>(HashMap::new());
+
         // let the_beginner_car_auto_script_events: Arc<Mutex<HashMap<String, AutoScriptEvents>>> =
         //     Arc::new(Mutex::new(HashMap::new()));
 
@@ -147,6 +158,7 @@ impl EdgeClient {
         //     async move {
         //         loop {
         //             match client
+        //             .watch_auto_script_overview(request)
         //                 .watch_the_beginner_car_events(WatchTheBeginnerCarEventsRequest {
         //                     number_plate: todo!(),
         //                 })
@@ -181,61 +193,44 @@ impl EdgeClient {
         //     }
         // });
 
-        // let (incoming_auto_scripts_tx, _) = broadcast::channel::<AutoScripts>(10);
-        // tokio::spawn({
-        //     let incoming_auto_scripts_tx = incoming_auto_scripts_tx.clone();
-        //     let mut client = client.clone();
-        //     let latest_auto_scripts_overview = latest_auto_scripts_overview.clone();
+        tokio::spawn({
+            let mut client = client.clone();
+            let scripts_overview = scripts_overview.clone();
 
-        //     async move {
-        //         loop {
-        //             let result = timeout(
-        //                 Duration::from_secs(5), // Set your desired timeout duration here
-        //                 client.watch_auto_script_overview(WatchAutoScriptOverviewRequest {}),
-        //             )
-        //             .await;
+            async move {
+                loop {
+                    let result = timeout(
+                        Duration::from_secs(5),
+                        client.watch_auto_script_overview(WatchAutoScriptOverviewRequest {}),
+                    )
+                    .await;
 
-        //             let result = match result {
-        //                 Ok(result) => result,
-        //                 Err(_) => {
-        //                     warn!("Timed out");
-        //                     continue;
-        //                 }
-        //             };
+                    let result = match result {
+                        Ok(result) => result,
+                        Err(_) => {
+                            warn!("Timed out");
+                            continue;
+                        }
+                    };
 
-        //             match result {
-        //                 Ok(response) => {
-        //                     let mut stream = response.into_inner();
-        //                     while let Some(result) = stream.next().await {
-        //                         match result {
-        //                             Ok(event) => {
-        //                                 if let Some(event_scripts) = event.scripts {
-        //                                     let _ = incoming_auto_scripts_tx
-        //                                         .send(event_scripts.clone());
-        //                                     let mut latest_overview =
-        //                                         latest_auto_scripts_overview.lock().unwrap();
-        //                                     *latest_overview = event_scripts;
-        //                                 }
-        //                             }
-        //                             Err(err) => {
-        //                                 warn!(
-        //                                     "Auto script overview stream disconnected: {err}. Reconnecting..."
-        //                                 );
-        //                                 break;
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //                 Err(err) => {
-        //                     warn!(
-        //                         "Failed to subscribe to auto script overview: {err}. Retrying in 5s..."
-        //                     );
-        //                 }
-        //             }
-        //             sleep(Duration::from_secs(5)).await;
-        //         }
-        //     }
-        // });
+                    match result {
+                        Ok(response) => {
+                            let mut stream = response.into_inner();
+                            // TODO: remove unwrap
+                            while let Some(result) = stream.message().await.unwrap() {
+                                scripts_overview.send_replace(result.scripts.unwrap()); // TODO: remove unwrap
+                            }
+                        }
+                        Err(err) => {
+                            warn!(
+                                "Failed to subscribe to auto script overview: {err}. Retrying in 5s..."
+                            );
+                        }
+                    }
+                    sleep(Duration::from_secs(5)).await;
+                }
+            }
+        });
 
         // tokio::spawn({
         //     let hardware_positions_tx = hardware_positions_tx.clone();
@@ -495,12 +490,9 @@ impl EdgeClient {
         // });
 
         Ok(EdgeClient {
-            logs: incoming_tx,
-            hardware_positions_tx,
             handle: client,
-            auto_scripts_overview,
-            hardware_overview,
-            vehicles: HashMap::new(),
+            scripts_overview,
+            vehicles,
             scripts: Arc::new(Mutex::new(HashMap::new())),
         })
     }

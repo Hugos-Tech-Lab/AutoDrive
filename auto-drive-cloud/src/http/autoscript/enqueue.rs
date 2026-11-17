@@ -2,13 +2,12 @@ use std::convert::Infallible;
 use std::time::Duration;
 
 use crate::{
-    auto_drive_edge_service::v1::{AutoScriptType, EnqueueAutoScriptRequest, RunAutoScriptRequest},
-    edge_client::{AutoScriptEvent, EdgeClient, StartAutoScriptResponse},
+    auto_drive_edge_service::v1::{AutoScriptType, EnqueueAutoScriptRequest},
+    edge_client::{EdgeClient, Script},
 };
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
-use tokio::sync::oneshot;
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::wrappers::BroadcastStream;
 use warp::{Filter, Rejection, Reply, http::StatusCode};
 
 pub fn enqueue(
@@ -66,12 +65,10 @@ async fn handle_enqueue(
         )
         .into_response());
     }
-    // ----------------------------
 
     let mut wasm_data = None;
     let mut owner_comment = String::new();
 
-    // Extract fields from the multipart form
     while let Some(Ok(mut part)) = form.next().await {
         match part.name() {
             "file" => {
@@ -92,7 +89,6 @@ async fn handle_enqueue(
         }
     }
 
-    // Verify file was provided
     let wasm_bytes = match wasm_data {
         Some(b) => b,
         None => {
@@ -104,7 +100,6 @@ async fn handle_enqueue(
         }
     };
 
-    // Validate arguments length limit (< 50 chars)
     if owner_comment.chars().count() >= 50 {
         return Ok(warp::reply::with_status(
             "Comment must be less than 50 characters",
@@ -115,6 +110,7 @@ async fn handle_enqueue(
 
     let res = edge_client
         .handle
+        .clone()
         .enqueue_auto_script(EnqueueAutoScriptRequest {
             owner_name,
             owner_comment,
@@ -134,10 +130,17 @@ async fn handle_enqueue(
         }
     };
 
-    let run_uuid = res.get_ref().run_uuid;
+    let run_uuid = res.get_ref().run_uuid.clone();
 
-    let log_stream = receiver_start.await;
-    let streamed_response = ReceiverStream::new(log_stream.unwrap());
+    let script = edge_client
+        .scripts
+        .lock()
+        .unwrap()
+        .entry(run_uuid.clone())
+        .or_insert(Script::new())
+        .clone();
+
+    let streamed_response = BroadcastStream::new(script.logs.subscribe());
 
     let confirmation = stream::once(async {
         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(
@@ -154,20 +157,23 @@ async fn handle_enqueue(
     });
 
     let run_uuid_stream = confirmation.chain(stream::once(async move {
-        let run_uuid = serde_json::json!({ "run_uuid": started_script_uuid }).to_string();
+        let run_uuid = serde_json::json!({ "run_uuid": run_uuid.clone() }).to_string();
         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(run_uuid))
     }));
 
     let event_stream = run_uuid_stream.chain(
         streamed_response
             .take_while(|auto_script_event| {
-                let keep = !matches!(auto_script_event, AutoScriptEvent::Exited);
+                let keep = !matches!(
+                    auto_script_event.clone().unwrap(),
+                    crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(_)
+                );
                 std::future::ready(keep)
             })
             .filter_map(|auto_script_event| async move {
-                let log = match auto_script_event {
-                    AutoScriptEvent::LogMessage { log_message } => log_message,
-                    AutoScriptEvent::Exited => {
+                let log = match auto_script_event.unwrap() {
+                    crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(log_message) => log_message,
+                    crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(_) => {
                         return None;
                     }
                 };

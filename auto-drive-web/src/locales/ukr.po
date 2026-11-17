@@ -15,18 +15,16 @@ msgstr "/"
 #. /dashboard
 #. /dashboard
 #. /dashboard
-#. /create-account
-#. /profile
 #. /dashboard
+#. /create-account
 #. /profile
 #. /create-account
 #. /sign-in
+#: src/lib/components/Account.svelte
 #: src/lib/components/LandingPage.svelte
 #: src/lib/components/Profile.svelte
 #: src/lib/components/SignIn.svelte
 #: src/lib/components/SignIn.svelte
-#: src/lib/components/UserAccount.svelte
-#: src/lib/components/UserAccount.svelte
 #: src/lib/components/UserAccountButton.svelte
 #: src/lib/components/UserAccountButton.svelte
 #: src/lib/components/UserAccountButton.svelte
@@ -64,7 +62,6 @@ msgstr "CZE"
 msgid "UKR"
 msgstr "UKR"
 
-#: src/lib/components/Auth.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Sign in"
 msgstr ""
@@ -74,80 +71,33 @@ msgstr ""
 msgid "Redirecting to {0}..."
 msgstr ""
 
-#~ msgid "Remote Firmware Manager"
-#~ msgstr ""
-
-#~ msgid "© {0} Hugo Luccarini. All Rights Reserved. Czech Business Number (IČO): 29876834."
-#~ msgstr ""
-
-#: src/routes/[locale]/settings/+page.svelte
-msgid "Settings"
-msgstr ""
-
-#: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Your email"
 msgstr ""
 
-#: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Email"
 msgstr ""
 
-#~ msgid "Send magic link"
-#~ msgstr ""
-
-#: src/lib/components/Account.svelte
-msgid "Website"
-msgstr ""
-
-#~ msgid "Saving ..."
-#~ msgstr ""
-
-#~ msgid "Update profile"
-#~ msgstr ""
-
-#~ msgid "Email: {0}"
-#~ msgstr ""
-
-#: src/lib/components/Account.svelte
-msgid "Name"
-msgstr ""
-
-#: src/lib/components/Account.svelte
 #: src/lib/components/Profile.svelte
 #: src/lib/components/Profile.svelte
 msgid "Sign Out"
 msgstr ""
 
-#~ msgid "Logged Out"
-#~ msgstr ""
-
-#: src/lib/components/Auth.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Sign in via password"
 msgstr ""
 
-#: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Password"
 msgstr ""
 
-#: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Your password"
-msgstr ""
-
-#: src/lib/components/Auth.svelte
-msgid "Sign up"
 msgstr ""
 
 #: src/routes/[locale]/location/+page.svelte
@@ -190,28 +140,16 @@ msgstr ""
 msgid "Model:"
 msgstr ""
 
-#: src/routes/[locale]/location/+page.svelte
-msgid "Firmware"
-msgstr ""
-
-#~ msgid "Check your email for the login link!"
-#~ msgstr ""
-
-#: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 #: src/lib/components/Profile.svelte
 #: src/lib/components/SignIn.svelte
 msgid "Something went wrong."
 msgstr ""
 
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 msgid "Account created! Check your email if confirmation is required."
 msgstr ""
 
-#: src/lib/components/Auth.svelte
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 #: src/lib/components/Profile.svelte
 #: src/lib/components/SignIn.svelte
@@ -219,30 +157,10 @@ msgstr ""
 msgid "Loading..."
 msgstr ""
 
-#~ msgid "Sign in via a magic link sent to your email."
-#~ msgstr ""
-
-#: src/lib/components/Auth.svelte
 #: src/lib/components/CreateAccount.svelte
 msgid "Create account"
 msgstr ""
 
-#~ msgid "Authentication failed."
-#~ msgstr ""
-
-#~ msgid "Manage software on real physical hardware devices in the lab."
-#~ msgstr ""
-
-#~ msgid "Source code of this site here: <0>https://github.com/Hugos-Tech-Lab/Remote-Firmware-Manager</0>"
-#~ msgstr ""
-
-#~ msgid "SIGN IN / SIGN UP"
-#~ msgstr ""
-
-#~ msgid "Sign out"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/routes/[locale]/create-account/+page.svelte
 #: src/routes/[locale]/profile/+page.svelte
@@ -250,411 +168,52 @@ msgstr ""
 msgid "Dashboard"
 msgstr ""
 
-#~ msgid "AutoDrive"
-#~ msgstr ""
-
 #: src/lib/components/Header.svelte
 msgid "Auto Drive"
 msgstr ""
 
-#~ msgid "hi"
-#~ msgstr ""
-
-#~ msgid "Hello"
-#~ msgstr ""
-
-#~ msgid "Hellaaaaaaaaaaaaaaaaaaaaaao"
-#~ msgstr ""
-
-#~ msgid "Hugo's Tesch Lab"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/TimeTrials/TimeTrials.svelte
 #: src/lib/components/Dashboard/TimeTrials/TimeTrials.svelte
 #: src/lib/components/Dashboard/TimeTrials/TimeTrials.svelte
 msgid "Leaderboard"
 msgstr ""
 
-#~ msgid "Hi"
-#~ msgstr ""
-
-#~ msgid "Hiiiiiiiiii"
-#~ msgstr ""
-
 #: src/lib/components/LandingPage.svelte
 msgid "YouTube video player"
 msgstr ""
 
-#~ msgid "Auto Drive Dashboard"
-#~ msgstr ""
-
-#~ msgid "Think you can code? Prove it"
-#~ msgstr ""
-
-#~ msgid "Code a car in a real lab"
-#~ msgstr ""
-
-#~ msgid "Control a car in a real lab"
-#~ msgstr ""
-
-#~ msgid "Control a small car"
-#~ msgstr ""
-
-#~ msgid "Control a real small car remotely"
-#~ msgstr ""
-
 #: src/lib/components/LandingPage.svelte
-#: src/lib/components/UserAccount.svelte
 msgid "DASHBOARD"
 msgstr ""
-
-#~ msgid "THINK YOU CAN CODE? Prove it"
-#~ msgstr ""
 
 #: src/lib/components/LandingPage.svelte
 msgid "THINK YOU CAN CODE? <0>Prove</0> it"
 msgstr ""
 
-#~ msgid "THINK YOU CAN CODE? <0>Prove</0>it"
-#~ msgstr ""
-
-#~ msgid "TAKE CONTROL"
-#~ msgstr ""
-
-#~ msgid "Just write the algorithm to control a real small car remotely"
-#~ msgstr ""
-
-#~ msgid "Write the algorithm to control a real small car remotely"
-#~ msgstr ""
-
-#~ msgid "d <0>Sign in via a magic link sent to your email.</0> <1><0>Email</0> <1/></1> <2/>"
-#~ msgstr ""
-
-#~ msgid "My Algorithms"
-#~ msgstr ""
-
-#~ msgid "Real Time Play"
-#~ msgstr ""
-
-#~ msgid "Live Debug"
-#~ msgstr ""
-
-#~ msgid "Try"
-#~ msgstr ""
-
-#~ msgid "Cars"
-#~ msgstr ""
-
 #: src/lib/components/LandingPage.svelte
 msgid "Control a real small machine remotely"
 msgstr ""
 
-#~ msgid "Machines"
-#~ msgstr ""
-
-#~ msgid "The Machines"
-#~ msgstr ""
-
-#~ msgid "The Tracks"
-#~ msgstr ""
-
-#~ msgid "The Track"
-#~ msgstr ""
-
-#~ msgid "The Machine"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second - 0 - 100(cm): 5 seconds - Power: 200 mA - Weight: 500 grams - Steering: Skid - Wheels: 2 powered, 1 non-powered - Inputs: 4 light sensors - Outputs: 2 motor speeds <4>The Track</4>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second <4/> - 0 - 100(cm): 5 seconds <5/> - Power: 200 mA <6/> - Weight: 500 grams <7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors <10/> - Outputs: 2 motor speeds <11/> <12>The Track</12>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second <4/> - 0 - 100(cm): 5 seconds <5/> - Power: 200 mA <6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors <10/> - Outputs: 2 motor speeds <11/> <12>The Track</12>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> - 0 - 100(cm): 5 seconds (placeholder)<5/> - Power: 200 mA (placeholder)<6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors (placeholder)<10/> - Outputs: 2 motor speeds (placeholder)<11/> <12>The Track</12>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> - 0 - 100(cm): 5 seconds (placeholder)<5/> - Power: 200 mA (placeholder)<6/> - Weight: 500 grams (placeholder)<7/> - Steering: Skid <8/> - Wheels: 2 powered, 1 non-powered <9/> - Inputs: 4 light sensors (placeholder)<10/> - Outputs: 2 motor speeds (placeholder)<11/><12/> <13>The Track</13>"
-#~ msgstr ""
-
-#~ msgid "Submit and Forget"
-#~ msgstr ""
-
-#~ msgid "Submit And Forget"
-#~ msgstr ""
-
-#~ msgid "Code A Solution"
-#~ msgstr ""
-
-#~ msgid "Code Now"
-#~ msgstr ""
-
-#~ msgid "Global Leaderboard"
-#~ msgstr ""
-
-#~ msgid "Live Upload"
-#~ msgstr ""
-
-#~ msgid "Car Right Now"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 #: src/lib/components/Dashboard/Vehicles/Vehicles.svelte
 #: src/lib/components/Dashboard/Vehicles/Vehicles.svelte
 #: src/lib/components/Dashboard/Vehicles/Vehicles.svelte
-#: src/lib/components/hardware/Status.svelte
 msgid "Status"
 msgstr ""
-
-#~ msgid "The Beginner Car"
-#~ msgstr ""
-
-#~ msgid "The Beginner Car V"
-#~ msgstr ""
-
-#~ msgid "The Beginner Car v"
-#~ msgstr ""
-
-#~ msgid "The Beginner Car (dropdown)"
-#~ msgstr ""
-
-#~ msgid "Hugo"
-#~ msgstr ""
-
-#~ msgid "Unit A"
-#~ msgstr ""
-
-#~ msgid "Unit B"
-#~ msgstr ""
-
-#~ msgid "Unit C"
-#~ msgstr ""
-
-#~ msgid "Unit D"
-#~ msgstr ""
-
-#~ msgid "Build A"
-#~ msgstr ""
-
-#~ msgid "Build B"
-#~ msgstr ""
-
-#~ msgid "Build C"
-#~ msgstr ""
-
-#~ msgid "SDK"
-#~ msgstr ""
-
-#~ msgid "The SDK"
-#~ msgstr ""
-
-#~ msgid "Software Development Kit (SDL)"
-#~ msgstr ""
-
-#~ msgid "Software Development Kit (SDK)"
-#~ msgstr ""
-
-#~ msgid "Best Algorithms"
-#~ msgstr ""
-
-#~ msgid "Calendar"
-#~ msgstr ""
-
-#~ msgid "ssss"
-#~ msgstr ""
-
-#~ msgid "Tracks"
-#~ msgstr ""
-
-#~ msgid "Track"
-#~ msgstr ""
-
-#~ msgid "Algorithm Leaderboard"
-#~ msgstr ""
-
-#~ msgid "History (Car)"
-#~ msgstr ""
-
-#~ msgid "History (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Future (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Upcoming (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Past (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Logs (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Current Status (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Live Control (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Status (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Sensors (shown in selected Build only)"
-#~ msgstr ""
-
-#~ msgid "Status (shown in selected Build only) (shows firmware, last online, etc)"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/> <5>The Machine</5> - Top Speed: 15cm / second (placeholder)<6/> - 0 - 100(cm): 5 seconds (placeholder)<7/> - Power: 200 mA (placeholder)<8/> - Weight: 500 grams (placeholder)<9/> - Steering: Skid <10/> - Wheels: 2 powered, 1 non-powered <11/> - Inputs: 4 light sensors (placeholder)<12/> - Outputs: 2 motor speeds (placeholder)<13/><14/> <15>The Track</15>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> - Top Speed: 15cm / second (placeholder)<4/><5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Best Times</3> - Top Speed: 15cm / second (placeholder)<4/><5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Best Times</3> - 3 seconds<4/><5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Best Times</3> - 5.233 seconds<4/><5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Best Times</3> - 5.233 seconds: Hugo<4/><5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> - 5.233 seconds: Hugo<4/><5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0/> <1>5.233 seconds: Hugo</1></4> <5>The Machine</5> - Top Speed: 15cm / second (placeholder)<6/> - 0 - 100(cm): 5 seconds (placeholder)<7/> - Power: 200 mA (placeholder)<8/> - Weight: 500 grams (placeholder)<9/> - Steering: Skid <10/> - Wheels: 2 powered, 1 non-powered <11/> - Inputs: 4 light sensors (placeholder)<12/> - Outputs: 2 motor speeds (placeholder)<13/><14/> <15>The Track</15>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0/> <1>5.233 seconds: Hugo</1> <2/> <3>5.233 seconds: Hugo</3></4> <5>The Machine</5> - Top Speed: 15cm / second (placeholder)<6/> - 0 - 100(cm): 5 seconds (placeholder)<7/> - Power: 200 mA (placeholder)<8/> - Weight: 500 grams (placeholder)<9/> - Steering: Skid <10/> - Wheels: 2 powered, 1 non-powered <11/> - Inputs: 4 light sensors (placeholder)<12/> - Outputs: 2 motor speeds (placeholder)<13/><14/> <15>The Track</15>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0><0>Leaderboard</0> <1>Week 41 ▼</1></0> <1><0><0/> <1><0>Hugo</0> <1>5.233 seconds</1></1></0> <1><0/> <1><0>Player 2</0> <1>6.120 seconds</1></1></1> <2><0/> <1><0>Player 3</0> <1>7.450 seconds</1></1></2></1></4> <5>The Machine</5> - Top Speed: 15cm / second (placeholder)<6/> - 0 - 100(cm): 5 seconds (placeholder)<7/> - Power: 200 mA (placeholder)<8/> - Weight: 500 grams (placeholder)<9/> - Steering: Skid <10/> - Wheels: 2 powered, 1 non-powered <11/> - Inputs: 4 light sensors (placeholder)<12/> - Outputs: 2 motor speeds (placeholder)<13/><14/> <15>The Track</15>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3><0><0>Leaderboard</0> <1>Week 41 ▼</1></0> <1><0><0/> <1><0>Hugo</0> <1>5.233 seconds</1></1></0> <1><0/> <1><0>Player 2</0> <1>6.120 seconds</1></1></1> <2><0/> <1><0>Player 3</0> <1>7.450 seconds</1></1></2></1></3> <4>The Machine</4> - Top Speed: 15cm / second (placeholder)<5/> - 0 - 100(cm): 5 seconds (placeholder)<6/> - Power: 200 mA (placeholder)<7/> - Weight: 500 grams (placeholder)<8/> - Steering: Skid <9/> - Wheels: 2 powered, 1 non-powered <10/> - Inputs: 4 light sensors (placeholder)<11/> - Outputs: 2 motor speeds (placeholder)<12/><13/> <14>The Track</14>"
-#~ msgstr ""
-
-#~ msgid "Dashbsoard"
-#~ msgstr ""
-
-#~ msgid "Dashsboard"
-#~ msgstr ""
-
-#~ msgid "Dashssssboard"
-#~ msgstr ""
-
-#~ msgid "Locatsion"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3><0><0/> <1>Hugo</1> <2>5.233 seconds</2></0> <1><0/> <1>Player 2</1> <2>6.120 seconds</2></1> <2><0/> <1>Player 3</1> <2>7.450 seconds</2></2></3> <4>The Machine</4> - Top Speed: 15cm / second (placeholder)<5/> - 0 - 100(cm): 5 seconds (placeholder)<6/> - Power: 200 mA (placeholder)<7/> - Weight: 500 grams (placeholder)<8/> - Steering: Skid <9/> - Wheels: 2 powered, 1 non-powered <10/> - Inputs: 4 light sensors (placeholder)<11/> - Outputs: 2 motor speeds (placeholder)<12/><13/> <14>The Track</14>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3><0><0/> <1>Hugo</1> <2>5.233 seconds</2></0> <1><0/> <1>Player 2</1> <2>6.120 seconds</2></1> <2><0/> <1>Player 3</1> <2>7.450 seconds</2></2></3> <4/> <5>The Machine</5> - Top Speed: 15cm / second (placeholder)<6/> - 0 - 100(cm): 5 seconds (placeholder)<7/> - Power: 200 mA (placeholder)<8/> - Weight: 500 grams (placeholder)<9/> - Steering: Skid <10/> - Wheels: 2 powered, 1 non-powered <11/> - Inputs: 4 light sensors (placeholder)<12/> - Outputs: 2 motor speeds (placeholder)<13/><14/> <15>The Track</15>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>The Machine</3> <4><0><0/> <1>Hugo</1> <2>5.233 seconds</2></0> <1><0/> <1>Player 2</1> <2>6.120 seconds</2></1> <2><0/> <1>Player 3</1> <2>7.450 seconds</2></2></4> <5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0><0/> <1>Hugo</1> <2>5.233 seconds</2></0> <1><0/> <1>Player 2</1> <2>6.120 seconds</2></1> <2><0/> <1>Player 3</1> <2>7.450 seconds</2></2></4> <5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "<0>Control a real small machine remotely</0> <1/> <2/> <3>Leaderboard</3> <4><0/> <1>Hugo</1> <2>5.233 seconds</2></4> <5/> <6>The Machine</6> - Top Speed: 15cm / second (placeholder)<7/> - 0 - 100(cm): 5 seconds (placeholder)<8/> - Power: 200 mA (placeholder)<9/> - Weight: 500 grams (placeholder)<10/> - Steering: Skid <11/> - Wheels: 2 powered, 1 non-powered <12/> - Inputs: 4 light sensors (placeholder)<13/> - Outputs: 2 motor speeds (placeholder)<14/><15/> <16>The Track</16>"
-#~ msgstr ""
-
-#~ msgid "Log In"
-#~ msgstr ""
 
 #: src/routes/[locale]/settings/+page.svelte
 msgid "Sign In / Sign up"
 msgstr ""
 
-#~ msgid "Lsocation"
-#~ msgstr ""
-
-#~ msgid "Selected build: Build {0}"
-#~ msgstr ""
-
-#~ msgid "Build {0}"
-#~ msgstr ""
-
-#~ msgid "Build {0} Information"
-#~ msgstr ""
-
-#~ msgid "Sensors"
-#~ msgstr ""
-
-#~ msgid "Upcoming"
-#~ msgstr ""
-
-#~ msgid "Past"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Vehicles/Vehicles.svelte
 msgid "Logs"
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/TimeTrials/TimeTrials.svelte
 #: src/lib/components/Dashboard/TimeTrials/TimeTrials.svelte
 msgid "Algorithms"
 msgstr ""
 
-#~ msgid "Play"
-#~ msgstr ""
-
-#~ msgid "Calender"
-#~ msgstr ""
-
-#~ msgid "Any"
-#~ msgstr ""
-
-#~ msgid "All"
-#~ msgstr ""
-
-#~ msgid "Upcoming Runs"
-#~ msgstr ""
-
-#~ msgid "Past Runs"
-#~ msgstr ""
-
-#~ msgid "Time"
-#~ msgstr ""
-
-#~ msgid "Debug"
-#~ msgstr ""
-
-#~ msgid "Test"
-#~ msgstr ""
-
-#~ msgid "Experiment"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
@@ -662,298 +221,89 @@ msgstr ""
 msgid "Time Trials"
 msgstr ""
 
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> asd"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today <4/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Today <4/> <5/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Yesterday | Today | Tomorrow <4/> <5/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Logs</4> Yesterday | Today | Tomorrow <5/> <6/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Logs</4> <5>Logs</5> Yesterday | Today | Tomorrow <6/> <7/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Logs</0> <1>Logs</1></4> Yesterday | Today | Tomorrow <5/> <6/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Logs</0> <1>Logs</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Logs</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> Yesterday | Today | Tomorrow<5/> <6/> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4><0>Yesterday</0> <1>Today</1> <2>Tomorrow</2></4> <5>8am</5> No Scheduled Time Trials"
-#~ msgstr ""
-
-#~ msgid "Yesterday"
-#~ msgstr ""
-
-#~ msgid "Today"
-#~ msgstr ""
-
-#~ msgid "Tomorrow"
-#~ msgstr ""
-
-#~ msgid "8am"
-#~ msgstr ""
-
-#~ msgid "8am - 8:05am"
-#~ msgstr ""
-
-#~ msgid "8am - 8:05am: Sem"
-#~ msgstr ""
-
-#~ msgid "8.05am - 8:10am: Sem"
-#~ msgstr ""
-
-#~ msgid "8.10am - 8:15am: Sem"
-#~ msgstr ""
-
-#~ msgid "Today (10.10.2026)"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> Software Development Kit"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Dashboard</4> Software Development Kit"
-#~ msgstr ""
-
-#~ msgid "Software Development Kit"
-#~ msgstr ""
-
-#~ msgid "Rust"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust</5>"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust SDK</5>"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust SDK</6>"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust Library</6>"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> Rust: <5>Rust Example</5> <6>Rust Library</6> API Token"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>Software Development Kit</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> <8>Create new one</8> API Token"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust: <6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4>Software Development Kit</4> <5>The SDK allows you to control the car from a programming language</5> Rust:<6>Rust Example</6> <7>Rust Library</7> API Token <8>Create new one</8>"
-#~ msgstr ""
-
-#~ msgid "Car Control"
-#~ msgstr ""
-
-#~ msgid "s"
-#~ msgstr ""
-
-#~ msgid "<0><0>Dashboard</0> <1>Sign In / Sign up</1></0> <1>The Beginner Car</1> <2/> <3/> <4/> <5>Software Development Kit</5> <6>The SDK allows you to control the car from a programming language</6> Rust:<7>Rust Example</7> <8>Rust Library</8> API Token <9>Create new one</9>"
-#~ msgstr ""
-
-#~ msgid "Rust Library"
-#~ msgstr ""
-
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Cancel"
 msgstr ""
 
-#~ msgid "Stop"
-#~ msgstr ""
-
-#~ msgid "Upload Script"
-#~ msgstr ""
-
-#~ msgid "Home"
-#~ msgstr ""
-
-#~ msgid "Drive To Start"
-#~ msgstr ""
-
-#~ msgid "Go To Start"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "STOP"
 msgstr ""
 
-#~ msgid "Build"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Vehicles/Vehicles.svelte
 msgid "Control"
 msgstr ""
 
-#~ msgid "Cameras"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Run Script"
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Navigate To Start"
 msgstr ""
 
-#~ msgid "<0>Car Control</0> Is Hugo authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
-#~ msgstr ""
-
-#~ msgid "<0>Car Control</0> Is \"Hugo\" authorized to control the car? Yes <1><0>STOP</0> <1>Run Script</1> <2>Navigate To Start</2></1>"
-#~ msgstr ""
-
-#~ msgid "Vehicle Telemetry"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Vehicles/Vehicles.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Telemetry"
 msgstr ""
 
-#~ msgid "Top-down car telemetry diagram"
-#~ msgstr ""
-
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "<0/> GPS"
 msgstr ""
 
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "<0/> Sensors"
 msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
-#: src/lib/components/hardware/Status.svelte
 msgid "Connecting..."
 msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
-#: src/lib/components/hardware/Status.svelte
 msgid "Connected"
 msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
-#: src/lib/components/hardware/Status.svelte
 msgid "Failed to parse telemetry data"
 msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
-#: src/lib/components/hardware/Status.svelte
 msgid "Disconnected"
 msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
-#: src/lib/components/hardware/Status.svelte
 msgid "Reconnecting..."
 msgstr ""
 
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Hardware Telemetry"
 msgstr ""
 
 #. 0: lastUpdate.toLocaleTimeString()
-#. 0: lastUpdate.toLocaleTimeString()
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Last update: {0}"
 msgstr ""
 
-#~ msgid "Raw telemetry"
-#~ msgstr ""
-
-#~ msgid "Connection: <0/>"
-#~ msgstr ""
-
-#: src/lib/components/HardwareTelemetry.svelte
-#: src/lib/components/HardwareTelemetry.svelte
-msgid "Waiting for data..."
-msgstr ""
-
-#~ msgid "IR Sensor A"
-#~ msgstr ""
-
-#: src/lib/components/HardwareTelemetry.svelte
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Raw sensor value"
 msgstr ""
 
 #. 0: connectionStatus
-#. 0: connectionStatus
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Connection: {0}"
 msgstr ""
-
-#~ msgid "IR Sensor A: {0}"
-#~ msgstr ""
 
 #. 0: leftDarkness
 #. 0: rightDarkness
@@ -962,116 +312,19 @@ msgstr ""
 msgid "{0}% darkness"
 msgstr ""
 
-#~ msgid "{0} {1}% darkness"
-#~ msgstr ""
-
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/TheBeginnerCarDrawing.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Front Left IR"
 msgstr ""
 
-#: src/lib/components/HardwareTelemetry.svelte
 #: src/lib/components/TheBeginnerCarDrawing.svelte
 #: src/lib/components/hardware/HardwareTelemetry.svelte
 msgid "Front Right IR"
 msgstr ""
 
-#~ msgid "Now"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
-msgid "Live"
-msgstr ""
-
-#~ msgid "Live Time Trials"
-#~ msgstr ""
-
-#~ msgid "Live Time Trials - Active"
-#~ msgstr ""
-
-#~ msgid "Live Time Trials - Active Now!"
-#~ msgstr ""
-
-#~ msgid "Live Time Trials - Active Now."
-#~ msgstr ""
-
-#~ msgid "Live Time Trials - Active Now"
-#~ msgstr ""
-
-#~ msgid "<0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
-#~ msgstr ""
-
-#~ msgid "asd <0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
-#~ msgstr ""
-
-#~ msgid "Driving The Car <0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
-#~ msgstr ""
-
-#~ msgid "Currently In Progress <0>STOP</0> asd <1>Run Script</1> <2>Navigate To Start</2>"
-#~ msgstr ""
-
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Live Time Trials - On Now"
 msgstr ""
-
-#~ msgid "Live Time Trials - On Air Now"
-#~ msgstr ""
-
-#~ msgid "Currently In Progress <0>STOP</0> In The Queue <1>Run Script</1> <2>Navigate To Start</2>"
-#~ msgstr ""
-
-#~ msgid "Currently In Progress <0>Magnus</0> In The Queue <1>Run Script</1> <2>Navigate To Start</2>"
-#~ msgstr ""
-
-#~ msgid "Currently In Progress <0>Magnus</0> <1>Magnus</1> In The Queue <2>Run Script</2> <3>Navigate To Start</3>"
-#~ msgstr ""
-
-#~ msgid "Currently In Progress <0>Magnus</0> <1>5 Seconds</1> In The Queue <2>Run Script</2> <3>Navigate To Start</3>"
-#~ msgstr ""
-
-#~ msgid "Magnus"
-#~ msgstr ""
-
-#~ msgid "5 Seconds"
-#~ msgstr ""
-
-#~ msgid "Currently In Progress"
-#~ msgstr ""
-
-#~ msgid "In The Queue"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | run_id | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Run Script</0> <1>Navigate To Start</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>Navigate To Start</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secon</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | start_amount_of_seconds | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | |________ __________ | name | queued_time_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "<0/> <1>Live Time Trials - On Now</1> __________ | name | run_time_seconds | upload_hash | run_number | run_uuid | restart | cancel | |________ __________ | name | queued_time_seconds | upload_hash | run_number | run_uuid | |________ | <2><0><0>Currently In Progress</0> <1><0>Magnus</0> <1>5 Seconds</1></1></0> <1><0>In The Queue</0> <1><0>Joe</0> <1>2 Secons</1></1></1></2>"
-#~ msgstr ""
-
-#~ msgid "Run Time"
-#~ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
@@ -1099,18 +352,6 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#~ msgid "5s"
-#~ msgstr ""
-
-#~ msgid "a1b2c3d4e5"
-#~ msgstr ""
-
-#~ msgid "8f3a9b12-4c..."
-#~ msgstr ""
-
-#~ msgid "<0/> Currently In Progress"
-#~ msgstr ""
-
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Queued Time"
 msgstr ""
@@ -1123,24 +364,9 @@ msgstr ""
 msgid "Skip The Queue"
 msgstr ""
 
-#~ msgid "Joe"
-#~ msgstr ""
-
-#~ msgid "2s"
-#~ msgstr ""
-
-#~ msgid "f9e8d7c6b5"
-#~ msgstr ""
-
-#~ msgid "3d2e1f0a-9b..."
-#~ msgstr ""
-
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> In The Queue"
 msgstr ""
-
-#~ msgid "<0/> In Progress"
-#~ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "<0/> Driving"
@@ -1168,59 +394,25 @@ msgstr ""
 msgid "Last Refresh: {0}"
 msgstr ""
 
-#~ msgid "Car Build"
-#~ msgstr ""
-
-#~ msgid "Vehicle ID"
-#~ msgstr ""
-
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Unknown"
 msgstr ""
 
-#. 0: selectedView
-#: src/lib/components/Dashboard.svelte
-msgid "Car Control: {0}"
-msgstr ""
-
-#~ msgid "No leaderboard yet!"
-#~ msgstr ""
-
-#~ msgid "No algorithms yet!"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/TimeTrials/TimeTrials.svelte
 msgid "No leaderboard yet."
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/TimeTrials/TimeTrials.svelte
 msgid "No algorithms yet."
 msgstr ""
-
-#~ msgid "THINK YOU CAN CODE? <0>Prove</0> it."
-#~ msgstr ""
-
-#~ msgid "THINK YOU CAN CODE? <0>Prove</0> it.."
-#~ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Owner"
 msgstr ""
-
-#~ msgid "Script Run Duration"
-#~ msgstr ""
-
-#~ msgid "Script Duration"
-#~ msgstr ""
-
-#~ msgid "Script Start Time"
-#~ msgstr ""
 
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Script Start"
@@ -1239,19 +431,9 @@ msgstr ""
 msgid "<0/> Stopped"
 msgstr ""
 
-#: src/lib/components/InnerHeader.svelte
-msgid "asdasd"
-msgstr ""
-
-#~ msgid "Sign In / Sign Up"
-#~ msgstr ""
-
 #: src/lib/components/UserAccountButton.svelte
 msgid "Sign In"
 msgstr ""
-
-#~ msgid "Sign Up"
-#~ msgstr ""
 
 #: src/lib/components/CreateAccount.svelte
 #: src/lib/components/UserAccountButton.svelte
@@ -1283,11 +465,6 @@ msgstr ""
 msgid "LIVE IN {0} SECONDS"
 msgstr ""
 
-#~ msgid "Calibration"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Vehicles/Vehicles.svelte
 msgid "Position"
 msgstr ""
@@ -1296,131 +473,27 @@ msgstr ""
 msgid "Don't have an account? <0>Create one</0>"
 msgstr ""
 
-#~ msgid "h"
-#~ msgstr ""
-
-#~ msgid "Statu"
-#~ msgstr ""
-
-#~ msgid "Wifi MCU:"
-#~ msgstr ""
-
-#~ msgid "Wifi MCU: uptime: 00:00:00"
-#~ msgstr ""
-
-#~ msgid "Wasm MCU: uptime: 00:00:00"
-#~ msgstr ""
-
-#~ msgid "Wifi MCU. Uptime: 00:00:00"
-#~ msgstr ""
-
-#~ msgid "Wasm MCU. Uptime: 00:00:00"
-#~ msgstr ""
-
-#~ msgid "Wifi MCU. Uptime: 00:00:00."
-#~ msgstr ""
-
-#~ msgid "Wasm MCU. Uptime: 00:00:00."
-#~ msgstr ""
-
-#~ msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987"
-#~ msgstr ""
-
-#~ msgid "Wifi MCU. Uptime: 00:00:00. Software: #1233987."
-#~ msgstr ""
-
-#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #11111111."
-#~ msgstr ""
-
-#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #1111111."
-#~ msgstr ""
-
-#~ msgid "Wasm MCU. Uptime: 00:00:00. Software: #abcde."
-#~ msgstr ""
-
-#~ msgid "PixiJS + Svelte Headstart"
-#~ msgstr ""
-
-#~ msgid "Hardware"
-#~ msgstr ""
-
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Vehicles"
 msgstr ""
 
-#~ msgid "<0>Wifi MCU</0> Uptime: 00:00:00. Software: #1233987."
-#~ msgstr ""
-
-#~ msgid "<0>WASM MCU</0> Wasm MCU. Uptime: 00:00:00. Software: #abcde."
-#~ msgstr ""
-
-#~ msgid "<0>WASM MCU</0> Uptime: 00:00:00. Software: #abcde."
-#~ msgstr ""
-
-#~ msgid "The STATUS of the chips"
-#~ msgstr ""
-
-#~ msgid "The STATUS of the chips (MCUs) on board the vehicle"
-#~ msgstr ""
-
-#~ msgid "The STATUS of the MCUs on board the vehicle"
-#~ msgstr ""
-
-#~ msgid "The STATUS of the MCUs controlling the vehicle"
-#~ msgstr ""
-
-#: src/lib/components/Vehicles/Vehicle/Status.svelte
-msgid "The STATE of the MCUs controlling the vehicle"
-msgstr ""
-
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
-#: src/lib/components/Vehicles/Vehicle/Status.svelte
 msgid "<0>Wifi MCU</0> Uptime: 00:00:00. Firmware: #1233987."
 msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
-#: src/lib/components/Vehicles/Vehicle/Status.svelte
 msgid "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
 msgstr ""
 
-#: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 #: src/lib/components/Dashboard/Dashboard.svelte
 msgid "Scripts"
 msgstr ""
 
-#~ msgid "Vehicless"
-#~ msgstr ""
-
-#~ msgid "<0/> a <1/>"
-#~ msgstr ""
-
-#~ msgid "a"
-#~ msgstr ""
-
-#~ msgid "status?"
-#~ msgstr ""
-
-#~ msgid "The STATE of the MCUs controlling {0}"
-#~ msgstr ""
-
 #: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 msgid "The STATE of the MCUs controlling <0/>"
 msgstr ""
-
-#~ msgid "Uh oh, not able to get the list of vehicles from the backend"
-#~ msgstr ""
-
-#~ msgid "NETWORK ERROR: Not able to get the list of vehicles from the backend"
-#~ msgstr ""
-
-#~ msgid "NETWORK ERROR: Not able to get the list of vehicles from the backend. Tap to retry."
-#~ msgstr ""
-
-#~ msgid "NETWORK ERROR. Tap to retry."
-#~ msgstr ""
 
 #: src/lib/components/Dashboard/Vehicles/LiveVehiclesSubmenu.svelte
 msgid "Retrying..."

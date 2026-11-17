@@ -641,9 +641,9 @@ msgstr "Algorithms"
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
-#: src/lib/components/LiveHardwareBanner.svelte
-#: src/lib/components/LiveHardwareBanner.svelte
-#: src/lib/components/LiveHardwareBanner.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Time Trials"
 msgstr "Time Trials"
 
@@ -1158,7 +1158,7 @@ msgstr "Last Refresh: {0}"
 msgid "Unknown"
 msgstr "Unknown"
 
-#. 0: selectedBuild
+#. 0: selectedView
 #: src/lib/components/Dashboard.svelte
 msgid "Car Control: {0}"
 msgstr "Car Control: {0}"
@@ -1319,7 +1319,7 @@ msgstr "Don't have an account? <0>Create one</0>"
 #~ msgid "Hardware"
 #~ msgstr "Hardware"
 
-#: src/lib/components/LiveHardwareBanner.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Vehicles"
 msgstr "Vehicles"
 
@@ -1355,3 +1355,7 @@ msgstr "<0>Wifi MCU</0> Uptime: 00:00:00. Firmware: #1233987."
 #: src/lib/components/Vehicles/Vehicle/Status.svelte
 msgid "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
 msgstr "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
+
+#: src/lib/components/Dashboard.svelte
+msgid "Scripts"
+msgstr "Scripts"

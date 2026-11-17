@@ -15,7 +15,7 @@
 
   let { session }: Props = $props();
   let userName = $state<string | undefined>();
-  let selectedBuild = $state<string>("Time Trials");
+  let selectedView = $state<string>("Time Trials");
 
   type PlayOption = "Leaderboard" | "Algorithms" | "Live";
   let selectedPlayOption = $state<PlayOption>("Leaderboard");
@@ -44,9 +44,39 @@
 
 <!-- <button type="button" class="button block">The Beginner Car</button> -->
 
-<LiveHardwareBanner bind:selectedBuild />
+<div class="row">
+  <button
+    type="button"
+    class="button block"
+    class:selected={selectedView === "Time Trials"}
+    aria-pressed={selectedView === "Time Trials"}
+    onclick={() => (selectedView = "Time Trials")}
+  >
+    Time Trials
+  </button>
 
-{#if selectedBuild === "Time Trials"}
+  <button
+    type="button"
+    class="button block"
+    // class:selected={selectedView === "Time Trials"}
+    // aria-pressed={selectedView === "Time Trials"}
+  >
+    Scripts
+  </button>
+
+  <button
+    type="button"
+    class="button block"
+    // class:selected={selectedView === "Time Trials"}
+    // aria-pressed={selectedView === "Time Trials"}
+  >
+    Vehicles
+  </button>
+</div>
+
+<LiveHardwareBanner bind:selectedView />
+
+{#if selectedView === "Time Trials"}
   <div class="button-container">
     {#each playOptions as playOption}
       <button
@@ -76,8 +106,8 @@
   </div>
 {/if}
 
-{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Control"}
-  <h2 class="text-2xl mb-4 min-w-0 flex-1">Car Control: {selectedBuild}</h2>
+{#if selectedView !== "Time Trials" && selectedBuildOption === "Control"}
+  <h2 class="text-2xl mb-4 min-w-0 flex-1">Car Control: {selectedView}</h2>
 
   <div class="row">
     <button type="button" class="button block">STOP</button>
@@ -86,27 +116,27 @@
   </div>
 {/if}
 
-{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Status"}
+{#if selectedView !== "Time Trials" && selectedBuildOption === "Status"}
   <Status />
 {/if}
 
-{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Position"}
+{#if selectedView !== "Time Trials" && selectedBuildOption === "Position"}
   <Position />
 {/if}
 
-{#if selectedBuild === "Time Trials" && selectedPlayOption === "Leaderboard"}
+{#if selectedView === "Time Trials" && selectedPlayOption === "Leaderboard"}
   <h2 class="text-2xl mb-4 min-w-0 flex-1">No leaderboard yet.</h2>
 {/if}
 
-{#if selectedBuild === "Time Trials" && selectedPlayOption === "Algorithms"}
+{#if selectedView === "Time Trials" && selectedPlayOption === "Algorithms"}
   <h2 class="text-2xl mb-4 min-w-0 flex-1">No algorithms yet.</h2>
 {/if}
 
-{#if selectedBuild !== "Time Trials" && selectedBuildOption === "Telemetry"}
+{#if selectedView !== "Time Trials" && selectedBuildOption === "Telemetry"}
   <HardwareTelemetry />
 {/if}
 
-{#if selectedBuild === "Time Trials" && selectedPlayOption === "Live"}
+{#if selectedView === "Time Trials" && selectedPlayOption === "Live"}
   <LiveTimeTrials />
 {/if}
 
@@ -122,7 +152,6 @@
 
   .row {
     display: flex;
-    gap: 0.5rem;
   }
 
   .row .button {

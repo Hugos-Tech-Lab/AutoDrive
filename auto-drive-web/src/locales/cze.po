@@ -641,9 +641,9 @@ msgstr ""
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
 #: src/lib/components/Dashboard.svelte
-#: src/lib/components/LiveHardwareBanner.svelte
-#: src/lib/components/LiveHardwareBanner.svelte
-#: src/lib/components/LiveHardwareBanner.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Time Trials"
 msgstr ""
 
@@ -1158,7 +1158,7 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#. 0: selectedBuild
+#. 0: selectedView
 #: src/lib/components/Dashboard.svelte
 msgid "Car Control: {0}"
 msgstr ""
@@ -1319,7 +1319,7 @@ msgstr ""
 #~ msgid "Hardware"
 #~ msgstr ""
 
-#: src/lib/components/LiveHardwareBanner.svelte
+#: src/lib/components/Dashboard.svelte
 msgid "Vehicles"
 msgstr ""
 
@@ -1354,4 +1354,8 @@ msgstr ""
 
 #: src/lib/components/Vehicles/Vehicle/Status.svelte
 msgid "<0>WASM MCU</0> Uptime: 00:00:00. Firmware: #abcde."
+msgstr ""
+
+#: src/lib/components/Dashboard.svelte
+msgid "Scripts"
 msgstr ""

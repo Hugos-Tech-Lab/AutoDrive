@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { endpointRoot } from "../../endpoint";
 
-  let { selectedBuild = $bindable() }: { selectedBuild: string } = $props();
+  let { selectedView = $bindable() }: { selectedView: string } = $props();
 
   type HardwareData = {
     number_plate: string;
@@ -44,40 +44,19 @@
   });
 </script>
 
-<div class="row">
+{#each hardwareList as hw}
   <button
     type="button"
     class="button block"
-    class:selected={selectedBuild === "Time Trials"}
-    aria-pressed={selectedBuild === "Time Trials"}
-    onclick={() => (selectedBuild = "Time Trials")}
+    class:selected={selectedView === hw.number_plate}
+    aria-pressed={selectedView === hw.number_plate}
+    onclick={() => (selectedView = hw.number_plate)}
   >
-    Time Trials
+    <!-- TODO: it shows connected even when connection to backend not made? Fix that -->
+    {hw.number_plate}
+    {backendConnected && hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"}
   </button>
-
-  <button
-    type="button"
-    class="button block"
-    // class:selected={selectedBuild === "Time Trials"}
-    // aria-pressed={selectedBuild === "Time Trials"}
-  >
-    Vehicles
-  </button>
-
-  {#each hardwareList as hw}
-    <button
-      type="button"
-      class="button block"
-      class:selected={selectedBuild === hw.number_plate}
-      aria-pressed={selectedBuild === hw.number_plate}
-      onclick={() => (selectedBuild = hw.number_plate)}
-    >
-      <!-- TODO: it shows connected even when connection to backend not made? Fix that -->
-      {hw.number_plate}
-      {backendConnected && hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"}
-    </button>
-  {/each}
-</div>
+{/each}
 
 <style>
   .row {

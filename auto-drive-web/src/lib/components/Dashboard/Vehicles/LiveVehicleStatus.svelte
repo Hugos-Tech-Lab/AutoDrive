@@ -56,7 +56,9 @@
   <title>Status</title>
 </svelte:head>
 
-<h2 class="text-2xl mb-4">The STATE of the MCUs controlling the vehicle</h2>
+<h2 class="text-2xl mb-4">
+  The STATE of the MCUs controlling <i>{vehicle_number_plate} </i>
+</h2>
 <div
   class="w-full flex flex-col md:flex-row gap-4 mb-6 bg-gray-100 p-4 border-2"
 >

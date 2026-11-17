@@ -1374,7 +1374,6 @@ msgstr "Vehicles"
 #~ msgid "The STATUS of the MCUs controlling the vehicle"
 #~ msgstr "The STATUS of the MCUs controlling the vehicle"
 
-#: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
 #: src/lib/components/Vehicles/Vehicle/Status.svelte
 msgid "The STATE of the MCUs controlling the vehicle"
 msgstr "The STATE of the MCUs controlling the vehicle"
@@ -1408,3 +1407,10 @@ msgstr "Scripts"
 
 #~ msgid "status?"
 #~ msgstr "status?"
+
+#~ msgid "The STATE of the MCUs controlling {0}"
+#~ msgstr "The STATE of the MCUs controlling {0}"
+
+#: src/lib/components/Dashboard/Vehicles/LiveVehicleStatus.svelte
+msgid "The STATE of the MCUs controlling <0/>"
+msgstr "The STATE of the MCUs controlling <0/>"

@@ -21,6 +21,11 @@ pub enum AutoScriptType {
     ConfigAdjust,
 }
 
+// pub enum UserType {
+//     Regular,
+//     Privileged,
+// }
+
 #[derive(Clone, Debug)]
 pub struct AutoScript {
     pub owner_name: String,
@@ -40,6 +45,7 @@ pub struct AutoScript {
     pub vehicle_finish_time: Option<DateTime<Utc>>,
     pub script_stop_time: Option<DateTime<Utc>>,
     pub script_type: AutoScriptType,
+    // pub user_type: U
 }
 
 impl AutoScript {

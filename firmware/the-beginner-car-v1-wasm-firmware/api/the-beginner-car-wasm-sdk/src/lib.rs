@@ -95,7 +95,7 @@ define_wasm_api! {
     // fn get_config_max_rpm() -> u16;
     fn set_config_recommended_pwm(rpm: i16, pwm: i8);
 
-    fn get_config_recommended_pwm(rpm: i16) -> i8;
+    fn get_config_recommended_pwm(rpm: i16) -> i8; // left wheel , right wheel, etc.
 
     fn get_config_recommended_pos_min_rpm() -> i16;
     //

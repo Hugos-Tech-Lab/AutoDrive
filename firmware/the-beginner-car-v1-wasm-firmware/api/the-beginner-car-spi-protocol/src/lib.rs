@@ -43,27 +43,23 @@ pub struct IrSensorArray {
 pub enum RequestToHardware {
     LightOn,
     LightOff,
-    DrainEvents,
+    DrainLogs,
     GetPosition,
     NotifyPositionFromCamera { position: Position },
     NotifyBatteryReadings { voltage: f32 },
     NotifyIrSensorReadings { readings: IrSensorArray },
     RunAutoScript { data: Vec<u8> },
     StopAutoScript,
+    AutoScriptState,
     Uptime,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum Event {
-    Log { message: LogMessage },
-    AutoScriptStopped,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ResponseFromHardware {
     Ok,
     Status { light_on: bool, motor_speed: i32 },
-    Events { events: Vec<Event> },
+    Logs { logs: Vec<LogMessage> },
+    AutoScriptState { ended: bool },
     AutoScriptStarted { id: i32 },
     CalibrationReadings {},
     Position { position: Option<Position> },

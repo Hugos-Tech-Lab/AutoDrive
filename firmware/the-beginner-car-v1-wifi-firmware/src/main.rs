@@ -15,7 +15,7 @@ use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
 use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 use hardware_config::{TheBeginnerCarMetadata, config::HARDWARE_CONFIG};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
-use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
+use the_beginner_car_tcp_protocol::{AutoScript, TheBeginnerCarOutgoingMessages};
 
 use crate::{
     battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, tcp_server::accept,
@@ -61,6 +61,14 @@ pub fn verify_device_is_registered() -> anyhow::Result<TheBeginnerCarMetadata> {
     };
 
     Ok(the_beginner_car_metadata.clone())
+}
+
+struct AutoScriptState {
+    run_uuid: String,
+}
+
+struct VehicleState {
+    current_script: Option<AutoScript>, //
 }
 
 pub fn main() -> anyhow::Result<()> {
@@ -139,6 +147,13 @@ pub fn main() -> anyhow::Result<()> {
 
     std::thread::Builder::new()
         .stack_size(2_000)
+        .name("sync_wasm".to_string())
+        .spawn(|| {
+            //
+        });
+
+    std::thread::Builder::new()
+        .stack_size(2_000)
         .name("flush_logs".to_string())
         .spawn({
             let sender_tx = sender_tx.clone();
@@ -212,12 +227,6 @@ pub fn main() -> anyhow::Result<()> {
                                             })
                                             .unwrap()
                                     } // TODO: this should send vec
-                                    // the_beginner_car_spi_protocol::Event::InfraredLedReadings { back_center, front_left, front_center, front_right, front_far_left, front_far_right, back_left  } => {
-                                    //     // dbg!(value);
-                                    //     sender_tx
-                                    //         .send(TheBeginnerCarOutgoingMessages::InfraredLedReadings { front_far_left, front_left, front_center, front_right, front_far_right, back_center, back_left  })
-                                    //         .unwrap()
-                                    // }
                                     the_beginner_car_spi_protocol::Event::AutoScriptStopped => {
                                         sender_tx
                                             .send(TheBeginnerCarOutgoingMessages::AutoScriptStopped)

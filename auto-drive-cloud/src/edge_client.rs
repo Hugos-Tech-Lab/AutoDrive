@@ -24,11 +24,12 @@ use crate::auto_drive_edge_service::v1::{
     AutoScripts, GetVehiclesRequest, LogMessage,
     auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
 };
-use crate::edge_client::watch_auto_script_logs::watch_auto_script_logs;
+use crate::edge_client::auto_script_logs::watch_auto_script_logs;
 use crate::edge_client::watch_scripts_overview::watch_scripts_overview;
-pub mod watch_auto_script_logs;
+pub mod auto_script_logs;
+pub mod grpc_connect;
+pub mod vehicle_logs;
 pub mod watch_scripts_overview;
-pub mod watch_vehicle_logs;
 pub mod watch_vehicle_positions;
 
 type HardwareHashMap = HashMap<String, HardwareDeviceState>;
@@ -173,10 +174,8 @@ impl EdgeClient {
             .iter()
             .map(|number_plate| {
                 (number_plate.clone(), {
-                    let (logs, _) = watch_vehicle_logs::watch_vehicle_logs(
-                        client.clone(),
-                        number_plate.clone(),
-                    );
+                    let (logs, _) =
+                        vehicle_logs::vehicle_logs(client.clone(), number_plate.clone());
 
                     Vehicle {
                         logs,

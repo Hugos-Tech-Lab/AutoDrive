@@ -5,34 +5,28 @@ use std::{
     time::Duration,
 };
 
-use futures_util::{
-    Stream, StreamExt,
-    stream::{self},
-};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use tokio::sync::{
-    RwLock,
-    broadcast::{self},
-    watch,
-};
+use tokio::sync::watch;
 use tokio::time::sleep;
-use tokio_stream::wrappers::{BroadcastStream, errors::BroadcastStreamRecvError};
 use tonic::transport::Channel;
 
-use crate::auto_drive_edge_service::v1::{
-    AutoScripts, GetVehiclesRequest, LogMessage,
-    auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+use crate::edge_client::{auto_scripts_overview::AutoScriptsOverview, vehicle::Vehicle};
+use crate::{
+    auto_drive_edge_service::v1::{
+        GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+    },
+    edge_client::logs::Logs,
 };
-use crate::edge_client::auto_script_logs::watch_auto_script_logs;
-use crate::edge_client::watch_scripts_overview::watch_scripts_overview;
-pub mod auto_script_logs;
+pub mod auto_script;
+pub mod auto_scripts_overview;
 pub mod grpc_connect;
-pub mod vehicle_logs;
-pub mod watch_scripts_overview;
+pub mod logs;
+pub mod vehicle;
+pub mod vehicle_position;
+
 pub mod watch_vehicle_positions;
 
-type HardwareHashMap = HashMap<String, HardwareDeviceState>;
 type HardwarePositions = HashMap<String, Pose>;
 
 pub enum StartAutoScriptResponse {
@@ -71,59 +65,6 @@ pub enum AutoScriptStatus {
     CancelledManually,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HardwareDeviceState {
-    pub number_plate: String,
-    pub category: String,
-    pub is_connected: bool,
-}
-
-#[derive(Debug)]
-pub struct Logs {
-    history: Arc<RwLock<Vec<LogMessage>>>,
-    live: broadcast::Receiver<LogMessage>,
-}
-
-impl Clone for Logs {
-    fn clone(&self) -> Self {
-        Self {
-            history: self.history.clone(),
-            live: self.live.resubscribe(),
-        }
-    }
-}
-
-impl Logs {
-    pub fn new(
-        history: Arc<RwLock<Vec<LogMessage>>>,
-        live: broadcast::Receiver<LogMessage>,
-    ) -> Self {
-        Self { history, live }
-    }
-
-    pub async fn stream_with_history(
-        &self,
-    ) -> Option<
-        impl Stream<Item = Result<LogMessage, BroadcastStreamRecvError>> + Send + Sync + 'static,
-    > {
-        let history_guard = self.history.read().await;
-        let history = history_guard.clone();
-        drop(history_guard);
-
-        let history_stream = stream::iter(history.into_iter().map(Ok));
-        let live_stream = BroadcastStream::new(self.live.resubscribe());
-
-        Some(history_stream.chain(live_stream))
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Vehicle {
-    logs: Logs,
-    position: watch::Receiver<Option<Pose>>,
-    status: watch::Receiver<Option<Status>>,
-}
-
 #[derive(Debug, Clone)]
 pub struct AutoScript {
     pub logs: Logs,
@@ -132,7 +73,7 @@ pub struct AutoScript {
 
 impl AutoScript {
     pub fn new(handle: AutoDriveEdgeServiceClient<Channel>, run_uuid: String) -> Self {
-        let (logs, _) = watch_auto_script_logs(handle, run_uuid);
+        let logs = Logs::from_auto_script(handle, run_uuid);
         let status = watch::Sender::<AutoScriptStatus>::new(AutoScriptStatus::ReceivedByHardware); // TODO send messages to this
         Self { logs, status }
     }
@@ -141,8 +82,8 @@ impl AutoScript {
 #[derive(Debug, Clone)]
 pub struct EdgeClient {
     pub handle: AutoDriveEdgeServiceClient<Channel>,
-    pub scripts_overview: watch::Sender<AutoScripts>,
-    pub vehicles: HashMap<String, Vehicle>,
+    pub scripts_overview: AutoScriptsOverview,
+    pub vehicles: Vec<Vehicle>,
     pub scripts: Arc<Mutex<HashMap<String, AutoScript>>>,
 }
 
@@ -166,28 +107,16 @@ impl EdgeClient {
             }
         };
 
-        let vehicles: HashMap<_, _> = client
+        let vehicles = client
             .get_vehicles(GetVehiclesRequest {})
             .await?
             .get_ref()
             .number_plates
             .iter()
-            .map(|number_plate| {
-                (number_plate.clone(), {
-                    let (logs, _) =
-                        vehicle_logs::vehicle_logs(client.clone(), number_plate.clone());
-
-                    Vehicle {
-                        logs,
-                        position: todo!(),
-                        status: todo!(),
-                    }
-                    //
-                })
-            })
+            .map(|number_plate| Vehicle::new(client.clone(), number_plate.clone()))
             .collect();
 
-        let (scripts_overview, _) = watch_scripts_overview(client.clone());
+        let scripts_overview = AutoScriptsOverview::new(client.clone());
 
         Ok(EdgeClient {
             handle: client,

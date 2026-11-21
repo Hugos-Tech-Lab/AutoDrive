@@ -11,15 +11,12 @@ use tokio::sync::watch;
 use tokio::time::sleep;
 use tonic::transport::Channel;
 
-use crate::edge_client::{auto_scripts_overview::AutoScriptsOverview, vehicle::Vehicle};
-use crate::{
-    auto_drive_edge_service::v1::{
-        GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-    },
-    edge_client::logs::Logs,
+use crate::auto_drive_edge_service::v1::{
+    GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
 };
+use crate::edge_client::{auto_script::AutoScript, vehicle::Vehicle};
 pub mod auto_script;
-pub mod auto_scripts_overview;
+pub mod auto_scripts;
 pub mod grpc_connect;
 pub mod logs;
 pub mod vehicle;
@@ -53,30 +50,6 @@ pub struct McuStatus {
 pub struct Status {
     pub wifi_mcu: McuStatus,
     pub wasm_mcu: McuStatus,
-}
-
-#[derive(Clone, Debug)]
-pub enum AutoScriptStatus {
-    NotReceivedByHardware,
-    ReceivedByHardware,
-    CallingMain,
-    StoppedBySelf,
-    CancelledBySafety,
-    CancelledManually,
-}
-
-#[derive(Debug, Clone)]
-pub struct AutoScript {
-    pub logs: Logs,
-    pub status: watch::Sender<AutoScriptStatus>,
-}
-
-impl AutoScript {
-    pub fn new(handle: AutoDriveEdgeServiceClient<Channel>, run_uuid: String) -> Self {
-        let logs = Logs::from_auto_script(handle, run_uuid);
-        let status = watch::Sender::<AutoScriptStatus>::new(AutoScriptStatus::ReceivedByHardware); // TODO send messages to this
-        Self { logs, status }
-    }
 }
 
 #[derive(Debug, Clone)]

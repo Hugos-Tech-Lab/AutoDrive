@@ -8,7 +8,9 @@ service AutoDriveEdgeService {
   // =======================
   // Non specific target
   rpc GetVehicles(GetVehiclesRequest) returns (GetVehiclesResponse);
-  rpc WatchAutoScriptOverview(WatchAutoScriptOverviewRequest) returns (stream WatchAutoScriptOverviewResponse);
+  rpc WatchRunningAutoScripts(WatchRunningAutoScriptsRequest) returns (stream WatchRunningAutoScriptsResponse);
+  rpc WatchQueuedAutoScripts(WatchQueuedAutoScriptsRequest) returns (stream WatchQueuedAutoScriptsResponse);
+  rpc WatchStoppedAutoScripts(WatchStoppedAutoScriptsRequest) returns (stream WatchStoppedAutoScriptsResponse);
 
   // Script specific
   rpc EnqueueAutoScript(EnqueueAutoScriptRequest) returns (EnqueueAutoScriptResponse);
@@ -28,6 +30,30 @@ service AutoDriveEdgeService {
   rpc NotifyHardwareCoordinates(NotifyHardwareCoordinatesRequest) returns (NotifyHardwareCoordinatesResponse);
 }
 
+message GetVehiclesRequest {}
+
+message GetVehiclesResponse {
+  repeated string number_plates = 1;
+}
+
+message WatchRunningAutoScriptsRequest {}
+
+message WatchRunningAutoScriptsResponse {
+  repeated AutoScript scripts = 1;
+}
+
+message WatchQueuedAutoScriptsRequest {}
+
+message WatchQueuedAutoScriptsResponse {
+  repeated AutoScript scripts = 1;
+}
+
+message WatchStoppedAutoScriptsRequest {}
+
+message WatchStoppedAutoScriptsResponse {
+  repeated AutoScript scripts = 1;
+}
+
 // LogMessage
 
 message WatchVehicleLogsRequest {
@@ -37,12 +63,6 @@ message WatchVehicleLogsRequest {
 
 message WatchVehicleLogsResponse {
   LogMessage log_message = 1;
-}
-
-message GetVehiclesRequest {}
-
-message GetVehiclesResponse {
-  repeated string number_plates = 1;
 }
 
 message HardwareCoordinate {
@@ -83,31 +103,20 @@ message Hardware {
   bool is_connected = 3;
 }
 
-message WatchAutoScriptOverviewRequest {}
-
-message WatchAutoScriptOverviewResponse {
-  AutoScripts scripts = 1;
-}
-
-message AutoScripts {
-  repeated AutoScript running = 1;
-  repeated AutoScript queued = 2;
-  repeated AutoScript stopped = 3;
-}
-
 message AutoScript {
   string owner_name = 1;
   string owner_comment = 2;
   string uploaded_script_hash = 3;
   string script_queue_time = 4;
-  optional string script_start_time = 5; // optional
-  optional string vehicle_start_time = 6; // optional
-  optional string vehicle_finish_time = 7; // optional
-  optional string script_stop_time = 8; // optional
+  optional string script_start_time = 5;
+  optional string vehicle_start_time = 6;
+  optional string vehicle_finish_time = 7;
+  optional string script_stop_time = 8;
   optional string number_plate = 9;
   uint32 run_number = 10;
   string run_uuid = 11;
   AutoScriptType script_type = 12;
+  AutoScriptRuntimeLifecycle runtime_status = 13;
 }
 
 enum AutoScriptType {
@@ -117,7 +126,7 @@ enum AutoScriptType {
   AUTO_SCRIPT_TYPE_CONFIG_ADJUST = 3;
 }
 
-enum AutoScriptStatus {
+enum AutoScriptRuntimeLifecycle {
   AUTO_SCRIPT_STATUS_UNSPECIFIED = 0;
   AUTO_SCRIPT_STATUS_NOT_RECEIVED_BY_HARDWARE = 1;
   AUTO_SCRIPT_STATUS_RECEIVED_BY_HARDWARE = 2;
@@ -132,7 +141,7 @@ message WatchAutoScriptStatusRequest {
 }
 
 message WatchAutoScriptStatusResponse {
-  AutoScriptStatus status = 1;
+  AutoScriptRuntimeLifecycle status = 1;
 }
 
 message WatchAutoScriptLogsRequest {

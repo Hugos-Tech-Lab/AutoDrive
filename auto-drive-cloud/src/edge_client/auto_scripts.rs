@@ -6,12 +6,9 @@ use tokio::{sync::watch, task::JoinHandle, time::timeout};
 use tonic::transport::Channel;
 
 use crate::{
-    auto_drive_edge_service::{
-        self,
-        v1::{
-            CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
-            auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-        },
+    auto_drive_edge_service::v1::{
+        CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
+        auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
     },
     edge_client::{auto_script::AutoScript, grpc_connect::grpc_connect},
 };
@@ -71,7 +68,7 @@ impl AutoScripts {
         Ok(())
     }
 
-    pub async fn wait_for_script(
+    pub async fn wait_for_auto_script_to_appear(
         &self,
         run_uuid: String,
         timeout_duration: Duration,

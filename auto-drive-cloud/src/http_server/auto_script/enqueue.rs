@@ -108,16 +108,39 @@ async fn handle_enqueue(
         .into_response());
     }
 
-    edge_client.scripts.enqueue();
+    let run_uuid = edge_client
+        .scripts
+        .enqueue(owner_name, owner_comment, wasm_bytes, 0)
+        .await;
 
-    let run_uuid = res.get_ref().run_uuid.clone();
+    let run_uuid = match run_uuid {
+        Ok(run_uuid) => run_uuid,
+        Err(err) => {
+            return Ok(warp::reply::with_status(
+                format!("Error ({err}) when enqueue"),
+                StatusCode::BAD_REQUEST,
+            )
+            .into_response());
+        }
+    };
 
-    // .scripts
-    // .lock()
-    // .unwrap()
-    // .entry(run_uuid.clone())
-    // .or_insert(AutoScript::new(edge_client.handle, run_uuid.clone()))
-    // .clone();
+    let auto_script = edge_client
+        .scripts
+        .wait_for_auto_script_to_appear(run_uuid, Duration::from_secs(5))
+        .await;
+
+    let auto_script = match auto_script {
+        Ok(auto_script) => auto_script,
+        Err(err) => {
+            return Ok(warp::reply::with_status(
+                format!("Failed to wait until auto script appeared ({err})"),
+                StatusCode::BAD_REQUEST,
+            )
+            .into_response());
+        }
+    };
+
+    let logs = auto_script.logs.stream_with_history().await;
 
     let logs = script.logs.stream_with_history().await;
     let mut status_rx = script.status.subscribe();

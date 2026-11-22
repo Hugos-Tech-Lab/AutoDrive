@@ -1,13 +1,8 @@
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 
-// Ensure you have these imported from your proto module
 use crate::auto_drive_edge_service::{
     self,
-    v1::{
-        AutoScriptRunningEvent, AutoScriptStoppedEvent, BatteryReadingEvent,
-        InfraredLedReadingsEvent, LogLevel, LogSystemOrigin, MotorSpeedUpdatedEvent,
-        SystemStateEvent, WasmInstalledEvent,
-    },
+    v1::{LogLevel, LogSystemOrigin},
 };
 
 pub fn to_grpc_log_message(
@@ -74,7 +69,7 @@ impl From<&crate::auto_script::AutoScript> for crate::auto_drive_edge_service::v
             run_uuid: value.run_uuid.clone(),
             number_plate: value.vehicle_number_plate.clone(),
             script_type: 0,
-            lifecycle: match value.auto_script_lifecycle {
+            lifecycle: match value.lifecycle {
                 crate::auto_scripts::AutoScriptLifecycle::Idle => 0,
                 crate::auto_scripts::AutoScriptLifecycle::SendingToWifiMcu => 0,
                 crate::auto_scripts::AutoScriptLifecycle::ReceivedByWifiMcu => 0,

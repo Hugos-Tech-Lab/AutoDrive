@@ -13,7 +13,7 @@ use tokio::{
 
 use crate::{
     auto_script::AutoScript,
-    auto_scripts::{AutoScriptLifecycle, AutoScripts},
+    auto_scripts::{AutoScriptLifecycle, AutoScriptSimplifiedLifecycle, AutoScripts},
     logs::Logs,
     vehicle::the_beginner_car::the_beginner_car_connection_handle::TheBeginnerCarConnectionHandle,
 };
@@ -83,9 +83,9 @@ impl TheBeginnerCar {
         let mut auto_script_to_start: Option<AutoScript> = None;
 
         let modified = self.scripts.scripts.send_if_modified(|auto_scripts| {
-            let active_auto_script = auto_scripts
-                .iter()
-                .find(|auto_script| auto_script.auto_script_lifecycle.is_active());
+            let active_auto_script = auto_scripts.iter().find(|auto_script| {
+                auto_script.lifecycle.simplified() == AutoScriptSimplifiedLifecycle::Driving
+            });
 
             if active_auto_script.is_some() {
                 warn!("other auto script is active");
@@ -101,7 +101,7 @@ impl TheBeginnerCar {
                 return false;
             };
 
-            auto_script.auto_script_lifecycle = AutoScriptLifecycle::SendingToWifiMcu;
+            auto_script.lifecycle = AutoScriptLifecycle::SendingToWifiMcu;
             auto_script_to_start = Some(auto_script.clone());
             true
         });
@@ -120,7 +120,7 @@ impl TheBeginnerCar {
         let vehicle_sending_wifi_mcu =
             self.vehicle_lifecycle
                 .send_if_modified(|vehicle_lifecycle| {
-                    if vehicle_lifecycle.is_active() {
+                    if vehicle_lifecycle.simplified() == AutoScriptSimplifiedLifecycle::Driving {
                         return false;
                     }
                     *vehicle_lifecycle = AutoScriptLifecycle::SendingToWifiMcu;

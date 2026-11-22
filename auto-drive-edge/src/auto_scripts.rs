@@ -29,28 +29,32 @@ pub enum AutoScriptLifecycle {
     StoppedByDisconnect,
 }
 
-impl AutoScriptLifecycle {
-    pub fn is_active(&self) -> bool {
-        if *self == AutoScriptLifecycle::SendingToWifiMcu {
-            return true;
-        }
-        if *self == AutoScriptLifecycle::ReceivedByWifiMcu {
-            return true;
-        }
-        if *self == AutoScriptLifecycle::SendingToWasmMcu {
-            return true;
-        }
-        if *self == AutoScriptLifecycle::ReceivedByWasmMcu {
-            return true;
-        }
-        if *self == AutoScriptLifecycle::StartedCallingMain {
-            return true;
-        }
-        if *self == AutoScriptLifecycle::Cancelling {
-            return true;
-        }
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AutoScriptSimplifiedLifecycle {
+    InTheQueue,
+    Driving,
+    Stopped,
+}
 
-        false
+impl AutoScriptLifecycle {
+    pub fn simplified(&self) -> AutoScriptSimplifiedLifecycle {
+        match self {
+            // IN THE QUEUE
+            AutoScriptLifecycle::Idle => AutoScriptSimplifiedLifecycle::InTheQueue,
+            // DRIVING
+            AutoScriptLifecycle::SendingToWifiMcu
+            | AutoScriptLifecycle::ReceivedByWifiMcu
+            | AutoScriptLifecycle::SendingToWasmMcu
+            | AutoScriptLifecycle::ReceivedByWasmMcu
+            | AutoScriptLifecycle::StartedCallingMain
+            | AutoScriptLifecycle::Cancelling => AutoScriptSimplifiedLifecycle::Driving,
+            // STOPPED
+            AutoScriptLifecycle::StoppedByScriptEnd
+            | AutoScriptLifecycle::StoppedBySafety
+            | AutoScriptLifecycle::StoppedByHttpCancel
+            | AutoScriptLifecycle::StoppedByDisconnect => AutoScriptSimplifiedLifecycle::Stopped,
+            // END
+        }
     }
 }
 
@@ -91,7 +95,7 @@ impl AutoScripts {
                 return false;
             };
 
-            auto_script.auto_script_lifecycle = AutoScriptLifecycle::Cancelling;
+            auto_script.lifecycle = AutoScriptLifecycle::Cancelling;
             true
         });
     }
@@ -120,8 +124,8 @@ impl AutoScripts {
         // TODO: add vehicle ID
         self.scripts.send_modify(|auto_scripts| {
             for auto_script in auto_scripts {
-                if auto_script.auto_script_lifecycle.is_active() {
-                    auto_script.auto_script_lifecycle = AutoScriptLifecycle::StoppedByDisconnect;
+                if auto_script.lifecycle.simplified() == AutoScriptSimplifiedLifecycle::Driving {
+                    auto_script.lifecycle = AutoScriptLifecycle::StoppedByDisconnect;
                 }
             }
         });
@@ -142,7 +146,7 @@ impl AutoScripts {
                 warn!("auto script not found");
                 return;
             };
-            auto_script.auto_script_lifecycle = AutoScriptLifecycle::StartedCallingMain;
+            auto_script.lifecycle = AutoScriptLifecycle::StartedCallingMain;
             auto_script.script_start_time = script_start_time;
             auto_script.vehicle_number_plate = Some(number_plate);
         });
@@ -163,7 +167,7 @@ impl AutoScripts {
                 warn!("auto script not found");
                 return;
             };
-            auto_script.auto_script_lifecycle = lifecycle;
+            auto_script.lifecycle = lifecycle;
             auto_script.vehicle_number_plate = Some(number_plate);
         });
     }

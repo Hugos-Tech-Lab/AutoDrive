@@ -108,9 +108,9 @@ async fn handle_enqueue(
         .into_response());
     }
 
-    let run_uuid = res.get_ref().run_uuid.clone();
-
     edge_client.scripts.enqueue();
+
+    let run_uuid = res.get_ref().run_uuid.clone();
 
     // .scripts
     // .lock()

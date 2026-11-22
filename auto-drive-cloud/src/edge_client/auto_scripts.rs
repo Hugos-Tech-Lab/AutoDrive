@@ -1,13 +1,17 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
+use anyhow::bail;
 use log::{info, warn};
-use tokio::{sync::watch, task::JoinHandle};
+use tokio::{sync::watch, task::JoinHandle, time::timeout};
 use tonic::transport::Channel;
 
 use crate::{
-    auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
-        auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+    auto_drive_edge_service::{
+        self,
+        v1::{
+            CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
+            auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+        },
     },
     edge_client::{auto_script::AutoScript, grpc_connect::grpc_connect},
 };
@@ -33,7 +37,7 @@ impl AutoScripts {
         }
     }
 
-    pub fn cancel(&self, run_uuid: String) {
+    pub async fn cancel(&self, run_uuid: String) -> anyhow::Result<()> {
         let valid_run_uuid;
         {
             let auto_scripts = self.auto_scripts.borrow();
@@ -50,13 +54,65 @@ impl AutoScripts {
         }
 
         if !valid_run_uuid {
-            return; // TODO: error return because not valid uuid
+            bail!("script with UUID ({run_uuid}) not found");
         }
 
-        // TODO: already release the borrow above
-        self.client
+        let response = self
+            .client
             .clone()
-            .cancel_auto_script(CancelAutoScriptRequest { run_uuid }); // TODO check response
+            .cancel_auto_script(CancelAutoScriptRequest { run_uuid })
+            .await; // TODO check response 
+
+        let _response = match response {
+            Ok(response) => response,
+            Err(err) => bail!("edge cancel request failed with status ({err})"),
+        };
+
+        Ok(())
+    }
+
+    pub async fn wait_for_script(
+        &self,
+        run_uuid: String,
+        timeout_duration: Duration,
+    ) -> anyhow::Result<AutoScript> {
+        let mut auto_scripts = self.auto_scripts.clone();
+
+        let auto_scripts = timeout(
+            timeout_duration,
+            auto_scripts.wait_for(|auto_scripts| {
+                auto_scripts
+                    .iter()
+                    .find(|auto_script| auto_script.run_uuid == run_uuid)
+                    .is_some()
+            }),
+        )
+        .await;
+
+        let auto_scripts = match auto_scripts {
+            Ok(auto_scripts) => auto_scripts,
+            Err(_err) => bail!(format!(
+                "timeout while waiting for auto script ({run_uuid})"
+            )),
+        };
+
+        let auto_scripts = match auto_scripts {
+            Ok(auto_scripts) => auto_scripts,
+            Err(err) => bail!(format!("error ({err}) while waiting for script")),
+        };
+
+        let auto_script = auto_scripts
+            .iter()
+            .find(|auto_script| auto_script.run_uuid == run_uuid);
+
+        let auto_script = match auto_script {
+            Some(auto_script) => auto_script,
+            None => {
+                bail!("waited for script, apparently found but now I'm lost (programmer bug here!)")
+            }
+        };
+
+        Ok(auto_script.clone())
     }
 
     pub async fn enqueue(
@@ -65,7 +121,7 @@ impl AutoScripts {
         owner_comment: String,
         data: Vec<u8>,
         script_type: i32,
-    ) {
+    ) -> anyhow::Result<String> {
         let response = self
             .client
             .clone()
@@ -78,30 +134,13 @@ impl AutoScripts {
             .await
             .unwrap();
 
-        // response.into_inner().run_uuid
-
-        // self.queued_auto_scripts
-        //     .scripts
-        //     .into_iter() // use .iter().cloned() if `response` is borrowed
-        //     .map(|new_script| {
-        //         if let Some(pos) = auto_scripts
-        //             .iter()
-        //             .position(|existing| existing.run_uuid == new_script.run_uuid)
-        //         {
-        //             auto_scripts.swap_remove(pos)
-        //         } else {
-        //             AutoScript::new(client.clone(), new_script.run_uuid)
-        //         }
-        //     })
-        //     .collect();
-
-        // response.
+        Ok(response.into_inner().run_uuid)
     }
 }
 
 async fn watch_auto_scripts(
     client: AutoDriveEdgeServiceClient<Channel>,
-    auto_scripts: watch::Sender<Vec<AutoScript>>,
+    tracked_auto_scripts: watch::Sender<Vec<AutoScript>>,
 ) {
     let mut stream = grpc_connect(
         client.clone(),
@@ -121,23 +160,23 @@ async fn watch_auto_scripts(
             Ok(None) => break,
         };
 
-        auto_scripts.send_modify(|auto_scripts| {
-            let updated_scripts = response
+        tracked_auto_scripts.send_modify(|tracked_auto_scripts| {
+            let updated_tracked_auto_scripts = response
                 .scripts
-                .into_iter() // use .iter().cloned() if `response` is borrowed
+                .into_iter()
                 .map(|new_script| {
-                    if let Some(pos) = auto_scripts
+                    if let Some(pos) = tracked_auto_scripts
                         .iter()
                         .position(|existing| existing.run_uuid == new_script.run_uuid)
                     {
-                        auto_scripts.swap_remove(pos)
+                        tracked_auto_scripts.swap_remove(pos)
                     } else {
                         AutoScript::new(client.clone(), new_script.run_uuid)
                     }
                 })
                 .collect();
 
-            *auto_scripts = updated_scripts;
+            *tracked_auto_scripts = updated_tracked_auto_scripts;
         });
     }
     info!("no longer watching auto scripts");

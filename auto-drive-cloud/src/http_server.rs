@@ -10,9 +10,9 @@ use crate::{
     },
 };
 pub mod auto_script;
-pub mod hardware_telemetry;
-pub mod logs;
-pub mod vehicle;
+// pub mod hardware_telemetry;
+// pub mod logs;
+// pub mod vehicle;
 
 pub async fn http_server(edge: EdgeClient) {
     let server = tokio::spawn(async move {

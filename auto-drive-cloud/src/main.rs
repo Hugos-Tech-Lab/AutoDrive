@@ -7,6 +7,7 @@ use crate::{
     edge_client::EdgeClient, http_server::http_server,
     ignore_incomplete_message::IgnoreIncompleteMessage,
 };
+pub mod auth;
 pub mod edge_client;
 pub mod hardware;
 pub mod http_server;

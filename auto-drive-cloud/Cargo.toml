@@ -32,6 +32,7 @@ log = "0.4.34"
 env_logger = "0.11.11"
 jsonwebtoken = "11.1.0"
 ts-rs = "12.0.1"
+anyhow = "1.0.104"
 
 [build-dependencies]
 tonic-prost-build = "0.14.6"

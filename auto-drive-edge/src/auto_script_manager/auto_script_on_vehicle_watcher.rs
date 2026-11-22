@@ -85,38 +85,5 @@ impl AutoScriptOnVehicleWatcher {
         script_stop_time_utc_ms: u64,
         time_trials_dnf: bool,
     ) {
-        auto_scripts.send_modify(|auto_scripts| {
-            let auto_script = auto_scripts
-                .iter_mut()
-                .find(|auto_script| auto_script.run_uuid == *run_uuid);
-
-            let Some(auto_script) = auto_script else {
-                warn!("AutoScript not found ({run_uuid})");
-                return;
-            };
-
-            if auto_script.script_stop_time.is_some() {
-                warn!("Hardware stopped but script already has a stop time.. we stopped twice? ({run_uuid})");
-                return;
-            }
-
-            auto_script.hardware.get_or_insert(vehicle.clone());
-
-            let script_stop_time = DateTime::<Utc>::from_timestamp_millis(script_stop_time_utc_ms as i64);
-
-            let Some(script_stop_time) = script_stop_time else {
-                warn!("Script stop time ({script_stop_time_utc_ms}) invalid");
-                return;
-            };
-
-            auto_script.script_stop_time = Some(script_stop_time);
-
-            if auto_script.time_trials_dnf.is_some() {
-                warn!("Hardware stopped and DNF is some? ({run_uuid})");
-                return;  
-            } 
-
-            auto_script.time_trials_dnf = Some(time_trials_dnf);
-        });
     }
 }

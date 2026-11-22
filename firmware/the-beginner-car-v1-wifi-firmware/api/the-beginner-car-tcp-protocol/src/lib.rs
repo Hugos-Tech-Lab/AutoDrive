@@ -32,9 +32,16 @@ pub enum TheBeginnerCarOutgoingMessages {
     Log {
         log: LogMessage,
     },
-    SystemState {},
-    WasmInstalled,
-    AutoScriptStarted {
+    AutoScriptReceivedByWifiMcu {
+        run_uuid: String,
+    },
+    AutoScriptSendingToWasmMcu {
+        run_uuid: String,
+    },
+    AutoScriptReceivedWasmMcu {
+        run_uuid: String,
+    },
+    AutoScriptStartedCallingMain {
         run_uuid: String,
         script_start_time_utc_ms: u64,
     },

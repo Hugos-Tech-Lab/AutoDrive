@@ -1,6 +1,8 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use auto_drive_common_types::LogMessage;
+use chrono::{DateTime, Utc};
+use log::warn;
 use the_beginner_car_tcp_protocol::TheBeginnerCarIncomingMessages;
 use tokio::sync::{broadcast::Receiver, watch};
 
@@ -17,14 +19,40 @@ use crate::{
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
-#[derive(Clone, Debug)]
-pub enum AutoScriptStatus {
-    NotReceivedByHardware,
-    ReceivedByHardware,
-    CallingMain,
-    StoppedBySelf,
-    CancelledBySafety,
-    CancelledManually,
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AutoScriptLifecycle {
+    Idle,
+    SendingToWifiMcu,
+    ReceivedByWifiMcu,
+    SendingToWasmMcu,
+    ReceivedByWasmMcu,
+    StartedCallingMain,
+    StoppedByScriptEnd,
+    StoppedBySafety,
+    StoppedByHttpCancel,
+    StoppedByDisconnect
+}
+
+impl AutoScriptLifecycle {
+    pub fn is_active(&self) -> bool {
+        if *self == AutoScriptLifecycle::SendingToWifiMcu {
+            return true;
+        }
+        if *self == AutoScriptLifecycle::ReceivedByWifiMcu {
+            return true;
+        }
+        if *self == AutoScriptLifecycle::SendingToWasmMcu {
+            return true;
+        }
+        if *self == AutoScriptLifecycle::ReceivedByWasmMcu {
+            return true;
+        }
+        if *self == AutoScriptLifecycle::StartedCallingMain {
+            return true;
+        }
+
+        false
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -35,7 +63,7 @@ pub enum AutoScriptEvents {
 
 #[derive(Clone, Debug)]
 pub struct AutoScripts {
-    scripts: watch::Sender<Vec<AutoScript>>,
+    pub scripts: watch::Sender<Vec<AutoScript>>,
 }
 
 impl AutoScripts {
@@ -45,157 +73,223 @@ impl AutoScripts {
         Self { scripts }
     }
 
-    pub fn notify_vehicle_started(&self) {
-        //
+    pub fn start_auto_script(&self, ) {
+        //   
     }
 
-    pub fn notify_vehicle_stopped(&self) {
-        //
-    }
-}
-
-impl AutoScripts {
-    //
-}
-
-pub struct AutoScriptManager {
-    vehicles: Vec<TheBeginnerCar>,
-    scripts: watch::Sender<Vec<AutoScript>>,
-}
-
-impl AutoScriptManager {
-    pub fn new(vehicles: Vec<TheBeginnerCar>) -> Self {
-        let (scripts, _) = watch::channel::<AutoScripts>(AutoScripts::default());
-
-        let auto_script_on_vehicle_watcher =
-            AutoScriptOnVehicleWatcher::new(vehicles.clone(), scripts.clone());
-
-        Self { vehicles, scripts }
-    }
-
-    pub async fn cancel_auto_script(&self, run_uuid: String) {
-        let hardware = self
-            .scripts
-            .borrow()
-            .running
-            .iter()
-            .find(|script| script.run_uuid == run_uuid)
-            .and_then(|script| script.hardware.clone());
-
-        if let Some(hardware) = hardware {
-            hardware
-                .send(TheBeginnerCarIncomingMessages::CancelAutoScript {
-                    run_uuid: run_uuid.clone(),
-                })
-                .await;
-            return;
-        }
-
-        self.scripts.send_if_modified(|state| {
-            let Some(pos) = state
-                .queued
-                .iter()
-                .position(|script| script.run_uuid == run_uuid)
-            else {
-                return false;
-            };
-
-            if let Some(script) = state.queued.remove(pos) {
-                state.stopped.push(script);
-            }
-            true
+    pub fn notify_vehicle_disconnected(&self) { // TODO: add vehicle ID  
+        self.scripts.send_modify(|auto_scripts| {
+            for auto_script in auto_scripts {
+                if auto_script.auto_script_lifecycle.is_active() {
+                    auto_script.auto_script_lifecycle = AutoScriptLifecycle::StoppedByDisconnect;
+                } 
+            } 
         });
     }
 
-    pub async fn run_auto_script(&self, run_uuid: String, number_plate: String) -> Result<(), ()> {
-        let Some(the_beginner_car) = self
-            .vehicles
-            .iter()
-            .find(|car| car.metadata.number_plate == number_plate)
-        else {
-            return Err(());
-        };
-
-        let mut script = None;
-
-        self.scripts.send_if_modified(|state| {
-            let Some(auto_script) = state
-                .queued
+    pub fn notify_auto_script_started(&self, run_uuid: String, vehicle: TheBeginnerCar, script_start_time: DateTime<Utc>) {
+        self.scripts.send_modify(|auto_scripts| {
+            let auto_script = auto_scripts
                 .iter_mut()
-                .find(|s| s.run_uuid == run_uuid && s.hardware.is_none())
-            else {
-                return false;
+                .find(|auto_script| auto_script.run_uuid == run_uuid);
+
+            let Some(auto_script) = auto_script else {
+                warn!("auto script not found");
+                return;
+            };
+            auto_script.auto_script_lifecycle = AutoScriptLifecycle::StartedCallingMain;
+            auto_script.script_start_time = Some(script_start_time);
+            auto_script.hardware = Some(vehicle);
+        });
+    }
+
+    pub fn set_auto_script_state(&self, run_uuid: String, lifecycle: AutoScriptLifecycle, vehicle: TheBeginnerCar) {
+        self.scripts.send_modify(|auto_scripts| {
+            let auto_script = auto_scripts
+                .iter_mut()
+                .find(|auto_script| auto_script.run_uuid == run_uuid);
+
+            let Some(auto_script) = auto_script else {
+                warn!("auto script not found");
+                return;
+            };
+            auto_script.auto_script_lifecycle = lifecycle;
+            auto_script.hardware = Some(vehicle);
+        });
+    }
+
+
+    pub fn notify_auto_script_stopped(&self, run_uuid: String, vehicle: TheBeginnerCar, script_stop_time: DateTime<Utc>, time_trials_dnf: bool) {
+        self.scripts.send_modify(|auto_scripts| {
+            let auto_script = auto_scripts
+                .iter_mut()    
+                .find(|auto_script| auto_script.run_uuid == *run_uuid);
+   
+            let Some(auto_script) = auto_script else {
+                warn!("AutoScript not found ({run_uuid})");
+                return;
             };
 
-            auto_script.hardware = Some(the_beginner_car.clone());
-            script = Some(the_beginner_car_tcp_protocol::AutoScript {
-                run_uuid: auto_script.run_uuid.clone(),
-                preprocessed_file_hash: auto_script.uploaded_script_hash.clone(),
-                run_number: auto_script.run_number,
-                script: auto_script.uploaded_script.to_vec(),
-            });
-            true
+            if auto_script.script_stop_time.is_some() {
+                warn!("Hardware stopped but script already has a stop time.. we stopped twice? ({run_uuid})");
+                return;
+            }
+
+            auto_script.hardware.get_or_insert(vehicle.clone());
+
+            auto_script.script_stop_time = Some(script_stop_time);
+
+            if auto_script.time_trials_dnf.is_some() {
+                warn!("Hardware stopped and DNF is some? ({run_uuid})");
+                return;  
+            } 
+
+            auto_script.time_trials_dnf = Some(time_trials_dnf);
         });
-
-        if let Some(script) = script {
-            the_beginner_car
-                .send(TheBeginnerCarIncomingMessages::RunAutoScript { script })
-                .await;
-        }
-
-        Ok(())
     }
 
-    pub fn enqueue_auto_script(
-        &self,
-        owner_name: String,
-        owner_comment: String,
-        data: Vec<u8>,
-        script_type: AutoScriptType,
-    ) -> String {
-        let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
 
-        let auto_script = AutoScript::new(
-            owner_name,
-            owner_comment,
-            run_number,
-            data.into(),
-            script_type,
-        );
-        let auto_script_run_uuid = auto_script.run_uuid.clone();
-
-        self.scripts.send_modify(|state| {
-            state.queued.push_back(auto_script);
-        });
-
-        auto_script_run_uuid
-    }
-
-    pub async fn watch_auto_script_logs(
-        &self,
-        uuid: String,
-    ) -> Option<(Vec<LogMessage>, Receiver<LogMessage>)> {
-        let (logs_history, logs_live_rx) = {
-            let state = self.scripts.borrow();
-            let auto_script = state
-                .queued
-                .iter()
-                .chain(state.running.iter())
-                .find(|auto_script| auto_script.run_uuid == uuid)?;
-
-            (
-                auto_script.logs_history.clone(),
-                auto_script.logs_live_tx.subscribe(),
-            )
-        };
-
-        let logs_history = logs_history.read().await.clone();
-        Some((logs_history, logs_live_rx))
-    }
-
-    pub fn watch_auto_script_overview(&self) -> (AutoScripts, watch::Receiver<AutoScripts>) {
-        let mut receiver = self.scripts.subscribe();
-        let snapshot = receiver.borrow_and_update().clone();
-        (snapshot, receiver)
-    }
+    // 
 }
+
+// pub struct AutoScriptManager {
+//     vehicles: Vec<TheBeginnerCar>,
+//     scripts: watch::Sender<Vec<AutoScript>>,
+// }
+
+// impl AutoScriptManager {
+//     pub fn new(vehicles: Vec<TheBeginnerCar>) -> Self {
+//         let (scripts, _) = watch::channel::<AutoScripts>(AutoScripts::default());
+
+//         let auto_script_on_vehicle_watcher =
+//             AutoScriptOnVehicleWatcher::new(vehicles.clone(), scripts.clone());
+
+//         Self { vehicles, scripts }
+//     }
+
+//     pub async fn cancel_auto_script(&self, run_uuid: String) {
+//         let hardware = self
+//             .scripts
+//             .borrow()
+//             .running
+//             .iter()
+//             .find(|script| script.run_uuid == run_uuid)
+//             .and_then(|script| script.hardware.clone());
+
+//         if let Some(hardware) = hardware {
+//             hardware
+//                 .send(TheBeginnerCarIncomingMessages::CancelAutoScript {
+//                     run_uuid: run_uuid.clone(),
+//                 })
+//                 .await;
+//             return;
+//         }
+
+//         self.scripts.send_if_modified(|state| {
+//             let Some(pos) = state
+//                 .queued
+//                 .iter()
+//                 .position(|script| script.run_uuid == run_uuid)
+//             else {
+//                 return false;
+//             };
+
+//             if let Some(script) = state.queued.remove(pos) {
+//                 state.stopped.push(script);
+//             }
+//             true
+//         });
+//     }
+
+//     pub async fn run_auto_script(&self, run_uuid: String, number_plate: String) -> Result<(), ()> {
+//         let Some(the_beginner_car) = self
+//             .vehicles
+//             .iter()
+//             .find(|car| car.metadata.number_plate == number_plate)
+//         else {
+//             return Err(());
+//         };
+
+//         let mut script = None;
+
+//         self.scripts.send_if_modified(|state| {
+//             let Some(auto_script) = state
+//                 .queued
+//                 .iter_mut()
+//                 .find(|s| s.run_uuid == run_uuid && s.hardware.is_none())
+//             else {
+//                 return false;
+//             };
+
+//             auto_script.hardware = Some(the_beginner_car.clone());
+//             script = Some(the_beginner_car_tcp_protocol::AutoScript {
+//                 run_uuid: auto_script.run_uuid.clone(),
+//                 preprocessed_file_hash: auto_script.uploaded_script_hash.clone(),
+//                 run_number: auto_script.run_number,
+//                 script: auto_script.uploaded_script.to_vec(),
+//             });
+//             true
+//         });
+
+//         if let Some(script) = script {
+//             the_beginner_car
+//                 .send(TheBeginnerCarIncomingMessages::RunAutoScript { script })
+//                 .await;
+//         }
+
+//         Ok(())
+//     }
+
+//     pub fn enqueue_auto_script(
+//         &self,
+//         owner_name: String,
+//         owner_comment: String,
+//         data: Vec<u8>,
+//         script_type: AutoScriptType,
+//     ) -> String {
+//         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
+
+//         let auto_script = AutoScript::new(
+//             owner_name,
+//             owner_comment,
+//             run_number,
+//             data.into(),
+//             script_type,
+//         );
+//         let auto_script_run_uuid = auto_script.run_uuid.clone();
+
+//         self.scripts.send_modify(|state| {
+//             state.queued.push_back(auto_script);
+//         });
+
+//         auto_script_run_uuid
+//     } 
+
+//     pub async fn watch_auto_script_logs(
+//         &self,
+//         uuid: String,
+//     ) -> Option<(Vec<LogMessage>, Receiver<LogMessage>)> {
+//         let (logs_history, logs_live_rx) = {
+//             let state = self.scripts.borrow();
+//             let auto_script = state
+//                 .queued
+//                 .iter()
+//                 .chain(state.running.iter())
+//                 .find(|auto_script| auto_script.run_uuid == uuid)?;
+
+//             (
+//                 auto_script.logs_history.clone(),
+//                 auto_script.logs_live_tx.subscribe(),
+//             )
+//         };
+
+//         let logs_history = logs_history.read().await.clone();
+//         Some((logs_history, logs_live_rx))
+//     }
+
+//     pub fn watch_auto_script_overview(&self) -> (AutoScripts, watch::Receiver<AutoScripts>) {
+//         let mut receiver = self.scripts.subscribe();
+//         let snapshot = receiver.borrow_and_update().clone();
+//         (snapshot, receiver)
+//     }
+// }

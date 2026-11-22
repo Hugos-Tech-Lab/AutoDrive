@@ -9,10 +9,7 @@ use tokio::sync::{
 };
 use uuid::Uuid;
 
-use crate::{
-    auto_script_manager::{AutoScriptEvents, AutoScriptStatus},
-    the_beginner_car::TheBeginnerCar,
-};
+use crate::auto_script_manager::{AutoScriptEvents, AutoScriptLifecycle};
 
 #[derive(Clone, Debug)]
 pub enum AutoScriptType {
@@ -36,8 +33,8 @@ pub struct AutoScript {
     pub uploaded_script_hash: String,
     pub logs_live_tx: Sender<LogMessage>,
     pub logs_history: Arc<RwLock<Vec<LogMessage>>>,
-    pub hardware: Option<TheBeginnerCar>,
-    pub hardware_response: AutoScriptStatus,
+    pub vehicle_number_plate: Option<String>,
+    pub auto_script_lifecycle: AutoScriptLifecycle,
     pub script_queue_time: DateTime<Utc>,
     pub script_start_time: Option<DateTime<Utc>>,
     pub time_trials_start_time: Option<DateTime<Utc>>,
@@ -66,7 +63,7 @@ impl AutoScript {
 
         // TODO: bring this back
         // let long_lived_hardware_listener_handle = tokio::task::spawn({
-        //     let hardware_rx = hardware.incoming_tx.subscribe();
+        //     let hardware_rx = vehicle_number_plate.incoming_tx.subscribe();
         //     let run_uuid = run_uuid.clone();
         //     let events_history = events_history.clone();
         //     let events_tx = events_tx.clone();
@@ -92,13 +89,14 @@ impl AutoScript {
             // long_lived_hardware_listener_handle: Arc::from(long_lived_hardware_listener_handle),
             logs_live_tx,
             logs_history,
-            hardware: None,
-            hardware_response: AutoScriptStatus::NotReceivedByHardware,
+            vehicle_number_plate: None,
+            auto_script_lifecycle: AutoScriptLifecycle::Idle,
             script_queue_time: Utc::now(),
             script_start_time: None,
             script_stop_time: None,
-            vehicle_start_time: None,
-            vehicle_finish_time: None,
+            time_trials_start_time: None,
+            time_trials_finish_time: None,
+            time_trials_dnf: None,
             script_type,
         }
     }

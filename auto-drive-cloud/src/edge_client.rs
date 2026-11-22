@@ -21,19 +21,9 @@ pub mod vehicle_position;
 
 pub mod watch_vehicle_positions;
 
-type HardwarePositions = HashMap<String, Pose>;
-
 pub enum StartAutoScriptResponse {
     Uuid { uuid: String },
     EdgeClientUnavailable,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Pose {
-    pub number_plate: String,
-    pub x: f32,
-    pub y: f32,
-    pub rotation: f32,
 }
 
 // TODO FILL THIS

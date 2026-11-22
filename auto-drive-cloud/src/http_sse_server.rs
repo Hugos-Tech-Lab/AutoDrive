@@ -1,11 +1,13 @@
 use log::info;
 use warp::Filter;
 
-use crate::http::hardware::overview::hardware_overview;
-use crate::http::hardware::positions::hardware_positions;
+use crate::http_sse_server::hardware::overview::hardware_overview;
+use crate::http_sse_server::hardware::positions::hardware_positions;
 use crate::{
     edge_client::EdgeClient,
-    http::autoscript::{cancel::cancel, logs::autoscript_watch, overview::autoscript_overview},
+    http_sse_server::autoscript::{
+        cancel::cancel, logs::autoscript_watch, overview::autoscript_overview,
+    },
 };
 pub mod autoscript;
 pub mod hardware;

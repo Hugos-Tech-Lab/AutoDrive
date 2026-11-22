@@ -4,11 +4,12 @@ use env_logger::Env;
 use log::info;
 
 use crate::{
-    edge_client::EdgeClient, http::http_server, ignore_incomplete_message::IgnoreIncompleteMessage,
+    edge_client::EdgeClient, http_sse_server::http_server,
+    ignore_incomplete_message::IgnoreIncompleteMessage,
 };
 pub mod edge_client;
 pub mod hardware;
-pub mod http;
+pub mod http_sse_server;
 pub mod ignore_incomplete_message;
 
 pub mod auto_drive_edge_service {

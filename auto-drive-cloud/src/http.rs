@@ -12,16 +12,15 @@ pub mod hardware;
 pub mod hardware_telemetry;
 pub mod logs;
 
-pub async fn http_server(receiver: EdgeClient) {
+pub async fn http_server(edge: EdgeClient) {
     let server = tokio::spawn(async move {
-        let watch_logs = logs(receiver.logs.clone());
         // let run = run(receiver.clone());
         let cancel = cancel(receiver.clone());
         let autoscript_watch = autoscript_watch(receiver.clone());
         let autoscript_overview = autoscript_overview(receiver.clone());
         let hardware_overview = hardware_overview(receiver.clone());
         let hardware_positions = hardware_positions(receiver.clone());
-        let hardware_telemetry = hardware_telemetry(receiver.logs);
+        // let hardware_telemetry = hardware_telemetry(receiver.logs);
 
         let cors = warp::cors()
             .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])

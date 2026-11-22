@@ -17,11 +17,6 @@ impl Vehicle {
     pub fn new(client: AutoDriveEdgeServiceClient<Channel>, number_plate: String) -> Self {
         let logs = Logs::from_vehicle(client.clone(), number_plate.clone());
 
-        Self {
-            number_plate,
-            logs,
-            // position: (),
-            // status: (),
-        }
+        Self { number_plate, logs }
     }
 }

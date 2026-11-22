@@ -1,20 +1,17 @@
-use std::{
-    collections::HashMap,
-    error::Error,
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{collections::HashMap, error::Error, time::Duration};
 
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use tokio::sync::watch;
 use tokio::time::sleep;
 use tonic::transport::Channel;
 
-use crate::auto_drive_edge_service::v1::{
-    GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-};
 use crate::edge_client::{auto_script::AutoScript, vehicle::Vehicle};
+use crate::{
+    auto_drive_edge_service::v1::{
+        GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+    },
+    edge_client::auto_scripts::AutoScripts,
+};
 pub mod auto_script;
 pub mod auto_scripts;
 pub mod grpc_connect;
@@ -55,9 +52,8 @@ pub struct Status {
 #[derive(Debug, Clone)]
 pub struct EdgeClient {
     pub handle: AutoDriveEdgeServiceClient<Channel>,
-    pub scripts_overview: AutoScriptsOverview,
     pub vehicles: Vec<Vehicle>,
-    pub scripts: Arc<Mutex<HashMap<String, AutoScript>>>,
+    pub scripts: AutoScripts,
 }
 
 impl EdgeClient {
@@ -89,13 +85,12 @@ impl EdgeClient {
             .map(|number_plate| Vehicle::new(client.clone(), number_plate.clone()))
             .collect();
 
-        let scripts_overview = AutoScriptsOverview::new(client.clone());
+        let scripts = AutoScripts::new(client.clone());
 
         Ok(EdgeClient {
             handle: client,
-            scripts_overview,
             vehicles,
-            scripts: Arc::new(Mutex::new(HashMap::new())),
+            scripts,
         })
     }
 }

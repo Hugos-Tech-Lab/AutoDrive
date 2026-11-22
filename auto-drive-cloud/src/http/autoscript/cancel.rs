@@ -1,10 +1,10 @@
 use bytes::Bytes;
-use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
+// use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 use serde::Deserialize;
 use std::convert::Infallible;
 use warp::{Filter, Reply, http::StatusCode};
 
-use crate::edge_client::{EdgeClient, ToEdgeMessage};
+use crate::edge_client::EdgeClient;
 
 #[derive(Debug, Deserialize)]
 pub struct CancelRequest {
@@ -47,16 +47,13 @@ pub struct CancelRequest {
 // }
 
 pub fn cancel(
-    hardware: EdgeClient,
+    edge: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
-    let sender = hardware.sender.clone();
-
     warp::path!("autoscript" / "cancel")
         .and(warp::post())
-        // Accept optional/empty JSON bodies gracefully
         .and(warp::body::bytes())
         .and_then(move |bytes: Bytes| {
-            let sender = sender.clone();
+            let edge = edge.clone();
             async move {
                 // Parse run_uuid if present in JSON payload
                 let cancel_req: CancelRequest = if bytes.is_empty() {
@@ -65,19 +62,7 @@ pub fn cancel(
                     serde_json::from_slice(&bytes).unwrap_or(CancelRequest { run_uuid: None })
                 };
 
-                let message = ToEdgeMessage::CancelAutoScript {
-                    run_uuid: cancel_req.run_uuid.unwrap(),
-                };
-
-                if sender.send(message).await.is_err() {
-                    return Ok::<_, Infallible>(
-                        warp::reply::with_status(
-                            "Device channel is closed",
-                            StatusCode::SERVICE_UNAVAILABLE,
-                        )
-                        .into_response(),
-                    );
-                }
+                edge.scripts.cancel(cancel_req.run_uuid.unwrap()); // TODO handle response + no unwrap
 
                 Ok::<_, Infallible>(
                     warp::reply::with_status("Cancel request sent", StatusCode::OK).into_response(),

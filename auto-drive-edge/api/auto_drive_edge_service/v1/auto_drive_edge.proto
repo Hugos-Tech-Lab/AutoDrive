@@ -8,9 +8,7 @@ service AutoDriveEdgeService {
   // =======================
   // Non specific target
   rpc GetVehicles(GetVehiclesRequest) returns (GetVehiclesResponse);
-  rpc WatchRunningAutoScripts(WatchRunningAutoScriptsRequest) returns (stream WatchRunningAutoScriptsResponse);
-  rpc WatchQueuedAutoScripts(WatchQueuedAutoScriptsRequest) returns (stream WatchQueuedAutoScriptsResponse);
-  rpc WatchStoppedAutoScripts(WatchStoppedAutoScriptsRequest) returns (stream WatchStoppedAutoScriptsResponse);
+  rpc WatchAutoScripts(WatchAutoScriptsRequest) returns (stream WatchAutoScriptsResponse);
 
   // Script specific
   rpc EnqueueAutoScript(EnqueueAutoScriptRequest) returns (EnqueueAutoScriptResponse);
@@ -36,21 +34,9 @@ message GetVehiclesResponse {
   repeated string number_plates = 1;
 }
 
-message WatchRunningAutoScriptsRequest {}
+message WatchAutoScriptsRequest {}
 
-message WatchRunningAutoScriptsResponse {
-  repeated AutoScript scripts = 1;
-}
-
-message WatchQueuedAutoScriptsRequest {}
-
-message WatchQueuedAutoScriptsResponse {
-  repeated AutoScript scripts = 1;
-}
-
-message WatchStoppedAutoScriptsRequest {}
-
-message WatchStoppedAutoScriptsResponse {
+message WatchAutoScriptsResponse {
   repeated AutoScript scripts = 1;
 }
 
@@ -116,7 +102,8 @@ message AutoScript {
   uint32 run_number = 10;
   string run_uuid = 11;
   AutoScriptType script_type = 12;
-  AutoScriptRuntimeLifecycle runtime_status = 13;
+  AutoScriptLifecycle lifecycle = 13;
+  AutoScriptRuntimeLifecycle runtime_lifecycle = 14;
 }
 
 enum AutoScriptType {
@@ -124,6 +111,13 @@ enum AutoScriptType {
   AUTO_SCRIPT_TYPE_TIME_TRIALS = 1;
   AUTO_SCRIPT_TYPE_REPOSITION = 2;
   AUTO_SCRIPT_TYPE_CONFIG_ADJUST = 3;
+}
+
+enum AutoScriptLifecycle {
+  AUTO_SCRIPT_LIFECYCLE_UNSPECIFIED = 0;
+  AUTO_SCRIPT_LIFECYCLE_QUEUED = 1;
+  AUTO_SCRIPT_LIFECYCLE_RUNNING = 2;
+  AUTO_SCRIPT_LIFECYCLE_STOPPED = 3;
 }
 
 enum AutoScriptRuntimeLifecycle {

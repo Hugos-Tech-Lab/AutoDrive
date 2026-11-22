@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use crate::{
     auto_drive_edge_service::v1::{AutoScriptType, EnqueueAutoScriptRequest},
-    edge_client::{AutoScript, AutoScriptStatus, EdgeClient},
+    edge_client::EdgeClient,
 };
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
@@ -108,37 +108,16 @@ async fn handle_enqueue(
         .into_response());
     }
 
-    let res = edge_client
-        .handle
-        .clone()
-        .enqueue_auto_script(EnqueueAutoScriptRequest {
-            owner_name,
-            owner_comment,
-            data: wasm_bytes,
-            script_type: AutoScriptType::TimeTrials as i32,
-        })
-        .await;
-
-    let res = match res {
-        Ok(res) => res,
-        Err(err) => {
-            return Ok(warp::reply::with_status(
-                "Device channel is closed",
-                StatusCode::SERVICE_UNAVAILABLE,
-            )
-            .into_response());
-        }
-    };
-
     let run_uuid = res.get_ref().run_uuid.clone();
 
-    let script = edge_client
-        .scripts
-        .lock()
-        .unwrap()
-        .entry(run_uuid.clone())
-        .or_insert(AutoScript::new(edge_client.handle, run_uuid.clone()))
-        .clone();
+    edge_client.scripts.enqueue();
+
+    // .scripts
+    // .lock()
+    // .unwrap()
+    // .entry(run_uuid.clone())
+    // .or_insert(AutoScript::new(edge_client.handle, run_uuid.clone()))
+    // .clone();
 
     let logs = script.logs.stream_with_history().await;
     let mut status_rx = script.status.subscribe();

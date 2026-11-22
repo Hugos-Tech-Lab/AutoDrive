@@ -15,7 +15,7 @@ use crate::{
         auto_script::{AutoScript, AutoScriptType},
         auto_script_on_vehicle_watcher::AutoScriptOnVehicleWatcher,
     },
-    the_beginner_car_comms::TheBeginnerCarComms,
+    the_beginner_car::TheBeginnerCar,
 };
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
@@ -38,12 +38,12 @@ pub enum AutoScriptEvents {
 
 pub struct AutoScriptManager {
     auto_script_on_vehicle_watcher: AutoScriptOnVehicleWatcher,
-    vehicles: Vec<TheBeginnerCarComms>,
+    vehicles: Vec<TheBeginnerCar>,
     scripts: watch::Sender<Vec<AutoScript>>,
 }
 
 impl AutoScriptManager {
-    pub fn new(vehicles: Vec<TheBeginnerCarComms>) -> Self {
+    pub fn new(vehicles: Vec<TheBeginnerCar>) -> Self {
         let (scripts, _) = watch::channel::<AutoScripts>(AutoScripts::default());
 
         let auto_script_on_vehicle_watcher =

@@ -13,15 +13,18 @@ use tokio::{
     time::{sleep, timeout},
 };
 
+pub mod the_beginner_car_auto_script_watcher;
+pub mod the_beginner_car_connection_handle;
+
 #[derive(Debug)]
-pub struct TheBeginnerCarComms {
+pub struct TheBeginnerCar {
     pub metadata: TheBeginnerCarMetadata,
     pub connected_rx: watch::Receiver<bool>,
     outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
     pub incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
 }
 
-impl Clone for TheBeginnerCarComms {
+impl Clone for TheBeginnerCar {
     fn clone(&self) -> Self {
         Self {
             metadata: self.metadata.clone(),
@@ -32,7 +35,7 @@ impl Clone for TheBeginnerCarComms {
     }
 }
 
-impl TheBeginnerCarComms {
+impl TheBeginnerCar {
     pub fn new(device_metadata: TheBeginnerCarMetadata) -> (Self, JoinHandle<()>) {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
         let (incoming_tx, incoming_rx) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);

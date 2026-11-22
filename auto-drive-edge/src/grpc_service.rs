@@ -19,20 +19,20 @@ use crate::{
     },
     auto_script_manager::{AutoScriptManager, auto_script::AutoScriptType},
     grpc_service::types::to_grpc_log_message,
-    the_beginner_car_comms::TheBeginnerCarComms,
+    the_beginner_car::TheBeginnerCar,
 };
 
 pub mod types;
 
 pub struct GrpcService {
     auto_script_manager: Arc<AutoScriptManager>,
-    the_beginner_cars: Vec<TheBeginnerCarComms>,
+    the_beginner_cars: Vec<TheBeginnerCar>,
 }
 
 impl GrpcService {
     pub fn new(
         auto_script_manager: Arc<AutoScriptManager>,
-        the_beginner_cars: Vec<TheBeginnerCarComms>,
+        the_beginner_cars: Vec<TheBeginnerCar>,
     ) -> Self {
         Self {
             auto_script_manager,

@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     auto_script_manager::{AutoScriptEvents, AutoScriptStatus},
-    the_beginner_car_comms::TheBeginnerCarComms,
+    the_beginner_car::TheBeginnerCar,
 };
 
 #[derive(Clone, Debug)]
@@ -36,7 +36,7 @@ pub struct AutoScript {
     pub uploaded_script_hash: String,
     pub logs_live_tx: Sender<LogMessage>,
     pub logs_history: Arc<RwLock<Vec<LogMessage>>>,
-    pub hardware: Option<TheBeginnerCarComms>,
+    pub hardware: Option<TheBeginnerCar>,
     pub hardware_response: AutoScriptStatus,
     pub script_queue_time: DateTime<Utc>,
     pub script_start_time: Option<DateTime<Utc>>,

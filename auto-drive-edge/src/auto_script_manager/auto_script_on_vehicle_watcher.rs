@@ -1,4 +1,3 @@
-
 use chrono::{DateTime, Utc};
 use log::{info, warn};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
@@ -11,7 +10,7 @@ use tokio::{
 };
 
 use crate::{
-    auto_script_manager::auto_script::AutoScript, the_beginner_car_comms::TheBeginnerCarComms,
+    auto_script_manager::auto_script::AutoScript, vehicle::the_beginner_car::TheBeginnerCar,
 };
 
 pub struct AutoScriptOnVehicleWatcher {
@@ -20,7 +19,7 @@ pub struct AutoScriptOnVehicleWatcher {
 
 impl AutoScriptOnVehicleWatcher {
     pub fn new(
-        the_beginner_cars: Vec<TheBeginnerCarComms>,
+        the_beginner_cars: Vec<TheBeginnerCar>,
         scripts: watch::Sender<Vec<AutoScript>>,
     ) -> Self {
         let watchers = the_beginner_cars
@@ -38,7 +37,7 @@ impl AutoScriptOnVehicleWatcher {
     }
 
     async fn watch_vehicle_state_change(
-        the_beginner_car: TheBeginnerCarComms,
+        the_beginner_car: TheBeginnerCar,
         scripts: watch::Sender<Vec<AutoScript>>,
     ) {
         let mut incoming_rx = the_beginner_car.incoming_tx.subscribe();
@@ -81,7 +80,7 @@ impl AutoScriptOnVehicleWatcher {
 
     pub async fn on_hardware_response_auto_script_stopped(
         auto_scripts: watch::Sender<Vec<AutoScript>>,
-        vehicle: &TheBeginnerCarComms,
+        vehicle: &TheBeginnerCar,
         run_uuid: String,
         script_stop_time_utc_ms: u64,
         time_trials_dnf: bool,

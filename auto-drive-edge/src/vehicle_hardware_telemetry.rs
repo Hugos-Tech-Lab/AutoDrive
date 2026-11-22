@@ -2,7 +2,7 @@ use opentelemetry::{KeyValue, global, metrics::Gauge};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 use tokio::{sync::broadcast, task::JoinSet};
 
-use crate::the_beginner_car_comms::TheBeginnerCarComms;
+use crate::vehicle::the_beginner_car::TheBeginnerCar;
 
 #[derive(Debug, Clone)]
 struct VehicleHardwareTelemetryGauges {
@@ -28,7 +28,7 @@ pub struct VehicleHardwareTelemetry {
 }
 
 impl VehicleHardwareTelemetry {
-    pub fn new(the_beginner_cars: Vec<TheBeginnerCarComms>) -> Self {
+    pub fn new(the_beginner_cars: Vec<TheBeginnerCar>) -> Self {
         let gauges = VehicleHardwareTelemetryGauges::new();
 
         let mut the_beginner_car_watcher_handles = tokio::task::JoinSet::new();

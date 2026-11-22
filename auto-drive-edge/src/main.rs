@@ -15,7 +15,7 @@ use std::error::Error;
 pub mod auto_drive_edge_server;
 pub mod auto_script_manager;
 pub mod grpc_service;
-pub mod the_beginner_car_comms;
+pub mod vehicle;
 pub mod vehicle_hardware_telemetry;
 
 pub mod auto_drive_edge_service {

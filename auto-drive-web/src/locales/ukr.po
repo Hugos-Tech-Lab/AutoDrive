@@ -553,3 +553,9 @@ msgstr ""
 #: src/lib/components/Dashboard/Scripts/Scripts.svelte
 msgid "Live"
 msgstr ""
+
+#~ msgid "No active auto scripts."
+#~ msgstr ""
+
+#~ msgid "<0/> Auto Scripts"
+#~ msgstr ""

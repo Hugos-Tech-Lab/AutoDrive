@@ -553,3 +553,9 @@ msgstr "NETWORK ERROR. Press to retry."
 #: src/lib/components/Dashboard/Scripts/Scripts.svelte
 msgid "Live"
 msgstr "Live"
+
+#~ msgid "No active auto scripts."
+#~ msgstr "No active auto scripts."
+
+#~ msgid "<0/> Auto Scripts"
+#~ msgstr "<0/> Auto Scripts"

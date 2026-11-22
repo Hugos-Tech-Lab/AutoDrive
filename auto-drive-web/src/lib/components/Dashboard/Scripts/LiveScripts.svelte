@@ -3,17 +3,22 @@
   import { endpointRoot } from "../../../../endpoint";
 
   type AutoScript = {
-    owner_name: string;
-    owner_comment: string;
-    uploaded_script_hash: string;
-    script_queue_time: string;
+    owner_name?: string;
+    owner_comment?: string;
+    uploaded_script_hash?: string;
+    script_queue_time?: string;
     script_start_time?: string;
     vehicle_start_time?: string;
     vehicle_finish_time?: string;
     script_stop_time?: number;
-    run_number: number;
+    run_number?: number;
     run_uuid: string;
-    number_plate: string;
+    number_plate?: string;
+    status?: "running" | "queued" | "stopped";
+  };
+
+  type AutoScriptOverviewStreamedResponse = {
+    auto_scripts: Array<AutoScript>;
   };
 
   type AutoScripts = {
@@ -52,21 +57,39 @@
 
     source.addEventListener("overview", (event: MessageEvent<string>) => {
       try {
-        const parsed = JSON.parse(event.data) as AutoScripts;
+        const parsed = JSON.parse(
+          event.data,
+        ) as AutoScriptOverviewStreamedResponse;
 
-        if (!parsed || typeof parsed !== "object") {
+        if (!parsed || !Array.isArray(parsed.auto_scripts)) {
           throw new Error("Invalid telemetry payload");
+        }
+
+        const grouped: AutoScripts = {
+          running: [],
+          queued: [],
+          stopped: [],
+        };
+
+        for (const script of parsed.auto_scripts) {
+          if (script.status === "queued") {
+            grouped.queued.push(script);
+          } else if (script.status === "stopped") {
+            grouped.stopped.push(script);
+          } else {
+            grouped.running.push(script);
+          }
         }
 
         // Sort all arrays by run_number descending (biggest first)
         const sortDesc = (a: AutoScript, b: AutoScript) =>
-          b.run_number - a.run_number;
-        if (parsed.running) parsed.running.sort(sortDesc);
-        if (parsed.queued) parsed.queued.sort(sortDesc);
-        if (parsed.stopped) parsed.stopped.sort(sortDesc);
+          (b.run_number ?? 0) - (a.run_number ?? 0);
+        grouped.running.sort(sortDesc);
+        grouped.queued.sort(sortDesc);
+        grouped.stopped.sort(sortDesc);
 
         // Store data and reset the local ticker
-        timeTrialsData = parsed;
+        timeTrialsData = grouped;
         lastUpdateMs = Date.now();
         localTickOffset = 0;
         telemetryError = "";

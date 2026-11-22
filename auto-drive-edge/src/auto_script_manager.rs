@@ -1,7 +1,4 @@
-use std::{
-    collections::VecDeque,
-    sync::atomic::{AtomicU32, Ordering},
-};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use auto_drive_common_types::LogMessage;
 use the_beginner_car_tcp_protocol::TheBeginnerCarIncomingMessages;
@@ -15,7 +12,7 @@ use crate::{
         auto_script::{AutoScript, AutoScriptType},
         auto_script_on_vehicle_watcher::AutoScriptOnVehicleWatcher,
     },
-    the_beginner_car::TheBeginnerCar,
+    vehicle::the_beginner_car::TheBeginnerCar,
 };
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
@@ -37,7 +34,6 @@ pub enum AutoScriptEvents {
 }
 
 pub struct AutoScriptManager {
-    auto_script_on_vehicle_watcher: AutoScriptOnVehicleWatcher,
     vehicles: Vec<TheBeginnerCar>,
     scripts: watch::Sender<Vec<AutoScript>>,
 }
@@ -49,11 +45,7 @@ impl AutoScriptManager {
         let auto_script_on_vehicle_watcher =
             AutoScriptOnVehicleWatcher::new(vehicles.clone(), scripts.clone());
 
-        Self {
-            auto_script_on_vehicle_watcher,
-            vehicles,
-            scripts,
-        }
+        Self { vehicles, scripts }
     }
 
     pub async fn cancel_auto_script(&self, run_uuid: String) {

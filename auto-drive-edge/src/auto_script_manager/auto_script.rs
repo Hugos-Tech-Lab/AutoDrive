@@ -103,46 +103,6 @@ impl AutoScript {
         }
     }
 
-    // pub async fn long_lived_hardware_listener(
-    //     mut hardware_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
-    //     events_history: Arc<RwLock<Vec<AutoScriptEvents>>>,
-    //     events_tx: broadcast::Sender<AutoScriptEvents>,
-    //     run_uuid: String,
-    // ) {
-    //     loop {
-    //         // TODO: add `tokio::select!` here later to handle the cancellation token
-    //         match hardware_rx.recv().await {
-    //             Ok(message) => match message {
-    //                 TheBeginnerCarOutgoingMessages::Log { log } => {
-    //                     // if log.trace_id.as_deref() == Some(&run_uuid) {
-    //                     let event = AutoScriptEvents::LogMessage {
-    //                         log_message: log.clone(),
-    //                     };
-    //                     let mut hist_lock = events_history.write().await;
-    //                     hist_lock.push(event.clone());
-    //                     let _ = events_tx.send(event);
-    //                     // }
-    //                 }
-    //                 TheBeginnerCarOutgoingMessages::AutoScriptStopped => {
-    //                     let event = AutoScriptEvents::ScriptExited;
-    //                     let mut hist_lock = events_history.write().await;
-    //                     hist_lock.push(event.clone());
-    //                     let _ = events_tx.send(event);
-    //                 }
-    //                 _ => {}
-    //             },
-    //             Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
-    //                 eprintln!("Car watcher lagged; skipped {skipped} messages");
-    //             }
-    //             Err(tokio::sync::broadcast::error::RecvError::Closed) => {
-    //                 info!("Closed");
-    //                 // The car disconnected or channel closed, exit the loop
-    //                 break;
-    //             }
-    //         };
-    //     }
-    // }
-
     pub async fn send_log_info(&self, message: String) {
         let event = AutoScriptEvents::LogMessage {
             log_message: LogMessage {

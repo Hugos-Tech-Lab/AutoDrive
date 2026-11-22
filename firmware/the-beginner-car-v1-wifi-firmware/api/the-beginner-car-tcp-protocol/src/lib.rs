@@ -34,14 +34,19 @@ pub enum TheBeginnerCarOutgoingMessages {
     },
     SystemState {},
     WasmInstalled,
-    AutoScriptRunning {
+    AutoScriptStarted {
         run_uuid: String,
         script_start_time_utc_ms: u64,
     },
     AutoScriptStopped {
         run_uuid: String,
         script_stop_time_utc_ms: u64,
+        time_trials_dnf: bool,
+    },
+    AutoScriptTimeTrialsStarted {
         vehicle_start_time_utc_ms: u64,
+    },
+    AutoScriptTimeTrialsFinished {
         vehicle_finish_time_utc_ms: u64,
     },
     AutoScriptRejected {

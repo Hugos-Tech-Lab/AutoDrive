@@ -36,29 +36,22 @@ pub enum AutoScriptEvents {
     ScriptExited,
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct AutoScripts {
-    pub running: Vec<AutoScript>,
-    pub queued: VecDeque<AutoScript>,
-    pub stopped: Vec<AutoScript>,
-}
-
 pub struct AutoScriptManager {
     auto_script_on_vehicle_watcher: AutoScriptOnVehicleWatcher,
-    the_beginner_cars: Vec<TheBeginnerCarComms>,
-    scripts: watch::Sender<AutoScripts>,
+    vehicles: Vec<TheBeginnerCarComms>,
+    scripts: watch::Sender<Vec<AutoScript>>,
 }
 
 impl AutoScriptManager {
-    pub fn new(the_beginner_cars: Vec<TheBeginnerCarComms>) -> Self {
+    pub fn new(vehicles: Vec<TheBeginnerCarComms>) -> Self {
         let (scripts, _) = watch::channel::<AutoScripts>(AutoScripts::default());
 
         let auto_script_on_vehicle_watcher =
-            AutoScriptOnVehicleWatcher::new(the_beginner_cars.clone(), scripts.clone());
+            AutoScriptOnVehicleWatcher::new(vehicles.clone(), scripts.clone());
 
         Self {
             auto_script_on_vehicle_watcher,
-            the_beginner_cars,
+            vehicles,
             scripts,
         }
     }
@@ -99,7 +92,7 @@ impl AutoScriptManager {
 
     pub async fn run_auto_script(&self, run_uuid: String, number_plate: String) -> Result<(), ()> {
         let Some(the_beginner_car) = self
-            .the_beginner_cars
+            .vehicles
             .iter()
             .find(|car| car.metadata.number_plate == number_plate)
         else {

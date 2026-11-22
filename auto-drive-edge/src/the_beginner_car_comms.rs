@@ -160,8 +160,6 @@ impl TheBeginnerCarComms {
                             }
                         }
                     }
-
-                    // Outgoing data to the car
                     message = internal_receiver.recv() => {
                         match message {
                             Some(message_to_car) => {

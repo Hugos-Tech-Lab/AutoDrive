@@ -1,19 +1,17 @@
-use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
 use log::{info, warn};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
 use tokio::{
     sync::{
-        Mutex,
-        broadcast::{self, Sender},
+        broadcast::{self},
         watch,
     },
     task::JoinHandle,
 };
 
 use crate::{
-    auto_script_manager::{AutoScripts, auto_script::AutoScript},
-    the_beginner_car_comms::TheBeginnerCarComms,
+    auto_script_manager::auto_script::AutoScript, the_beginner_car_comms::TheBeginnerCarComms,
 };
 
 pub struct AutoScriptOnVehicleWatcher {
@@ -23,7 +21,7 @@ pub struct AutoScriptOnVehicleWatcher {
 impl AutoScriptOnVehicleWatcher {
     pub fn new(
         the_beginner_cars: Vec<TheBeginnerCarComms>,
-        scripts: watch::Sender<AutoScripts>,
+        scripts: watch::Sender<Vec<AutoScript>>,
     ) -> Self {
         let watchers = the_beginner_cars
             .into_iter()
@@ -41,14 +39,14 @@ impl AutoScriptOnVehicleWatcher {
 
     async fn watch_vehicle_state_change(
         the_beginner_car: TheBeginnerCarComms,
-        scripts: watch::Sender<AutoScripts>,
+        scripts: watch::Sender<Vec<AutoScript>>,
     ) {
         let mut incoming_rx = the_beginner_car.incoming_tx.subscribe();
 
         loop {
             match incoming_rx.recv().await {
                 Ok(message) => match message {
-                    TheBeginnerCarOutgoingMessages::AutoScriptRunning {
+                    TheBeginnerCarOutgoingMessages::AutoScriptStarted {
                         run_uuid,
                         script_start_time_utc_ms,
                     } => {
@@ -57,16 +55,14 @@ impl AutoScriptOnVehicleWatcher {
                     TheBeginnerCarOutgoingMessages::AutoScriptStopped {
                         run_uuid,
                         script_stop_time_utc_ms,
-                        vehicle_start_time_utc_ms,
-                        vehicle_finish_time_utc_ms,
+                        time_trials_dnf,
                     } => {
                         Self::on_hardware_response_auto_script_stopped(
                             scripts.clone(),
-                            the_beginner_car.metadata.number_plate.to_string(),
+                            &the_beginner_car,
                             run_uuid,
                             script_stop_time_utc_ms,
-                            vehicle_start_time_utc_ms,
-                            vehicle_finish_time_utc_ms,
+                            time_trials_dnf,
                         )
                         .await;
                     }
@@ -83,34 +79,45 @@ impl AutoScriptOnVehicleWatcher {
         }
     }
 
-    // TODO: fill / use these fields
     pub async fn on_hardware_response_auto_script_stopped(
-        scripts: watch::Sender<AutoScripts>,
-        number_plate: String,
+        auto_scripts: watch::Sender<Vec<AutoScript>>,
+        vehicle: &TheBeginnerCarComms,
         run_uuid: String,
         script_stop_time_utc_ms: u64,
-        vehicle_start_time_utc_ms: u64,
-        vehicle_finish_time_utc_ms: u64,
+        time_trials_dnf: bool,
     ) {
-        let mut stopped = Vec::new();
+        auto_scripts.send_modify(|auto_scripts| {
+            let auto_script = auto_scripts
+                .iter_mut()
+                .find(|auto_script| auto_script.run_uuid == *run_uuid);
 
-        scripts.send_modify(|state| {
-            stopped = state
-                .running
-                .extract_if(.., |auto_script| auto_script.run_uuid == run_uuid)
-                .collect();
+            let Some(auto_script) = auto_script else {
+                warn!("AutoScript not found ({run_uuid})");
+                return;
+            };
 
-            if stopped.len() != 1 {
-                warn!("Unexpected number of scripts removed: ({})", stopped.len());
+            if auto_script.script_stop_time.is_some() {
+                warn!("Hardware stopped but script already has a stop time.. we stopped twice? ({run_uuid})");
+                return;
             }
 
-            state.stopped.extend(stopped.iter().cloned());
-        });
+            auto_script.hardware.get_or_insert(vehicle.clone());
 
-        for stopped_script in stopped {
-            stopped_script
-                .send_log_info("Script exited".to_string())
-                .await;
-        }
+            let script_stop_time = DateTime::<Utc>::from_timestamp_millis(script_stop_time_utc_ms as i64);
+
+            let Some(script_stop_time) = script_stop_time else {
+                warn!("Script stop time ({script_stop_time_utc_ms}) invalid");
+                return;
+            };
+
+            auto_script.script_stop_time = Some(script_stop_time);
+
+            if auto_script.time_trials_dnf.is_some() {
+                warn!("Hardware stopped and DNF is some? ({run_uuid})");
+                return;  
+            } 
+
+            auto_script.time_trials_dnf = Some(time_trials_dnf);
+        });
     }
 }

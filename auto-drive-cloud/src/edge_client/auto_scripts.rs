@@ -1,8 +1,13 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::bail;
+use futures_util::Stream;
 use log::{info, warn};
 use tokio::{sync::watch, task::JoinHandle, time::timeout};
+use tokio_stream::{
+    StreamExt,
+    wrappers::{WatchStream, errors::BroadcastStreamRecvError},
+};
 use tonic::transport::Channel;
 
 use crate::{
@@ -66,6 +71,10 @@ impl AutoScripts {
         };
 
         Ok(())
+    }
+
+    pub fn stream(&self) -> impl Stream<Item = Vec<AutoScript>> + Send + Sync + 'static {
+        WatchStream::new(self.auto_scripts.clone())
     }
 
     pub async fn find_auto_script(

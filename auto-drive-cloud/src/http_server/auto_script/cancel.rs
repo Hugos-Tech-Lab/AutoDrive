@@ -1,10 +1,10 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use warp::{Filter, Reply, http::StatusCode};
 
 use crate::edge_client::EdgeClient;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CancelRequest {
     pub run_uuid: String,
 }

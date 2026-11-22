@@ -29,11 +29,13 @@ pub fn autoscript_logs(
                 let auto_script = match auto_script {
                     Ok(auto_script) => auto_script,
                     Err(err) => {
-                        return Ok(warp::reply::with_status(
-                            format!("Failed to find auto script ({err})"),
-                            StatusCode::BAD_REQUEST,
-                        )
-                        .into_response());
+                        return Ok::<_, warp::Rejection>(
+                            warp::reply::with_status(
+                                format!("Failed to find auto script ({err})"),
+                                StatusCode::BAD_REQUEST,
+                            )
+                            .into_response(),
+                        );
                     }
                 };
 

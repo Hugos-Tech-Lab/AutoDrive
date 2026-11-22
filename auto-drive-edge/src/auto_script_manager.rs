@@ -1,10 +1,9 @@
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32};
 
 use auto_drive_common_types::LogMessage;
 use chrono::{DateTime, Utc};
 use log::warn;
-use the_beginner_car_tcp_protocol::TheBeginnerCarIncomingMessages;
-use tokio::sync::{broadcast::Receiver, watch};
+use tokio::sync::{watch};
 
 pub mod auto_script;
 pub mod auto_script_on_vehicle_watcher;
@@ -12,7 +11,6 @@ pub mod auto_script_on_vehicle_watcher;
 use crate::{
     auto_script_manager::{
         auto_script::{AutoScript, AutoScriptType},
-        auto_script_on_vehicle_watcher::AutoScriptOnVehicleWatcher,
     },
     vehicle::the_beginner_car::TheBeginnerCar,
 };
@@ -87,7 +85,7 @@ impl AutoScripts {
         });
     }
 
-    pub fn notify_auto_script_started(&self, run_uuid: String, vehicle: TheBeginnerCar, script_start_time: DateTime<Utc>) {
+    pub fn notify_auto_script_started(&self, run_uuid: String, number_plate: String, script_start_time: Option<DateTime<Utc>>) {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
@@ -98,12 +96,12 @@ impl AutoScripts {
                 return;
             };
             auto_script.auto_script_lifecycle = AutoScriptLifecycle::StartedCallingMain;
-            auto_script.script_start_time = Some(script_start_time);
-            auto_script.hardware = Some(vehicle);
+            auto_script.script_start_time = script_start_time;
+            auto_script.vehicle_number_plate = Some(number_plate);
         });
     }
 
-    pub fn set_auto_script_state(&self, run_uuid: String, lifecycle: AutoScriptLifecycle, vehicle: TheBeginnerCar) {
+    pub fn set_auto_script_state(&self, run_uuid: String, lifecycle: AutoScriptLifecycle, number_plate: String) {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
@@ -114,15 +112,15 @@ impl AutoScripts {
                 return;
             };
             auto_script.auto_script_lifecycle = lifecycle;
-            auto_script.hardware = Some(vehicle);
+            auto_script.vehicle_number_plate = Some(number_plate);
         });
     }
 
 
-    pub fn notify_auto_script_stopped(&self, run_uuid: String, vehicle: TheBeginnerCar, script_stop_time: DateTime<Utc>, time_trials_dnf: bool) {
+    pub fn notify_auto_script_stopped(&self, run_uuid: String, number_plate: String, script_stop_time: Option<DateTime<Utc>>, time_trials_dnf: bool) {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
-                .iter_mut()    
+                .iter_mut()
                 .find(|auto_script| auto_script.run_uuid == *run_uuid);
    
             let Some(auto_script) = auto_script else {
@@ -135,21 +133,20 @@ impl AutoScripts {
                 return;
             }
 
-            auto_script.hardware.get_or_insert(vehicle.clone());
+            auto_script.vehicle_number_plate.get_or_insert(number_plate);
+            auto_script.script_stop_time = script_stop_time;
 
-            auto_script.script_stop_time = Some(script_stop_time);
+            if auto_script.script_stop_time.is_some() {
+                warn!("Stop time is unexpectedly some");
+            }
 
             if auto_script.time_trials_dnf.is_some() {
-                warn!("Hardware stopped and DNF is some? ({run_uuid})");
-                return;  
-            } 
+                warn!("DNF is unexpectedly some");
+            }
 
             auto_script.time_trials_dnf = Some(time_trials_dnf);
         });
     }
-
-
-    // 
 }
 
 // pub struct AutoScriptManager {

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
 use hardware_config::TheBeginnerCarMetadata;
 use log::{error, info, warn};
 use the_beginner_car_tcp_protocol::{
@@ -25,6 +26,7 @@ enum TheBeginnerCarAutoScriptStatus {
 
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCar {
+    metadata: TheBeginnerCarMetadata,
     connection: TheBeginnerCarConnectionHandle,
     scripts: AutoScripts,
     handle_messages_from_vehicle_task_handle: Arc<JoinHandle<()>>,
@@ -34,8 +36,8 @@ pub struct TheBeginnerCar {
 }
 
 impl TheBeginnerCar {
-    pub fn new(device_metadata: TheBeginnerCarMetadata, scripts: AutoScripts) -> Self {
-        let connection = TheBeginnerCarConnectionHandle::new(device_metadata);
+    pub fn new(metadata: TheBeginnerCarMetadata, scripts: AutoScripts) -> Self {
+        let connection = TheBeginnerCarConnectionHandle::new(metadata.clone());
 
         let vehicle_lifecycle =
             watch::Sender::<AutoScriptLifecycle>::new(AutoScriptLifecycle::Idle);
@@ -45,6 +47,7 @@ impl TheBeginnerCar {
                 connection.clone(),
                 scripts.clone(),
                 vehicle_lifecycle.clone(),
+                metadata.number_plate.to_string(),
             ));
 
         let handle_vehicle_connection_handle = tokio::spawn(handle_vehicle_connection(
@@ -53,6 +56,7 @@ impl TheBeginnerCar {
         ));
 
         Self {
+            metadata,
             connection,
             handle_messages_from_vehicle_task_handle: Arc::new(
                 handle_messages_from_vehicle_task_handle,
@@ -62,6 +66,10 @@ impl TheBeginnerCar {
             scripts,
             handle_vehicle_connection_handle: Arc::new(handle_vehicle_connection_handle),
         }
+    }
+
+    pub fn number_plate(&self) -> String {
+        self.metadata.number_plate.to_string()
     }
 
     pub fn is_connected(&self) -> bool {
@@ -143,8 +151,11 @@ impl TheBeginnerCar {
             // revert vehicle lifecycle state
             self.vehicle_lifecycle
                 .send_replace(AutoScriptLifecycle::Idle);
-            self.scripts
-                .set_auto_script_state(run_uuid, AutoScriptLifecycle::Idle);
+            self.scripts.set_auto_script_state(
+                run_uuid,
+                AutoScriptLifecycle::Idle,
+                self.number_plate(),
+            );
         }
     }
 }
@@ -167,11 +178,17 @@ pub async fn handle_messages_from_vehicle_task(
     mut connection: TheBeginnerCarConnectionHandle,
     scripts: AutoScripts,
     vehicle_lifecycle: watch::Sender<AutoScriptLifecycle>,
+    number_plate: String,
 ) {
     loop {
         match connection.incoming_rx.recv().await {
             Ok(message) => {
-                handle_message_from_vehicle(message, scripts.clone(), vehicle_lifecycle.clone());
+                handle_message_from_vehicle(
+                    message,
+                    scripts.clone(),
+                    vehicle_lifecycle.clone(),
+                    number_plate,
+                );
             }
             Err(broadcast::error::RecvError::Lagged(skipped)) => {
                 warn!("Car watcher lagged; skipped {skipped} messages");
@@ -188,36 +205,69 @@ pub async fn handle_message_from_vehicle(
     message: TheBeginnerCarOutgoingMessages,
     scripts: AutoScripts,
     vehicle_lifecycle: watch::Sender<AutoScriptLifecycle>,
+    number_plate: String,
 ) {
     match message {
         TheBeginnerCarOutgoingMessages::Log { log } => {
             //
         }
         TheBeginnerCarOutgoingMessages::AutoScriptReceivedByWifiMcu { run_uuid } => {
-            scripts.set_auto_script_state(run_uuid, AutoScriptLifecycle::ReceivedByWifiMcu);
+            scripts.set_auto_script_state(
+                run_uuid,
+                AutoScriptLifecycle::ReceivedByWifiMcu,
+                number_plate,
+            );
             vehicle_lifecycle.send_replace(AutoScriptLifecycle::ReceivedByWifiMcu);
         }
 
         TheBeginnerCarOutgoingMessages::AutoScriptSendingToWasmMcu { run_uuid } => {
-            scripts.set_auto_script_state(run_uuid, AutoScriptLifecycle::SendingToWasmMcu);
+            scripts.set_auto_script_state(
+                run_uuid,
+                AutoScriptLifecycle::SendingToWasmMcu,
+                number_plate,
+            );
             vehicle_lifecycle.send_replace(AutoScriptLifecycle::SendingToWasmMcu);
         }
         TheBeginnerCarOutgoingMessages::AutoScriptReceivedWasmMcu { run_uuid } => {
-            scripts.set_auto_script_state(run_uuid, AutoScriptLifecycle::ReceivedByWasmMcu);
+            scripts.set_auto_script_state(
+                run_uuid,
+                AutoScriptLifecycle::ReceivedByWasmMcu,
+                number_plate,
+            );
             vehicle_lifecycle.send_replace(AutoScriptLifecycle::ReceivedByWasmMcu);
         }
         TheBeginnerCarOutgoingMessages::AutoScriptStartedCallingMain {
             run_uuid,
             script_start_time_utc_ms,
         } => {
-            scripts.notify_auto_script_started(run_uuid, script_start_time_utc_ms);
+            let script_start_time_utc =
+                DateTime::<Utc>::from_timestamp_millis(script_start_time_utc_ms as i64);
+            if script_start_time_utc.is_none() {
+                warn!(
+                    "Script start time is none when creating from u64 ({script_start_time_utc_ms})"
+                )
+            }
+            scripts.notify_auto_script_started(run_uuid, number_plate, script_start_time_utc);
             vehicle_lifecycle.send_replace(AutoScriptLifecycle::StartedCallingMain);
         }
         TheBeginnerCarOutgoingMessages::AutoScriptStopped {
             run_uuid,
             script_stop_time_utc_ms,
             time_trials_dnf,
-        } => todo!(),
+        } => {
+            let script_stop_time_utc =
+                DateTime::<Utc>::from_timestamp_millis(script_stop_time_utc_ms as i64);
+            if script_stop_time_utc.is_none() {
+                warn!("Script stop time is none when creating from u64 ({script_stop_time_utc_ms})")
+            }
+            scripts.notify_auto_script_stopped(
+                run_uuid,
+                number_plate,
+                script_stop_time_utc,
+                time_trials_dnf,
+            );
+            vehicle_lifecycle.send_replace(AutoScriptLifecycle::StartedCallingMain);
+        }
         TheBeginnerCarOutgoingMessages::AutoScriptTimeTrialsStarted {
             vehicle_start_time_utc_ms,
         } => todo!(),

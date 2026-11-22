@@ -1,18 +1,18 @@
 use log::info;
 use warp::Filter;
 
-use crate::http_sse_server::hardware::overview::hardware_overview;
-use crate::http_sse_server::hardware::positions::hardware_positions;
+use crate::http_sse_server::vehicle::overview::hardware_overview;
+use crate::http_sse_server::vehicle::positions::hardware_positions;
 use crate::{
     edge_client::EdgeClient,
-    http_sse_server::autoscript::{
+    http_sse_server::auto_script::{
         cancel::cancel, logs::autoscript_watch, overview::autoscript_overview,
     },
 };
-pub mod autoscript;
-pub mod hardware;
+pub mod auto_script;
 pub mod hardware_telemetry;
 pub mod logs;
+pub mod vehicle;
 
 pub async fn http_server(edge: EdgeClient) {
     let server = tokio::spawn(async move {

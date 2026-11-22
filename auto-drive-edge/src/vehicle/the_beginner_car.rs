@@ -21,11 +21,6 @@ use crate::{
 pub mod the_beginner_car_auto_script_watcher;
 pub mod the_beginner_car_connection_handle;
 
-enum TheBeginnerCarAutoScriptStatus {
-    Ready,
-    Sending,
-}
-
 #[derive(Clone, Debug)]
 pub struct TheBeginnerCar {
     metadata: TheBeginnerCarMetadata,
@@ -51,7 +46,7 @@ impl TheBeginnerCar {
                 scripts.clone(),
                 vehicle_lifecycle.clone(),
                 metadata.number_plate.to_string(),
-                logs,
+                logs.clone(),
             ));
 
         let handle_vehicle_connection_handle = tokio::spawn(handle_vehicle_connection(
@@ -84,7 +79,7 @@ impl TheBeginnerCar {
         self.connection.send(message).await
     }
 
-    pub async fn start_auto_script(&self, run_uuid: String) {
+    pub async fn start_auto_script(&self, run_uuid: String) -> Result<(), ()> {
         let mut auto_script_to_start: Option<AutoScript> = None;
 
         let modified = self.scripts.scripts.send_if_modified(|auto_scripts| {
@@ -112,14 +107,14 @@ impl TheBeginnerCar {
         });
 
         if !modified {
-            return;
+            return Err(());
         }
 
         let Some(auto_script_to_start) = auto_script_to_start else {
             error!(
                 "Auto Script to start was not set, despite modified being true, state is out of sync!"
             );
-            return;
+            return Err(());
         };
 
         let vehicle_sending_wifi_mcu =
@@ -136,7 +131,7 @@ impl TheBeginnerCar {
             warn!("Vehicle is in use, cannot start auto script");
             self.scripts
                 .set_auto_script_state(run_uuid, AutoScriptLifecycle::Idle, "".to_string());
-            return;
+            return Err(());
         }
 
         let sent = self
@@ -161,6 +156,8 @@ impl TheBeginnerCar {
                 self.number_plate(),
             );
         }
+
+        Ok(())
     }
 }
 
@@ -194,7 +191,8 @@ pub async fn handle_messages_from_vehicle_task(
                     vehicle_lifecycle.clone(),
                     number_plate.clone(),
                     logs.clone(),
-                );
+                )
+                .await;
             }
             Err(broadcast::error::RecvError::Lagged(skipped)) => {
                 warn!("Car watcher lagged; skipped {skipped} messages");
@@ -216,9 +214,9 @@ pub async fn handle_message_from_vehicle(
 ) {
     match message {
         TheBeginnerCarOutgoingMessages::Log { log } => {
-            vehicle_logs.push(log.clone());
+            vehicle_logs.push(log.clone()).await;
             if let Some(run_uuid) = log.run_uuid.clone() {
-                scripts.notify_log(run_uuid, log);
+                scripts.notify_log(run_uuid, log).await;
             };
         }
         TheBeginnerCarOutgoingMessages::AutoScriptReceivedByWifiMcu { run_uuid } => {

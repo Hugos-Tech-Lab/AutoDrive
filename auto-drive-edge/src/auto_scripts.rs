@@ -2,25 +2,31 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use auto_drive_common_types::LogMessage;
 use chrono::{DateTime, Utc};
+use futures_util::Stream;
 use log::warn;
-use tokio::sync::{watch};
+use tokio::sync::watch;
+use tokio_stream::wrappers::WatchStream;
 
-use crate::auto_script::{AutoScript, AutoScriptType};
+use crate::{
+    auto_script::{AutoScript, AutoScriptType},
+    logs::Logs,
+};
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
-      
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AutoScriptLifecycle {
     Idle,
     SendingToWifiMcu,
-    ReceivedByWifiMcu,  
-    SendingToWasmMcu,  
-    ReceivedByWasmMcu,   
+    ReceivedByWifiMcu,
+    SendingToWasmMcu,
+    ReceivedByWasmMcu,
     StartedCallingMain,
+    Cancelling,
     StoppedByScriptEnd,
-    StoppedBySafety,    
+    StoppedBySafety,
     StoppedByHttpCancel,
-    StoppedByDisconnect
+    StoppedByDisconnect,
 }
 
 impl AutoScriptLifecycle {
@@ -40,6 +46,9 @@ impl AutoScriptLifecycle {
         if *self == AutoScriptLifecycle::StartedCallingMain {
             return true;
         }
+        if *self == AutoScriptLifecycle::Cancelling {
+            return true;
+        }
 
         false
     }
@@ -53,16 +62,43 @@ pub struct AutoScripts {
 impl AutoScripts {
     pub fn new() -> Self {
         let (scripts, _) = watch::channel::<Vec<AutoScript>>(Vec::<AutoScript>::default());
-  
+
         Self { scripts }
     }
 
-    pub fn start_auto_script(&self, ) {
-        //   
+    pub fn start_auto_script(&self) {
+        //
     }
 
-    pub fn notify_log(&self, run_uuid: String, log: LogMessage) {
-        self.scripts.send_modify(|auto_scripts| { 
+    pub async fn auto_script(&self, run_uuid: String) -> Option<AutoScript> {
+        let auto_scripts = self.scripts.borrow();
+        let auto_script = auto_scripts
+            .iter()
+            .find(|auto_script| auto_script.run_uuid == run_uuid)
+            .map(|auto_script| auto_script.clone());
+
+        auto_script
+    }
+
+    pub async fn cancel(&self, run_uuid: String) {
+        self.scripts.send_if_modified(|auto_scripts| {
+            let auto_script = auto_scripts
+                .iter_mut()
+                .find(|auto_script| auto_script.run_uuid == run_uuid);
+
+            let Some(auto_script) = auto_script else {
+                warn!("auto script not found");
+                return false;
+            };
+
+            auto_script.auto_script_lifecycle = AutoScriptLifecycle::Cancelling;
+            true
+        });
+    }
+
+    pub async fn notify_log(&self, run_uuid: String, log: LogMessage) {
+        let mut logs: Option<Logs> = None;
+        self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
                 .find(|auto_script| auto_script.run_uuid == run_uuid);
@@ -71,21 +107,32 @@ impl AutoScripts {
                 warn!("auto script not found");
                 return;
             };
-            auto_script.logs.push(log);
+
+            logs = Some(auto_script.logs.clone());
         });
+
+        if let Some(logs) = logs {
+            logs.push(log).await;
+        };
     }
 
-    pub fn notify_vehicle_disconnected(&self) { // TODO: add vehicle ID  
+    pub fn notify_vehicle_disconnected(&self) {
+        // TODO: add vehicle ID
         self.scripts.send_modify(|auto_scripts| {
             for auto_script in auto_scripts {
                 if auto_script.auto_script_lifecycle.is_active() {
                     auto_script.auto_script_lifecycle = AutoScriptLifecycle::StoppedByDisconnect;
-                } 
-            } 
+                }
+            }
         });
     }
 
-    pub fn notify_auto_script_started(&self, run_uuid: String, number_plate: String, script_start_time: Option<DateTime<Utc>>) {
+    pub fn notify_auto_script_started(
+        &self,
+        run_uuid: String,
+        number_plate: String,
+        script_start_time: Option<DateTime<Utc>>,
+    ) {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
@@ -101,7 +148,12 @@ impl AutoScripts {
         });
     }
 
-    pub fn set_auto_script_state(&self, run_uuid: String, lifecycle: AutoScriptLifecycle, number_plate: String) {
+    pub fn set_auto_script_state(
+        &self,
+        run_uuid: String,
+        lifecycle: AutoScriptLifecycle,
+        number_plate: String,
+    ) {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
@@ -116,20 +168,25 @@ impl AutoScripts {
         });
     }
 
-
-    pub fn notify_auto_script_stopped(&self, run_uuid: String, number_plate: String, script_stop_time: Option<DateTime<Utc>>, time_trials_dnf: bool) {
+    pub fn notify_auto_script_stopped(
+        &self,
+        run_uuid: String,
+        number_plate: String,
+        script_stop_time: Option<DateTime<Utc>>,
+        time_trials_dnf: bool,
+    ) {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
                 .find(|auto_script| auto_script.run_uuid == *run_uuid);
-   
+
             let Some(auto_script) = auto_script else {
                 warn!("AutoScript not found ({run_uuid})");
                 return;
             };
 
             if auto_script.script_stop_time.is_some() {
-                warn!("Hardware stopped but script already has a stop time.. we stopped twice? ({run_uuid})");
+                warn!("Hardware stopped a second time ({run_uuid})");
                 return;
             }
 
@@ -148,10 +205,13 @@ impl AutoScripts {
         });
     }
 
-    pub fn enqueue_auto_script(&self,          owner_name: String,
-         owner_comment: String,
-         data: Vec<u8>, 
-         script_type: AutoScriptType) -> String {
+    pub fn enqueue_auto_script(
+        &self,
+        owner_name: String,
+        owner_comment: String,
+        data: Vec<u8>,
+        script_type: AutoScriptType,
+    ) -> String {
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
 
         let auto_script = AutoScript::new(
@@ -169,6 +229,10 @@ impl AutoScripts {
         });
 
         run_uuid
+    }
+
+    pub fn stream(&self) -> impl Stream<Item = Vec<AutoScript>> + Send + Sync + 'static {
+        WatchStream::new(self.scripts.subscribe().clone())
     }
 }
 
@@ -256,11 +320,9 @@ impl AutoScripts {
 //                 .send(TheBeginnerCarIncomingMessages::RunAutoScript { script })
 //                 .await;
 //         }
-  
+
 //         Ok(())
 //     }
-
-
 
 //     pub async fn watch_auto_script_logs(
 //         &self,

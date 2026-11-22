@@ -15,7 +15,6 @@ service AutoDriveEdgeService {
   rpc RunAutoScript(RunAutoScriptRequest) returns (RunAutoScriptResponse);
   rpc CancelAutoScript(CancelAutoScriptRequest) returns (CancelAutoScriptResponse);
   rpc WatchAutoScriptLogs(WatchAutoScriptLogsRequest) returns (stream WatchAutoScriptLogsResponse);
-  rpc WatchAutoScriptStatus(WatchAutoScriptStatusRequest) returns (stream WatchAutoScriptStatusResponse);
 
   // Vehicle Specific
   rpc WatchVehicleLogs(WatchVehicleLogsRequest) returns (stream WatchVehicleLogsResponse);
@@ -128,14 +127,6 @@ enum AutoScriptRuntimeLifecycle {
   AUTO_SCRIPT_STATUS_STOPPED_BY_SELF = 4;
   AUTO_SCRIPT_STATUS_CANCELLED_BY_SAFETY = 5;
   AUTO_SCRIPT_STATUS_CANCELLED_MANUALLY = 6;
-}
-
-message WatchAutoScriptStatusRequest {
-  string run_uuid = 1;
-}
-
-message WatchAutoScriptStatusResponse {
-  AutoScriptRuntimeLifecycle status = 1;
 }
 
 message WatchAutoScriptLogsRequest {

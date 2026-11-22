@@ -19,7 +19,7 @@ pub struct AutoScriptOverviewStreamedResponse {
     auto_scripts: Vec<AutoScript>,
 }
 
-pub fn autoscript_overview(
+pub fn auto_script_overview(
     edge: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path!("autoscript" / "overview")

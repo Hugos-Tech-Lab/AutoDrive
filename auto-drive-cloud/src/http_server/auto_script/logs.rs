@@ -11,7 +11,7 @@ pub struct AutoScriptLogsRequest {
     pub run_uuid: String,
 }
 
-pub fn autoscript_logs(
+pub fn auto_script_logs(
     hardware: EdgeClient,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
     warp::path!("autoscript" / "logs")

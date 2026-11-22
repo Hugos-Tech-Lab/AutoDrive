@@ -9,7 +9,7 @@ pub struct CancelRequest {
     pub run_uuid: String,
 }
 
-pub fn cancel(
+pub fn auto_script_cancel(
     edge: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     warp::path!("autoscript" / "cancel")

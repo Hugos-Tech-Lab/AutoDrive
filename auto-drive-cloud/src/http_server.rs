@@ -1,28 +1,22 @@
 use log::info;
 use warp::Filter;
 
-use crate::http_server::vehicle::overview::hardware_overview;
-use crate::http_server::vehicle::positions::hardware_positions;
 use crate::{
     edge_client::EdgeClient,
     http_server::auto_script::{
-        cancel::cancel, logs::autoscript_watch, overview::autoscript_overview,
+        cancel::auto_script_cancel, enqueue::auto_script_enqueue, logs::auto_script_logs,
+        overview::auto_script_overview, run::auto_script_run,
     },
 };
 pub mod auto_script;
-// pub mod hardware_telemetry;
-// pub mod logs;
-// pub mod vehicle;
 
 pub async fn http_server(edge: EdgeClient) {
     let server = tokio::spawn(async move {
-        // let run = run(receiver.clone());
-        let cancel = cancel(receiver.clone());
-        let autoscript_watch = autoscript_watch(receiver.clone());
-        let autoscript_overview = autoscript_overview(receiver.clone());
-        let hardware_overview = hardware_overview(receiver.clone());
-        let hardware_positions = hardware_positions(receiver.clone());
-        // let hardware_telemetry = hardware_telemetry(receiver.logs);
+        let auto_script_cancel = auto_script_cancel(edge.clone());
+        let auto_script_enqueue = auto_script_enqueue(edge.clone());
+        let auto_script_logs = auto_script_logs(edge.clone());
+        let auto_script_overview = auto_script_overview(edge.clone());
+        let auto_script_run = auto_script_run(edge.clone());
 
         let cors = warp::cors()
             .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
@@ -33,14 +27,11 @@ pub async fn http_server(edge: EdgeClient) {
         #[cfg(feature = "production")]
         let cors = cors.allow_origin("https://autodrive.hugostechlab.com");
 
-        let routes = watch_logs
-            .or(run)
-            .or(hardware_telemetry)
-            .or(cancel)
-            .or(autoscript_watch)
-            .or(autoscript_overview)
-            .or(hardware_overview)
-            .or(hardware_positions)
+        let routes = auto_script_cancel
+            .or(auto_script_enqueue)
+            .or(auto_script_logs)
+            .or(auto_script_overview)
+            .or(auto_script_run)
             .with(cors);
 
         let address = ([0, 0, 0, 0], 3030);

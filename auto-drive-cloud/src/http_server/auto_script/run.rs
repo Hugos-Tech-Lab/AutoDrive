@@ -14,7 +14,7 @@ struct ApiResponse {
     message: String,
 }
 
-pub fn autoscript_run(
+pub fn auto_script_run(
     edge_client: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     let edge_client = edge_client.handle.clone();

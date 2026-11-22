@@ -6,7 +6,7 @@ use bytes::Buf;
 use futures_util::{StreamExt, stream};
 use warp::{Filter, Rejection, Reply, http::StatusCode};
 
-pub fn enqueue(
+pub fn auto_script_enqueue(
     edge_client: EdgeClient,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
     const MAX_BODY_SIZE: u64 = 16 * 1024;

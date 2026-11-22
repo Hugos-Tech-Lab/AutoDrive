@@ -14,12 +14,23 @@ use tokio::{
     time::timeout,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct TheBeginnerCarComms {
     pub metadata: TheBeginnerCarMetadata,
     pub connected_rx: watch::Receiver<bool>,
     outgoing_tx: mpsc::Sender<TheBeginnerCarIncomingMessages>,
-    pub incoming_tx: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
+    pub incoming_rx: broadcast::Receiver<TheBeginnerCarOutgoingMessages>,
+}
+
+impl Clone for TheBeginnerCarComms {
+    fn clone(&self) -> Self {
+        Self {
+            metadata: self.metadata.clone(),
+            connected_rx: self.connected_rx.clone(),
+            outgoing_tx: self.outgoing_tx.clone(),
+            incoming_rx: self.incoming_rx.resubscribe(),
+        }
+    }
 }
 
 impl TheBeginnerCarComms {
@@ -28,30 +39,22 @@ impl TheBeginnerCarComms {
         // vehicle_telemetry: TheBeginnerCarVehicleHardwareTelemetry,
     ) -> (Self, JoinHandle<()>) {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
-        let (incoming_tx, _) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);
+        let (incoming_tx, incoming_rx) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);
 
         let (connected_tx, connected_rx) = watch::channel(false);
 
-        let connection_handle = tokio::spawn({
-            let device_metadata = device_metadata.clone();
-            let incoming_tx = incoming_tx.clone();
-            let connected_tx = connected_tx.clone();
-            async {
-                Self::long_lived_connection(
-                    device_metadata,
-                    internal_receiver,
-                    incoming_tx,
-                    connected_tx,
-                )
-                .await;
-            }
-        });
+        let connection_handle = tokio::spawn(Self::tcp_connection(
+            device_metadata.clone(),
+            internal_receiver,
+            incoming_tx.clone(),
+            connected_tx.clone(),
+        ));
 
         (
             Self {
                 connected_rx,
                 outgoing_tx,
-                incoming_tx,
+                incoming_rx,
                 metadata: device_metadata,
             },
             connection_handle,
@@ -73,7 +76,7 @@ impl TheBeginnerCarComms {
         true
     }
 
-    async fn long_lived_connection(
+    async fn tcp_connection(
         metadata: TheBeginnerCarMetadata,
         mut internal_receiver: mpsc::Receiver<TheBeginnerCarIncomingMessages>,
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
@@ -90,24 +93,14 @@ impl TheBeginnerCarComms {
                     info!("Connected to {} at {ip}.", metadata.number_plate);
                     stream
                 }
-
-                Ok(Err(error)) => {
+                Err(_) | Ok(Err(_)) => {
                     connected_tx.send(false).unwrap();
                     let ip = ip.clone();
                     eprintln!(
-                        "Failed to connect to {} at {ip} error: {error}. Trying again in 10 seconds",
+                        "Failed to connect to {} at {ip}. Trying again in 5 seconds",
                         metadata.number_plate
                     );
-                    thread::sleep(Duration::from_secs(10));
-                    continue;
-                }
-
-                Err(_) => {
-                    eprintln!(
-                        "Connection timed out to {} at {ip} after 5 seconds. Trying again in 10 seconds",
-                        metadata.number_plate
-                    );
-                    thread::sleep(Duration::from_secs(10));
+                    thread::sleep(Duration::from_secs(5));
                     continue;
                 }
             };
@@ -115,7 +108,7 @@ impl TheBeginnerCarComms {
             let (mut stream_read, mut stream_write) = stream.into_split();
             loop {
                 select! {
-                    // we assume the car sends a message at least once every 10 seconds...
+                    // car must send message every 10 seconds
                     result = timeout(Duration::from_secs(10), async {
                         let mut len_bytes = [0u8; 4];
                         stream_read.read_exact(&mut len_bytes).await?;
@@ -135,7 +128,6 @@ impl TheBeginnerCarComms {
                         Ok::<Vec<u8>, std::io::Error>(message_buf)
                     }) => {
                         match result {
-                            // Read succeeded
                             Ok(Ok(message_buf)) => {
                                 let message: TheBeginnerCarOutgoingMessages = match postcard::from_bytes(&message_buf) {
                                     Ok(message) => message,

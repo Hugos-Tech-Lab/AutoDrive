@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
 use tonic::transport::Channel;
 
-use crate::edge_client::{auto_script::AutoScript, vehicle::Vehicle};
+use crate::edge_client::vehicle::Vehicle;
 use crate::{
     auto_drive_edge_service::v1::{
         GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,

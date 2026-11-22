@@ -1,11 +1,11 @@
 use log::info;
 use warp::Filter;
 
-use crate::http_sse_server::vehicle::overview::hardware_overview;
-use crate::http_sse_server::vehicle::positions::hardware_positions;
+use crate::http_server::vehicle::overview::hardware_overview;
+use crate::http_server::vehicle::positions::hardware_positions;
 use crate::{
     edge_client::EdgeClient,
-    http_sse_server::auto_script::{
+    http_server::auto_script::{
         cancel::cancel, logs::autoscript_watch, overview::autoscript_overview,
     },
 };

@@ -187,7 +187,7 @@ pub async fn handle_messages_from_vehicle_task(
                     message,
                     scripts.clone(),
                     vehicle_lifecycle.clone(),
-                    number_plate,
+                    number_plate.clone(),
                 );
             }
             Err(broadcast::error::RecvError::Lagged(skipped)) => {
@@ -270,12 +270,15 @@ pub async fn handle_message_from_vehicle(
         }
         TheBeginnerCarOutgoingMessages::AutoScriptTimeTrialsStarted {
             vehicle_start_time_utc_ms,
-        } => todo!(),
+        } => {
+            // vehicle_lifecycle.send_replace(AutoScriptLifecycle::);
+            //
+        }
         TheBeginnerCarOutgoingMessages::AutoScriptTimeTrialsFinished {
             vehicle_finish_time_utc_ms,
-        } => todo!(),
-        TheBeginnerCarOutgoingMessages::AutoScriptRejected { run_uuid } => todo!(),
-        TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => todo!(),
+        } => {}
+        TheBeginnerCarOutgoingMessages::AutoScriptRejected { run_uuid } => {}
+        TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {}
         TheBeginnerCarOutgoingMessages::InfraredLedReadings {
             front_far_left,
             front_left,
@@ -284,12 +287,12 @@ pub async fn handle_message_from_vehicle(
             front_far_right,
             back_center,
             back_left,
-        } => todo!(),
+        } => {}
         TheBeginnerCarOutgoingMessages::Position {
             x,
             y,
             rotation_radians,
             timestamp_unix_epoch_ms,
-        } => todo!(),
+        } => {}
     }
 }

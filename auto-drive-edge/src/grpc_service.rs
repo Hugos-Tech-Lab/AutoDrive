@@ -12,30 +12,26 @@ use crate::{
         EnqueueAutoScriptResponse, GetVehiclesRequest, GetVehiclesResponse, Hardware,
         NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse, RunAutoScriptRequest,
         RunAutoScriptResponse, WatchAutoScriptLogsRequest, WatchAutoScriptLogsResponse,
-        WatchAutoScriptOverviewRequest, WatchAutoScriptOverviewResponse, WatchHardwarePoseRequest,
-        WatchHardwarePoseResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse,
-        WatchVehicleLogsRequest, WatchVehicleLogsResponse,
+        WatchHardwarePoseRequest, WatchHardwarePoseResponse, WatchHardwareStatusRequest,
+        WatchHardwareStatusResponse, WatchVehicleLogsRequest, WatchVehicleLogsResponse,
         auto_drive_edge_service_server::AutoDriveEdgeService,
     },
-    auto_script_manager::{AutoScriptManager, auto_script::AutoScriptType},
+    auto_script_manager::AutoScripts,
     grpc_service::types::to_grpc_log_message,
-    the_beginner_car::TheBeginnerCar,
+    vehicle::the_beginner_car::TheBeginnerCar,
 };
 
 pub mod types;
 
 pub struct GrpcService {
-    auto_script_manager: Arc<AutoScriptManager>,
+    auto_scripts: AutoScripts,
     the_beginner_cars: Vec<TheBeginnerCar>,
 }
 
 impl GrpcService {
-    pub fn new(
-        auto_script_manager: Arc<AutoScriptManager>,
-        the_beginner_cars: Vec<TheBeginnerCar>,
-    ) -> Self {
+    pub fn new(auto_scripts: AutoScripts, the_beginner_cars: Vec<TheBeginnerCar>) -> Self {
         Self {
-            auto_script_manager,
+            auto_scripts,
             the_beginner_cars,
         }
     }
@@ -48,7 +44,7 @@ impl AutoDriveEdgeService for GrpcService {
         request: Request<EnqueueAutoScriptRequest>,
     ) -> Result<Response<EnqueueAutoScriptResponse>, Status> {
         let request = request.into_inner();
-        let run_uuid = self.auto_script_manager.enqueue_auto_script(
+        let run_uuid = self.auto_scripts.enqueue_auto_script(
             request.owner_name,
             request.owner_comment,
             request.data,
@@ -76,7 +72,7 @@ impl AutoDriveEdgeService for GrpcService {
     ) -> Result<Response<RunAutoScriptResponse>, Status> {
         let request = request.into_inner();
         let run_uuid = self
-            .auto_script_manager
+            .auto_scripts
             .run_auto_script(request.run_uuid, request.number_plate)
             .await;
         // TODO: handle result
@@ -87,7 +83,7 @@ impl AutoDriveEdgeService for GrpcService {
         &self,
         request: Request<CancelAutoScriptRequest>,
     ) -> Result<Response<CancelAutoScriptResponse>, Status> {
-        self.auto_script_manager
+        self.auto_scripts
             .cancel_auto_script(request.into_inner().run_uuid)
             .await;
 
@@ -104,7 +100,7 @@ impl AutoDriveEdgeService for GrpcService {
         let run_uuid = request.into_inner().run_uuid;
 
         let (past_events, live_rx) = self
-            .auto_script_manager
+            .auto_scripts
             .watch_auto_script(run_uuid)
             .await
             .ok_or_else(|| Status::not_found("Script run not found or already stopped"))?;
@@ -112,10 +108,10 @@ impl AutoDriveEdgeService for GrpcService {
         let history_stream = tokio_stream::iter(past_events).map(|event| {
             let res;
             match event {
-                crate::auto_script_manager::AutoScriptEvents::LogMessage { log_message } => res = WatchAutoScriptResponse {
+                crate::auto_scripts::AutoScriptEvents::LogMessage { log_message } => res = WatchAutoScriptResponse {
                 event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(log_message.clone())))
                 },
-                crate::auto_script_manager::AutoScriptEvents::ScriptExited => res = WatchAutoScriptResponse {
+                crate::auto_scripts::AutoScriptEvents::ScriptExited => res = WatchAutoScriptResponse {
                 event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(0))
                 },
             };
@@ -127,10 +123,10 @@ impl AutoDriveEdgeService for GrpcService {
                 Ok(event) => {
                     let res;
                     match event {
-                            crate::auto_script_manager::AutoScriptEvents::LogMessage { log_message } => res = WatchAutoScriptResponse {
+                            crate::auto_scripts::AutoScriptEvents::LogMessage { log_message } => res = WatchAutoScriptResponse {
                             event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::LogMessage(to_grpc_log_message(log_message.clone())))
                         },
-                        crate::auto_script_manager::AutoScriptEvents::ScriptExited => res = WatchAutoScriptResponse {
+                        crate::auto_scripts::AutoScriptEvents::ScriptExited => res = WatchAutoScriptResponse {
                         event: Some(crate::auto_drive_edge_service::v1::watch_auto_script_response::Event::ScriptExited(0))
                         },
                     };
@@ -148,24 +144,24 @@ impl AutoDriveEdgeService for GrpcService {
         Ok(Response::new(Box::pin(combined_stream)))
     }
 
-    type WatchAutoScriptOverviewStream = Pin<
-        Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>,
-    >;
+    // type WatchAutoScriptOverviewStream = Pin<
+    //     Box<dyn Stream<Item = Result<WatchAutoScriptOverviewResponse, Status>> + Send + 'static>,
+    // >;
 
-    async fn watch_auto_script_overview(
-        &self,
-        _request: Request<WatchAutoScriptOverviewRequest>,
-    ) -> Result<Response<Self::WatchAutoScriptOverviewStream>, Status> {
-        let (_snapshot, queue_receiver) = self.auto_script_manager.watch_auto_script_overview();
+    // async fn watch_auto_script_overview(
+    //     &self,
+    //     _request: Request<WatchAutoScriptOverviewRequest>,
+    // ) -> Result<Response<Self::WatchAutoScriptOverviewStream>, Status> {
+    //     let (_snapshot, queue_receiver) = self.auto_scripts.watch_auto_script_overview();
 
-        let scripts = WatchStream::new(queue_receiver).map(|snapshot| {
-            Ok(WatchAutoScriptOverviewResponse {
-                scripts: Some(snapshot.into()),
-            })
-        });
+    //     let scripts = WatchStream::new(queue_receiver).map(|snapshot| {
+    //         Ok(WatchAutoScriptOverviewResponse {
+    //             scripts: Some(snapshot.into()),
+    //         })
+    //     });
 
-        Ok(Response::new(Box::pin(scripts)))
-    }
+    //     Ok(Response::new(Box::pin(scripts)))
+    // }
 
     type WatchVehicleLogsStream =
         Pin<Box<dyn Stream<Item = Result<WatchVehicleLogsResponse, Status>> + Send + 'static>>;

@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU32};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use auto_drive_common_types::LogMessage;
 use chrono::{DateTime, Utc};
@@ -8,12 +8,7 @@ use tokio::sync::{watch};
 pub mod auto_script;
 pub mod auto_script_on_vehicle_watcher;
 
-use crate::{
-    auto_script_manager::{
-        auto_script::{AutoScript, AutoScriptType},
-    },
-    vehicle::the_beginner_car::TheBeginnerCar,
-};
+use crate::auto_script_manager::auto_script::{AutoScript, AutoScriptType};
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
 
@@ -22,7 +17,7 @@ pub enum AutoScriptLifecycle {
     Idle,
     SendingToWifiMcu,
     ReceivedByWifiMcu,
-    SendingToWasmMcu,
+    SendingToWasmMcu, 
     ReceivedByWasmMcu,
     StartedCallingMain,
     StoppedByScriptEnd,
@@ -147,6 +142,29 @@ impl AutoScripts {
             auto_script.time_trials_dnf = Some(time_trials_dnf);
         });
     }
+
+    pub fn enqueue_auto_script(&self,          owner_name: String,
+         owner_comment: String,
+         data: Vec<u8>,
+         script_type: AutoScriptType) -> String {
+        let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
+
+        let auto_script = AutoScript::new(
+            owner_name,
+            owner_comment,
+            run_number,
+            data.into(),
+            script_type,
+        );
+
+        let run_uuid = auto_script.run_uuid.clone();
+
+        self.scripts.send_modify(|state| {
+            state.push(auto_script);
+        });
+
+        run_uuid
+    }
 }
 
 // pub struct AutoScriptManager {
@@ -237,30 +255,7 @@ impl AutoScripts {
 //         Ok(())
 //     }
 
-//     pub fn enqueue_auto_script(
-//         &self,
-//         owner_name: String,
-//         owner_comment: String,
-//         data: Vec<u8>,
-//         script_type: AutoScriptType,
-//     ) -> String {
-//         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
 
-//         let auto_script = AutoScript::new(
-//             owner_name,
-//             owner_comment,
-//             run_number,
-//             data.into(),
-//             script_type,
-//         );
-//         let auto_script_run_uuid = auto_script.run_uuid.clone();
-
-//         self.scripts.send_modify(|state| {
-//             state.queued.push_back(auto_script);
-//         });
-
-//         auto_script_run_uuid
-//     } 
 
 //     pub async fn watch_auto_script_logs(
 //         &self,

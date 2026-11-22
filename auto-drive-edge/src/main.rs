@@ -64,8 +64,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let auto_drive_edge_server = AutoDriveEdgeServer::new(hardware_config);
 
     let grpc_service = GrpcService::new(
-        auto_drive_edge_server.auto_script_manager,
-        auto_drive_edge_server.the_beginner_cars.clone(),
+        auto_drive_edge_server.auto_scripts,
+        auto_drive_edge_server.vehicles.clone(),
     );
 
     tokio::spawn(async move {

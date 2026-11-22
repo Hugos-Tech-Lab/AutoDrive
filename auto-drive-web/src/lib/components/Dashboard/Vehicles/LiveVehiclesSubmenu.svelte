@@ -6,74 +6,41 @@
     selectedVehicleNumberPlate = $bindable(),
   }: { selectedVehicleNumberPlate: string } = $props();
 
-  type HardwareData = {
-    number_plate: string;
-    category: string;
-    is_connected: boolean;
-  };
-
-  let hardwareList = $state<HardwareData[]>([]);
+  let numberPlates = $state<string[]>([]);
   let backendConnected = $state(false);
   let isRetrying = $state(false);
 
-  let sse: EventSource | null = null;
-
-  function connect() {
-    // Clean up any existing connection before starting a new one
-    if (sse) {
-      sse.close();
-    }
-
+  async function loadVehicles() {
     isRetrying = true;
-    sse = new EventSource(`${endpointRoot()}/hardware/overview`);
+    try {
+      const res = await fetch(`${endpointRoot()}/vehicle/overview`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    sse.addEventListener("overview", (event) => {
-      try {
-        const json = JSON.parse(event.data);
-        const dataObj = json.data || json;
-        hardwareList = Object.values(dataObj);
-      } catch (err) {
-        console.error("Failed to parse SSE overview data", err);
-      }
-
+      const data: { number_plates: string[] } = await res.json();
+      numberPlates = data.number_plates;
       backendConnected = true;
-      isRetrying = false;
-    });
-
-    sse.onopen = () => {
-      backendConnected = true;
-      isRetrying = false;
-    };
-
-    sse.onerror = (err) => {
-      console.error("SSE Error on hardware overview", err);
+    } catch (err) {
+      console.error("Failed to fetch vehicle overview", err);
       backendConnected = false;
+    } finally {
       isRetrying = false;
-    };
+    }
   }
 
-  onMount(() => {
-    connect();
-
-    // Cleanup the connection when the component is destroyed
-    return () => {
-      sse?.close();
-    };
-  });
+  onMount(loadVehicles);
 </script>
 
 <div class="row">
   {#if backendConnected}
-    {#each hardwareList as hw}
+    {#each numberPlates as plate}
       <button
         type="button"
         class="button block"
-        class:selected={selectedVehicleNumberPlate === hw.number_plate}
-        aria-pressed={selectedVehicleNumberPlate === hw.number_plate}
-        onclick={() => (selectedVehicleNumberPlate = hw.number_plate)}
+        class:selected={selectedVehicleNumberPlate === plate}
+        aria-pressed={selectedVehicleNumberPlate === plate}
+        onclick={() => (selectedVehicleNumberPlate = plate)}
       >
-        {hw.number_plate}
-        {hw.is_connected ? "(CONNECTED)" : "(NOT CONNECTED)"}
+        {plate}
       </button>
     {/each}
   {:else}
@@ -81,7 +48,7 @@
       type="button"
       class="button block"
       disabled={isRetrying}
-      onclick={connect}
+      onclick={loadVehicles}
     >
       {isRetrying ? "Retrying..." : "NETWORK ERROR. Press to retry."}
     </button>

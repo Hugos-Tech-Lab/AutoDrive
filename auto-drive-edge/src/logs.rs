@@ -24,7 +24,7 @@ impl Logs {
 
     pub async fn push(&self, log_message: LogMessage) {
         let mut history_lock = self.history.write().await;
-        self.live.send(log_message.clone()).unwrap();
+        let _ = self.live.send(log_message.clone());
         history_lock.push(log_message);
     }
 

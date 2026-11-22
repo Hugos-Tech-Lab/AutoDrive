@@ -3,12 +3,16 @@ use warp::Filter;
 
 use crate::{
     edge_client::EdgeClient,
-    http_server::auto_script::{
-        cancel::auto_script_cancel, enqueue::auto_script_enqueue, logs::auto_script_logs,
-        overview::auto_script_overview, run::auto_script_run,
+    http_server::{
+        auto_script::{
+            cancel::auto_script_cancel, enqueue::auto_script_enqueue, logs::auto_script_logs,
+            overview::auto_script_overview, run::auto_script_run,
+        },
+        vehicle::overview::vehicle_overview,
     },
 };
 pub mod auto_script;
+pub mod vehicle;
 
 pub async fn http_server(edge: EdgeClient) {
     let server = tokio::spawn(async move {
@@ -17,6 +21,8 @@ pub async fn http_server(edge: EdgeClient) {
         let auto_script_logs = auto_script_logs(edge.clone());
         let auto_script_overview = auto_script_overview(edge.clone());
         let auto_script_run = auto_script_run(edge.clone());
+
+        let vehicle_overview = vehicle_overview(edge.clone());
 
         let cors = warp::cors()
             .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
@@ -32,6 +38,7 @@ pub async fn http_server(edge: EdgeClient) {
             .or(auto_script_logs)
             .or(auto_script_overview)
             .or(auto_script_run)
+            .or(vehicle_overview)
             .with(cors);
 
         let address = ([0, 0, 0, 0], 3030);

@@ -43,7 +43,7 @@ pub struct IrSensorArray {
 pub enum RequestToHardware {
     LightOn,
     LightOff,
-    DrainLogs,
+    FlushLogs,
     GetPosition,
     NotifyPositionFromCamera { position: Position },
     NotifyBatteryReadings { voltage: f32 },

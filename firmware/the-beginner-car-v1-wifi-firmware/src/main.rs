@@ -154,7 +154,7 @@ pub fn main() -> anyhow::Result<()> {
 
     std::thread::Builder::new()
         .stack_size(2_000)
-        .name("flush_logs".to_string())
+        .name("flush_wifi_mcu_logs".to_string())
         .spawn({
             let sender_tx = sender_tx.clone();
             move || {
@@ -185,7 +185,7 @@ pub fn main() -> anyhow::Result<()> {
         .unwrap();
 
     let drain_events_handle = std::thread::Builder::new()
-        .name("drain_events_handle".to_string())
+        .name("flush_wasm_mcu_logs".to_string())
         .stack_size(4 * 1000)
         .spawn({
             let hardware_sender = hardware_sender.clone();
@@ -198,7 +198,7 @@ pub fn main() -> anyhow::Result<()> {
 
                     hardware_sender
                         .send(HardwareMessage {
-                            request: RequestToHardware::DrainEvents,
+                            request: RequestToHardware::FlushLogs,
                             response_tx: sender,
                         })
                         .unwrap();
@@ -217,22 +217,12 @@ pub fn main() -> anyhow::Result<()> {
                     };
 
                     match receive {
-                        ResponseFromHardware::Events { events } => {
-                            for event in events {
-                                match event {
-                                    the_beginner_car_spi_protocol::Event::Log { message } => {
-                                        sender_tx
-                                            .send(TheBeginnerCarOutgoingMessages::Log {
-                                                log: message,
-                                            })
-                                            .unwrap()
-                                    } // TODO: this should send vec
-                                    the_beginner_car_spi_protocol::Event::AutoScriptStopped => {
-                                        sender_tx
-                                            .send(TheBeginnerCarOutgoingMessages::AutoScriptStopped)
-                                            .unwrap()
-                                    }
-                                }
+                        ResponseFromHardware::Logs { logs } => {
+                            for log in logs {
+                                // TODO: this should send vec
+                                sender_tx
+                                    .send(TheBeginnerCarOutgoingMessages::Log { log })
+                                    .unwrap()
                             }
                         }
                         _ => {

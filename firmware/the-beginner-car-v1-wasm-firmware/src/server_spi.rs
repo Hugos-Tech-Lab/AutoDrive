@@ -3,10 +3,11 @@ use std::{
     thread::JoinHandle,
 };
 
+use auto_drive_common_types::LogMessage;
 use common_firmware::spi_slave::{SpiSlave, SpiSlaveHardware};
 use esp_idf_svc::hal::gpio::{InputPin, OutputPin};
 use log::info;
-use the_beginner_car_spi_protocol::{Event, RequestToHardware, ResponseFromHardware};
+use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 
 use crate::{
     auto_script::AutoScript, spawn_thread::spawn_thread,
@@ -29,12 +30,12 @@ impl ServerSpi {
         hardware: SpiSlaveHardware<SCLK, SDI, SDO, SRDY, CS, MRDY>,
         the_beginner_car: Arc<TheBeginnerCarHardware>,
         auto_script: Arc<AutoScript>,
-        events: Arc<Mutex<Vec<Event>>>,
+        logs: Arc<Mutex<Vec<LogMessage>>>,
     ) -> anyhow::Result<Self> {
         let handle = spawn_thread(c"server_spi_incoming_messages", 5, 12_000, move || {
             let mut spi = SpiSlave::new(hardware).unwrap();
             spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                Self::handle_request(request, &the_beginner_car, &auto_script, &events)
+                Self::handle_request(request, &the_beginner_car, &auto_script, &logs)
             });
         })?;
 
@@ -45,18 +46,18 @@ impl ServerSpi {
         request: RequestToHardware,
         the_beginner_car: &Arc<TheBeginnerCarHardware>,
         auto_script: &Arc<AutoScript>,
-        events: &Arc<Mutex<Vec<Event>>>,
+        logs: &Arc<Mutex<Vec<LogMessage>>>,
     ) -> ResponseFromHardware {
         match request {
             RequestToHardware::LightOn => println!("LightOn"),
             RequestToHardware::LightOff => println!("LightOff"),
-            RequestToHardware::DrainEvents => {
-                let events = {
-                    let mut events = events.lock().unwrap();
-                    std::mem::take(&mut *events)
+            RequestToHardware::FlushLogs => {
+                let logs = {
+                    let mut logs = logs.lock().unwrap();
+                    std::mem::take(&mut *logs)
                 };
 
-                return ResponseFromHardware::Events { events };
+                return ResponseFromHardware::Logs { logs };
             }
             RequestToHardware::NotifyPositionFromCamera { position } => {
                 the_beginner_car.notify_position_from_camera(position);
@@ -64,7 +65,9 @@ impl ServerSpi {
             RequestToHardware::NotifyBatteryReadings { voltage } => {
                 the_beginner_car.notify_battery_reading(voltage);
             }
-            RequestToHardware::NotifyIrSensorReadings { readings } => todo!(),
+            RequestToHardware::NotifyIrSensorReadings { readings } => {
+                //
+            }
             RequestToHardware::RunAutoScript { data } => {
                 info!("run auto script");
                 match auto_script.run(data) {
@@ -76,9 +79,6 @@ impl ServerSpi {
                 if auto_script.is_running() {
                     dbg!("was running and cancelled");
                     auto_script.cancel()
-                } else {
-                    let mut events = events.lock().unwrap();
-                    events.push(Event::AutoScriptStopped);
                 }
             } // TODO: RENAME TO CANCEL AutoScript
             RequestToHardware::GetPosition => {
@@ -89,6 +89,7 @@ impl ServerSpi {
             RequestToHardware::Uptime => {
                 return ResponseFromHardware::Uptime { ms: uptime_in_ms() };
             }
+            RequestToHardware::AutoScriptState => todo!(),
         }
 
         // pin.set_color(3, 20, 3);

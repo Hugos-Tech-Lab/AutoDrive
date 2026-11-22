@@ -55,7 +55,7 @@ impl Log for Logger {
             level,
             target: record.target().to_owned(),
             message: record.args().to_string(),
-            trace_id: current_trace_id(),
+            run_uuid: current_trace_id(),
             system_origin: self.origin.clone(),
         };
 

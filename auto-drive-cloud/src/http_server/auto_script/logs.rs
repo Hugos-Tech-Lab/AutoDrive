@@ -1,98 +1,59 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
-use crate::edge_client::EdgeClient;
+use crate::{auto_drive_edge_service::format_log, edge_client::EdgeClient};
 use futures_util::StreamExt;
-use serde::Serialize;
-use tokio::time::interval;
-use tokio_stream::wrappers::IntervalStream;
-use warp::{Filter, Reply};
+use serde::Deserialize;
+use warp::{Filter, Reply, http::StatusCode};
 
-#[derive(Serialize, Clone)]
-pub struct TimeTrialDrivingEntry {
-    pub name: String,
-    pub run_time: String,
-    pub upload_hash: String,
-    pub run_number: u32,
+#[derive(Debug, Deserialize)]
+pub struct AutoScriptLogsRequest {
     pub run_uuid: String,
-    pub uploader_comment: String,
 }
 
-#[derive(Serialize, Clone)]
-pub struct TimeTrialQueueEntry {
-    pub name: String,
-    pub waiting_time: String,
-    pub upload_hash: String,
-    pub run_number: u32,
-    pub run_uuid: String,
-    pub uploader_comment: String,
-}
-
-#[derive(Serialize, Clone)]
-pub struct TimeTrialData {
-    pub driving_now: Vec<TimeTrialDrivingEntry>,
-    pub queue: Vec<TimeTrialQueueEntry>,
-}
-
-// TODO: fix this and use this.
-// 2. The new GET endpoint for SSE streaming
-pub fn autoscript_watch(
-    hardware: EdgeClient, // Assuming you need to pass state to fetch real queue data
-) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
-    // Note the new endpoint name
-    warp::path!("autoscript" / "watch")
+pub fn autoscript_logs(
+    hardware: EdgeClient,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::path!("autoscript" / "logs")
         .and(warp::get())
-        .and_then(move || {
-            let _hardware = hardware.clone();
+        .and(warp::body::json::<AutoScriptLogsRequest>())
+        .and_then(move |request: AutoScriptLogsRequest| {
+            let edge = hardware.clone();
 
             async move {
-                // Set up a 10-second tick interval for updates
-                let timer = interval(Duration::from_secs(10));
-                let timer_stream = IntervalStream::new(timer);
+                let auto_script = edge
+                    .scripts
+                    .find_auto_script(request.run_uuid, Duration::from_secs(1))
+                    .await;
 
-                let event_stream = timer_stream.map(move |_| {
-                    // TODO: Replace this mock data with actual state from `hardware`
-                    let data = TimeTrialData {
-                        driving_now: vec![TimeTrialDrivingEntry {
-                            name: "Magnus".to_string(),
-                            run_time: "5s".to_string(), // Frontend will handle incrementing this locally
-                            upload_hash: "a1b2c3d4e5".to_string(),
-                            run_number: 42,
-                            run_uuid: "8f3a9b12-4c...".to_string(),
-                            uploader_comment: "Fast run".to_string(),
-                        }],
-                        queue: vec![TimeTrialQueueEntry {
-                            name: "Joe".to_string(),
-                            waiting_time: "2s".to_string(),
-                            upload_hash: "f9e8d7c6b5".to_string(),
-                            run_number: 43,
-                            run_uuid: "3d2e1f0a-9b...".to_string(),
-                            uploader_comment: "Smooth curve test".to_string(),
-                        }],
-                    };
+                let auto_script = match auto_script {
+                    Ok(auto_script) => auto_script,
+                    Err(err) => {
+                        return Ok(warp::reply::with_status(
+                            format!("Failed to find auto script ({err})"),
+                            StatusCode::BAD_REQUEST,
+                        )
+                        .into_response());
+                    }
+                };
 
-                    // Serialize to JSON
-                    let json_string =
-                        serde_json::to_string(&data).unwrap_or_else(|_| "{}".to_string());
+                let logs_stream = auto_script.logs.stream_with_history().await;
 
-                    // Map to warp::sse::Event matching the Svelte 'update' listener
-                    Ok::<_, Infallible>(
-                        warp::sse::Event::default()
-                            .event("update")
-                            .data(json_string),
-                    )
+                let logs_stream = logs_stream.filter_map(|auto_script_event| async move {
+                    let log = auto_script_event.unwrap();
+                    let formatted_log = format_log(&log);
+                    Some(Ok::<_, Infallible>(
+                        warp::sse::Event::default().event("log").data(formatted_log),
+                    ))
                 });
 
-                // Reply with the continuous SSE stream
-                Ok::<_, Infallible>(
-                    warp::sse::reply(
-                        warp::sse::keep_alive()
-                            .interval(Duration::from_secs(15))
-                            .text("keep-alive")
-                            .stream(event_stream),
-                    )
-                    .into_response(),
+                Ok(warp::sse::reply(
+                    warp::sse::keep_alive()
+                        .interval(Duration::from_secs(15))
+                        .text("keep-alive")
+                        .stream(logs_stream),
                 )
+                .into_response())
             }
         })
 }

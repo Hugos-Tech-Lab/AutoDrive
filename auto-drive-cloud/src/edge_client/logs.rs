@@ -80,17 +80,20 @@ impl Logs {
 
     pub async fn stream_with_history(
         &self,
-    ) -> Option<
-        impl Stream<Item = Result<LogMessage, BroadcastStreamRecvError>> + Send + Sync + 'static,
-    > {
-        let history_guard = self.history.read().await;
-        let history = history_guard.clone();
-        drop(history_guard);
+    ) -> impl Stream<Item = Result<LogMessage, BroadcastStreamRecvError>> + Send + Sync + 'static
+    {
+        let live_rx;
+        let history;
+        {
+            let history_guard = self.history.read().await;
+            live_rx = self.live.resubscribe();
+            history = history_guard.clone();
+        }
 
         let history_stream = stream::iter(history.into_iter().map(Ok));
-        let live_stream = BroadcastStream::new(self.live.resubscribe());
+        let live_stream = BroadcastStream::new(live_rx);
 
-        Some(history_stream.chain(live_stream))
+        history_stream.chain(live_stream)
     }
 }
 

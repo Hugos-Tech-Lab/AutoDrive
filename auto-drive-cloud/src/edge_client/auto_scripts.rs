@@ -68,7 +68,7 @@ impl AutoScripts {
         Ok(())
     }
 
-    pub async fn wait_for_auto_script_to_appear(
+    pub async fn find_auto_script(
         &self,
         run_uuid: String,
         timeout_duration: Duration,

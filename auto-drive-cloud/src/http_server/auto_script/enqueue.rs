@@ -1,13 +1,9 @@
 use std::convert::Infallible;
 use std::time::Duration;
 
-use crate::{
-    auto_drive_edge_service::v1::{AutoScriptType, EnqueueAutoScriptRequest},
-    edge_client::EdgeClient,
-};
+use crate::{auto_drive_edge_service::format_log, edge_client::EdgeClient};
 use bytes::Buf;
 use futures_util::{StreamExt, stream};
-use tokio_stream::wrappers::BroadcastStream;
 use warp::{Filter, Rejection, Reply, http::StatusCode};
 
 pub fn enqueue(
@@ -126,14 +122,14 @@ async fn handle_enqueue(
 
     let auto_script = edge_client
         .scripts
-        .wait_for_auto_script_to_appear(run_uuid, Duration::from_secs(5))
+        .find_auto_script(run_uuid.clone(), Duration::from_secs(5))
         .await;
 
     let auto_script = match auto_script {
         Ok(auto_script) => auto_script,
         Err(err) => {
             return Ok(warp::reply::with_status(
-                format!("Failed to wait until auto script appeared ({err})"),
+                format!("Failed to find auto script ({err})"),
                 StatusCode::BAD_REQUEST,
             )
             .into_response());
@@ -141,21 +137,6 @@ async fn handle_enqueue(
     };
 
     let logs = auto_script.logs.stream_with_history().await;
-
-    let logs = script.logs.stream_with_history().await;
-    let mut status_rx = script.status.subscribe();
-    let is_finished = async move {
-        let _ = status_rx
-            .wait_for(|status| {
-                matches!(
-                    status,
-                    AutoScriptStatus::StoppedBySelf
-                        | AutoScriptStatus::CancelledBySafety
-                        | AutoScriptStatus::CancelledManually
-                )
-            })
-            .await;
-    };
 
     let confirmation = stream::once(async {
         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(
@@ -176,33 +157,13 @@ async fn handle_enqueue(
         Ok::<_, Infallible>(warp::sse::Event::default().event("log").data(run_uuid))
     }));
 
-    let event_stream = run_uuid_stream.chain(logs.take_until(is_finished).filter_map(
-        |auto_script_event| async move {
-            let log = auto_script_event.unwrap();
-
-            let level = match log.level() {
-                crate::auto_drive_edge_service::v1::LogLevel::Unspecified => "UNSPECIFIED",
-                crate::auto_drive_edge_service::v1::LogLevel::Error => "ERROR",
-                crate::auto_drive_edge_service::v1::LogLevel::Warn => "WARN",
-                crate::auto_drive_edge_service::v1::LogLevel::Info => "INFO",
-                crate::auto_drive_edge_service::v1::LogLevel::Debug => "DEBUG",
-                crate::auto_drive_edge_service::v1::LogLevel::Trace => "TRACE",
-            };
-
-            let system_origin = match log.system_origin() {
-                crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmUnspecified => {
-                    "UNSPECIFIED"
-                }
-                crate::auto_drive_edge_service::v1::LogSystemOrigin::WasmMcu => "WASM_MCU",
-                crate::auto_drive_edge_service::v1::LogSystemOrigin::WifiMcu => "WIFI_MCU",
-            };
-
-            let formatted_log = format!("[{}] [{}] {}", level, system_origin, log.message);
-            Some(Ok::<_, Infallible>(
-                warp::sse::Event::default().event("log").data(formatted_log),
-            ))
-        },
-    ));
+    let event_stream = run_uuid_stream.chain(logs.filter_map(|auto_script_event| async move {
+        let log = auto_script_event.unwrap();
+        let formatted_log = format_log(&log);
+        Some(Ok::<_, Infallible>(
+            warp::sse::Event::default().event("log").data(formatted_log),
+        ))
+    }));
 
     let event_stream = event_stream.chain(exit);
 

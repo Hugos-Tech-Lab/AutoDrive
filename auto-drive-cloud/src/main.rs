@@ -8,16 +8,11 @@ use crate::{
     ignore_incomplete_message::IgnoreIncompleteMessage,
 };
 pub mod auth;
+pub mod auto_drive_edge_service;
 pub mod edge_client;
 pub mod hardware;
 pub mod http_server;
 pub mod ignore_incomplete_message;
-
-pub mod auto_drive_edge_service {
-    pub mod v1 {
-        tonic::include_proto!("auto_drive_edge_service.v1");
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

@@ -33,82 +33,30 @@ pub fn to_grpc_log_message(
         level: log_level as i32,
         system_origin: system_origin as i32,
     }
-    //
 }
 
-// impl From<TheBeginnerCarOutgoingMessages> for WatchTheBeginnerCarEventsResponse {
-//     fn from(message: TheBeginnerCarOutgoingMessages) -> Self {
-//         match message {
-//             TheBeginnerCarOutgoingMessages::Log { log } => WatchTheBeginnerCarEventsResponse {
-//                 event: Some(Event::Log(LogEvent {
-//                     log: Some(to_grpc_log_message(log)),
-//                 })),
-//             },
-//             TheBeginnerCarOutgoingMessages::SystemState {} => WatchTheBeginnerCarEventsResponse {
-//                 event: Some(Event::SystemState(SystemStateEvent {})),
-//             },
-//             TheBeginnerCarOutgoingMessages::WasmInstalled => WatchTheBeginnerCarEventsResponse {
-//                 event: Some(Event::WasmInstalled(WasmInstalledEvent {})),
-//             },
-//             TheBeginnerCarOutgoingMessages::AutoScriptRunning {
-//                 run_uuid,
-//                 script_start_time_utc_ms,
-//             } => WatchTheBeginnerCarEventsResponse {
-//                 event: Some(Event::AutoScriptRunning(AutoScriptRunningEvent {})),
-//             },
+// pub fn from_grpc_log_message(
+//     log_message: auto_drive_edge_service::v1::LogMessage,
+// ) -> auto_drive_common_types::LogMessage {
+//     let log_level = match log_message.level {
+//         auto_drive_common_types::LogLevel::Error => LogLevel::Error,
+//         auto_drive_common_types::LogLevel::Warn => LogLevel::Warn,
+//         auto_drive_common_types::LogLevel::Info => LogLevel::Info,
+//         auto_drive_common_types::LogLevel::Debug => LogLevel::Debug,
+//         auto_drive_common_types::LogLevel::Trace => LogLevel::Trace,
+//     };
 
-//             TheBeginnerCarOutgoingMessages::AutoScriptStopped {
-//                 run_uuid,
-//                 script_stop_time_utc_ms,
-//                 vehicle_start_time_utc_ms,
-//                 vehicle_finish_time_utc_ms,
-//             } => WatchTheBeginnerCarEventsResponse {
-//                 event: Some(Event::AutoScriptStopped(AutoScriptStoppedEvent {})),
-//             },
+//     let system_origin = match log_message.system_origin {
+//         auto_drive_common_types::LogSystemOrigin::WasmMcu => LogSystemOrigin::WasmMcu,
+//         auto_drive_common_types::LogSystemOrigin::WifiMcu => LogSystemOrigin::WifiMcu,
+//         auto_drive_common_types::LogSystemOrigin::CloudServer => LogSystemOrigin::WifiMcu,
+//         auto_drive_common_types::LogSystemOrigin::EdgeServer => LogSystemOrigin::WifiMcu,
+//     };
 
-//             TheBeginnerCarOutgoingMessages::BatteryReading { voltage } => {
-//                 WatchTheBeginnerCarEventsResponse {
-//                     event: Some(Event::BatteryReading(BatteryReadingEvent {
-//                         battery_voltage: voltage,
-//                     })),
-//                 }
-//             }
-
-//             TheBeginnerCarOutgoingMessages::InfraredLedReadings {
-//                 front_far_left,
-//                 front_left,
-//                 front_center,
-//                 front_right,
-//                 front_far_right,
-//                 back_center,
-//                 back_left,
-//             } => WatchTheBeginnerCarEventsResponse {
-//                 event: Some(Event::InfraredLedReading(InfraredLedReadingsEvent {
-//                     front_far_left: front_far_left as u32,
-//                     front_left: front_left as u32,
-//                     front_center: front_center as u32,
-//                     front_right: front_right as u32,
-//                     front_far_right: front_far_right as u32,
-//                     back_center: back_center as u32,
-//                     back_left: back_left as u32,
-//                 })),
-//             },
-//             TheBeginnerCarOutgoingMessages::Position {
-//                 x,
-//                 y,
-//                 rotation_radians,
-//                 timestamp_unix_epoch_ms,
-//             } => WatchTheBeginnerCarEventsResponse {
-//                 event: Some(Event::PositionEvent(PositionEvent {
-//                     number_plate: "TODO".to_string(), // TODO
-//                     x,
-//                     y,
-//                     rotation_radians,
-//                     timestamp_unix_epoch_ms,
-//                 })),
-//             },
-//             TheBeginnerCarOutgoingMessages::AutoScriptRejected { run_uuid } => todo!(),
-//         }
+//     crate::auto_drive_edge_service::v1::LogMessage {
+//         message: log_message.message,
+//         level: log_level as i32,
+//         system_origin: system_origin as i32,
 //     }
 // }
 

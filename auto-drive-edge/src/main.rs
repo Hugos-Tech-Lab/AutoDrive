@@ -13,8 +13,10 @@ use opentelemetry_sdk::{metrics::SdkMeterProvider, trace::SpanExporter as _};
 use std::error::Error;
 
 pub mod auto_drive_edge_server;
-pub mod auto_script_manager;
+pub mod auto_script;
+pub mod auto_scripts;
 pub mod grpc_service;
+pub mod logs;
 pub mod vehicle;
 pub mod vehicle_hardware_telemetry;
 

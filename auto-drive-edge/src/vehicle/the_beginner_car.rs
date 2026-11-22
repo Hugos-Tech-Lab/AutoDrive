@@ -12,7 +12,9 @@ use tokio::{
 };
 
 use crate::{
-    auto_script_manager::{AutoScriptLifecycle, AutoScripts, auto_script::AutoScript},
+    auto_script::AutoScript,
+    auto_scripts::{AutoScriptLifecycle, AutoScripts},
+    logs::Logs,
     vehicle::the_beginner_car::the_beginner_car_connection_handle::TheBeginnerCarConnectionHandle,
 };
 
@@ -30,7 +32,7 @@ pub struct TheBeginnerCar {
     connection: TheBeginnerCarConnectionHandle,
     scripts: AutoScripts,
     handle_messages_from_vehicle_task_handle: Arc<JoinHandle<()>>,
-    logs: (),
+    logs: Logs,
     vehicle_lifecycle: watch::Sender<AutoScriptLifecycle>,
     handle_vehicle_connection_handle: Arc<JoinHandle<()>>,
 }
@@ -42,12 +44,14 @@ impl TheBeginnerCar {
         let vehicle_lifecycle =
             watch::Sender::<AutoScriptLifecycle>::new(AutoScriptLifecycle::Idle);
 
+        let logs = Logs::new();
         let handle_messages_from_vehicle_task_handle =
             tokio::spawn(handle_messages_from_vehicle_task(
                 connection.clone(),
                 scripts.clone(),
                 vehicle_lifecycle.clone(),
                 metadata.number_plate.to_string(),
+                logs,
             ));
 
         let handle_vehicle_connection_handle = tokio::spawn(handle_vehicle_connection(
@@ -61,7 +65,7 @@ impl TheBeginnerCar {
             handle_messages_from_vehicle_task_handle: Arc::new(
                 handle_messages_from_vehicle_task_handle,
             ),
-            logs: (),
+            logs,
             vehicle_lifecycle,
             scripts,
             handle_vehicle_connection_handle: Arc::new(handle_vehicle_connection_handle),
@@ -179,6 +183,7 @@ pub async fn handle_messages_from_vehicle_task(
     scripts: AutoScripts,
     vehicle_lifecycle: watch::Sender<AutoScriptLifecycle>,
     number_plate: String,
+    logs: Logs,
 ) {
     loop {
         match connection.incoming_rx.recv().await {
@@ -188,6 +193,7 @@ pub async fn handle_messages_from_vehicle_task(
                     scripts.clone(),
                     vehicle_lifecycle.clone(),
                     number_plate.clone(),
+                    logs.clone(),
                 );
             }
             Err(broadcast::error::RecvError::Lagged(skipped)) => {
@@ -206,10 +212,14 @@ pub async fn handle_message_from_vehicle(
     scripts: AutoScripts,
     vehicle_lifecycle: watch::Sender<AutoScriptLifecycle>,
     number_plate: String,
+    vehicle_logs: Logs,
 ) {
     match message {
         TheBeginnerCarOutgoingMessages::Log { log } => {
-            //
+            vehicle_logs.push(log.clone());
+            if let Some(run_uuid) = log.run_uuid.clone() {
+                scripts.notify_log(run_uuid, log);
+            };
         }
         TheBeginnerCarOutgoingMessages::AutoScriptReceivedByWifiMcu { run_uuid } => {
             scripts.set_auto_script_state(

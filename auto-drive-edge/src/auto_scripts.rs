@@ -5,23 +5,20 @@ use chrono::{DateTime, Utc};
 use log::warn;
 use tokio::sync::{watch};
 
-pub mod auto_script;
-pub mod auto_script_on_vehicle_watcher;
-
-use crate::auto_script_manager::auto_script::{AutoScript, AutoScriptType};
+use crate::auto_script::{AutoScript, AutoScriptType};
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
-
+      
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AutoScriptLifecycle {
     Idle,
     SendingToWifiMcu,
-    ReceivedByWifiMcu,
-    SendingToWasmMcu, 
-    ReceivedByWasmMcu,
+    ReceivedByWifiMcu,  
+    SendingToWasmMcu,  
+    ReceivedByWasmMcu,   
     StartedCallingMain,
     StoppedByScriptEnd,
-    StoppedBySafety,
+    StoppedBySafety,    
     StoppedByHttpCancel,
     StoppedByDisconnect
 }
@@ -49,12 +46,6 @@ impl AutoScriptLifecycle {
 }
 
 #[derive(Clone, Debug)]
-pub enum AutoScriptEvents {
-    LogMessage { log_message: LogMessage },
-    ScriptExited,
-}
-
-#[derive(Clone, Debug)]
 pub struct AutoScripts {
     pub scripts: watch::Sender<Vec<AutoScript>>,
 }
@@ -62,12 +53,26 @@ pub struct AutoScripts {
 impl AutoScripts {
     pub fn new() -> Self {
         let (scripts, _) = watch::channel::<Vec<AutoScript>>(Vec::<AutoScript>::default());
-
+  
         Self { scripts }
     }
 
     pub fn start_auto_script(&self, ) {
         //   
+    }
+
+    pub fn notify_log(&self, run_uuid: String, log: LogMessage) {
+        self.scripts.send_modify(|auto_scripts| { 
+            let auto_script = auto_scripts
+                .iter_mut()
+                .find(|auto_script| auto_script.run_uuid == run_uuid);
+
+            let Some(auto_script) = auto_script else {
+                warn!("auto script not found");
+                return;
+            };
+            auto_script.logs.push(log);
+        });
     }
 
     pub fn notify_vehicle_disconnected(&self) { // TODO: add vehicle ID  
@@ -145,7 +150,7 @@ impl AutoScripts {
 
     pub fn enqueue_auto_script(&self,          owner_name: String,
          owner_comment: String,
-         data: Vec<u8>,
+         data: Vec<u8>, 
          script_type: AutoScriptType) -> String {
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
 
@@ -251,7 +256,7 @@ impl AutoScripts {
 //                 .send(TheBeginnerCarIncomingMessages::RunAutoScript { script })
 //                 .await;
 //         }
-
+  
 //         Ok(())
 //     }
 

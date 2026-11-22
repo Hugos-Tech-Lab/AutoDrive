@@ -1,9 +1,9 @@
-use std::{pin::Pin, sync::Arc};
+use std::pin::Pin;
 
 use futures_util::{Stream, StreamExt};
 use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Position;
 use tokio::sync::mpsc;
-use tokio_stream::wrappers::{BroadcastStream, ReceiverStream, WatchStream};
+use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
 use tonic::{Request, Response, Status};
 
 use crate::{
@@ -16,7 +16,8 @@ use crate::{
         WatchHardwareStatusResponse, WatchVehicleLogsRequest, WatchVehicleLogsResponse,
         auto_drive_edge_service_server::AutoDriveEdgeService,
     },
-    auto_script_manager::AutoScripts,
+    auto_script::AutoScriptType,
+    auto_scripts::AutoScripts,
     grpc_service::types::to_grpc_log_message,
     vehicle::the_beginner_car::TheBeginnerCar,
 };

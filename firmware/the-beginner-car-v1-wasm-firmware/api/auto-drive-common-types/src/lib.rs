@@ -11,7 +11,6 @@ pub enum LogLevel {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum LogSystemOrigin {
-    CloudServer,
     EdgeServer,
     WasmMcu,
     WifiMcu,
@@ -23,5 +22,5 @@ pub struct LogMessage {
     pub level: LogLevel,
     pub target: String,
     pub message: String,
-    pub trace_id: Option<String>,
+    pub run_uuid: Option<String>,
 }

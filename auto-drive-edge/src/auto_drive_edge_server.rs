@@ -1,7 +1,7 @@
 use hardware_config::HardwareConfig;
 
 use crate::{
-    auto_script_manager::AutoScripts, vehicle::the_beginner_car::TheBeginnerCar,
+    auto_scripts::AutoScripts, vehicle::the_beginner_car::TheBeginnerCar,
     vehicle_hardware_telemetry::VehicleHardwareTelemetry,
 };
 

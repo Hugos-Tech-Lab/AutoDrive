@@ -5,10 +5,6 @@ use std::time::{Duration, Instant};
 pub mod auto_script;
 pub mod error;
 pub mod info;
-pub mod set_motor_a_speed;
-pub mod set_motor_b_speed;
-pub mod update;
-pub mod verify_and_set_valid;
 
 use anyhow::{Context, bail};
 use async_io::{Async, Timer};
@@ -73,16 +69,6 @@ where
             postcard::from_bytes(&bytes).context("decoding incoming message")?;
 
         match message {
-            TheBeginnerCarIncomingMessages::SetMotorLeftSpeed { speed } => {
-                set_motor_a_speed::set_motor_a_speed_on_hardware(hardware_sender.clone(), speed)
-                    .map_err(|err| anyhow::anyhow!("{err:?}"))?;
-            }
-
-            TheBeginnerCarIncomingMessages::SetMotorRightSpeed { speed } => {
-                set_motor_b_speed::set_motor_b_speed_on_hardware(hardware_sender.clone(), speed)
-                    .map_err(|err| anyhow::anyhow!("{err:?}"))?;
-            }
-
             TheBeginnerCarIncomingMessages::NotifyPositionFromCamera {
                 x,
                 y,
@@ -164,10 +150,6 @@ where
             .recv_async()
             .await
             .map_err(|_| anyhow::anyhow!("outgoing message channel closed"))?;
-
-        if message == TheBeginnerCarOutgoingMessages::AutoScriptStopped {
-            dbg!("stopped");
-        }
 
         let bytes = postcard::to_allocvec(&message).context("encoding outgoing message")?;
 

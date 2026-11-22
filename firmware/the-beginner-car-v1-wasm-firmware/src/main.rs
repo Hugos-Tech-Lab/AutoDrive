@@ -1,18 +1,13 @@
-use std::{
-    ffi::CStr,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
-use auto_drive_common_types::LogSystemOrigin;
+use auto_drive_common_types::{LogMessage, LogSystemOrigin};
 use common_firmware::{logger::init_logging, spi_slave::SpiSlaveHardware};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::{delay::FreeRtos, task::thread::ThreadSpawnConfiguration};
-use the_beginner_car_spi_protocol::Event;
 
 use crate::{
     auto_script::AutoScript,
-    get_fw_sha256::{get_fw_sha256, print_task_stats, print_unallocated_memory, sample_cpu_usage},
     hardware_config::load_hardware_config,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
@@ -112,13 +107,13 @@ pub fn main() -> anyhow::Result<()> {
     ));
 
     // let latest_position: Arc<Mutex<Option<Position>>> = Arc::new(Mutex::new(None));
-    let events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(vec![]));
+    let logs: Arc<Mutex<Vec<LogMessage>>> = Arc::new(Mutex::new(vec![]));
 
     let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
-        let events = events.clone();
+        let logs = logs.clone();
         move || {
-            let mut events = events.lock().unwrap();
-            events.push(Event::AutoScriptStopped);
+            // let mut logs = logs.lock().unwrap();
+            // logs.push(Event::AutoScriptStopped);
         }
     })?);
 
@@ -131,7 +126,7 @@ pub fn main() -> anyhow::Result<()> {
     .unwrap();
 
     spawn_thread(c"position", 5, 2_000, {
-        let events = events.clone();
+        let logs = logs.clone();
 
         move || {
             let mut kalman_filter_state = kalman_filter.create_iterate_state();
@@ -149,7 +144,7 @@ pub fn main() -> anyhow::Result<()> {
 
                 // if let Some(position) = position {
                 //     {
-                //         let mut event_guard = events.lock().unwrap();
+                //         let mut event_guard = logs.lock().unwrap();
                 //         let timestamp_unix_epoch_ms = std::time::SystemTime::now()
                 //             .duration_since(std::time::UNIX_EPOCH)
                 //             .expect("Time went backwards")
@@ -173,7 +168,7 @@ pub fn main() -> anyhow::Result<()> {
     .unwrap();
 
     spawn_thread(c"flush_logs", 4, 2_000, {
-        let events = events.clone();
+        let logs = logs.clone();
         move || {
             let mut pending_logs = Vec::new();
             let mut last_flush = std::time::Instant::now();
@@ -189,9 +184,8 @@ pub fn main() -> anyhow::Result<()> {
                 }
 
                 if last_flush.elapsed() >= std::time::Duration::from_secs(1) {
-                    let mut events = events.lock().unwrap();
-                    events.extend(pending_logs.drain(..).map(|message| Event::Log { message }));
-
+                    let mut logs = logs.lock().unwrap();
+                    logs.extend(pending_logs.drain(..));
                     last_flush = std::time::Instant::now();
                 }
             }
@@ -217,7 +211,7 @@ pub fn main() -> anyhow::Result<()> {
         f_master_ready_pin: peripherals.pins.gpio19,
     };
 
-    let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, events)?;
+    let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, logs)?;
 
     server_spi.handle.join().unwrap();
     // reading.join().unwrap();

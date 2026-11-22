@@ -17,7 +17,6 @@ use esp_idf_svc::hal::{
     delay::FreeRtos,
     gpio::{Gpio0, Gpio1, Gpio2, Gpio3, Gpio4, Gpio5, Gpio6},
 };
-use the_beginner_car_spi_protocol::Event;
 
 pub struct IrSensorArrayHardware {
     pub adc: ADC1<'static>,
@@ -48,10 +47,9 @@ pub struct IrSensorArray {}
 impl IrSensorArray {
     pub fn new<T: AdcChannel>(
         hardware: IrSensorArrayHardware,
-        events: Arc<Mutex<Vec<Event>>>,
         data: Arc<IrSensorArrayData>,
     ) -> Self {
-        let a = Self::long_lived_watch_readings(hardware, events, data);
+        let a = Self::long_lived_watch_readings(hardware, data);
 
         Self {}
     }
@@ -68,7 +66,6 @@ impl IrSensorArray {
 
     pub fn long_lived_watch_readings(
         hardware: IrSensorArrayHardware,
-        events: Arc<Mutex<Vec<Event>>>,
         data: Arc<IrSensorArrayData>,
     ) -> JoinHandle<!> {
         let reading = std::thread::Builder::new()
@@ -112,11 +109,6 @@ impl IrSensorArray {
 
                         let back_left = Self::read_and_store(&mut back_left, &data.back_left);
                         let back_center = Self::read_and_store(&mut back_center, &data.back_center);
-
-                        if last_flush.elapsed() >= Duration::from_millis(100) {
-                            let mut events = events.lock().unwrap();
-                            last_flush = std::time::Instant::now();
-                        }
 
                         FreeRtos::delay_ms(1);
                     }

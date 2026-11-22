@@ -2,9 +2,7 @@ use std::pin::Pin;
 
 use futures_util::{FutureExt, Stream, StreamExt};
 use log::warn;
-use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages::Position;
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::{BroadcastStream, ReceiverStream};
+use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 
 use crate::{
@@ -141,7 +139,7 @@ impl AutoDriveEdgeService for GrpcService {
             )));
         };
 
-        let stream = auto_script.logs.stream_with_history().await;
+        let stream = auto_script.payload.logs.stream_with_history().await;
         let scripts = stream.map(|log| {
             let log_message = match log {
                 Ok(log) => log,

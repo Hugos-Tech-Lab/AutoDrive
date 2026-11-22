@@ -78,7 +78,7 @@ impl AutoScripts {
         let auto_scripts = self.scripts.borrow();
         let auto_script = auto_scripts
             .iter()
-            .find(|auto_script| auto_script.run_uuid == run_uuid)
+            .find(|auto_script| auto_script.metadata.run_uuid == run_uuid)
             .map(|auto_script| auto_script.clone());
 
         auto_script
@@ -88,14 +88,14 @@ impl AutoScripts {
         self.scripts.send_if_modified(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
-                .find(|auto_script| auto_script.run_uuid == run_uuid);
+                .find(|auto_script| auto_script.metadata.run_uuid == run_uuid);
 
             let Some(auto_script) = auto_script else {
                 warn!("auto script not found");
                 return false;
             };
 
-            auto_script.lifecycle = AutoScriptLifecycle::Cancelling;
+            auto_script.metadata.lifecycle = AutoScriptLifecycle::Cancelling;
             true
         });
     }
@@ -105,14 +105,14 @@ impl AutoScripts {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
-                .find(|auto_script| auto_script.run_uuid == run_uuid);
+                .find(|auto_script| auto_script.metadata.run_uuid == run_uuid);
 
             let Some(auto_script) = auto_script else {
                 warn!("auto script not found");
                 return;
             };
 
-            logs = Some(auto_script.logs.clone());
+            logs = Some(auto_script.payload.logs.clone());
         });
 
         if let Some(logs) = logs {
@@ -124,8 +124,10 @@ impl AutoScripts {
         // TODO: add vehicle ID
         self.scripts.send_modify(|auto_scripts| {
             for auto_script in auto_scripts {
-                if auto_script.lifecycle.simplified() == AutoScriptSimplifiedLifecycle::Driving {
-                    auto_script.lifecycle = AutoScriptLifecycle::StoppedByDisconnect;
+                if auto_script.metadata.lifecycle.simplified()
+                    == AutoScriptSimplifiedLifecycle::Driving
+                {
+                    auto_script.metadata.lifecycle = AutoScriptLifecycle::StoppedByDisconnect;
                 }
             }
         });
@@ -140,15 +142,15 @@ impl AutoScripts {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
-                .find(|auto_script| auto_script.run_uuid == run_uuid);
+                .find(|auto_script| auto_script.metadata.run_uuid == run_uuid);
 
             let Some(auto_script) = auto_script else {
                 warn!("auto script not found");
                 return;
             };
-            auto_script.lifecycle = AutoScriptLifecycle::StartedCallingMain;
-            auto_script.script_start_time = script_start_time;
-            auto_script.vehicle_number_plate = Some(number_plate);
+            auto_script.metadata.lifecycle = AutoScriptLifecycle::StartedCallingMain;
+            auto_script.metadata.script_start_time = script_start_time;
+            auto_script.metadata.vehicle_number_plate = Some(number_plate);
         });
     }
 
@@ -161,14 +163,14 @@ impl AutoScripts {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
-                .find(|auto_script| auto_script.run_uuid == run_uuid);
+                .find(|auto_script| auto_script.metadata.run_uuid == run_uuid);
 
             let Some(auto_script) = auto_script else {
                 warn!("auto script not found");
                 return;
             };
-            auto_script.lifecycle = lifecycle;
-            auto_script.vehicle_number_plate = Some(number_plate);
+            auto_script.metadata.lifecycle = lifecycle;
+            auto_script.metadata.vehicle_number_plate = Some(number_plate);
         });
     }
 
@@ -182,30 +184,33 @@ impl AutoScripts {
         self.scripts.send_modify(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
-                .find(|auto_script| auto_script.run_uuid == *run_uuid);
+                .find(|auto_script| auto_script.metadata.run_uuid == *run_uuid);
 
             let Some(auto_script) = auto_script else {
                 warn!("AutoScript not found ({run_uuid})");
                 return;
             };
 
-            if auto_script.script_stop_time.is_some() {
+            if auto_script.metadata.script_stop_time.is_some() {
                 warn!("Hardware stopped a second time ({run_uuid})");
                 return;
             }
 
-            auto_script.vehicle_number_plate.get_or_insert(number_plate);
-            auto_script.script_stop_time = script_stop_time;
+            auto_script
+                .metadata
+                .vehicle_number_plate
+                .get_or_insert(number_plate);
+            auto_script.metadata.script_stop_time = script_stop_time;
 
-            if auto_script.script_stop_time.is_some() {
+            if auto_script.metadata.script_stop_time.is_some() {
                 warn!("Stop time is unexpectedly some");
             }
 
-            if auto_script.time_trials_dnf.is_some() {
+            if auto_script.metadata.time_trials_dnf.is_some() {
                 warn!("DNF is unexpectedly some");
             }
 
-            auto_script.time_trials_dnf = Some(time_trials_dnf);
+            auto_script.metadata.time_trials_dnf = Some(time_trials_dnf);
         });
     }
 
@@ -226,7 +231,7 @@ impl AutoScripts {
             script_type,
         );
 
-        let run_uuid = auto_script.run_uuid.clone();
+        let run_uuid = auto_script.metadata.run_uuid.clone();
 
         self.scripts.send_modify(|state| {
             state.push(auto_script);

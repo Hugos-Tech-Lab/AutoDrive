@@ -1,5 +1,3 @@
-use the_beginner_car_tcp_protocol::TheBeginnerCarOutgoingMessages;
-
 use crate::auto_drive_edge_service::{
     self,
     v1::{LogLevel, LogSystemOrigin},
@@ -57,19 +55,22 @@ pub fn to_grpc_log_message(
 impl From<&crate::auto_script::AutoScript> for crate::auto_drive_edge_service::v1::AutoScript {
     fn from(value: &crate::auto_script::AutoScript) -> Self {
         Self {
-            owner_name: value.owner_name.clone(),
-            owner_comment: value.owner_comment.clone(),
-            uploaded_script_hash: value.uploaded_script_hash.clone(),
-            script_queue_time: value.script_queue_time.to_string(),
-            script_start_time: value.script_start_time.map(|v| v.to_string()),
-            vehicle_start_time: value.time_trials_start_time.map(|v| v.to_string()),
-            vehicle_finish_time: value.time_trials_finish_time.map(|v| v.to_string()),
-            script_stop_time: value.script_stop_time.map(|v| v.to_string()),
-            run_number: value.run_number,
-            run_uuid: value.run_uuid.clone(),
-            number_plate: value.vehicle_number_plate.clone(),
+            owner_name: value.metadata.owner_name.clone(),
+            owner_comment: value.metadata.owner_comment.clone(),
+            uploaded_script_hash: value.metadata.uploaded_script_hash.clone(),
+            script_queue_time: value.metadata.script_queue_time.to_string(),
+            script_start_time: value.metadata.script_start_time.map(|v| v.to_string()),
+            vehicle_start_time: value.metadata.time_trials_start_time.map(|v| v.to_string()),
+            vehicle_finish_time: value
+                .metadata
+                .time_trials_finish_time
+                .map(|v| v.to_string()),
+            script_stop_time: value.metadata.script_stop_time.map(|v| v.to_string()),
+            run_number: value.metadata.run_number,
+            run_uuid: value.metadata.run_uuid.clone(),
+            number_plate: value.metadata.vehicle_number_plate.clone(),
             script_type: 0,
-            lifecycle: match value.lifecycle {
+            lifecycle: match value.metadata.lifecycle {
                 crate::auto_scripts::AutoScriptLifecycle::Idle => 0,
                 crate::auto_scripts::AutoScriptLifecycle::SendingToWifiMcu => 0,
                 crate::auto_scripts::AutoScriptLifecycle::ReceivedByWifiMcu => 0,

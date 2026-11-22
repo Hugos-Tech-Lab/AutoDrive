@@ -84,7 +84,8 @@ impl TheBeginnerCar {
 
         let modified = self.scripts.scripts.send_if_modified(|auto_scripts| {
             let active_auto_script = auto_scripts.iter().find(|auto_script| {
-                auto_script.lifecycle.simplified() == AutoScriptSimplifiedLifecycle::Driving
+                auto_script.metadata.lifecycle.simplified()
+                    == AutoScriptSimplifiedLifecycle::Driving
             });
 
             if active_auto_script.is_some() {
@@ -94,14 +95,14 @@ impl TheBeginnerCar {
 
             let auto_script = auto_scripts
                 .iter_mut()
-                .find(|auto_script| auto_script.run_uuid == run_uuid);
+                .find(|auto_script| auto_script.metadata.run_uuid == run_uuid);
 
             let Some(auto_script) = auto_script else {
                 warn!("auto script not found");
                 return false;
             };
 
-            auto_script.lifecycle = AutoScriptLifecycle::SendingToWifiMcu;
+            auto_script.metadata.lifecycle = AutoScriptLifecycle::SendingToWifiMcu;
             auto_script_to_start = Some(auto_script.clone());
             true
         });
@@ -139,9 +140,9 @@ impl TheBeginnerCar {
             .send(TheBeginnerCarIncomingMessages::RunAutoScript {
                 script: the_beginner_car_tcp_protocol::AutoScript {
                     run_uuid: run_uuid.clone(),
-                    preprocessed_file_hash: auto_script_to_start.uploaded_script_hash,
-                    run_number: auto_script_to_start.run_number,
-                    script: auto_script_to_start.uploaded_script.to_vec(),
+                    preprocessed_file_hash: auto_script_to_start.metadata.uploaded_script_hash,
+                    run_number: auto_script_to_start.metadata.run_number,
+                    script: auto_script_to_start.payload.uploaded_script.to_vec(),
                 },
             })
             .await;

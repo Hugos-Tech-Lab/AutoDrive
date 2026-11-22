@@ -1,4 +1,4 @@
-use std::{thread, time::Duration};
+use std::time::Duration;
 
 use hardware_config::TheBeginnerCarMetadata;
 use log::{info, warn};
@@ -8,10 +8,9 @@ use the_beginner_car_tcp_protocol::{
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
-    select,
     sync::{broadcast, mpsc, watch},
     task::JoinHandle,
-    time::timeout,
+    time::{sleep, timeout},
 };
 
 #[derive(Debug)]
@@ -34,20 +33,16 @@ impl Clone for TheBeginnerCarComms {
 }
 
 impl TheBeginnerCarComms {
-    pub fn new(
-        device_metadata: TheBeginnerCarMetadata,
-        // vehicle_telemetry: TheBeginnerCarVehicleHardwareTelemetry,
-    ) -> (Self, JoinHandle<()>) {
+    pub fn new(device_metadata: TheBeginnerCarMetadata) -> (Self, JoinHandle<()>) {
         let (outgoing_tx, internal_receiver) = mpsc::channel::<TheBeginnerCarIncomingMessages>(100);
         let (incoming_tx, incoming_rx) = broadcast::channel::<TheBeginnerCarOutgoingMessages>(100);
-
         let (connected_tx, connected_rx) = watch::channel(false);
 
         let connection_handle = tokio::spawn(Self::tcp_connection(
             device_metadata.clone(),
             internal_receiver,
-            incoming_tx.clone(),
-            connected_tx.clone(),
+            incoming_tx,
+            connected_tx,
         ));
 
         (
@@ -62,7 +57,7 @@ impl TheBeginnerCarComms {
     }
 
     pub fn is_connected(&self) -> bool {
-        self.connected_rx.borrow().clone()
+        *self.connected_rx.borrow()
     }
 
     pub async fn send(&self, message: TheBeginnerCarIncomingMessages) -> bool {
@@ -70,10 +65,7 @@ impl TheBeginnerCarComms {
             return false;
         }
 
-        if let Err(_) = self.outgoing_tx.send(message).await {
-            return false;
-        }
-        true
+        self.outgoing_tx.send(message).await.is_ok()
     }
 
     async fn tcp_connection(
@@ -82,95 +74,140 @@ impl TheBeginnerCarComms {
         broadcast_sender: broadcast::Sender<TheBeginnerCarOutgoingMessages>,
         connected_tx: watch::Sender<bool>,
     ) {
-        loop {
-            let ip = metadata.wifi_mcu.ip;
-            let ip = format!("{ip}:8080");
+        const MAX_FRAME_LEN: usize = 16 * 1024;
 
-            let stream = match timeout(Duration::from_secs(5), TcpStream::connect(ip.clone())).await
-            {
+        let addr = format!("{}:8080", metadata.wifi_mcu.ip);
+
+        loop {
+            if connected_tx.is_closed() {
+                info!(
+                    "All handles dropped for {}; stopping TCP task.",
+                    metadata.number_plate
+                );
+                return;
+            }
+
+            let stream = match timeout(Duration::from_secs(5), TcpStream::connect(&addr)).await {
                 Ok(Ok(stream)) => {
-                    connected_tx.send(true).unwrap();
-                    info!("Connected to {} at {ip}.", metadata.number_plate);
+                    let _ = stream.set_nodelay(true);
+                    let _ = connected_tx.send(true);
+                    info!("Connected to {} at {addr}.", metadata.number_plate);
                     stream
                 }
                 Err(_) | Ok(Err(_)) => {
-                    connected_tx.send(false).unwrap();
-                    let ip = ip.clone();
-                    eprintln!(
-                        "Failed to connect to {} at {ip}. Trying again in 5 seconds",
-                        metadata.number_plate
+                    let _ = connected_tx.send(false);
+                    warn!(
+                        "Failed to connect to {} at {addr}. Trying again in {} seconds",
+                        metadata.number_plate,
+                        Duration::from_secs(5).as_secs()
                     );
-                    thread::sleep(Duration::from_secs(5));
+                    sleep(Duration::from_secs(5)).await;
                     continue;
                 }
             };
 
             let (mut stream_read, mut stream_write) = stream.into_split();
-            loop {
-                select! {
-                    // car must send message every 10 seconds
-                    result = timeout(Duration::from_secs(10), async {
-                        let mut len_bytes = [0u8; 4];
-                        stream_read.read_exact(&mut len_bytes).await?;
 
-                        let len = u32::from_be_bytes(len_bytes) as usize;
+            let (shutdown_tx, mut shutdown_rx) = watch::channel(false);
 
-                        if len > 16 * 1024 {
-                            return Err(std::io::Error::new(
-                                std::io::ErrorKind::InvalidData,
-                                format!("Payload length {} exceeds sanity limit. Framing error?", len)
-                            ));
-                        }
-
-                        let mut message_buf = vec![0u8; len];
-                        stream_read.read_exact(&mut message_buf).await?;
-
-                        Ok::<Vec<u8>, std::io::Error>(message_buf)
-                    }) => {
-                        match result {
-                            Ok(Ok(message_buf)) => {
-                                let message: TheBeginnerCarOutgoingMessages = match postcard::from_bytes(&message_buf) {
-                                    Ok(message) => message,
-                                    Err(err) => {
-                                        warn!("Failed to deserialize message: {:?}", err);
-                                        continue;
+            let writer_task = tokio::spawn({
+                let number_plate = metadata.number_plate.clone();
+                async move {
+                    loop {
+                        tokio::select! {
+                            biased;
+                            _ = shutdown_rx.changed() => {
+                                break;
+                            }
+                            msg = internal_receiver.recv() => {
+                                match msg {
+                                    Some(message_to_car) => {
+                                        let bytes = match message_to_car.to_bytes() {
+                                            Ok(b) => b,
+                                            Err(e) => {
+                                                warn!("Failed to serialize outgoing message: {:?}", e);
+                                                continue;
+                                            }
+                                        };
+                                        if let Err(e) = stream_write.write_all(&bytes).await {
+                                            warn!("Error writing to {number_plate}: {e}");
+                                            break;
+                                        }
                                     }
-                                };
-                                if let Err(_) = broadcast_sender.send(message) {
-                                    warn!("Did not send broadcast message, assuming all receivers dropped, that's strange?")
-                                };
-                            }
-                            Ok(Err(e)) => {
-                                warn!("Error reading from car: {e}");
-                                connected_tx.send(false).unwrap();
-                                break;
-                            }
-                            Err(_) => {
-                                warn!("Read timeout: Car silently disconnected or lost power.");
-                                connected_tx.send(false).unwrap();
-                                break;
-                            }
-                        }
-                    }
-                    message = internal_receiver.recv() => {
-                        match message {
-                            Some(message_to_car) => {
-                                let bytes = message_to_car.to_bytes().unwrap();
-
-                                if let Err(e) = stream_write.write_all(&bytes).await {
-                                    eprintln!("Error writing to car: {e}");
-                                    connected_tx.send(false).unwrap();
-                                    break;
-                                } else {
-                                    connected_tx.send(true).unwrap();
+                                    None => {
+                                        return None;
+                                    }
                                 }
                             }
-                            None => {
-                                break;
+                        }
+                    }
+                    Some(internal_receiver)
+                }
+            });
+
+            loop {
+                let read_result = timeout(Duration::from_secs(10), async {
+                    let mut len_bytes = [0u8; 4];
+                    stream_read.read_exact(&mut len_bytes).await?;
+
+                     let len = u32::from_be_bytes(len_bytes) as usize;
+
+                    if len > MAX_FRAME_LEN {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!(
+                                "Payload length {} (raw bytes: {:02X?}) exceeds sanity limit. Framing error?",
+                                len, len_bytes
+                            ),
+                        ));
+                    }
+
+                    let mut message_buf = vec![0u8; len];
+                    stream_read.read_exact(&mut message_buf).await?;
+
+                    Ok::<Vec<u8>, std::io::Error>(message_buf)
+                })
+                .await;
+
+                match read_result {
+                    Ok(Ok(message_buf)) => {
+                        match postcard::from_bytes::<TheBeginnerCarOutgoingMessages>(&message_buf) {
+                            Ok(message) => {
+                                if broadcast_sender.send(message).is_err() {
+                                    warn!(
+                                        "No active incoming_rx subscribers; dropping incoming message."
+                                    );
+                                }
+                            }
+                            Err(err) => {
+                                warn!(
+                                    "Failed to deserialize message ({} bytes): {:?}",
+                                    message_buf.len(),
+                                    err
+                                );
                             }
                         }
                     }
+                    Ok(Err(e)) => {
+                        warn!("Error reading from {}: {e}", metadata.number_plate);
+                        break;
+                    }
+                    Err(_) => {
+                        warn!(
+                            "Read timeout on {}: Car silently disconnected or lost power.",
+                            metadata.number_plate
+                        );
+                        break;
+                    }
                 }
+            }
+
+            let _ = connected_tx.send(false);
+            let _ = shutdown_tx.send(true);
+
+            match writer_task.await {
+                Ok(Some(rx)) => internal_receiver = rx,
+                Ok(None) | Err(_) => return,
             }
         }
     }

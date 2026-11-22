@@ -1,30 +1,27 @@
-use std::sync::Arc;
-
 use hardware_config::HardwareConfig;
-use tokio::task::JoinHandle;
 
 use crate::{
-    auto_script_manager::AutoScriptManager, the_beginner_car::TheBeginnerCar,
+    auto_script_manager::{AutoScriptManager, AutoScripts},
+    vehicle::the_beginner_car::TheBeginnerCar,
     vehicle_hardware_telemetry::VehicleHardwareTelemetry,
 };
 
 pub struct AutoDriveEdgeServer {
+    pub auto_scripts: AutoScripts,
     pub the_beginner_cars: Vec<TheBeginnerCar>,
-    pub the_beginner_car_handles: Vec<JoinHandle<()>>,
     pub telemetry: VehicleHardwareTelemetry,
-    pub auto_script_manager: Arc<AutoScriptManager>,
 }
 
 impl AutoDriveEdgeServer {
     pub fn new(config: HardwareConfig) -> Self {
-        let (the_beginner_cars, the_beginner_car_handles): (
-            Vec<TheBeginnerCar>,
-            Vec<JoinHandle<()>>,
-        ) = config
+        let auto_scripts = AutoScripts::new();
+        //
+        //
+        let the_beginner_cars = config
             .the_beginner_cars
             .iter()
             .map(|d| TheBeginnerCar::new(d.clone()))
-            .unzip();
+            .collect();
 
         let telemetry = VehicleHardwareTelemetry::new(the_beginner_cars.clone());
 
@@ -32,7 +29,6 @@ impl AutoDriveEdgeServer {
 
         Self {
             the_beginner_cars,
-            the_beginner_car_handles,
             telemetry,
             auto_script_manager: auto_script_manager.into(),
         }

@@ -22,6 +22,7 @@ pub mod the_beginner_car_connection_handle;
 pub struct TheBeginnerCar {
     connection: TheBeginnerCarConnectionHandle,
     handle_messages_from_vehicle_task_handle: Arc<JoinHandle<()>>,
+    logs: (),
 }
 
 impl TheBeginnerCar {
@@ -77,7 +78,9 @@ pub async fn handle_message_from_vehicle(
     scripts: watch::Sender<Vec<AutoScript>>,
 ) {
     match message {
-        TheBeginnerCarOutgoingMessages::Log { log } => todo!(),
+        TheBeginnerCarOutgoingMessages::Log { log } => {
+            //
+        }
         TheBeginnerCarOutgoingMessages::SystemState {} => todo!(),
         TheBeginnerCarOutgoingMessages::WasmInstalled => todo!(),
         TheBeginnerCarOutgoingMessages::AutoScriptStarted {

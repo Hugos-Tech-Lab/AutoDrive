@@ -33,6 +33,31 @@ pub enum AutoScriptEvents {
     ScriptExited,
 }
 
+#[derive(Clone, Debug)]
+pub struct AutoScripts {
+    scripts: watch::Sender<Vec<AutoScript>>,
+}
+
+impl AutoScripts {
+    pub fn new() -> Self {
+        let (scripts, _) = watch::channel::<Vec<AutoScript>>(Vec::<AutoScript>::default());
+
+        Self { scripts }
+    }
+
+    pub fn notify_vehicle_started(&self) {
+        //
+    }
+
+    pub fn notify_vehicle_stopped(&self) {
+        //
+    }
+}
+
+impl AutoScripts {
+    //
+}
+
 pub struct AutoScriptManager {
     vehicles: Vec<TheBeginnerCar>,
     scripts: watch::Sender<Vec<AutoScript>>,

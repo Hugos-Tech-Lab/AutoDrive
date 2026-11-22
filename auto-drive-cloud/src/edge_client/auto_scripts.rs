@@ -4,10 +4,7 @@ use anyhow::bail;
 use futures_util::Stream;
 use log::{info, warn};
 use tokio::{sync::watch, task::JoinHandle, time::timeout};
-use tokio_stream::{
-    StreamExt,
-    wrappers::{WatchStream, errors::BroadcastStreamRecvError},
-};
+use tokio_stream::wrappers::WatchStream;
 use tonic::transport::Channel;
 
 use crate::{
@@ -48,11 +45,7 @@ impl AutoScripts {
                 .iter()
                 .find(|auto_script| auto_script.run_uuid == run_uuid);
 
-            if let Some(_) = script {
-                valid_run_uuid = true;
-            } else {
-                valid_run_uuid = false;
-            }
+            valid_run_uuid = script.is_some();
         }
 
         if !valid_run_uuid {

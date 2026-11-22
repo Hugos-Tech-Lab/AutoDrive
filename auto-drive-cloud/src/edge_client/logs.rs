@@ -129,7 +129,7 @@ async fn watch_vehicle_logs(
         };
 
         let mut history_lock = history.write().await;
-        live.send(message.clone());
+        live.send(message.clone()).unwrap();
         history_lock.push(message);
     }
 
@@ -168,7 +168,7 @@ async fn watch_auto_script_logs(
         };
 
         let mut history_lock = history.write().await;
-        live.send(message.clone());
+        live.send(message.clone()).unwrap();
         history_lock.push(message);
     }
 

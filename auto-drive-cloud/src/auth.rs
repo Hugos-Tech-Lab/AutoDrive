@@ -15,7 +15,7 @@ struct Claims {
     role: Role,
 }
 
-fn authenticate_jwt(token: &str, jwt_secret: &str) -> bool {
+pub fn authenticate_jwt(token: &str, jwt_secret: &str) -> bool {
     let key = DecodingKey::from_secret(jwt_secret.as_bytes());
 
     let mut validation = Validation::new(Algorithm::HS256);

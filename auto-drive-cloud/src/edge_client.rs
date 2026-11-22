@@ -1,7 +1,6 @@
-use std::{collections::HashMap, error::Error, time::Duration};
+use std::{error::Error, time::Duration};
 
 use log::{info, warn};
-use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
 use tonic::transport::Channel;
 
@@ -17,27 +16,6 @@ pub mod auto_scripts;
 pub mod grpc_connect;
 pub mod logs;
 pub mod vehicle;
-pub mod vehicle_position;
-
-pub mod watch_vehicle_positions;
-
-pub enum StartAutoScriptResponse {
-    Uuid { uuid: String },
-    EdgeClientUnavailable,
-}
-
-// TODO FILL THIS
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct McuStatus {
-    cpu_perc: f32,
-    // ...
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Status {
-    pub wifi_mcu: McuStatus,
-    pub wasm_mcu: McuStatus,
-}
 
 #[derive(Debug, Clone)]
 pub struct EdgeClient {

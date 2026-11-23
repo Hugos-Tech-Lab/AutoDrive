@@ -14,7 +14,6 @@ pub struct AutoScriptMetadata {
     pub vehicle_number_plate: Option<String>,
     pub lifecycle: AutoScriptLifecycle,
     pub script_queue_time: DateTime<Utc>,
-    pub aa: DateTime<Utc>,
     pub script_start_time: Option<DateTime<Utc>>,
     pub time_trials_start_time: Option<DateTime<Utc>>,
     pub time_trials_finish_time: Option<DateTime<Utc>>,

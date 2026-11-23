@@ -36,7 +36,7 @@ message GetVehiclesResponse {
 message WatchAutoScriptsRequest {}
 
 message WatchAutoScriptsResponse {
-  repeated AutoScript scripts = 1;
+  repeated AutoScriptMetadata scripts = 1;
 }
 
 // LogMessage
@@ -88,7 +88,7 @@ message Hardware {
   bool is_connected = 3;
 }
 
-message AutoScript {
+message AutoScriptMetadata {
   string owner_name = 1;
   string owner_comment = 2;
   string uploaded_script_hash = 3;
@@ -102,7 +102,7 @@ message AutoScript {
   string run_uuid = 11;
   AutoScriptType script_type = 12;
   AutoScriptLifecycle lifecycle = 13;
-  AutoScriptRuntimeLifecycle runtime_lifecycle = 14;
+  AutoScriptSimplifiedLifecycle simplified_lifecycle = 14;
 }
 
 enum AutoScriptType {
@@ -125,6 +125,12 @@ enum AutoScriptLifecycle {
   AUTO_SCRIPT_LIFECYCLE_STOPPED_BY_SAFETY = 9;
   AUTO_SCRIPT_LIFECYCLE_STOPPED_BY_HTTP_CANCEL = 10;
   AUTO_SCRIPT_LIFECYCLE_STOPPED_BY_DISCONNECT = 11;
+}
+
+enum AutoScriptSimplifiedLifecycle {
+  AUTO_SCRIPT_SIMPLIFIED_LIFECYCLE_UNSPECIFIED = 0;
+  AUTO_SCRIPT_SIMPLIFIED_LIFECYCLE_IDLE = 1;
+  AUTO_SCRIPT_SIMPLIFIED_SENDING_TO_WIFI_MCU = 2;
 }
 
 message WatchAutoScriptLogsRequest {

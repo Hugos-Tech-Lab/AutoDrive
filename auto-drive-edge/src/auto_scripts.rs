@@ -29,35 +29,6 @@ pub enum AutoScriptLifecycle {
     StoppedByDisconnect,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum AutoScriptSimplifiedLifecycle {
-    InTheQueue,
-    Driving,
-    Stopped,
-}
-
-impl AutoScriptLifecycle {
-    pub fn simplified(&self) -> AutoScriptSimplifiedLifecycle {
-        match self {
-            // IN THE QUEUE
-            AutoScriptLifecycle::Idle => AutoScriptSimplifiedLifecycle::InTheQueue,
-            // DRIVING
-            AutoScriptLifecycle::SendingToWifiMcu
-            | AutoScriptLifecycle::ReceivedByWifiMcu
-            | AutoScriptLifecycle::SendingToWasmMcu
-            | AutoScriptLifecycle::ReceivedByWasmMcu
-            | AutoScriptLifecycle::StartedCallingMain
-            | AutoScriptLifecycle::Cancelling => AutoScriptSimplifiedLifecycle::Driving,
-            // STOPPED
-            AutoScriptLifecycle::StoppedByScriptEnd
-            | AutoScriptLifecycle::StoppedBySafety
-            | AutoScriptLifecycle::StoppedByHttpCancel
-            | AutoScriptLifecycle::StoppedByDisconnect => AutoScriptSimplifiedLifecycle::Stopped,
-            // END
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct AutoScripts {
     pub scripts: watch::Sender<Vec<AutoScript>>,

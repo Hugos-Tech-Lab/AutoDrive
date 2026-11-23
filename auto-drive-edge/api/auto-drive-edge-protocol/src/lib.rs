@@ -11,4 +11,5 @@ pub mod auto_drive_edge_service {
 
 pub mod auto_script_lifecycle;
 pub mod auto_script_metadata;
+pub mod auto_script_simplified_lifecycle;
 pub mod auto_script_type;

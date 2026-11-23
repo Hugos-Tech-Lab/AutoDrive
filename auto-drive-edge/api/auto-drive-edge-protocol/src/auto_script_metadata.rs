@@ -1,7 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{auto_script_lifecycle::AutoScriptLifecycle, auto_script_type::AutoScriptType};
+use crate::{
+    auto_script_lifecycle::AutoScriptLifecycle,
+    auto_script_permission_level::AutoScriptPermissionLevel,
+};
 
 #[derive(Serialize, Deserialize, ts_rs::TS)]
 #[ts(export)]
@@ -19,5 +22,7 @@ pub struct AutoScriptMetadata {
     pub time_trials_finish_time: Option<DateTime<Utc>>,
     pub time_trials_dnf: Option<bool>,
     pub script_stop_time: Option<DateTime<Utc>>,
-    pub script_type: AutoScriptType,
+    pub permission_level: AutoScriptPermissionLevel,
 }
+
+//

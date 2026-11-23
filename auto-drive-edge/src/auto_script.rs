@@ -4,39 +4,13 @@ use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::{
-    auto_drive_edge_service::v1::AutoScriptRuntimeLifecycle, auto_scripts::AutoScriptLifecycle,
-    logs::Logs,
-};
+use crate::{auto_scripts::AutoScriptLifecycle, logs::Logs};
 
 #[derive(Clone, Debug)]
 pub enum AutoScriptType {
     TimeTrial,
     Reposition,
     ConfigAdjust,
-}
-
-// pub enum UserType {
-//     Regular,
-//     Privileged,
-// }
-
-#[derive(Clone, Debug)]
-pub struct AutoScriptMetadata {
-    pub owner_name: String,
-    pub owner_comment: String,
-    pub run_uuid: String,
-    pub run_number: u32,
-    pub uploaded_script_hash: String,
-    pub vehicle_number_plate: Option<String>,
-    pub lifecycle: AutoScriptLifecycle,
-    pub script_queue_time: DateTime<Utc>,
-    pub script_start_time: Option<DateTime<Utc>>,
-    pub time_trials_start_time: Option<DateTime<Utc>>,
-    pub time_trials_finish_time: Option<DateTime<Utc>>,
-    pub time_trials_dnf: Option<bool>,
-    pub script_stop_time: Option<DateTime<Utc>>,
-    pub script_type: AutoScriptType,
 }
 
 #[derive(Clone, Debug)]

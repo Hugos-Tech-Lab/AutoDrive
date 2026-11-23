@@ -1,6 +1,6 @@
 version: v2
 modules:
-  - path: api
+  - path: auto_drive_edge_service/v1
 lint:
   use:
     - STANDARD

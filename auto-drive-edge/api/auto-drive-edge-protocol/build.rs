@@ -10,11 +10,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         unsafe { std::env::set_var("PROTOC", &protoc) };
     }
 
-    let proto_file = "auto_drive_edge_service/v1/auto_drive_edge.proto";
+    let proto_file = "auto_drive_edge_service/v1/auto_drive_edge_service/v1/auto_drive_edge.proto";
 
     println!("cargo:rerun-if-changed={proto_file}");
 
-    tonic_prost_build::configure().compile_protos(&[proto_file], &["api"])?;
+    tonic_prost_build::configure().compile_protos(&[proto_file], &["."])?;
 
     Ok(())
 }

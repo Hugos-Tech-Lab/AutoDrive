@@ -100,15 +100,15 @@ message AutoScriptMetadata {
   optional string number_plate = 9;
   uint32 run_number = 10;
   string run_uuid = 11;
-  AutoScriptPermissionLevel script_type = 12;
+  AutoScriptPermissionLevel permission_level = 12;
   AutoScriptLifecycle lifecycle = 13;
   AutoScriptSimplifiedLifecycle simplified_lifecycle = 14;
 }
 
 enum AutoScriptPermissionLevel {
-  AUTO_SCRIPT_TYPE_UNSPECIFIED = 0;
-  AUTO_SCRIPT_TYPE_STANDARD = 1;
-  AUTO_SCRIPT_TYPE_ELEVATED = 2;
+  AUTO_SCRIPT_PERMISSION_LEVEL_UNSPECIFIED = 0;
+  AUTO_SCRIPT_PERMISSION_LEVEL_STANDARD = 1;
+  AUTO_SCRIPT_PERMISSION_LEVEL_ELEVATED = 2;
 }
 
 enum AutoScriptLifecycle {
@@ -128,8 +128,9 @@ enum AutoScriptLifecycle {
 
 enum AutoScriptSimplifiedLifecycle {
   AUTO_SCRIPT_SIMPLIFIED_LIFECYCLE_UNSPECIFIED = 0;
-  AUTO_SCRIPT_SIMPLIFIED_LIFECYCLE_IDLE = 1;
-  AUTO_SCRIPT_SIMPLIFIED_SENDING_TO_WIFI_MCU = 2;
+  AUTO_SCRIPT_SIMPLIFIED_LIFECYCLE_IN_THE_QUEUE = 1;
+  AUTO_SCRIPT_SIMPLIFIED_LIFECYCLE_DRIVING = 2;
+  AUTO_SCRIPT_SIMPLIFIED_LIFECYCLE_STOPPED = 3;
 }
 
 message WatchAutoScriptLogsRequest {

@@ -1,19 +1,17 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::bail;
+use auto_drive_edge_protocol::auto_drive_edge_service::v1::{
+    CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
+    auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+};
 use futures_util::Stream;
 use log::{info, warn};
 use tokio::{sync::watch, task::JoinHandle, time::timeout};
 use tokio_stream::wrappers::WatchStream;
 use tonic::transport::Channel;
 
-use crate::{
-    auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
-        auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-    },
-    edge_client::{auto_script::AutoScript, grpc_connect::grpc_connect},
-};
+use crate::edge_client::{auto_script::AutoScript, grpc_connect::grpc_connect};
 
 #[derive(Debug, Clone)]
 pub struct AutoScripts {

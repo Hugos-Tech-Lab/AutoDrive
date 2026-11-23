@@ -9,6 +9,7 @@ development = []
 production = []
 
 [dependencies]
+auto-drive-edge-protocol = { path = "../auto-drive-edge/api/auto-drive-edge-protocol" }
 auto-drive-common-types = { path = "../firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types" }
 
 prost = "0.14"

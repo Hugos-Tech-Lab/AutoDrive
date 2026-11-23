@@ -10,7 +10,6 @@ use crate::{
 pub mod auth;
 pub mod auto_drive_edge_service;
 pub mod edge_client;
-pub mod hardware;
 pub mod http_server;
 pub mod ignore_incomplete_message;
 

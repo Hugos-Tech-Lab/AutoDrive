@@ -1,15 +1,13 @@
 use std::sync::Arc;
 
+use auto_drive_edge_protocol::auto_drive_edge_service::v1::{
+    WatchHardwarePoseRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+};
 use log::{info, warn};
 use tokio::{sync::watch, task::JoinHandle};
 use tonic::transport::Channel;
 
-use crate::{
-    auto_drive_edge_service::v1::{
-        WatchHardwarePoseRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-    },
-    edge_client::{grpc_connect::grpc_connect, logs::Logs},
-};
+use crate::edge_client::{grpc_connect::grpc_connect, logs::Logs};
 
 // // TODO FILL THIS
 // #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -4,12 +4,9 @@ use log::{info, warn};
 use tokio::time::sleep;
 use tonic::transport::Channel;
 
-use crate::edge_client::vehicle::Vehicle;
-use crate::{
-    auto_drive_edge_service::v1::{
-        GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-    },
-    edge_client::auto_scripts::AutoScripts,
+use crate::edge_client::{auto_scripts::AutoScripts, vehicle::Vehicle};
+use auto_drive_edge_protocol::auto_drive_edge_service::v1::{
+    GetVehiclesRequest, auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
 };
 pub mod auto_script;
 pub mod auto_scripts;

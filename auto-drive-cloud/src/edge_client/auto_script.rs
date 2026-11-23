@@ -1,10 +1,8 @@
+use auto_drive_edge_protocol::auto_drive_edge_service::v1::auto_drive_edge_service_client::AutoDriveEdgeServiceClient;
 use tokio::sync::watch;
 use tonic::transport::Channel;
 
-use crate::{
-    auto_drive_edge_service::v1::auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-    edge_client::logs::Logs,
-};
+use crate::edge_client::logs::Logs;
 
 #[derive(Clone, Debug)]
 pub enum AutoScriptStatus {

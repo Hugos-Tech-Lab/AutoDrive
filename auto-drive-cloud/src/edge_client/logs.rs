@@ -1,5 +1,10 @@
 use std::sync::Arc;
 
+use auto_drive_common_types::LogMessage;
+use auto_drive_edge_protocol::auto_drive_edge_service::v1::{
+    WatchAutoScriptLogsRequest, WatchVehicleLogsRequest,
+    auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+};
 use futures_util::{
     Stream, StreamExt,
     stream::{self},
@@ -16,13 +21,7 @@ use tokio::{
 use tokio_stream::wrappers::{BroadcastStream, errors::BroadcastStreamRecvError};
 use tonic::transport::Channel;
 
-use crate::{
-    auto_drive_edge_service::v1::{
-        LogMessage, WatchAutoScriptLogsRequest, WatchVehicleLogsRequest,
-        auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
-    },
-    edge_client::grpc_connect::grpc_connect,
-};
+use crate::edge_client::grpc_connect::grpc_connect;
 
 #[derive(Debug)]
 pub struct Logs {
@@ -127,6 +126,10 @@ async fn watch_vehicle_logs(
             warn!("log message not in message");
             continue;
         };
+        let Ok(message): Result<LogMessage, _> = message.try_into() else {
+            warn!("Error converting message");
+            continue;
+        };
 
         let mut history_lock = history.write().await;
         live.send(message.clone()).unwrap();
@@ -164,6 +167,11 @@ async fn watch_auto_script_logs(
 
         let Some(message) = response.log_message else {
             warn!("log message not in message");
+            continue;
+        };
+
+        let Ok(message): Result<LogMessage, _> = message.try_into() else {
+            warn!("Error converting message");
             continue;
         };
 

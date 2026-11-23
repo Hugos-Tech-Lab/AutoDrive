@@ -159,7 +159,7 @@ async fn handle_enqueue(
 
     let event_stream = run_uuid_stream.chain(logs.filter_map(|auto_script_event| async move {
         let log = auto_script_event.unwrap();
-        let formatted_log = format_log(&log);
+        let formatted_log = format_log(&log.into());
         Some(Ok::<_, Infallible>(
             warp::sse::Event::default().event("log").data(formatted_log),
         ))

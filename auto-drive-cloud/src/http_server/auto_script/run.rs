@@ -1,6 +1,8 @@
-use crate::{auto_drive_edge_service::v1::RunAutoScriptRequest, edge_client::EdgeClient};
+use auto_drive_edge_protocol::auto_drive_edge_service::v1::RunAutoScriptRequest;
 use serde::{Deserialize, Serialize};
 use warp::{Filter, http::StatusCode};
+
+use crate::edge_client::EdgeClient;
 
 #[derive(Deserialize)]
 pub struct RunAutoScriptPayload {

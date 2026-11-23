@@ -1,28 +1,14 @@
-use std::sync::Arc;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
-pub enum AutoScriptType {
-    TimeTrial,
-    Reposition,
-    ConfigAdjust,
+use crate::auto_script_type::AutoScriptType;
+
+pub mod auto_drive_edge_service {
+    pub mod v1 {
+        tonic::include_proto!("auto_drive_edge_service.v1");
+    }
 }
 
-#[derive(Clone, Debug)]
-pub struct AutoScript {
-    pub owner_name: String,
-    pub owner_comment: String,
-    pub run_uuid: String,
-    pub run_number: u32,
-    pub uploaded_script: Arc<[u8]>,
-    pub uploaded_script_hash: String,
-    // pub logs: Logs,
-    pub vehicle_number_plate: Option<String>,
-    pub lifecycle: AutoScriptLifecycle,
-    pub script_queue_time: DateTime<Utc>,
-    pub script_start_time: Option<DateTime<Utc>>,
-    pub time_trials_start_time: Option<DateTime<Utc>>,
-    pub time_trials_finish_time: Option<DateTime<Utc>>,
-    pub time_trials_dnf: Option<bool>,
-    pub script_stop_time: Option<DateTime<Utc>>,
-    pub script_type: AutoScriptType,
-}
+pub mod auto_script_lifecycle;
+pub mod auto_script_metadata;
+pub mod auto_script_type;

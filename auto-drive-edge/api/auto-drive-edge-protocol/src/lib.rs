@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 #[derive(Clone, Debug)]
 pub enum AutoScriptType {
     TimeTrial,
@@ -13,7 +15,7 @@ pub struct AutoScript {
     pub run_number: u32,
     pub uploaded_script: Arc<[u8]>,
     pub uploaded_script_hash: String,
-    pub logs: Logs,
+    // pub logs: Logs,
     pub vehicle_number_plate: Option<String>,
     pub lifecycle: AutoScriptLifecycle,
     pub script_queue_time: DateTime<Utc>,

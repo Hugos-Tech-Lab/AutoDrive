@@ -10,6 +10,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 prost = "0.14"
 tonic = "0.14.6"
 tonic-prost = "0.14.6"
+auto-drive-common-types = { path = "../../../firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types" }
 
 [build-dependencies]
 tonic-prost-build = "0.14.6"

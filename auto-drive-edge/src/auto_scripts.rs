@@ -1,33 +1,20 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use auto_drive_common_types::LogMessage;
+use auto_drive_edge_protocol::{
+    auto_script_lifecycle::AutoScriptLifecycle,
+    auto_script_permission_level::AutoScriptPermissionLevel,
+    auto_script_simplified_lifecycle::AutoScriptSimplifiedLifecycle,
+};
 use chrono::{DateTime, Utc};
 use futures_util::Stream;
 use log::warn;
 use tokio::sync::watch;
 use tokio_stream::wrappers::WatchStream;
 
-use crate::{
-    auto_script::{AutoScript, AutoScriptType},
-    logs::Logs,
-};
+use crate::{auto_script::AutoScript, logs::Logs};
 
 static NEXT_RUN_NUMBER: AtomicU32 = AtomicU32::new(0);
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum AutoScriptLifecycle {
-    Idle,
-    SendingToWifiMcu,
-    ReceivedByWifiMcu,
-    SendingToWasmMcu,
-    ReceivedByWasmMcu,
-    StartedCallingMain,
-    Cancelling,
-    StoppedByScriptEnd,
-    StoppedBySafety,
-    StoppedByHttpCancel,
-    StoppedByDisconnect,
-}
 
 #[derive(Clone, Debug)]
 pub struct AutoScripts {
@@ -190,7 +177,7 @@ impl AutoScripts {
         owner_name: String,
         owner_comment: String,
         data: Vec<u8>,
-        script_type: AutoScriptType,
+        permission_level: AutoScriptPermissionLevel,
     ) -> String {
         let run_number = NEXT_RUN_NUMBER.fetch_add(1, Ordering::Relaxed);
 
@@ -199,7 +186,7 @@ impl AutoScripts {
             owner_comment,
             run_number,
             data.into(),
-            script_type,
+            permission_level,
         );
 
         let run_uuid = auto_script.metadata.run_uuid.clone();

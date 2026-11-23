@@ -1,28 +1,25 @@
 use std::pin::Pin;
 
-use futures_util::{FutureExt, Stream, StreamExt};
+use futures_util::{Stream, StreamExt};
 use log::warn;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 
-use crate::{
+use auto_drive_edge_protocol::{
     auto_drive_edge_service::v1::{
-        CancelAutoScriptRequest, CancelAutoScriptResponse, EnqueueAutoScriptRequest,
-        EnqueueAutoScriptResponse, GetVehiclesRequest, GetVehiclesResponse, Hardware,
-        NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse, RunAutoScriptRequest,
-        RunAutoScriptResponse, WatchAutoScriptLogsRequest, WatchAutoScriptLogsResponse,
-        WatchAutoScriptsRequest, WatchAutoScriptsResponse, WatchHardwarePoseRequest,
-        WatchHardwarePoseResponse, WatchHardwareStatusRequest, WatchHardwareStatusResponse,
-        WatchVehicleLogsRequest, WatchVehicleLogsResponse,
+        AutoScriptMetadata, CancelAutoScriptRequest, CancelAutoScriptResponse,
+        EnqueueAutoScriptRequest, EnqueueAutoScriptResponse, GetVehiclesRequest,
+        GetVehiclesResponse, NotifyHardwareCoordinatesRequest, NotifyHardwareCoordinatesResponse,
+        RunAutoScriptRequest, RunAutoScriptResponse, WatchAutoScriptLogsRequest,
+        WatchAutoScriptLogsResponse, WatchAutoScriptsRequest, WatchAutoScriptsResponse,
+        WatchHardwarePoseRequest, WatchHardwarePoseResponse, WatchHardwareStatusRequest,
+        WatchHardwareStatusResponse, WatchVehicleLogsRequest, WatchVehicleLogsResponse,
         auto_drive_edge_service_server::AutoDriveEdgeService,
     },
-    auto_script::AutoScriptType,
-    auto_scripts::AutoScripts,
-    grpc_service::types::to_grpc_log_message,
-    vehicle::the_beginner_car::TheBeginnerCar,
+    auto_script_permission_level::AutoScriptPermissionLevel,
 };
 
-pub mod types;
+use crate::{auto_scripts::AutoScripts, vehicle::the_beginner_car::TheBeginnerCar};
 
 pub struct GrpcService {
     auto_scripts: AutoScripts,
@@ -65,9 +62,9 @@ impl AutoDriveEdgeService for GrpcService {
     ) -> Result<Response<Self::WatchAutoScriptsStream>, Status> {
         let stream = self.auto_scripts.stream();
         let scripts = stream.map(|auto_scripts| {
-            let scripts: Vec<crate::auto_drive_edge_service::v1::AutoScript> = auto_scripts
+            let scripts: Vec<AutoScriptMetadata> = auto_scripts
                 .iter()
-                .map(|auto_script| auto_script.into())
+                .map(|auto_script| auto_script.metadata.clone().into())
                 .collect();
 
             Ok(WatchAutoScriptsResponse { scripts })
@@ -86,7 +83,7 @@ impl AutoDriveEdgeService for GrpcService {
             request.owner_name,
             request.owner_comment,
             request.data,
-            AutoScriptType::TimeTrial,
+            AutoScriptPermissionLevel::Standard,
         );
         Ok(Response::new(EnqueueAutoScriptResponse { run_uuid }))
     }
@@ -152,7 +149,7 @@ impl AutoDriveEdgeService for GrpcService {
             };
 
             Ok(WatchAutoScriptLogsResponse {
-                log_message: Some(to_grpc_log_message(log_message)),
+                log_message: Some(log_message.into()),
             })
         });
 

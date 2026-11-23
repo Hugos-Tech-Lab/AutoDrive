@@ -1,9 +1,6 @@
-use crate::{
-    auto_drive_edge_server::AutoDriveEdgeServer,
-    auto_drive_edge_service::v1::auto_drive_edge_service_server::AutoDriveEdgeServiceServer,
-    grpc_service::GrpcService,
-};
+use crate::{auto_drive_edge_server::AutoDriveEdgeServer, grpc_service::GrpcService};
 
+use auto_drive_edge_protocol::auto_drive_edge_service::v1::auto_drive_edge_service_server::AutoDriveEdgeServiceServer;
 use env_logger::Env;
 use hardware_config::config::HARDWARE_CONFIG;
 use log::info;
@@ -19,12 +16,6 @@ pub mod grpc_service;
 pub mod logs;
 pub mod vehicle;
 pub mod vehicle_hardware_telemetry;
-
-pub mod auto_drive_edge_service {
-    pub mod v1 {
-        tonic::include_proto!("auto_drive_edge_service.v1");
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {

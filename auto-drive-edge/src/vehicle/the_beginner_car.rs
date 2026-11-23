@@ -1,5 +1,9 @@
 use std::sync::Arc;
 
+use auto_drive_edge_protocol::{
+    auto_script_lifecycle::AutoScriptLifecycle,
+    auto_script_simplified_lifecycle::AutoScriptSimplifiedLifecycle,
+};
 use chrono::{DateTime, Utc};
 use hardware_config::TheBeginnerCarMetadata;
 use log::{error, info, warn};
@@ -12,9 +16,7 @@ use tokio::{
 };
 
 use crate::{
-    auto_script::AutoScript,
-    auto_scripts::{AutoScriptLifecycle, AutoScriptSimplifiedLifecycle, AutoScripts},
-    logs::Logs,
+    auto_script::AutoScript, auto_scripts::AutoScripts, logs::Logs,
     vehicle::the_beginner_car::the_beginner_car_connection_handle::TheBeginnerCarConnectionHandle,
 };
 

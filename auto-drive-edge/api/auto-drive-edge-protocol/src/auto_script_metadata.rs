@@ -6,7 +6,7 @@ use crate::{
     auto_script_permission_level::AutoScriptPermissionLevel,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS, PartialEq)]
 #[ts(export)]
 pub struct AutoScriptMetadata {
     pub owner_name: String,

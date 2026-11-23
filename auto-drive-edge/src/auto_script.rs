@@ -1,17 +1,14 @@
 use std::sync::Arc;
 
-use chrono::{DateTime, Utc};
+use auto_drive_edge_protocol::{
+    auto_script_lifecycle::AutoScriptLifecycle, auto_script_metadata::AutoScriptMetadata,
+    auto_script_permission_level::AutoScriptPermissionLevel,
+};
+use chrono::Utc;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::{auto_scripts::AutoScriptLifecycle, logs::Logs};
-
-#[derive(Clone, Debug)]
-pub enum AutoScriptType {
-    TimeTrial,
-    Reposition,
-    ConfigAdjust,
-}
+use crate::logs::Logs;
 
 #[derive(Clone, Debug)]
 pub struct AutoScriptPayload {
@@ -31,7 +28,7 @@ impl AutoScript {
         owner_comment: String,
         run_number: u32,
         uploaded_script: Arc<[u8]>,
-        script_type: AutoScriptType,
+        permission_level: AutoScriptPermissionLevel,
     ) -> Self {
         let run_uuid = Uuid::new_v4().to_string();
 
@@ -53,7 +50,7 @@ impl AutoScript {
                 time_trials_finish_time: None,
                 time_trials_dnf: None,
                 script_stop_time: None,
-                script_type,
+                permission_level,
             },
             payload: AutoScriptPayload {
                 uploaded_script,

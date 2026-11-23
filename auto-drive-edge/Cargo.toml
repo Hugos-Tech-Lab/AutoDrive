@@ -9,6 +9,7 @@ development = []
 production = []
 
 [dependencies]
+auto-drive-edge-protocol = { path = "api/auto-drive-edge-protocol" }
 auto-drive-common-types = { path = "../firmware/the-beginner-car-v1-wasm-firmware/api/auto-drive-common-types" }
 hardware-config = { path = "api/hardware_config" }
 the-beginner-car-tcp-protocol = { path = "../firmware/the-beginner-car-v1-wifi-firmware/api/the-beginner-car-tcp-protocol" }
@@ -44,3 +45,4 @@ hex = "0.4.3"
 chrono = "0.4.45"
 log = "0.4.34"
 env_logger = "0.11.11"
+tonic = "0.14.6"

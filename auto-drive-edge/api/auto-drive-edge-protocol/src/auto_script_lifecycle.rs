@@ -4,7 +4,7 @@ use crate::{
     auto_drive_edge_service::v1, auto_script_simplified_lifecycle::AutoScriptSimplifiedLifecycle,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS, PartialEq)]
 #[ts(export)]
 pub enum AutoScriptLifecycle {
     Idle,

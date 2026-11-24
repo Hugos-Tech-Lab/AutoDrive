@@ -1,4 +1,3 @@
-
 <script lang="ts">
   import { onMount } from "svelte";
   import TheBeginnerCar from "../TheBeginnerCarDrawing.svelte";
@@ -11,9 +10,7 @@
   let telemetryError = $state("");
 
   onMount(() => {
-    const source = new EventSource(
-      `${endpointRoot()}/hardware_telemetry`
-    );
+    const source = new EventSource(`${endpointRoot()}/hardware_telemetry`);
 
     source.onopen = () => {
       connectionStatus = "Connected";
@@ -32,7 +29,7 @@
           telemetryError = "Failed to parse telemetry data";
           console.error("[Telemetry] Invalid event:", error);
         }
-      }
+      },
     );
 
     source.onerror = () => {
@@ -126,11 +123,7 @@
     Run Script
   </button>
 
-  <button
-    type="button"
-    class="button block"
-    onclick={navigateToStart}
-  >
+  <button type="button" class="button block" onclick={navigateToStart}>
     Navigate To Start
   </button>
 </div>

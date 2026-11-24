@@ -48,3 +48,43 @@ impl From<AutoScriptMetadata> for v1::AutoScriptMetadata {
         }
     }
 }
+
+impl TryFrom<v1::AutoScriptMetadata> for AutoScriptMetadata {
+    type Error = ();
+
+    fn try_from(value: v1::AutoScriptMetadata) -> Result<Self, Self::Error> {
+        let parse_dt = |s: String| -> Result<DateTime<Utc>, ()> {
+            DateTime::parse_from_rfc3339(&s)
+                .map(|dt| dt.with_timezone(&Utc))
+                .map_err(|_| ())
+        };
+
+        let parse_opt_dt = |opt: Option<String>| -> Result<Option<DateTime<Utc>>, ()> {
+            opt.map(parse_dt).transpose()
+        };
+
+        let lifecycle = v1::AutoScriptLifecycle::try_from(value.lifecycle).map_err(|_| ())?;
+        let lifecycle = AutoScriptLifecycle::try_from(lifecycle)?;
+
+        let permission_level =
+            v1::AutoScriptPermissionLevel::try_from(value.permission_level).map_err(|_| ())?;
+        let permission_level = AutoScriptPermissionLevel::try_from(permission_level)?;
+
+        Ok(Self {
+            owner_name: value.owner_name,
+            owner_comment: value.owner_comment,
+            run_uuid: value.run_uuid,
+            run_number: value.run_number,
+            uploaded_script_hash: value.uploaded_script_hash,
+            vehicle_number_plate: value.number_plate,
+            lifecycle,
+            script_queue_time: parse_dt(value.script_queue_time)?,
+            script_start_time: parse_opt_dt(value.script_start_time)?,
+            time_trials_start_time: parse_opt_dt(value.vehicle_start_time)?,
+            time_trials_finish_time: parse_opt_dt(value.vehicle_finish_time)?,
+            time_trials_dnf: None, // TODO: implement the dnf
+            script_stop_time: parse_opt_dt(value.script_stop_time)?,
+            permission_level,
+        })
+    }
+}

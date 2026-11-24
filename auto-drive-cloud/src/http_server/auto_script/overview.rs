@@ -2,21 +2,15 @@ use std::convert::Infallible;
 use std::time::Duration;
 
 use crate::edge_client::EdgeClient;
+use auto_drive_edge_protocol::auto_script_metadata::AutoScriptMetadata;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use warp::{Filter, Reply};
 
 #[derive(Debug, Deserialize, Serialize, ts_rs::TS)]
 #[ts(export)]
-struct AutoScript {
-    run_uuid: String,
-    // TODO: more events here...
-}
-
-#[derive(Debug, Deserialize, Serialize, ts_rs::TS)]
-#[ts(export)]
 pub struct AutoScriptOverviewStreamedResponse {
-    auto_scripts: Vec<AutoScript>,
+    auto_scripts: Vec<AutoScriptMetadata>,
 }
 
 pub fn auto_script_overview(
@@ -33,9 +27,7 @@ pub fn auto_script_overview(
                     let response = AutoScriptOverviewStreamedResponse {
                         auto_scripts: auto_scripts
                             .iter()
-                            .map(|auto_script| AutoScript {
-                                run_uuid: auto_script.run_uuid.clone(),
-                            })
+                            .map(|auto_script| auto_script.metadata.clone())
                             .collect(),
                     };
 

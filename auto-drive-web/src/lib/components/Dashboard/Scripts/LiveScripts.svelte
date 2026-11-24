@@ -1,30 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { endpointRoot } from "../../../../endpoint";
-
-  type AutoScript = {
-    owner_name?: string;
-    owner_comment?: string;
-    uploaded_script_hash?: string;
-    script_queue_time?: string;
-    script_start_time?: string;
-    vehicle_start_time?: string;
-    vehicle_finish_time?: string;
-    script_stop_time?: number;
-    run_number?: number;
-    run_uuid: string;
-    number_plate?: string;
-    status?: "running" | "queued" | "stopped";
-  };
+  import { type AutoScriptMetadata } from "../../../../../../auto-drive-edge/api/auto-drive-edge-protocol/ts/AutoScriptMetadata";
 
   type AutoScriptOverviewStreamedResponse = {
-    auto_scripts: Array<AutoScript>;
+    auto_scripts: Array<AutoScriptMetadata>;
   };
 
   type AutoScripts = {
-    running: Array<AutoScript>;
-    queued: Array<AutoScript>;
-    stopped: Array<AutoScript>;
+    running: Array<AutoScriptMetadata>;
+    queued: Array<AutoScriptMetadata>;
+    stopped: Array<AutoScriptMetadata>;
   };
 
   let timeTrialsData = $state<AutoScripts | null>(null);
@@ -57,6 +43,8 @@
 
     source.addEventListener("overview", (event: MessageEvent<string>) => {
       try {
+        console.log(event.data);
+
         const parsed = JSON.parse(
           event.data,
         ) as AutoScriptOverviewStreamedResponse;
@@ -65,6 +53,7 @@
           throw new Error("Invalid telemetry payload");
         }
 
+        console.log(parsed);
         const grouped: AutoScripts = {
           running: [],
           queued: [],
@@ -72,7 +61,7 @@
         };
 
         for (const script of parsed.auto_scripts) {
-          if (script.status === "queued") {
+          if (script.lifecycle === "Idle") {
             grouped.queued.push(script);
           } else if (script.status === "stopped") {
             grouped.stopped.push(script);

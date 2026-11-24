@@ -1,9 +1,12 @@
 use std::{sync::Arc, time::Duration};
 
 use anyhow::bail;
-use auto_drive_edge_protocol::auto_drive_edge_service::v1::{
-    CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
-    auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+use auto_drive_edge_protocol::{
+    auto_drive_edge_service::v1::{
+        CancelAutoScriptRequest, EnqueueAutoScriptRequest, WatchAutoScriptsRequest,
+        auto_drive_edge_service_client::AutoDriveEdgeServiceClient,
+    },
+    auto_script_metadata::AutoScriptMetadata,
 };
 use futures_util::Stream;
 use log::{info, warn};
@@ -41,7 +44,7 @@ impl AutoScripts {
 
             let script = auto_scripts
                 .iter()
-                .find(|auto_script| auto_script.run_uuid == run_uuid);
+                .find(|auto_script| auto_script.metadata.run_uuid == run_uuid);
 
             valid_run_uuid = script.is_some();
         }
@@ -80,7 +83,7 @@ impl AutoScripts {
             auto_scripts.wait_for(|auto_scripts| {
                 auto_scripts
                     .iter()
-                    .find(|auto_script| auto_script.run_uuid == run_uuid)
+                    .find(|auto_script| auto_script.metadata.run_uuid == run_uuid)
                     .is_some()
             }),
         )
@@ -100,7 +103,7 @@ impl AutoScripts {
 
         let auto_script = auto_scripts
             .iter()
-            .find(|auto_script| auto_script.run_uuid == run_uuid);
+            .find(|auto_script| auto_script.metadata.run_uuid == run_uuid);
 
         let auto_script = match auto_script {
             Some(auto_script) => auto_script,
@@ -164,11 +167,14 @@ async fn watch_auto_scripts(
                 .map(|new_script| {
                     if let Some(pos) = tracked_auto_scripts
                         .iter()
-                        .position(|existing| existing.run_uuid == new_script.run_uuid)
+                        .position(|existing| existing.metadata.run_uuid == new_script.run_uuid)
                     {
                         tracked_auto_scripts.swap_remove(pos)
                     } else {
-                        AutoScript::new(client.clone(), new_script.run_uuid)
+                        AutoScript::new(
+                            client.clone(),
+                            AutoScriptMetadata::try_from(new_script).unwrap(), // TODO: remove unwrap
+                        )
                     }
                 })
                 .collect();

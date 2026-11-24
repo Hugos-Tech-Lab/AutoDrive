@@ -125,7 +125,7 @@ curl --fail-with-body \
     ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
     -F "file=@$wasm;type=application/wasm" \
     -F "args=$ARGS_STRING" \
-    "$BASE_URL/run" |
+    "$BASE_URL/enqueue" |
     awk -v uuid_file="$UUID_FILE" '
         # Ignore the SSE "event:" framing lines
         /^event:/ {

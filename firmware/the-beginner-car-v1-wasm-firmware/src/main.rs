@@ -5,9 +5,10 @@ use common_firmware::{logger::init_logging, spi_slave::SpiSlaveHardware};
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::{delay::FreeRtos, task::thread::ThreadSpawnConfiguration};
+use the_beginner_car_spi_protocol::AutoScriptState;
 
 use crate::{
-    auto_script::AutoScript,
+    auto_script::{AutoScript, atomic_auto_script_state::AtomicAutoScriptState},
     hardware_config::load_hardware_config,
     server_spi::ServerSpi,
     the_beginner_car_hardware::{
@@ -109,13 +110,19 @@ pub fn main() -> anyhow::Result<()> {
     // let latest_position: Arc<Mutex<Option<Position>>> = Arc::new(Mutex::new(None));
     let logs: Arc<Mutex<Vec<LogMessage>>> = Arc::new(Mutex::new(vec![]));
 
-    let auto_script = Arc::new(AutoScript::new(the_beginner_car.clone(), {
-        let logs = logs.clone();
-        move || {
-            // let mut logs = logs.lock().unwrap();
-            // logs.push(Event::AutoScriptStopped);
-        }
-    })?);
+    let auto_script_state = Arc::new(AtomicAutoScriptState::new(AutoScriptState::Idle));
+
+    let auto_script = Arc::new(AutoScript::new(
+        the_beginner_car.clone(),
+        {
+            let logs = logs.clone();
+            move || {
+                // let mut logs = logs.lock().unwrap();
+                // logs.push(Event::AutoScriptStopped);
+            }
+        },
+        auto_script_state.clone(),
+    )?);
 
     ThreadSpawnConfiguration {
         name: Some(c"position"),
@@ -211,7 +218,13 @@ pub fn main() -> anyhow::Result<()> {
         f_master_ready_pin: peripherals.pins.gpio19,
     };
 
-    let server_spi = ServerSpi::new(spi_hardware, the_beginner_car, auto_script, logs)?;
+    let server_spi = ServerSpi::new(
+        spi_hardware,
+        the_beginner_car,
+        auto_script,
+        logs,
+        auto_script_state,
+    )?;
 
     server_spi.handle.join().unwrap();
     // reading.join().unwrap();

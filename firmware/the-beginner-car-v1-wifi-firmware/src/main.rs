@@ -22,7 +22,7 @@ use crate::{
 };
 
 use esp_idf_sys::esp_reset_reason;
-use log::info;
+use log::{info, warn};
 pub mod connect_to_wifi;
 pub mod inter_thread;
 pub mod tcp_server;
@@ -148,9 +148,61 @@ pub fn main() -> anyhow::Result<()> {
     std::thread::Builder::new()
         .stack_size(2_000)
         .name("sync_wasm".to_string())
-        .spawn(|| {
-            //
-        });
+        .spawn({
+            let sender_tx = sender_tx.clone();
+            let hardware_sender = hardware_sender.clone();
+            move || {
+                loop {
+                    let (sender, receiver) = std::sync::mpsc::sync_channel::<
+                        Result<ResponseFromHardware, anyhow::Error>,
+                    >(1);
+
+                    hardware_sender
+                        .send(HardwareMessage {
+                            request: RequestToHardware::GetAutoScriptState {},
+                            response_tx: sender,
+                        })
+                        .unwrap();
+
+                    let receive = match receiver.recv_timeout(Duration::from_secs(2)) {
+                        Ok(Ok(response)) => response,
+                        Ok(Err(e)) => {
+                            log::error!("{e}");
+                            thread::sleep(Duration::from_secs(1));
+                            continue;
+                        }
+                        Err(e) => {
+                            log::error!("{e}");
+                            continue;
+                        }
+                    };
+
+                    match receive {
+                        ResponseFromHardware::AutoScriptState { state } => {
+                            let state = match state{
+                                the_beginner_car_spi_protocol::AutoScriptState::Idle => the_beginner_car_tcp_protocol::AutoScriptState::Idle,
+                                the_beginner_car_spi_protocol::AutoScriptState::ReceivedByWasmMcu => the_beginner_car_tcp_protocol::AutoScriptState::ReceivedByWasmMcu,
+                                the_beginner_car_spi_protocol::AutoScriptState::CreatingWasmModule =>the_beginner_car_tcp_protocol::AutoScriptState::CreatingWasmModule,
+                                the_beginner_car_spi_protocol::AutoScriptState::InstantiatingWasmModule => the_beginner_car_tcp_protocol::AutoScriptState::InstantiatingWasmModule,
+                                the_beginner_car_spi_protocol::AutoScriptState::PreparingToRunWasmMain => the_beginner_car_tcp_protocol::AutoScriptState::PreparingToRunWasmMain,
+                                the_beginner_car_spi_protocol::AutoScriptState::FindingWasmMain => the_beginner_car_tcp_protocol::AutoScriptState::FindingWasmMain,
+                                the_beginner_car_spi_protocol::AutoScriptState::RunningWasmMain => the_beginner_car_tcp_protocol::AutoScriptState::RunningWasmMain,
+                            };
+
+                            sender_tx
+                                .send(TheBeginnerCarOutgoingMessages::AutoScriptWasmState { state })
+                                .unwrap();
+                        }
+                        _ => {
+                            warn!("unexpected response");
+                        }
+                    }
+
+                    thread::sleep(Duration::from_millis(500));
+                }
+            }
+        })
+        .unwrap();
 
     std::thread::Builder::new()
         .stack_size(2_000)

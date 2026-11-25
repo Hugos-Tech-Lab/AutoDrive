@@ -10,6 +10,7 @@ use std::{
 
 use crate::{
     auto_script::{
+        atomic_auto_script_state::AtomicAutoScriptState,
         cancellation_token::CancellationToken,
         wasm_thread::{WasmThread, WasmThreadCommand},
     },
@@ -20,7 +21,9 @@ use crate::{
 use anyhow::{Result, bail};
 use esp_idf_svc::hal::delay::FreeRtos;
 use log::{info, warn};
+use the_beginner_car_spi_protocol::AutoScriptState;
 use wamr_rust_sdk::sys::{WASMModuleInstanceCommon, wasm_runtime_terminate};
+pub mod atomic_auto_script_state;
 pub mod cancellation_token;
 pub mod exposed_functions;
 pub mod wasm_thread;
@@ -37,6 +40,7 @@ pub enum WasmResponse {
 pub struct AutoScript {
     _wasm_thread: JoinHandle<()>,
     running: Arc<Mutex<bool>>,
+    auto_script_state: Arc<AtomicAutoScriptState>,
     sender: SyncSender<(WasmThreadCommand, SyncSender<anyhow::Result<()>>)>,
     ct: CancellationToken,
 }
@@ -45,6 +49,7 @@ impl AutoScript {
     pub fn new(
         the_beginner_car: Arc<TheBeginnerCarHardware>,
         on_stopped_running: impl Fn() + Send + 'static,
+        auto_script_state: Arc<AtomicAutoScriptState>,
     ) -> Result<Self> {
         let (sender, receiver) = mpsc::sync_channel(1);
         let ct = CancellationToken::new();
@@ -81,20 +86,26 @@ impl AutoScript {
         let wasm_thread = spawn_thread(c"wasm", 5, 8 * 1024, {
             let ct = ct.clone();
             let running = running.clone();
+            let auto_script_state = auto_script_state.clone();
 
             move || {
                 let mut auto_script_wasm = WasmThread::new(
                     the_beginner_car,
                     active_wasm_instance,
-                    move || {
-                        {
-                            let mut running_guard = running.lock().unwrap();
-                            *running_guard = false;
-                        }
+                    {
+                        let auto_script_state = auto_script_state.clone();
+                        move || {
+                            {
+                                let mut running_guard = running.lock().unwrap();
+                                *running_guard = false;
+                                auto_script_state.store(AutoScriptState::Idle);
+                            }
 
-                        on_stopped_running();
+                            on_stopped_running();
+                        }
                     },
                     last_host_fn_call_ticks_ms,
+                    auto_script_state,
                     ct,
                 )
                 .expect("Failed to init WasmThread");
@@ -116,6 +127,7 @@ impl AutoScript {
             sender,
             _wasm_thread: wasm_thread,
             running,
+            auto_script_state,
             ct,
         })
     }
@@ -131,10 +143,12 @@ impl AutoScript {
         let (sender, receiver) = mpsc::sync_channel(1);
         self.sender
             .send((WasmThreadCommand::Run { data }, sender))
-            .unwrap(); // TODO: wait for response
+            .unwrap(); // TODO: wait for response 
         receiver.recv_timeout(Duration::from_secs(5))??;
 
         *running_guard = true;
+        self.auto_script_state
+            .store(AutoScriptState::ReceivedByWasmMcu);
 
         Ok(())
     }

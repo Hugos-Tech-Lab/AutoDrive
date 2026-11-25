@@ -10,7 +10,8 @@ use std::{
 
 use crate::{
     auto_script::{
-        cancellation_token::CancellationToken, exposed_functions::TheBeginnerCarExports,
+        atomic_auto_script_state::AtomicAutoScriptState, cancellation_token::CancellationToken,
+        exposed_functions::TheBeginnerCarExports,
     },
     the_beginner_car_hardware::TheBeginnerCarHardware,
     uptime_in_ms::uptime_in_ms,
@@ -18,6 +19,7 @@ use crate::{
 use anyhow::{Result, anyhow};
 use esp_idf_sys::xTaskGetTickCount;
 use log::{error, info};
+use the_beginner_car_spi_protocol::AutoScriptState;
 use the_beginner_car_wasm_sdk::host::host_functions;
 use wamr_rust_sdk::{
     function::Function, instance::Instance, module::Module, runtime::Runtime,
@@ -47,6 +49,7 @@ pub struct WasmThread {
     ct: CancellationToken,
     active_wasm_instance: Arc<AtomicUsize>,
     last_host_fn_call_ticks_ms: Arc<AtomicU32>,
+    state: Arc<AtomicAutoScriptState>,
 }
 
 impl WasmThread {
@@ -55,6 +58,7 @@ impl WasmThread {
         active_wasm_instance: Arc<AtomicUsize>,
         on_stopped_running: impl Fn() + Send + 'static,
         last_host_fn_call_ticks_ms: Arc<AtomicU32>,
+        state: Arc<AtomicAutoScriptState>,
         ct: CancellationToken,
     ) -> Result<Self> {
         let runtime_pool = vec![0u8; 32 * 1024].into_boxed_slice();
@@ -77,6 +81,7 @@ impl WasmThread {
             on_stopped_running: Box::new(on_stopped_running),
             last_host_fn_call_ticks_ms,
             active_wasm_instance,
+            state,
         })
     }
 
@@ -108,19 +113,23 @@ impl WasmThread {
         sender: SyncSender<Result<()>>,
         ct: CancellationToken,
     ) -> Result<()> {
+        self.state.store(AutoScriptState::CreatingWasmModule);
+
         let _guard = OnDrop(|| (self.on_stopped_running)());
 
         let module = Module::from_vec(self.runtime.clone(), data, "env")
             .map_err(|e| anyhow::anyhow!("failed to create module: {e:?}"))?;
 
-        info!("Installing wasm instance");
+        self.state.store(AutoScriptState::InstantiatingWasmModule);
+
         let instance = Rc::new(
             Instance::new(module.into(), 1024 * 16)
                 .map_err(|e| format!("failed to create instance: {}", e)) // TODO these should be more specific types for wasm and no unwrap AND CLEANUP TOO
                 .unwrap(), // TODO: Remove this unwrap.
         );
 
-        info!("running wasm");
+        self.state.store(AutoScriptState::PreparingToRunWasmMain);
+
         self.active_wasm_instance
             .store(instance.get_inner_instance() as usize, Ordering::Relaxed);
 
@@ -140,13 +149,14 @@ impl WasmThread {
             )
         }; //  TODO: disable WAMR_BUILD_LIB_PTHREAD
 
-        info!("Finding main");
+        self.state.store(AutoScriptState::FindingWasmMain);
 
         let main_function = Function::find_export_func(instance.clone(), "main").unwrap();
 
         // TODO: here send response running
 
         sender.send(anyhow::Ok(())).unwrap();
+        self.state.store(AutoScriptState::RunningWasmMain);
         let res = main_function.call(&vec![]);
         log::info!("{:?}", res);
         self.active_wasm_instance.store(0, Ordering::Relaxed);

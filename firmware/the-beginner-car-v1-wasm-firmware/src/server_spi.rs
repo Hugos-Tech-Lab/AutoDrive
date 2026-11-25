@@ -10,8 +10,10 @@ use log::info;
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 
 use crate::{
-    auto_script::AutoScript, spawn_thread::spawn_thread,
-    the_beginner_car_hardware::TheBeginnerCarHardware, uptime_in_ms::uptime_in_ms,
+    auto_script::{AutoScript, atomic_auto_script_state::AtomicAutoScriptState},
+    spawn_thread::spawn_thread,
+    the_beginner_car_hardware::TheBeginnerCarHardware,
+    uptime_in_ms::uptime_in_ms,
 };
 
 pub struct ServerSpi {
@@ -31,11 +33,18 @@ impl ServerSpi {
         the_beginner_car: Arc<TheBeginnerCarHardware>,
         auto_script: Arc<AutoScript>,
         logs: Arc<Mutex<Vec<LogMessage>>>,
+        auto_script_state: Arc<AtomicAutoScriptState>,
     ) -> anyhow::Result<Self> {
         let handle = spawn_thread(c"server_spi_incoming_messages", 5, 12_000, move || {
             let mut spi = SpiSlave::new(hardware).unwrap();
             spi.listen(|request: RequestToHardware| -> ResponseFromHardware {
-                Self::handle_request(request, &the_beginner_car, &auto_script, &logs)
+                Self::handle_request(
+                    request,
+                    &the_beginner_car,
+                    &auto_script,
+                    &logs,
+                    auto_script_state.clone(),
+                )
             });
         })?;
 
@@ -47,6 +56,7 @@ impl ServerSpi {
         the_beginner_car: &Arc<TheBeginnerCarHardware>,
         auto_script: &Arc<AutoScript>,
         logs: &Arc<Mutex<Vec<LogMessage>>>,
+        auto_script_state: Arc<AtomicAutoScriptState>,
     ) -> ResponseFromHardware {
         match request {
             RequestToHardware::LightOn => println!("LightOn"),
@@ -89,7 +99,11 @@ impl ServerSpi {
             RequestToHardware::Uptime => {
                 return ResponseFromHardware::Uptime { ms: uptime_in_ms() };
             }
-            RequestToHardware::AutoScriptState => todo!(),
+            RequestToHardware::GetAutoScriptState => {
+                return ResponseFromHardware::AutoScriptState {
+                    state: auto_script_state.load(),
+                };
+            }
         }
 
         // pin.set_color(3, 20, 3);

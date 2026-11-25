@@ -3,7 +3,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AutoScript {
     pub run_uuid: String,
     pub preprocessed_file_hash: String,
@@ -11,7 +11,18 @@ pub struct AutoScript {
     pub script: Vec<u8>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum AutoScriptState {
+    Idle,
+    ReceivedByWasmMcu,
+    CreatingWasmModule,
+    InstantiatingWasmModule,
+    PreparingToRunWasmMain,
+    FindingWasmMain,
+    RunningWasmMain,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TheBeginnerCarIncomingMessages {
     NotifyPositionFromCamera {
         x: f32,
@@ -44,6 +55,9 @@ pub enum TheBeginnerCarOutgoingMessages {
     AutoScriptStartedCallingMain {
         run_uuid: String,
         script_start_time_utc_ms: u64,
+    },
+    AutoScriptWasmState {
+        state: AutoScriptState,
     },
     AutoScriptStopped {
         run_uuid: String,

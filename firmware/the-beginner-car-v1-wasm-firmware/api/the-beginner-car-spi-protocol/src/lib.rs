@@ -40,17 +40,29 @@ pub struct IrSensorArray {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[repr(u32)]
+pub enum AutoScriptState {
+    Idle,
+    ReceivedByWasmMcu,
+    CreatingWasmModule,
+    InstantiatingWasmModule,
+    PreparingToRunWasmMain,
+    FindingWasmMain,
+    RunningWasmMain,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum RequestToHardware {
     LightOn,
     LightOff,
     FlushLogs,
     GetPosition,
+    GetAutoScriptState,
     NotifyPositionFromCamera { position: Position },
     NotifyBatteryReadings { voltage: f32 },
     NotifyIrSensorReadings { readings: IrSensorArray },
     RunAutoScript { data: Vec<u8> },
     StopAutoScript,
-    AutoScriptState,
     Uptime,
 }
 
@@ -59,7 +71,7 @@ pub enum ResponseFromHardware {
     Ok,
     Status { light_on: bool, motor_speed: i32 },
     Logs { logs: Vec<LogMessage> },
-    AutoScriptState { ended: bool },
+    AutoScriptState { state: AutoScriptState },
     AutoScriptStarted { id: i32 },
     CalibrationReadings {},
     Position { position: Option<Position> },

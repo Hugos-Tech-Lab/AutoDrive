@@ -164,17 +164,17 @@ async fn watch_auto_scripts(
             let updated_tracked_auto_scripts = response
                 .scripts
                 .into_iter()
-                .map(|new_script| {
-                    if let Some(pos) = tracked_auto_scripts
-                        .iter()
-                        .position(|existing| existing.metadata.run_uuid == new_script.run_uuid)
-                    {
-                        tracked_auto_scripts.swap_remove(pos)
+                .map(|incoming_script_metadata| {
+                    let incoming_script_metadata =
+                        AutoScriptMetadata::try_from(incoming_script_metadata).unwrap(); // TODO: remove unwrap
+                    if let Some(pos) = tracked_auto_scripts.iter().position(|existing| {
+                        existing.metadata.run_uuid == incoming_script_metadata.run_uuid
+                    }) {
+                        let mut script = tracked_auto_scripts.swap_remove(pos);
+                        script.metadata = incoming_script_metadata.clone();
+                        script
                     } else {
-                        AutoScript::new(
-                            client.clone(),
-                            AutoScriptMetadata::try_from(new_script).unwrap(), // TODO: remove unwrap
-                        )
+                        AutoScript::new(client.clone(), incoming_script_metadata)
                     }
                 })
                 .collect();

@@ -130,7 +130,7 @@ impl TheBeginnerCar {
                     true
                 });
 
-        if vehicle_sending_wifi_mcu {
+        if !vehicle_sending_wifi_mcu {
             warn!("Vehicle is in use, cannot start auto script");
             self.scripts
                 .set_auto_script_state(run_uuid, AutoScriptLifecycle::Idle, "".to_string());
@@ -159,6 +159,8 @@ impl TheBeginnerCar {
                 self.number_plate(),
             );
         }
+
+        dbg!(self.vehicle_lifecycle.borrow());
 
         Ok(())
     }

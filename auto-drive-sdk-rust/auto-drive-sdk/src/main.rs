@@ -26,8 +26,11 @@ fn main(the_beginner_car: TheBeginnerCar) {
     // delay(1000);
 
     // dbg!();
+
+    the_beginner_car.wheel_right.motor.set_pwm(60);
+    the_beginner_car.wheel_left.motor.set_pwm(60);
     print(format_args!("hi: {}", 2).as_str().unwrap());
-    delay(1000);
+    delay(60_000);
 
     // print(&format!("hi").to_string());
     // the_beginner_car.wheel_left.motor.set_pwm(125);

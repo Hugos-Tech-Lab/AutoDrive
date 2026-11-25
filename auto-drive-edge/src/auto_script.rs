@@ -8,7 +8,7 @@ use chrono::Utc;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::logs::Logs;
+use crate::{logs::Logs, vehicle::the_beginner_car::TheBeginnerCar};
 
 #[derive(Clone, Debug)]
 pub struct AutoScriptPayload {
@@ -20,6 +20,7 @@ pub struct AutoScriptPayload {
 pub struct AutoScript {
     pub metadata: AutoScriptMetadata,
     pub payload: AutoScriptPayload,
+    pub vehicle: Option<TheBeginnerCar>,
 }
 
 impl AutoScript {
@@ -56,6 +57,7 @@ impl AutoScript {
                 uploaded_script,
                 logs: Logs::new(),
             },
+            vehicle: None,
         }
     }
 }

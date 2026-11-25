@@ -43,6 +43,8 @@ impl AutoScripts {
     }
 
     pub async fn cancel(&self, run_uuid: String) {
+        let mut vehicle = None;
+
         self.scripts.send_if_modified(|auto_scripts| {
             let auto_script = auto_scripts
                 .iter_mut()
@@ -54,8 +56,17 @@ impl AutoScripts {
             };
 
             auto_script.metadata.lifecycle = AutoScriptLifecycle::Cancelling;
+
+            vehicle = auto_script.vehicle.clone();
             true
         });
+
+        let Some(vehicle) = vehicle else {
+            warn!("tried to cancel but vehicle missing");
+            return;
+        };
+
+        vehicle.cancel_auto_script(run_uuid).await;
     }
 
     pub async fn notify_log(&self, run_uuid: String, log: LogMessage) {

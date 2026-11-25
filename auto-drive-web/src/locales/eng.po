@@ -376,12 +376,10 @@ msgstr "Restart"
 msgid "Queued Time"
 msgstr "Queued Time"
 
-#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Action"
 msgstr "Action"
 
-#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 #: src/lib/components/LiveTimeTrials.svelte
 msgid "Skip The Queue"
 msgstr "Skip The Queue"
@@ -563,3 +561,55 @@ msgstr "Live"
 #: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
 msgid "Idle"
 msgstr "Idle"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "StoppedByDisconnect"
+msgstr "StoppedByDisconnect"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "StoppedByHttpCancel"
+msgstr "StoppedByHttpCancel"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "StoppedBySafety"
+msgstr "StoppedBySafety"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "StoppedByScriptEnd"
+msgstr "StoppedByScriptEnd"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "Failed to start script on car"
+msgstr "Failed to start script on car"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "Network error starting script"
+msgstr "Network error starting script"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "Run on Car"
+msgstr "Run on Car"
+
+#. 0: plate
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "{0} is currently driving"
+msgstr "{0} is currently driving"
+
+#. 0: plate
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "Run on {0}"
+msgstr "Run on {0}"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "Starting..."
+msgstr "Starting..."
+
+#. 0: plate
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "Run {0}"
+msgstr "Run {0}"
+
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+#: src/lib/components/Dashboard/Scripts/LiveScripts.svelte
+msgid "Lifecycle"
+msgstr "Lifecycle"

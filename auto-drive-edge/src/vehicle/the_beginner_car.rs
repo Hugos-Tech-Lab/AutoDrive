@@ -105,6 +105,7 @@ impl TheBeginnerCar {
             };
 
             auto_script.metadata.lifecycle = AutoScriptLifecycle::SendingToWifiMcu;
+            auto_script.vehicle = Some(self.clone());
             auto_script_to_start = Some(auto_script.clone());
             true
         });
@@ -160,9 +161,14 @@ impl TheBeginnerCar {
             );
         }
 
-        dbg!(self.vehicle_lifecycle.borrow());
-
         Ok(())
+    }
+
+    pub async fn cancel_auto_script(&self, run_uuid: String) {
+        let sent = self
+            .connection
+            .send(TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid })
+            .await;
     }
 }
 

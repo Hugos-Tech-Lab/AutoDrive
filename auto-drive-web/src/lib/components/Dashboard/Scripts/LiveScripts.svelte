@@ -3,12 +3,15 @@
   import { endpointRoot } from "../../../../endpoint";
   import { type AutoScriptMetadata } from "../../../../../../auto-drive-edge/api/auto-drive-edge-protocol/ts/AutoScriptMetadata";
 
+  // Define your fleet's number plates here (or fetch them from an endpoint)
+  const AVAILABLE_CARS = ["TBC 001"];
+
   type AutoScriptOverviewStreamedResponse = {
     auto_scripts: Array<AutoScriptMetadata>;
   };
 
   type AutoScripts = {
-    running: Array<AutoScriptMetadata>;
+    driving: Array<AutoScriptMetadata>;
     queued: Array<AutoScriptMetadata>;
     stopped: Array<AutoScriptMetadata>;
   };
@@ -16,6 +19,7 @@
   let timeTrialsData = $state<AutoScripts | null>(null);
   let connectionStatus = $state("Connecting...");
   let telemetryError = $state("");
+  let pendingRuns = $state<Record<string, boolean>>({});
 
   // Variables for the client-side time offset ticker
   let lastUpdateMs = $state(Date.now());
@@ -24,6 +28,15 @@
   // Derive a nicely formatted string for the last refresh time
   let lastRefreshTime = $derived(
     timeTrialsData ? new Date(lastUpdateMs).toLocaleTimeString() : "Never",
+  );
+
+  // Track which number plates are currently driving so we can disable their buttons
+  let busyPlates = $derived(
+    new Set(
+      (timeTrialsData?.driving ?? [])
+        .map((s) => s.vehicle_number_plate)
+        .filter((p): p is string => Boolean(p)),
+    ),
   );
 
   onMount(() => {
@@ -43,8 +56,6 @@
 
     source.addEventListener("overview", (event: MessageEvent<string>) => {
       try {
-        console.log(event.data);
-
         const parsed = JSON.parse(
           event.data,
         ) as AutoScriptOverviewStreamedResponse;
@@ -53,9 +64,10 @@
           throw new Error("Invalid telemetry payload");
         }
 
-        console.log(parsed);
+        console.log(parsed.auto_scripts);
+
         const grouped: AutoScripts = {
-          running: [],
+          driving: [],
           queued: [],
           stopped: [],
         };
@@ -63,17 +75,22 @@
         for (const script of parsed.auto_scripts) {
           if (script.lifecycle === "Idle") {
             grouped.queued.push(script);
-          } else if (script.status === "stopped") {
+          } else if (
+            script.lifecycle === "StoppedByDisconnect" ||
+            script.lifecycle === "StoppedByHttpCancel" ||
+            script.lifecycle === "StoppedBySafety" ||
+            script.lifecycle === "StoppedByScriptEnd"
+          ) {
             grouped.stopped.push(script);
           } else {
-            grouped.running.push(script);
+            grouped.driving.push(script);
           }
         }
 
         // Sort all arrays by run_number descending (biggest first)
-        const sortDesc = (a: AutoScript, b: AutoScript) =>
+        const sortDesc = (a: AutoScriptMetadata, b: AutoScriptMetadata) =>
           (b.run_number ?? 0) - (a.run_number ?? 0);
-        grouped.running.sort(sortDesc);
+        grouped.driving.sort(sortDesc);
         grouped.queued.sort(sortDesc);
         grouped.stopped.sort(sortDesc);
 
@@ -111,10 +128,31 @@
     return `${baseTime + offset}s`;
   }
 
-  function skipTheQueue(run_uuid: string | undefined) {
+  async function runScript(run_uuid: string | undefined, number_plate: string) {
     if (!run_uuid) return;
-    console.log("Skipping queue for", run_uuid);
-    // TODO: Call your hardware stop endpoint.
+    const key = `${run_uuid}-${number_plate}`;
+
+    try {
+      const response = await fetch(`${endpointRoot()}/autoscript/run`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ run_uuid, number_plate }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        console.error(
+          "Failed to run auto script:",
+          data.message || response.statusText,
+        );
+        telemetryError = data.message || "Failed to start script on car";
+      }
+    } catch (error) {
+      console.error("Error executing run request:", error);
+      telemetryError = "Network error starting script";
+    }
   }
 
   function restart(run_uuid: string | undefined) {
@@ -176,12 +214,13 @@
             <th class="py-3 px-4">Upload Hash</th>
             <th class="py-3 px-4">Upload Comment</th>
             <th class="py-3 px-4">Number Plate</th>
+            <th class="py-3 px-4">Lifecycle</th>
             <th class="py-3 px-4 text-center">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
-          {#if timeTrialsData?.running && timeTrialsData.running.length > 0}
-            {#each timeTrialsData.running as entry, i (entry.run_uuid || i)}
+          {#if timeTrialsData?.driving && timeTrialsData.driving.length > 0}
+            {#each timeTrialsData.driving as entry, i (entry.run_uuid || i)}
               <tr class="hover:bg-gray-50 transition-colors">
                 <td class="py-3 px-4 font-semibold text-gray-900"
                   >{entry.owner_name || "Unknown"}</td
@@ -200,7 +239,10 @@
                   >{(entry.owner_comment || "").substring(0, 10)}</td
                 >
                 <td class="py-3 px-4 font-mono text-xs text-gray-500"
-                  >{(entry.number_plate || "").substring(0, 10)}</td
+                  >{(entry.vehicle_number_plate || "").substring(0, 10)}</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.lifecycle || "").substring(0, 10)}</td
                 >
                 <td class="py-3 px-4">
                   <div class="flex items-center justify-center gap-2">
@@ -256,7 +298,7 @@
             <th class="py-3 px-4">Upload Hash</th>
             <th class="py-3 px-4">Run #</th>
             <th class="py-3 px-4">Run UUID</th>
-            <th class="py-3 px-4 text-center">Action</th>
+            <th class="py-3 px-4 text-center">Run on Car</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -276,14 +318,28 @@
                 <td class="py-3 px-4 font-mono text-xs text-gray-500"
                   >{(entry.run_uuid || "").substring(0, 13)}...</td
                 >
-                <td class="py-3 px-4 text-center">
-                  <button
-                    type="button"
-                    class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-300 rounded transition"
-                    onclick={() => skipTheQueue(entry.run_uuid)}
-                  >
-                    Skip The Queue
-                  </button>
+                <td class="py-3 px-4">
+                  <div class="flex flex-wrap items-center justify-center gap-2">
+                    {#each AVAILABLE_CARS as plate (plate)}
+                      {@const isBusy = busyPlates.has(plate)}
+                      {@const isPending =
+                        pendingRuns[`${entry.run_uuid}-${plate}`]}
+                      <button
+                        type="button"
+                        disabled={isBusy || isPending}
+                        title={isBusy
+                          ? `${plate} is currently driving`
+                          : `Run on ${plate}`}
+                        class="px-2.5 py-1.5 text-xs font-mono font-medium rounded border transition
+                          {isBusy
+                          ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                          : 'text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-300'}"
+                        onclick={() => runScript(entry.run_uuid, plate)}
+                      >
+                        {isPending ? "Starting..." : `Run ${plate}`}
+                      </button>
+                    {/each}
+                  </div>
                 </td>
               </tr>
             {/each}
@@ -322,6 +378,7 @@
             <th class="py-3 px-4">Upload Hash</th>
             <th class="py-3 px-4">Upload Comment</th>
             <th class="py-3 px-4">Number Plate</th>
+            <th class="py-3 px-4">Lifecycle</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -342,7 +399,10 @@
                   >{(entry.owner_comment || "").substring(0, 10)}</td
                 >
                 <td class="py-3 px-4 font-mono text-xs text-gray-500"
-                  >{(entry.number_plate || "").substring(0, 10)}</td
+                  >{(entry.vehicle_number_plate || "").substring(0, 10)}</td
+                >
+                <td class="py-3 px-4 font-mono text-xs text-gray-500"
+                  >{(entry.lifecycle || "").substring(0, 10)}</td
                 >
               </tr>
             {/each}

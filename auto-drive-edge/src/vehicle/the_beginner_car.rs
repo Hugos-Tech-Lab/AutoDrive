@@ -313,5 +313,39 @@ pub async fn handle_message_from_vehicle(
             rotation_radians,
             timestamp_unix_epoch_ms,
         } => {}
+        TheBeginnerCarOutgoingMessages::AutoScriptWasmState { state } => {
+            // dbg!(state);
+            // scripts.scripts.send_modify(|scripts| {
+            //     // let auto_script = scripts.iter_mut().find(|auto_script| {
+            //     //     // auto_script.metadata.vehicle_number_plate == Some(number_plate.clone())
+            //     //     // match state {
+            //     //     //     the_beginner_car_tcp_protocol::AutoScriptState::Idle => {
+            //     //     //         auto_script.metadata.lifecycle = AutoScriptLifecycle::Idle,
+            //     //     //     }
+            //     //     //     the_beginner_car_tcp_protocol::AutoScriptState::ReceivedByWasmMcu => {
+            //     //     //         todo!()
+            //     //     //     }
+            //     //     //     the_beginner_car_tcp_protocol::AutoScriptState::CreatingWasmModule => {
+            //     //     //         todo!()
+            //     //     //     }
+            //     //     //     the_beginner_car_tcp_protocol::AutoScriptState::InstantiatingWasmModule => {
+            //     //     //         todo!()
+            //     //     //     }
+            //     //     //     the_beginner_car_tcp_protocol::AutoScriptState::PreparingToRunWasmMain => {
+            //     //     //         todo!()
+            //     //     //     }
+            //     //     //     the_beginner_car_tcp_protocol::AutoScriptState::FindingWasmMain => todo!(),
+            //     //     //     the_beginner_car_tcp_protocol::AutoScriptState::RunningWasmMain => todo!(),
+            //     //     // }
+
+            //     //     false
+            //     // });
+
+            //     let Some(auto_script) = auto_script else {
+            //         warn!("auto script not found");
+            //         return;
+            //     };
+            // });
+        }
     }
 }

@@ -1,39 +1,96 @@
 use std::sync::atomic::AtomicU32;
-use std::sync::mpsc::{self, SyncSender};
+use std::sync::{Arc, mpsc};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-pub mod auto_script;
 pub mod error;
 pub mod info;
 
 use anyhow::{Context, bail};
 use async_io::{Async, Timer};
-use flume::Receiver;
-use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, try_join};
+use flume::{Receiver, Sender};
+use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, FutureExt, try_join};
 use log::error;
 use log::info;
 use std::io;
 use std::net::{TcpListener, TcpStream, ToSocketAddrs};
-use the_beginner_car_spi_protocol::{Position, RequestToHardware, ResponseFromHardware};
+use the_beginner_car_spi_protocol::ResponseFromHardware;
 use the_beginner_car_tcp_protocol::{
     TheBeginnerCarIncomingMessages, TheBeginnerCarOutgoingMessages,
 };
 
-use futures::executor::LocalSpawner;
+use futures::executor::{LocalPool, LocalSpawner};
 use futures::task::LocalSpawnExt;
 
-use crate::HardwareMessage;
+#[derive(Debug, Clone)]
+pub struct TcpServer {
+    sender: Sender<TheBeginnerCarOutgoingMessages>,
+    receiver: Receiver<TheBeginnerCarIncomingMessages>,
+    thread_handle: Arc<JoinHandle<()>>,
+}
+
+impl TcpServer {
+    pub fn new() -> Self {
+        let (outgoing_messages_sender, outgoing_messages_receiver) = flume::unbounded();
+        let (incoming_messages_sender, incoming_messages_receiver) = flume::unbounded();
+
+        let thread_handle = std::thread::Builder::new()
+            .name("tcp_handle".to_string())
+            .stack_size(40 * 1000)
+            .spawn({
+                // let hardware_sender = hardware_sender.clone();
+                || {
+                    let mut local_executor = LocalPool::new();
+                    let spawner = local_executor.spawner();
+                    local_executor
+                        .spawner()
+                        .spawn_local(
+                            async move {
+                                accept(
+                                    spawner,
+                                    outgoing_messages_receiver,
+                                    incoming_messages_sender,
+                                )
+                                .await
+                                .unwrap();
+
+                                Result::<_, anyhow::Error>::Ok(())
+                            }
+                            .map(Result::unwrap),
+                        )
+                        .unwrap();
+
+                    local_executor.run();
+                }
+            })
+            .unwrap();
+
+        Self {
+            sender: outgoing_messages_sender,
+            receiver: incoming_messages_receiver,
+            thread_handle: Arc::new(thread_handle),
+        }
+    }
+
+    pub fn send(&self, message: TheBeginnerCarOutgoingMessages) {
+        self.sender.send(message).unwrap();
+    }
+
+    pub fn receiver(&self) -> Receiver<TheBeginnerCarIncomingMessages> {
+        self.receiver.clone()
+    }
+}
 
 async fn handle(
     stream: Async<TcpStream>,
-    hardware_sender: SyncSender<HardwareMessage>,
-    receiver_tx: Receiver<TheBeginnerCarOutgoingMessages>,
+    outgoing_messages_receiver: Receiver<TheBeginnerCarOutgoingMessages>,
+    incoming_messages_sender: Sender<TheBeginnerCarIncomingMessages>,
 ) {
     let (reader, writer) = stream.split();
 
     if let Err(err) = try_join!(
-        handle_incoming(reader, hardware_sender),
-        handle_outgoing(writer, receiver_tx),
+        handle_incoming(reader, incoming_messages_sender),
+        handle_outgoing(writer, outgoing_messages_receiver),
     ) {
         error!("TCP connection ended: {err:#}");
     }
@@ -41,7 +98,7 @@ async fn handle(
 
 async fn handle_incoming<R>(
     mut reader: R,
-    hardware_sender: SyncSender<HardwareMessage>,
+    incoming_messages_sender: Sender<TheBeginnerCarIncomingMessages>,
 ) -> anyhow::Result<()>
 where
     R: AsyncRead + Unpin,
@@ -68,85 +125,19 @@ where
         let message: TheBeginnerCarIncomingMessages =
             postcard::from_bytes(&bytes).context("decoding incoming message")?;
 
-        match message {
-            TheBeginnerCarIncomingMessages::NotifyPositionFromCamera {
-                x,
-                y,
-                rotation_radians,
-                timestamp_unix_epoch_ms,
-            } => {
-                let (sender, receiver) = std::sync::mpsc::sync_channel(1);
-
-                hardware_sender
-                    .send(HardwareMessage {
-                        request: RequestToHardware::NotifyPositionFromCamera {
-                            position: Position {
-                                x,
-                                y,
-                                rotation_radians,
-                                timestamp_unix_epoch_ms,
-                            },
-                        },
-                        response_tx: sender,
-                    })
-                    .context("sending RunAutoScript to hardware")?;
-
-                let _ = wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
-            }
-
-            TheBeginnerCarIncomingMessages::RunAutoScript { script } => {
-                info!("run auto script");
-
-                let (sender, receiver) = std::sync::mpsc::sync_channel(1);
-
-                hardware_sender
-                    .send(HardwareMessage {
-                        request: RequestToHardware::RunAutoScript {
-                            data: script.script,
-                        },
-                        response_tx: sender,
-                    })
-                    .context("sending RunAutoScript to hardware")?;
-
-                let response = wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
-                match response {
-                    ResponseFromHardware::AutoScriptStarted { id } => {
-                        dbg!(id);
-                    }
-                    _ => {}
-                }
-            }
-
-            TheBeginnerCarIncomingMessages::CancelAutoScript { run_uuid } => {
-                let (sender, receiver) = std::sync::mpsc::sync_channel(1);
-                hardware_sender
-                    .send(HardwareMessage {
-                        request: RequestToHardware::StopAutoScript,
-                        response_tx: sender,
-                    })
-                    .context("sending StopAutoScript to hardware")?;
-
-                let response = wait_for_hardware_response(receiver, Duration::from_secs(5)).await?;
-                match response {
-                    ResponseFromHardware::Ok => {
-                        dbg!("ok");
-                    }
-                    _ => {}
-                }
-            }
-        }
+        incoming_messages_sender.send_async(message).await;
     }
 }
 
 async fn handle_outgoing<W>(
     mut writer: W,
-    receiver: Receiver<TheBeginnerCarOutgoingMessages>,
+    outgoing_messages_receiver: Receiver<TheBeginnerCarOutgoingMessages>,
 ) -> anyhow::Result<()>
 where
     W: AsyncWrite + Unpin,
 {
     loop {
-        let message = receiver
+        let message = outgoing_messages_receiver
             .recv_async()
             .await
             .map_err(|_| anyhow::anyhow!("outgoing message channel closed"))?;
@@ -194,8 +185,8 @@ async fn wait_for_hardware_response(
 
 pub async fn accept(
     spawner: LocalSpawner,
-    hardware_sender: SyncSender<HardwareMessage>,
-    receiver_tx: Receiver<TheBeginnerCarOutgoingMessages>,
+    outgoing_messages_receiver: Receiver<TheBeginnerCarOutgoingMessages>,
+    incoming_messages_sender: Sender<TheBeginnerCarIncomingMessages>,
 ) -> Result<(), io::Error> {
     info!("Binding to port 8080");
 
@@ -221,13 +212,18 @@ pub async fn accept(
 
     loop {
         let stream = listener.accept().await;
-        let receiver_tx = receiver_tx.clone();
+        let outgoing_messages_receiver = outgoing_messages_receiver.clone();
+        let incoming_messages_sender = incoming_messages_sender.clone();
         match stream {
             Ok((stream, addr)) => {
                 info!("Accepted client {addr}");
 
                 spawner
-                    .spawn_local(handle(stream, hardware_sender.clone(), receiver_tx))
+                    .spawn_local(handle(
+                        stream,
+                        outgoing_messages_receiver,
+                        incoming_messages_sender,
+                    ))
                     .unwrap();
             }
             Err(e) => {

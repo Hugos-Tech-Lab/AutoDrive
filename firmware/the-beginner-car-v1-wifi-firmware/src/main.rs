@@ -12,21 +12,24 @@ use esp_idf_svc::{
 };
 #[cfg(all(esp_idf_app_compile_time_date, not(esp_idf_app_reproducible_build)))]
 use esp_idf_svc::{hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition};
-use futures::{FutureExt, executor::LocalPool, task::LocalSpawnExt};
 use hardware_config::{TheBeginnerCarMetadata, config::HARDWARE_CONFIG};
 use the_beginner_car_spi_protocol::{RequestToHardware, ResponseFromHardware};
 use the_beginner_car_tcp_protocol::{AutoScript, TheBeginnerCarOutgoingMessages};
 
 use crate::{
-    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi, tcp_server::accept,
+    battery_monitor::battery_monitor::Battery, connect_to_wifi::connect_to_wifi,
+    edge_connection::EdgeConnection,
 };
 
 use esp_idf_sys::esp_reset_reason;
 use log::{info, warn};
 pub mod connect_to_wifi;
+pub mod edge_connection;
 pub mod inter_thread;
-pub mod tcp_server;
 pub mod utils;
+pub mod vehicle;
+pub mod vehicle_control;
+pub mod wasm_mcu_connection;
 
 pub struct HardwareMessage {
     request: RequestToHardware,
@@ -120,34 +123,13 @@ pub fn main() -> anyhow::Result<()> {
 
     let (sender_tx, receiver_tx) = flume::bounded(1000);
 
-    let tcp_handle = std::thread::Builder::new()
-        .name("tcp_handle".to_string())
-        .stack_size(40 * 1000)
-        .spawn({
-            let hardware_sender = hardware_sender.clone();
-            || {
-                let mut local_executor = LocalPool::new();
-                let spawner = local_executor.spawner();
-                local_executor
-                    .spawner()
-                    .spawn_local(
-                        async move {
-                            accept(spawner, hardware_sender, receiver_tx).await.unwrap();
+    let edge_connection = EdgeConnection::new();
 
-                            Result::<_, anyhow::Error>::Ok(())
-                        }
-                        .map(Result::unwrap),
-                    )
-                    .unwrap();
-
-                local_executor.run();
-            }
-        })
-        .unwrap();
+    // TCP SERVER
 
     std::thread::Builder::new()
         .stack_size(2_000)
-        .name("sync_wasm".to_string())
+        .name("sync_wasm".to_string())  
         .spawn({
             let sender_tx = sender_tx.clone();
             let hardware_sender = hardware_sender.clone();

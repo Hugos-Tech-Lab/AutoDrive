@@ -1,5 +1,0 @@
-{
-  "rust-analyzer.cargo.extraEnv": {
-    "LIBCLANG_PATH": "/usr/lib/llvm-18/lib"
-  }
-}

@@ -1589,7 +1589,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tbc-runner-fw"
+name = "tbc-runner-firmware"
 version = "0.1.0"
 dependencies = [
  "anyhow",

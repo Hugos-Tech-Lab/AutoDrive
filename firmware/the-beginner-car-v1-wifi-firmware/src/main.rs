@@ -26,10 +26,10 @@ use log::{info, warn};
 pub mod connect_to_wifi;
 pub mod edge_connection;
 pub mod inter_thread;
+pub mod runtime_mcu_connection;
 pub mod utils;
 pub mod vehicle;
 pub mod vehicle_control;
-pub mod wasm_mcu_connection;
 
 pub struct HardwareMessage {
     request: RequestToHardware,
@@ -419,7 +419,6 @@ pub fn main() -> anyhow::Result<()> {
     info!("init done");
 
     spi_handle.join().unwrap();
-    tcp_handle.join().unwrap();
     battery_poll_handle.join().unwrap();
     drain_events_handle.join().unwrap();
     Ok(())

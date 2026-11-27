@@ -1688,37 +1688,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tempfile"
-version = "3.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
-dependencies = [
- "fastrand",
- "getrandom",
- "once_cell",
- "rustix 1.1.5",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "the-beginner-car-spi-protocol"
-version = "0.1.0"
-dependencies = [
- "auto-drive-common-types",
- "serde",
-]
-
-[[package]]
-name = "the-beginner-car-tcp-protocol"
-version = "0.1.0"
-dependencies = [
- "auto-drive-common-types",
- "postcard",
- "serde",
-]
-
-[[package]]
-name = "the-beginner-car-wifi-firmware"
+name = "tbc-core-firmware"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1750,6 +1720,36 @@ dependencies = [
  "the-beginner-car-spi-protocol",
  "the-beginner-car-tcp-protocol",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "tempfile"
+version = "3.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
+dependencies = [
+ "fastrand",
+ "getrandom",
+ "once_cell",
+ "rustix 1.1.5",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "the-beginner-car-spi-protocol"
+version = "0.1.0"
+dependencies = [
+ "auto-drive-common-types",
+ "serde",
+]
+
+[[package]]
+name = "the-beginner-car-tcp-protocol"
+version = "0.1.0"
+dependencies = [
+ "auto-drive-common-types",
+ "postcard",
+ "serde",
 ]
 
 [[package]]

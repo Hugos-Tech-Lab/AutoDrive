@@ -67,25 +67,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "auto-drive-the-beginner-fw"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "auto-drive-common-types",
- "common-firmware",
- "embassy-time",
- "embuild",
- "esp-idf-svc",
- "esp-idf-sys",
- "log",
- "postcard",
- "serde",
- "the-beginner-car-spi-protocol",
- "the-beginner-car-wasm-sdk",
- "wamr-rust-sdk",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1605,6 +1586,25 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tbc-runner-fw"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "auto-drive-common-types",
+ "common-firmware",
+ "embassy-time",
+ "embuild",
+ "esp-idf-svc",
+ "esp-idf-sys",
+ "log",
+ "postcard",
+ "serde",
+ "the-beginner-car-spi-protocol",
+ "the-beginner-car-wasm-sdk",
+ "wamr-rust-sdk",
 ]
 
 [[package]]
